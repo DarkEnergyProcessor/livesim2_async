@@ -1,4 +1,5 @@
 -- DEP LS (Pronounced Deep Less), Live Simulator.
+local love = love
 local List
 local JSON
 local tween
@@ -20,7 +21,7 @@ local idol_image_pos = {	-- idol image position
 	{816, 96 }
 }
 -- local notes_moving_angle = {90, 112.46575563415, 134.89859164657, 157.34706707977, 180, -157.4794343971, -135, -112.5205656029, -90}
-local notes_list = {}		-- SIF format notes list
+local notes_list			-- SIF format notes list
 local BEATMAP_AUDIO			-- beatmap audio handle
 local BEATMAP_NAME = nil	-- name of the beatmap to be loaded
 local tap_circle_image		-- Tap circle image handle.
@@ -31,9 +32,15 @@ local DEBUG_SWITCH = true
 local __LSHIFT_REPEAT = false
 local NOTES_QUEUE = {}
 local DEBUG_FONT
+local DEBUG_FONT_OUTLINE_SHADER
 local audio_playing = false
+local NOTE_LOADER			-- Note loader function
+local stamina_number_image = {}	-- Stamina number image
+local stamina_bar_image		-- Stamina bar image
+local current_score = SCORE_DISPLAY_DEBUG or 0	-- Score tracking
+local current_combo = 0		-- Combo tracking
 
-local function file_get_contents(path)
+function file_get_contents(path)
 	local f = io.open(path)
 	
 	if not(f) then return nil end
@@ -52,10 +59,82 @@ local function load_token_note(path)
 end
 
 local function load_audio_safe(path)
-	local _, token_image = pcall(love.audio.newSource, path)
+	local _, token_image = pcall(love.audio.newSource, path, "static")
 	
 	if _ == false then return nil
 	else return token_image end
+end
+
+local load_unit_icon
+do
+	local dummy_image
+	
+	load_unit_icon = function(path)
+		if dummy_image == nil then
+			dummy_image = love.graphics.newImage("image/dummy.png")
+		end
+		
+		if path == nil then return dummy_image end
+		
+		local _, img = pcall(love.graphics.newImage, path)
+		
+		if _ == false then
+			return dummy_image
+		end
+		
+		return img
+	end
+end
+
+-- Score updater routine
+local score_update_coroutine = coroutine.wrap(function(deltaT)
+	local score_str = {string.byte(tostring(current_score), 1, 2147483647)}
+	local score_images = {}
+	local score_digit_len = 0
+	local xpos
+	
+	for i = 0, 9 do
+		score_images[i] = love.graphics.newImage("image/score_num/l_num_0"..i..".png")
+	end
+	
+	while true do
+		score_str = {string.byte(tostring(current_score), 1, 2147483647)}
+		score_digit_len = #score_str
+		xpos = 448 - 18 * score_digit_len
+
+		for i = 1, score_digit_len do
+			graphics.draw(score_images[score_str[i] - 48], xpos + 36 * i, 53)
+		end
+		
+		-- Get deltaT
+		deltaT = coroutine.yield()
+	end
+end)
+
+local function add_score(score_val)
+	-- Combo calculation starts here
+	local added_score = score_val
+	
+	if current_combo < 50 then
+		added_score = added_score
+	elseif current_combo < 100 then
+		added_score = added_score * 1.1
+	elseif current_combo < 200 then
+		added_score = added_score * 1.15
+	elseif current_combo < 400 then
+		added_score = added_score * 1.2
+	elseif current_combo < 600 then
+		added_score = added_score * 1.25
+	elseif current_combo < 800 then
+		added_score = added_score * 1.3
+	else
+		added_score = added_score * 1.35
+	end
+	
+	added_score = math.floor(added_score + 0.5)
+	
+	current_score = current_score + added_score
+	-- TODO: Call update score coroutine for animation
 end
 
 local function distance(a, b)
@@ -143,11 +222,6 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 				math.floor((longnote_data.last_circle.y + (s2 * 64) * math.sin(longnote_data.direction)) + 0.5),	-- y
 			}
 			
-			print(string.format("poly x1 = %d poly y1 = %d", vert[1], vert[2]))
-			print(string.format("poly x2 = %d poly y2 = %d", vert[3], vert[4]))
-			print(string.format("poly x3 = %d poly y3 = %d", vert[5], vert[6]))
-			print(string.format("poly x4 = %d poly y4 = %d", vert[7], vert[8]))
-			
 			graphics.setColor(255, 255, 255, 127)
 			graphics.polygon("fill", vert[1], vert[2], vert[3], vert[4], vert[5], vert[6])
 			graphics.polygon("fill", vert[5], vert[6], vert[7], vert[8], vert[1], vert[2])
@@ -177,29 +251,35 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	
 	if long_note_bit then
 		longnote_data.sound:play()
+		add_score(SCORE_ADD_NOTE * 1.25)
 	else
 		circle_sound:play()
+		add_score(SCORE_ADD_NOTE)
 	end
+	
+	current_combo = current_combo + 1
 	
 	while true do coroutine.yield() end
 end
 
+-- Initialization function
 function love.load(argv)
 	math.randomseed(os.time())
 	
 	-- Initialize libraries
 	__arg = argv
 	ROOT_DIR = love.filesystem.getRealDirectory("main.lua")
-	JSON = dofile(ROOT_DIR.."/JSON.lua")
-	tween = dofile(ROOT_DIR.."/tween.lua")
-	List = dofile(ROOT_DIR.."/List.lua")
+	JSON = require("JSON")
+	tween = require("tween")
+	List = require("List")
 	graphics = love.graphics
 	BEATMAP_NAME = argv[2]
 	NOTE_SPEED = (tonumber(argv[4] or "") or NOTE_SPEED) * 1000
+	NOTE_LOADER = require("note_loader")
 	
 	if BEATMAP_NAME then
 		-- Load beatmap
-		notes_list = JSON:decode(file_get_contents(ROOT_DIR.."/beatmap/"..BEATMAP_NAME..".json"))
+		notes_list = NOTE_LOADER(ROOT_DIR.."/beatmap/"..BEATMAP_NAME..".json")
 		--NOTES_QUEUE = List.new()
 		
 		-- Load beatmap audio
@@ -218,7 +298,7 @@ function love.load(argv)
 		
 		-- Load idol images
 		for i = 1, 9 do
-			idol_image_handle[i] = love.graphics.newImage(IDOL_IMAGE[i])
+			idol_image_handle[i] = load_unit_icon(IDOL_IMAGE[i])
 		end
 		
 		-- Load tap circle data
@@ -235,15 +315,40 @@ function love.load(argv)
 			love.graphics.newImage("image/tap_circle/tap_circle-36.png"),
 			love.graphics.newImage("image/tap_circle/tap_circle-40.png"),
 			
-			longnote = love.graphics.newImage("image/popn.png"),
+			display = love.graphics.newImage("image/popn.png"),
 			simulnote = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
 			starnote = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
 			endlongnote = love.graphics.newImage("image/tap_circle/tap_circle-44.png"),
 			tokennote = load_token_note(argv[4] or TOKEN_IMAGE)
 		}
 		
+		-- Load stamina bar
+		stamina_bar_image = love.graphics.newImage("image/live_gauge_02_02.png")
+		
+		-- Load stamina number images
+		do
+			local stamina_display_str = tostring(STAMINA_DISPLAY)
+			local matcher = stamina_display_str:gmatch("%d")
+			local temp
+			local temp_num
+			
+			stamina_number_image.draw_target = {}
+			
+			for i = 1, #stamina_display_str do
+				temp = matcher()
+				temp_num = tonumber(temp)
+				
+				if stamina_number_image[temp_num] == nil then
+					stamina_number_image[temp_num] = love.graphics.newImage("image/hp_num/live_num_"..temp..".png")
+				end
+				
+				stamina_number_image.draw_target[i] = stamina_number_image[temp_num]
+			end
+		end
+		
 		-- Load font
-		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 20)
+		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 24)
+		DEBUG_FONT_OUTLINE_SHADER = love.graphics.newShader("outline_shader.glsl")
 	end
 end
 
@@ -265,6 +370,15 @@ function love.draw()
 			for i = 1, 9 do
 				graphics.draw(idol_image_handle[i], unpack(idol_image_pos[i]))
 			end
+			
+			-- Draw stamina
+			graphics.draw(stamina_bar_image, 14, 60)
+			for i = 1, #stamina_number_image.draw_target do
+				graphics.draw(stamina_number_image.draw_target[i], 290 + 16 * i, 66)
+			end
+			
+			-- Draw score
+			score_update_coroutine(deltaT)
 		end
 		
 		-- Draw notes
@@ -283,16 +397,17 @@ function love.draw()
 		
 		-- Print debug info if exist
 		if DEBUG_SWITCH then
-			local oldfont = graphics.getFont()
-			
-			graphics.setFont(DEBUG_FONT)
-			graphics.setColor(0, 255, 255, 255)
-			graphics.print(string.format([[
+			local str = string.format([[
 %d FPS
 NOTE_SPEED = %d ms
 AVAILABLE_NOTES = %d
 QUEUED_NOTES = %d
-]], love.timer.getFPS(), NOTE_SPEED, #notes_list, #NOTES_QUEUE))
+]], love.timer.getFPS(), NOTE_SPEED, notes_list.len, #NOTES_QUEUE)
+			local oldfont = graphics.getFont()
+			
+			graphics.setFont(DEBUG_FONT)
+			graphics.setColor(255, 0, 0, 255)
+			graphics.print(str)
 			graphics.setFont(oldfont)
 			graphics.setColor(255, 255, 255, 255)
 		end
@@ -322,14 +437,17 @@ function love.update(deltaT)
 				audio_playing = true
 			end
 			
-			if notes_list[1] then
+			if notes_list:isempty() == false then
 				-- Spawn notes
+				local temp_note
 				local added_notes = {}
 				
-				while notes_list[1] do
-					if elapsed_time >= notes_list[1].timing_sec * 1000 - NOTE_SPEED then
-						table.insert(added_notes, table.remove(notes_list, 1))
+				while notes_list:isempty() == false do
+					temp_note = notes_list:popleft()
+					if elapsed_time >= temp_note.timing_sec * 1000 - NOTE_SPEED then
+						table.insert(added_notes, temp_note)
 					else
+						notes_list:pushleft(temp_note)
 						break
 					end
 				end

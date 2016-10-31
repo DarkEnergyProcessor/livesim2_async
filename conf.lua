@@ -13,6 +13,9 @@ IDOL_IMAGE = {	-- Order: leftmost > rightmost
 NOTE_SPEED = 0.8
 TOKEN_IMAGE = "image/tap_circle/e_icon_08.png"
 RANDOM_NOTE_IMAGE = false
+STAMINA_DISPLAY = 32
+--SCORE_DISPLAY_DEBUG = 123456
+SCORE_ADD_NOTE = 345	-- Raw score value added when taping a note
 
 function love.conf(t)
 	t.identity = nil                    -- The name of the save directory (string)
@@ -32,7 +35,7 @@ function love.conf(t)
 	t.window.minheight = 640            -- Minimum window height if the window is resizable (number)
 	t.window.fullscreen = false         -- Enable fullscreen (boolean)
 	t.window.fullscreentype = "desktop" -- Choose between "desktop" fullscreen or "exclusive" fullscreen mode (string)
-	t.window.vsync = true               -- Enable vertical sync (boolean)
+	t.window.vsync = false               -- Enable vertical sync (boolean)
 	t.window.msaa = 0                   -- The number of samples to use with multi-sampled antialiasing (number)
 	t.window.display = 1                -- Index of the monitor to show the window in (number)
 	t.window.highdpi = false            -- Enable high-dpi mode for the window on a Retina display (boolean)
