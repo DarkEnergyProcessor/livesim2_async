@@ -1,4 +1,5 @@
-BACKGROUND_IMAGE = "image/liveback_10.png"
+-- Live simulator config
+BACKGROUND_IMAGE = "image/liveback_12.png"
 IDOL_IMAGE = {	-- Order: leftmost > rightmost
 	"image/dummy.png",
 	"image/dummy.png",
@@ -15,10 +16,11 @@ TOKEN_IMAGE = "image/tap_circle/e_icon_08.png"
 RANDOM_NOTE_IMAGE = false
 STAMINA_DISPLAY = 32
 --SCORE_DISPLAY_DEBUG = 123456
-SCORE_ADD_NOTE = 345	-- Raw score value added when taping a note
+SCORE_ADD_NOTE = 525	-- Raw score value added when taping a note
 
+-- Love2d config function
 function love.conf(t)
-	t.identity = nil                    -- The name of the save directory (string)
+	t.identity = "DEPLS"                -- The name of the save directory (string)
 	t.version = "0.10.1"                -- The LÖVE version this game was made for (string)
 	t.console = true                    -- Attach a console (boolean, Windows only)
 	t.accelerometerjoystick = true      -- Enable the accelerometer on iOS and Android by exposing it as a Joystick (boolean)
@@ -35,7 +37,7 @@ function love.conf(t)
 	t.window.minheight = 640            -- Minimum window height if the window is resizable (number)
 	t.window.fullscreen = false         -- Enable fullscreen (boolean)
 	t.window.fullscreentype = "desktop" -- Choose between "desktop" fullscreen or "exclusive" fullscreen mode (string)
-	t.window.vsync = false               -- Enable vertical sync (boolean)
+	t.window.vsync = true               -- Enable vertical sync (boolean)
 	t.window.msaa = 0                   -- The number of samples to use with multi-sampled antialiasing (number)
 	t.window.display = 1                -- Index of the monitor to show the window in (number)
 	t.window.highdpi = false            -- Enable high-dpi mode for the window on a Retina display (boolean)
