@@ -47,6 +47,7 @@ local current_score = SCORE_DISPLAY_DEBUG or 0	-- Score tracking
 local current_combo = 0		-- Combo tracking
 local NOTE_SPEED = NOTE_SPEED
 local combo_system = {replay_animation = false, img = {}}
+local score_eclipsef = {replay_animation = false}
 
 function file_get_contents(path)
 	local f = io.open(path)
@@ -99,6 +100,31 @@ do
 	end
 end
 
+score_eclipsef.routine = coroutine.wrap(function()
+	local deltaT
+	local eclipse_data = {scale = 1, opacity = 255}
+	local eclipse_tween = tween.new(500, eclipse_data, {scale = 1.6, opacity = 0})
+	
+	eclipse_tween:update(1000)	-- Seek to end
+	
+	while true do
+		deltaT = coroutine.yield()		-- love.update part
+		
+		if score_eclipsef.replay_animation then
+			eclipse_tween:reset()
+			score_eclipsef.replay_animation = false
+		end
+		
+		coroutine.yield()	-- love.draw part
+		
+		if eclipse_tween:update(deltaT) == false then
+			graphics.setColor(255, 255, 255, eclipse_data.opacity)
+			graphics.draw(score_eclipsef.img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
+			graphics.setColor(255, 255, 255, 255)
+		end
+	end
+end)
+
 -- Score updater routine
 local score_update_coroutine = coroutine.wrap(function(deltaT)
 	local score_str = {string.byte(tostring(current_score), 1, 2147483647)}
@@ -111,16 +137,17 @@ local score_update_coroutine = coroutine.wrap(function(deltaT)
 	end
 	
 	while true do
+		deltaT = coroutine.yield()
+		
 		score_str = {string.byte(tostring(current_score), 1, 2147483647)}
 		score_digit_len = #score_str
 		xpos = 448 - 18 * score_digit_len
-
+		
+		coroutine.yield()
+		
 		for i = 1, score_digit_len do
 			graphics.draw(score_images[score_str[i] - 48], xpos + 36 * i, 53)
 		end
-		
-		-- Get deltaT
-		deltaT = coroutine.yield()
 	end
 end)
 
@@ -147,6 +174,7 @@ local function add_score(score_val)
 	added_score = math.floor(added_score + 0.5)
 	
 	current_score = current_score + added_score
+	score_eclipsef.replay_animation = true
 	-- TODO: Call update score coroutine for animation
 end
 
@@ -187,10 +215,10 @@ combo_system.draw_routine = coroutine.wrap(function()
 	local combo_tween = tween.new(100, combo_scale, {s = 1}, function(t, b, c, d) return c * (1 - math.cos(t / d * math.pi) * 0.5 - 0.5) + b end)
 	
 	while true do
-		deltaT = coroutine.yield()
+		deltaT = coroutine.yield()	-- love.update part
 		
 		if combo_system.replay_animation then
-			combo_tween:update(-100)	-- Reset
+			combo_tween:reset()
 			combo_system.replay_animation = false
 		end
 		
@@ -203,13 +231,16 @@ combo_system.draw_routine = coroutine.wrap(function()
 			local combo_str = {string.byte(tostring(current_combo), 1, 2147483647)}
 			local img = combo_system.img[get_combo_color_index(current_combo)]
 			
+			coroutine.yield()	-- love.draw part
+			
 			for i = 1, #combo_str do
-				local n = 
 				-- Draw numbers
 				graphics.draw(img[combo_str[i] - 47], 451 - (#combo_str - i) * 43, 267, 0, combo_scale.s, combo_scale.s, 24, 24)
 			end
 			
 			graphics.draw(img.combo, 541, 267, 0, combo_scale.s, combo_scale.s, 61, 17)
+		else
+			coroutine.yield()	-- draw nothing
 		end
 	end
 end)
@@ -268,6 +299,10 @@ local function circletap_effect_routine(position)
 	end
 end
 
+-- Added score update routine
+local function score_node_routine(score)
+end
+
 local function distance(a, b)
 	return math.sqrt(a ^ 2 + b ^ 2)
 end
@@ -291,6 +326,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	local longnote_data = {}
 	local off_time = NOTE_SPEED
 	local score = long_note_bit and (SCORE_ADD_NOTE * 1.25) or SCORE_ADD_NOTE
+	local drawing_order = {}
 	
 	if RANDOM_NOTE_IMAGE then
 		drawn_circle = tap_circle_image[math.random(1, 10)]
@@ -312,6 +348,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	end
 	
 	local deltaT = coroutine.yield(score)	-- Should be in ms
+	time_elapsed = time_elapsed + deltaT
 	
 	while time_elapsed < off_time do
 		if time_elapsed < NOTE_SPEED then
@@ -320,8 +357,6 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 			circle_sound:play()
 			longnote_data.first_sound_play = true
 		end
-		
-		time_elapsed = time_elapsed + deltaT
 		
 		local x = math.floor(note_draw.x + 0.5)
 		local y = math.floor(note_draw.y + 0.5)
@@ -354,34 +389,45 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 				math.floor((longnote_data.last_circle.y + (s2 * 64) * math.sin(longnote_data.direction)) + 0.5),	-- y
 			}
 			
-			graphics.setColor(255, 255, 255, 127)
-			graphics.polygon("fill", vert[1], vert[2], vert[3], vert[4], vert[5], vert[6])
-			graphics.polygon("fill", vert[5], vert[6], vert[7], vert[8], vert[1], vert[2])
-			graphics.setColor(255, 255, 255, 255)
+			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 127}
+			drawing_order[#drawing_order + 1] = {graphics.polygon, "fill", vert[1], vert[2], vert[3], vert[4], vert[5], vert[6]}
+			drawing_order[#drawing_order + 1] = {graphics.polygon, "fill", vert[5], vert[6], vert[7], vert[8], vert[1], vert[2]}
+			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 255}
 			
-			graphics.draw(drawn_circle, x, y, 0, s, s, 64, 64) -- Draw tap circle BEFORE end long note indicator
+			drawing_order[#drawing_order + 1] = {graphics.draw, drawn_circle, x, y, 0, s, s, 64, 64} -- Draw tap circle BEFORE end long note indicator
 			
 			if spawn_ln_end then
-				graphics.draw(tap_circle_image.endlongnote, longnote_data.last_circle.x, longnote_data.last_circle.y, 0, s2, s2, 64, 64)
+				drawing_order[#drawing_order + 1] = {graphics.draw, tap_circle_image.endlongnote, longnote_data.last_circle.x, longnote_data.last_circle.y, 0, s2, s2, 64, 64}
 			end
 		
 		else
-			graphics.draw(drawn_circle, x, y, 0, s, s, 64, 64)		-- Draw tap circle
+			drawing_order[#drawing_order + 1] = {graphics.draw, drawn_circle, x, y, 0, s, s, 64, 64}		-- Draw tap circle
 		end
 		
 		if token_note_bit and tap_circle_image.tokennote then
-			graphics.draw(tap_circle_image.tokennote, x, y, 0, s, s, 64, 64)	-- Layer token note
+			drawing_order[#drawing_order + 1] = {graphics.draw, tap_circle_image.tokennote, x, y, 0, s, s, 64, 64}	-- Layer token note
 		end
 		
 		if simul_note_bit then
-			graphics.draw(tap_circle_image.simulnote, x, y, 0, s, s, 64, 64)	-- Layer simul note
+			drawing_order[#drawing_order + 1] = {graphics.draw, tap_circle_image.simulnote, x, y, 0, s, s, 64, 64}	-- Layer simul note
 		end
 		
 		if star_note_bit then
-			graphics.draw(tap_circle_image.starnote, x, y, 0, s, s, 64, 64)		-- Layer star note
+			drawing_order[#drawing_order + 1] = {graphics.draw, tap_circle_image.starnote, x, y, 0, s, s, 64, 64}		-- Layer star note
 		end
 		
+		coroutine.yield(score)
+		
+		-- Draw
+		for i = 1, #drawing_order do
+			local x = drawing_order[i]
+			local f = table.remove(x, 1)
+			f(unpack(x))
+		end
+		drawing_order = {}
+		
 		deltaT = coroutine.yield(score)
+		time_elapsed = time_elapsed + deltaT
 	end
 	
 	current_combo = current_combo + 1
@@ -396,9 +442,6 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	local aftertap = coroutine.wrap(circletap_effect_routine)
 	aftertap(note_data.position)	-- Initialize circletap effect
 	effect_player.spawn(aftertap)	-- Then add to effect list
-	
-	coroutine.yield(score)
-	
 	
 	while true do coroutine.yield(score) end
 end
@@ -495,7 +538,9 @@ function love.load(argv)
 		
 		-- Load combo number images
 		combo_system.img = require("combo_num")
-		combo_system.draw_routine()	-- Call it once
+		
+		-- Load score eclipse
+		score_eclipsef.img = love.graphics.newImage("image/l_etc_46.png")
 		
 		-- Load font
 		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 24)
@@ -517,7 +562,7 @@ function love.draw()
 		if start_livesim <= 0 then
 			-- Draw header
 			graphics.draw(live_header.header)
-			graphics.draw(live_header.score_gauge, 5, 8, 0, 876 / 880, 33 / 38)
+			graphics.draw(live_header.score_gauge, 5, 8, 0, 0.99545454, 0.86842105)
 			
 			-- Draw idols
 			for i = 1, 9 do
@@ -531,15 +576,16 @@ function love.draw()
 			end
 			
 			-- Draw score
-			score_update_coroutine(deltaT)
+			score_update_coroutine()
+			score_eclipsef.routine()
+			
+			-- Draw combo
+			combo_system.draw_routine()
 		end
-		
-		-- Draw combo
-		combo_system.draw_routine(deltaT)
 		
 		-- Draw notes
 		for n, v in pairs(NOTES_QUEUE) do
-			v.draw(deltaT)
+			v.draw()
 		end
 		
 		-- remove notes from queue
@@ -547,13 +593,15 @@ function love.draw()
 		
 		while NOTES_QUEUE[1] do
 			if elapsed_time > NOTES_QUEUE[1].endtime then
-				accumulative_score = accumulative_score + table.remove(NOTES_QUEUE, 1).draw(deltaT)
+				accumulative_score = accumulative_score + table.remove(NOTES_QUEUE, 1).draw()
 			else
 				break
 			end
 		end
 		
-		add_score(accumulative_score)
+		if accumulative_score > 0 then
+			add_score(accumulative_score)
+		end
 		
 		-- Update effect player
 		effect_player.update(deltaT)
@@ -598,9 +646,12 @@ function love.update(deltaT)
 			if BEATMAP_AUDIO and audio_playing == false then
 				BEATMAP_AUDIO:setVolume(0.9)
 				BEATMAP_AUDIO:setLooping(false)
+				BEATMAP_AUDIO:seek(math.max(elapsed_time / 1000 - 1, 0))
 				BEATMAP_AUDIO:play()
 				audio_playing = true
 			end
+			
+			combo_system.draw_routine(deltaT)
 			
 			if notes_list:isempty() == false then
 				-- Spawn notes
@@ -635,6 +686,25 @@ function love.update(deltaT)
 					})
 				end
 			end
+			
+			local accumulative_score = 0
+			
+			-- Update notes (remove if necessary)
+			for i = #NOTES_QUEUE, 1, -1 do
+				local x = NOTES_QUEUE[i]
+				x.draw(deltaT)
+				
+				if elapsed_time > x.endtime then
+					accumulative_score = accumulative_score + table.remove(NOTES_QUEUE, i).draw()
+				end
+			end
+			
+			if accumulative_score > 0 then
+				add_score(accumulative_score)
+			end
+			
+			score_update_coroutine(deltaT)
+			score_eclipsef.routine(deltaT)
 		end
 	end
 end

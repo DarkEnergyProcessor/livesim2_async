@@ -1,7 +1,7 @@
 Dark Enegy Processor Live Simulator
 ===================================
 
-DEPLS (pronounced **Deep Less**) is a Live Show! Simulator for LL!SIF written in Lua meant to be run under LOVE2D framework.
+DEPLS (pronounced **Deep Less**) is a Love Live! School Idol Festival Live Show Simulator written in Lua meant to be run under LOVE2D framework.
 
 You need LOVE2D v0.10.1 or above to run this live simulator.
 

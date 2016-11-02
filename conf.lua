@@ -16,7 +16,7 @@ TOKEN_IMAGE = "image/tap_circle/e_icon_08.png"
 RANDOM_NOTE_IMAGE = false
 STAMINA_DISPLAY = 32
 --SCORE_DISPLAY_DEBUG = 123456
-SCORE_ADD_NOTE = 525	-- Raw score value added when taping a note
+SCORE_ADD_NOTE = 1221	-- Raw score value added when taping a note
 
 -- Love2d config function
 function love.conf(t)
