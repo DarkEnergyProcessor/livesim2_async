@@ -48,6 +48,7 @@ local current_combo = 0		-- Combo tracking
 local NOTE_SPEED = NOTE_SPEED
 local combo_system = {replay_animation = false, img = {}}
 local score_eclipsef = {replay_animation = false}
+local score_node = {img = {}}
 
 function file_get_contents(path)
 	local f = io.open(path)
@@ -151,6 +152,54 @@ local score_update_coroutine = coroutine.wrap(function(deltaT)
 	end
 end)
 
+local function sine_tween_func(t, b, c, d)
+	return c * (math.floor(math.sin(t/d * math.pi) * 1000000) / 1000000) + b
+end
+
+-- Added score update routine
+score_node.routine = function(score)
+	local score_canvas = graphics.newCanvas(500, 32)
+	local score_info = {opacity = 0, scale = 0.85, x = 508}
+	local opacity_tw = tween.new(100, score_info, {opacity = 255})
+	local scale_tw = tween.new(200, score_info, {scale = 1}, "inOutSine")
+	local xpos_tw = tween.new(250, score_info, {x = 572}, "inOutSine")
+	local deltaT
+	local elapsed_time = 0
+	
+	-- Draw all in canvas
+	graphics.setCanvas(score_canvas)
+	graphics.setBlendMode("alpha", "premultiplied")
+	graphics.draw(score_node.img.plus)
+	
+	do
+		local i = 1
+		for w in tostring(score):gmatch("%d") do
+			graphics.draw(score_node.img[tonumber(w)], i * 24, 0)
+			i = i + 1
+		end
+	end
+	graphics.setBlendMode("alpha")
+	graphics.setCanvas()
+	
+	deltaT = coroutine.yield()
+	elapsed_time = elapsed_time + deltaT
+	
+	while elapsed_time < 500 do
+		xpos_tw:update(deltaT)
+		opacity_tw:update(elapsed_time > 350 and -deltaT or deltaT)
+		scale_tw:update(elapsed_time > 200 and -deltaT or deltaT)
+		
+		graphics.setColor(255, 255, 255, score_info.opacity)
+		graphics.draw(score_canvas, score_info.x, 70, 0, score_info.scale, score_info.scale, 0, 16)
+		graphics.setColor(255, 255, 255, 255)
+		
+		deltaT = coroutine.yield()
+		elapsed_time = elapsed_time + deltaT
+	end
+	
+	while true do coroutine.yield(true) end	-- Stop
+end
+
 local function add_score(score_val)
 	-- Combo calculation starts here
 	local added_score = score_val
@@ -175,7 +224,10 @@ local function add_score(score_val)
 	
 	current_score = current_score + added_score
 	score_eclipsef.replay_animation = true
-	-- TODO: Call update score coroutine for animation
+	
+	local score_routine_eff = coroutine.wrap(score_node.routine)
+	score_routine_eff(added_score)
+	effect_player.spawn(score_routine_eff)
 end
 
 local function get_combo_color_index(combo)
@@ -299,10 +351,6 @@ local function circletap_effect_routine(position)
 	end
 end
 
--- Added score update routine
-local function score_node_routine(score)
-end
-
 local function distance(a, b)
 	return math.sqrt(a ^ 2 + b ^ 2)
 end
@@ -327,6 +375,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	local off_time = NOTE_SPEED
 	local score = long_note_bit and (SCORE_ADD_NOTE * 1.25) or SCORE_ADD_NOTE
 	local drawing_order = {}
+	local first_note_done_rendering = false
 	
 	if RANDOM_NOTE_IMAGE then
 		drawn_circle = tap_circle_image[math.random(1, 10)]
@@ -351,8 +400,8 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	time_elapsed = time_elapsed + deltaT
 	
 	while time_elapsed < off_time do
-		if time_elapsed < NOTE_SPEED then
-			note_tween:update(deltaT)
+		if first_note_done_rendering == false then
+			first_note_done_rendering = note_tween:update(deltaT)
 		elseif not(longnote_data.first_sound_play) then
 			circle_sound:play()
 			longnote_data.first_sound_play = true
@@ -376,17 +425,17 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 			
 			local vert = {
 				-- First position
-				math.floor((note_draw.x + (s * 64) * math.cos(longnote_data.direction)) + 0.5),	-- x
-				math.floor((note_draw.y + (s * 64) * math.sin(longnote_data.direction)) + 0.5),	-- y
+				math.floor((note_draw.x + (s * 60) * math.cos(longnote_data.direction)) + 0.5),	-- x
+				math.floor((note_draw.y + (s * 60) * math.sin(longnote_data.direction)) + 0.5),	-- y
 				-- Second position
-				math.floor((note_draw.x + (s * 64) * math.cos(longnote_data.direction - math.pi)) + 0.5),	-- x
-				math.floor((note_draw.y + (s * 64) * math.sin(longnote_data.direction - math.pi)) + 0.5),	-- y
+				math.floor((note_draw.x + (s * 60) * math.cos(longnote_data.direction - math.pi)) + 0.5),	-- x
+				math.floor((note_draw.y + (s * 60) * math.sin(longnote_data.direction - math.pi)) + 0.5),	-- y
 				-- Third position
-				math.floor((longnote_data.last_circle.x + (s2 * 64) * math.cos(longnote_data.direction - math.pi)) + 0.5),	-- x
-				math.floor((longnote_data.last_circle.y + (s2 * 64) * math.sin(longnote_data.direction - math.pi)) + 0.5),	-- y
+				math.floor((longnote_data.last_circle.x + (s2 * 60) * math.cos(longnote_data.direction - math.pi)) + 0.5),	-- x
+				math.floor((longnote_data.last_circle.y + (s2 * 60) * math.sin(longnote_data.direction - math.pi)) + 0.5),	-- y
 				-- Fourth position
-				math.floor((longnote_data.last_circle.x + (s2 * 64) * math.cos(longnote_data.direction)) + 0.5),	-- x
-				math.floor((longnote_data.last_circle.y + (s2 * 64) * math.sin(longnote_data.direction)) + 0.5),	-- y
+				math.floor((longnote_data.last_circle.x + (s2 * 60) * math.cos(longnote_data.direction)) + 0.5),	-- x
+				math.floor((longnote_data.last_circle.y + (s2 * 60) * math.sin(longnote_data.direction)) + 0.5),	-- y
 			}
 			
 			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 127}
@@ -541,6 +590,12 @@ function love.load(argv)
 		
 		-- Load score eclipse
 		score_eclipsef.img = love.graphics.newImage("image/l_etc_46.png")
+		
+		-- Load score node number
+		for i = 21, 30 do
+			score_node.img[i - 21] = love.graphics.newImage("image/score_num/l_num_"..i..".png")
+		end
+		score_node.img.plus = love.graphics.newImage("image/score_num/l_num_31.png")
 		
 		-- Load font
 		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 24)
