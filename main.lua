@@ -27,15 +27,15 @@ local idol_image_pos = {	-- idol image position
 	{816, 96 }
 }
 -- local notes_moving_angle = {90, 112.46575563415, 134.89859164657, 157.34706707977, 180, -157.4794343971, -135, -112.5205656029, -90}
+local livesim_delay = LIVESIM_DELAY or 1000
 local notes_list			-- SIF format notes list
 local BEATMAP_AUDIO			-- beatmap audio handle
 local BEATMAP_NAME = nil	-- name of the beatmap to be loaded
 local tap_circle_image		-- Tap circle image handle.
-local start_livesim = 1000	-- used internally (delay)
+local start_livesim = livesim_delay	-- used internally (delay)
 local __arg					-- Used to reset state
-local elapsed_time = -1000
-local DEBUG_SWITCH = true
-local __LSHIFT_REPEAT = false
+local elapsed_time = -livesim_delay
+local DEBUG_SWITCH = false
 local NOTES_QUEUE = {}
 local DEBUG_FONT
 local DEBUG_FONT_OUTLINE_SHADER
@@ -43,12 +43,19 @@ local audio_playing = false
 local NOTE_LOADER			-- Note loader function
 local stamina_number_image = {}	-- Stamina number image
 local stamina_bar_image		-- Stamina bar image
-local current_score = SCORE_DISPLAY_DEBUG or 0	-- Score tracking
+local current_score = 0	-- Score tracking
 local current_combo = 0		-- Combo tracking
 local NOTE_SPEED = NOTE_SPEED
 local combo_system = {replay_animation = false, img = {}}
 local score_eclipsef = {replay_animation = false}
 local score_node = {img = {}}
+local perfect_node = {replay_animation = false}
+local noteicon_anim = {}
+local SAVE_DIR
+
+function path_save_dir(path)
+	return love.filesystem.getSaveDirectory().."/"..path
+end
 
 function file_get_contents(path)
 	local f = io.open(path)
@@ -68,8 +75,35 @@ local function load_token_note(path)
 	else return token_image end
 end
 
-local function load_audio_safe(path)
-	local _, token_image = pcall(love.audio.newSource, path, "static")
+local function substitute_extension(file, ext_without_dot)
+	return file:sub(1,((file:find("%.[^%.]*$")) or #file+1)-1).."."..ext_without_dot
+end
+
+local function load_audio_safe(path, noorder)
+	local _, token_image
+	
+	if not(noorder) then
+		local a = load_audio_safe(substitute_extension(path, "wav"), true)
+		
+		if a == nil then
+			return load_audio_safe(substitute_extension(path, "ogg"), true)
+		end
+	end
+	
+	-- Try save dir
+	do
+		local file = love.filesystem.newFile(path)
+		
+		if file then
+			_, token_image = pcall(love.audio.newSource, path, "static")
+			
+			if _ then
+				return token_image
+			end
+		end
+	end
+	
+	_, token_image = pcall(love.audio.newSource, path, "static")
 	
 	if _ == false then return nil
 	else return token_image end
@@ -83,20 +117,32 @@ end
 local load_unit_icon
 do
 	local dummy_image
+	local list = {}
 	
 	load_unit_icon = function(path)
+		if list[path] then
+			return list[path]
+		end
+		
 		if dummy_image == nil then
 			dummy_image = love.graphics.newImage("image/dummy.png")
 		end
 		
 		if path == nil then return dummy_image end
 		
-		local _, img = pcall(love.graphics.newImage, path)
+		local filedata = love.filesystem.newFileData("unit_icon/"..path)
+		
+		if not(filedata) then
+			return dummy_image
+		end
+		
+		local _, img = pcall(love.graphics.newImage, filedata)
 		
 		if _ == false then
 			return dummy_image
 		end
 		
+		list[path] = img
 		return img
 	end
 end
@@ -104,15 +150,21 @@ end
 score_eclipsef.routine = coroutine.wrap(function()
 	local deltaT
 	local eclipse_data = {scale = 1, opacity = 255}
-	local eclipse_tween = tween.new(500, eclipse_data, {scale = 1.6, opacity = 0})
+	local eclipse_tween = tween.new(500, eclipse_data, {scale = 1.6, opacity = 0}, "outSine")
+	local bar_data = {opacity = 255}
 	
-	eclipse_tween:update(1000)	-- Seek to end
+	bar_data.tween = tween.new(300, bar_data, {opacity = 0})
+	
+	-- Seek to end
+	eclipse_tween:update(500)
+	bar_data.tween:update(300)
 	
 	while true do
 		deltaT = coroutine.yield()		-- love.update part
 		
 		if score_eclipsef.replay_animation then
 			eclipse_tween:reset()
+			bar_data.tween:reset()
 			score_eclipsef.replay_animation = false
 		end
 		
@@ -121,7 +173,124 @@ score_eclipsef.routine = coroutine.wrap(function()
 		if eclipse_tween:update(deltaT) == false then
 			graphics.setColor(255, 255, 255, eclipse_data.opacity)
 			graphics.draw(score_eclipsef.img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
+		end
+		
+		if bar_data.tween:update(deltaT) == false then
+			graphics.setColor(255, 255, 255, bar_data.opacity)
+			graphics.draw(score_eclipsef.img2, 5, 8)
+		end
+		
+		graphics.setColor(255, 255, 255, 255)
+	end
+end)
+
+perfect_node.routine = coroutine.wrap(function()
+	local deltaT
+	local et = 500
+	local perfect_data = {opacity = 0, scale = 0}
+	local perfect_tween = tween.new(50, perfect_data, {opacity = 255, scale = 2}, "outSine")
+	local perfect_tween_fadeout = tween.new(200, perfect_data, {opacity = 0})
+	perfect_tween:update(50)
+	perfect_tween_fadeout:update(200)
+	
+	while true do
+		deltaT = coroutine.yield()
+		et = et + deltaT
+		-- love.update
+		
+		if perfect_node.replay_animation then
+			et = deltaT
+			perfect_tween:reset()
+			perfect_tween_fadeout:reset()
+			perfect_node.replay_animation = false
+		end
+		
+		perfect_tween:update(deltaT)
+		
+		if et > 200 then
+			perfect_tween_fadeout:update(deltaT)
+		end
+		
+		-- To prevet overflow
+		if et > 5000 then
+			et = et - 4000
+		end
+		
+		coroutine.yield()
+		-- love.draw
+		
+		if et < 500 then
+			graphics.setColor(255, 255, 255, perfect_data.opacity)
+			graphics.draw(perfect_node.img, 480, 320, 0, perfect_data.scale, perfect_data.scale, 99, 19)
 			graphics.setColor(255, 255, 255, 255)
+		end
+	end
+end)
+
+noteicon_anim.circleroutine = function()
+	local deltaT
+	local circ_data = {scale = 0.6, opacity = 255}
+	local circ_tween = tween.new(1600, circ_data, {scale = 2.5, opacity = 0})
+	
+	while true do
+		deltaT = coroutine.yield()
+		
+		if circ_tween:update(deltaT) == true then
+			break
+		end
+		
+		graphics.setColor(255, 255, 255, circ_data.opacity)
+		graphics.draw(noteicon_anim.img2, 480, 160, 0, circ_data.scale, circ_data.scale, 34, 34)
+		graphics.setColor(255, 255, 255, 255)
+	end
+	
+	while true do coroutine.yield(true) end
+end
+
+noteicon_anim.routine = coroutine.wrap(function()
+	local deltaT
+	local et = 0
+	local noteicon_data = {scale = 1}
+	local noteicon_tween = tween.new(800, noteicon_data, {scale = 0.8})
+	local noteicon_tween2 = tween.new(1200, noteicon_data, {scale = 1}, "outSine")
+	local active_tween = noteicon_tween
+	local circledraw_time = {0, 300, 600}
+	
+	while true do
+		deltaT = coroutine.yield()
+		
+		if deltaT then
+			et = et + deltaT
+			
+			if et >= 2000 then
+				et = et - 2000
+				noteicon_tween:reset()
+				noteicon_tween2:reset()
+				active_tween = noteicon_tween
+				circledraw_time[1] = 0
+				circledraw_time[2] = 300
+				circledraw_time[3] = 600
+			end
+			
+			if active_tween:update(deltaT) == true then
+				active_tween = noteicon_tween2
+			end
+			
+			-- Draw circle
+			for i = 1, 3 do
+				circledraw_time[i] = circledraw_time[i] - deltaT
+				
+				if circledraw_time[i] <= 0 then
+					local cr = coroutine.wrap(noteicon_anim.circleroutine)
+					effect_player.spawn(cr)
+					cr()
+					circledraw_time[i] = 1234567
+				end
+			end
+			
+			-- love.draw
+			coroutine.yield()
+			graphics.draw(noteicon_anim.img, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
 		end
 	end
 end)
@@ -142,12 +311,12 @@ local score_update_coroutine = coroutine.wrap(function(deltaT)
 		
 		score_str = {string.byte(tostring(current_score), 1, 2147483647)}
 		score_digit_len = #score_str
-		xpos = 448 - 18 * score_digit_len
+		xpos = 448 - 16 * score_digit_len
 		
 		coroutine.yield()
 		
 		for i = 1, score_digit_len do
-			graphics.draw(score_images[score_str[i] - 48], xpos + 36 * i, 53)
+			graphics.draw(score_images[score_str[i] - 48], xpos + 32 * i, 53)
 		end
 	end
 end)
@@ -159,10 +328,10 @@ end
 -- Added score update routine
 score_node.routine = function(score)
 	local score_canvas = graphics.newCanvas(500, 32)
-	local score_info = {opacity = 0, scale = 0.85, x = 508}
+	local score_info = {opacity = 0, scale = 0.85, x = 518}
 	local opacity_tw = tween.new(100, score_info, {opacity = 255})
 	local scale_tw = tween.new(200, score_info, {scale = 1}, "inOutSine")
-	local xpos_tw = tween.new(250, score_info, {x = 572}, "inOutSine")
+	local xpos_tw = tween.new(250, score_info, {x = 580}, "inOutSine")
 	local deltaT
 	local elapsed_time = 0
 	
@@ -190,7 +359,7 @@ score_node.routine = function(score)
 		scale_tw:update(elapsed_time > 200 and -deltaT or deltaT)
 		
 		graphics.setColor(255, 255, 255, score_info.opacity)
-		graphics.draw(score_canvas, score_info.x, 70, 0, score_info.scale, score_info.scale, 0, 16)
+		graphics.draw(score_canvas, score_info.x, 72, 0, score_info.scale, score_info.scale, 0, 16)
 		graphics.setColor(255, 255, 255, 255)
 		
 		deltaT = coroutine.yield()
@@ -224,6 +393,7 @@ local function add_score(score_val)
 	
 	current_score = current_score + added_score
 	score_eclipsef.replay_animation = true
+	perfect_node.replay_animation = true
 	
 	local score_routine_eff = coroutine.wrap(score_node.routine)
 	score_routine_eff(added_score)
@@ -361,9 +531,10 @@ end
 
 -- Note drawing coroutine
 local function circletap_drawing_coroutine(note_data, simul_note_bit)
+	local pos = 10 - note_data.position
 	local note_draw = {scale = 0, x = 480, y = 160}
 	local note_tween = tween.new(NOTE_SPEED, note_draw, {
-		scale = 1, x = idol_image_pos[note_data.position][1] + 64, y = idol_image_pos[note_data.position][2] + 64
+		scale = 1, x = idol_image_pos[pos][1] + 64, y = idol_image_pos[pos][2] + 64
 	})
 	local time_elapsed = 0
 	local circle_sound = tap_sound:clone()
@@ -384,10 +555,10 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	end
 	
 	if long_note_bit then
-		longnote_data.direction = angle_from(480, 160, idol_image_pos[note_data.position][1] + 64, idol_image_pos[note_data.position][2] + 64)
+		longnote_data.direction = angle_from(480, 160, idol_image_pos[pos][1] + 64, idol_image_pos[pos][2] + 64)
 		longnote_data.last_circle = {scale = 0, x = 480, y = 160}
 		longnote_data.last_circle_tween = tween.new(NOTE_SPEED, longnote_data.last_circle, {
-			scale = 1, x = idol_image_pos[note_data.position][1] + 64, y = idol_image_pos[note_data.position][2] + 64
+			scale = 1, x = idol_image_pos[pos][1] + 64, y = idol_image_pos[pos][2] + 64
 		})
 		longnote_data.duration = note_data.effect_value * 1000
 		longnote_data.sound = tap_sound:clone()
@@ -489,7 +660,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	end
 	
 	local aftertap = coroutine.wrap(circletap_effect_routine)
-	aftertap(note_data.position)	-- Initialize circletap effect
+	aftertap(pos)	-- Initialize circletap effect
 	effect_player.spawn(aftertap)	-- Then add to effect list
 	
 	while true do coroutine.yield(score) end
@@ -498,6 +669,11 @@ end
 -- Initialization function
 function love.load(argv)
 	math.randomseed(os.time())
+	
+	SAVE_DIR = love.filesystem.getSaveDirectory()
+	love.filesystem.createDirectory("audio")
+	love.filesystem.createDirectory("beatmap")
+	print("R/W Directory: "..SAVE_DIR)
 	
 	-- Initialize libraries
 	__arg = argv
@@ -513,18 +689,18 @@ function love.load(argv)
 	
 	if BEATMAP_NAME then
 		-- Load beatmap
-		notes_list = NOTE_LOADER(ROOT_DIR.."/beatmap/"..BEATMAP_NAME..".json")
+		notes_list = NOTE_LOADER(path_save_dir("beatmap/"..BEATMAP_NAME..".json"))
 		--NOTES_QUEUE = List.new()
 		
 		-- Load beatmap audio
-		BEATMAP_AUDIO = load_audio_safe("audio/"..(argv[3] or BEATMAP_NAME..".wav"))
+		BEATMAP_AUDIO = load_audio_safe("audio/"..(argv[3] or BEATMAP_NAME), not(not(argv[3])))
 		
 		-- Load perfect sound
 		tap_sound = love.audio.newSource("sound/SE_306.ogg", "static")
 		
 		-- Load background
 		background_image = love.graphics.newImage(BACKGROUND_IMAGE)
-		background_dim.tween = tween.new(1000, background_dim, {opacity = 127})
+		background_dim.tween = tween.new(livesim_delay, background_dim, {opacity = 170})
 		
 		-- Load live header
 		live_header.header = love.graphics.newImage("image/live_header.png")
@@ -590,12 +766,22 @@ function love.load(argv)
 		
 		-- Load score eclipse
 		score_eclipsef.img = love.graphics.newImage("image/l_etc_46.png")
+		score_eclipsef.img2 = love.graphics.newImage("image/l_gauge_17.png")
 		
 		-- Load score node number
 		for i = 21, 30 do
 			score_node.img[i - 21] = love.graphics.newImage("image/score_num/l_num_"..i..".png")
 		end
 		score_node.img.plus = love.graphics.newImage("image/score_num/l_num_31.png")
+		
+		-- PERFECT text
+		perfect_node.img = love.graphics.newImage("image/ef_313_004.png")
+		perfect_node.routine()
+		
+		-- Note spawning position
+		noteicon_anim.img = love.graphics.newImage("image/ef_308_000.png")
+		noteicon_anim.img2 = love.graphics.newImage("image/ef_308_001.png")
+		noteicon_anim.routine()
 		
 		-- Load font
 		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 24)
@@ -607,6 +793,7 @@ function love.draw()
 	local deltaT = love.timer.getDelta() * 1000
 	
 	if BEATMAP_NAME then
+		local livesim_started = start_livesim <= 0
 		-- Draw background
 		graphics.draw(background_image)	-- TODO: replace with background handler
 		
@@ -614,7 +801,7 @@ function love.draw()
 		graphics.rectangle("fill", 0, 0, 960, 640)
 		graphics.setColor(255, 255, 255, 255)
 		
-		if start_livesim <= 0 then
+		if livesim_started then
 			-- Draw header
 			graphics.draw(live_header.header)
 			graphics.draw(live_header.score_gauge, 5, 8, 0, 0.99545454, 0.86842105)
@@ -632,7 +819,6 @@ function love.draw()
 			
 			-- Draw score
 			score_update_coroutine()
-			score_eclipsef.routine()
 			
 			-- Draw combo
 			combo_system.draw_routine()
@@ -642,6 +828,9 @@ function love.draw()
 		for n, v in pairs(NOTES_QUEUE) do
 			v.draw()
 		end
+		
+		-- Draw PERFECT text
+		perfect_node.routine()
 		
 		-- remove notes from queue
 		local accumulative_score = 0
@@ -661,6 +850,11 @@ function love.draw()
 		-- Update effect player
 		effect_player.update(deltaT)
 		
+		if livesim_started then
+			score_eclipsef.routine()
+			noteicon_anim.routine()
+		end
+		
 		-- Print debug info if exist
 		if DEBUG_SWITCH then
 			local str = string.format([[
@@ -670,14 +864,16 @@ AVAILABLE_NOTES = %d
 QUEUED_NOTES = %d
 CURRENT_COMBO = %d
 RUNNING_EFFECT = %d
-]], love.timer.getFPS(), NOTE_SPEED, notes_list.len, #NOTES_QUEUE, current_combo, #effect_player.list)
+SAVE_DIR = %s
+]], love.timer.getFPS(), NOTE_SPEED, notes_list.len, #NOTES_QUEUE, current_combo, #effect_player.list, SAVE_DIR)
 			local oldfont = graphics.getFont()
 			
 			graphics.setFont(DEBUG_FONT)
-			graphics.setColor(255, 0, 0, 255)
+			graphics.setColor(0, 0, 0, 255)
+			graphics.print(str, 1, 1)
+			graphics.setColor(255, 255, 255, 255)
 			graphics.print(str)
 			graphics.setFont(oldfont)
-			graphics.setColor(255, 255, 255, 255)
 		end
 	else
 		graphics.print([[
@@ -701,7 +897,7 @@ function love.update(deltaT)
 			if BEATMAP_AUDIO and audio_playing == false then
 				BEATMAP_AUDIO:setVolume(0.9)
 				BEATMAP_AUDIO:setLooping(false)
-				BEATMAP_AUDIO:seek(math.max(elapsed_time / 1000 - 1, 0))
+				BEATMAP_AUDIO:seek(math.max(elapsed_time / livesim_delay - 1, 0))
 				BEATMAP_AUDIO:play()
 				audio_playing = true
 			end
@@ -760,7 +956,10 @@ function love.update(deltaT)
 			
 			score_update_coroutine(deltaT)
 			score_eclipsef.routine(deltaT)
+			noteicon_anim.routine(deltaT)
 		end
+		
+		perfect_node.routine(deltaT)
 	end
 end
 

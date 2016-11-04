@@ -1,27 +1,27 @@
 -- Live simulator config
+LIVESIM_DELAY = 2000
 BACKGROUND_IMAGE = "image/liveback_12.png"
 IDOL_IMAGE = {	-- Order: leftmost > rightmost
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png",
-	"image/dummy.png"
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png",
+	"a.png"
 }
 NOTE_SPEED = 0.8
 TOKEN_IMAGE = "image/tap_circle/e_icon_08.png"
 RANDOM_NOTE_IMAGE = false
 STAMINA_DISPLAY = 32
---SCORE_DISPLAY_DEBUG = 123456
 SCORE_ADD_NOTE = 1221	-- Raw score value added when taping a note
 
 -- Love2d config function
 function love.conf(t)
 	t.identity = "DEPLS"                -- The name of the save directory (string)
-	t.version = "0.10.1"                -- The LÖVE version this game was made for (string)
+	t.version = "0.10.0"                -- The LÖVE version this game was made for (string)
 	t.console = true                    -- Attach a console (boolean, Windows only)
 	t.accelerometerjoystick = true      -- Enable the accelerometer on iOS and Android by exposing it as a Joystick (boolean)
 	t.externalstorage = false           -- True to save files (and read from the save directory) in external storage on Android (boolean) 
