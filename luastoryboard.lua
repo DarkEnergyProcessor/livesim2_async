@@ -4,11 +4,19 @@ local BeatmapDir
 local StoryboardLua
 
 local function RelativeLoadVideo(path, loadaudio)
-	local x = love.filesystem.newFile(BeatmapDir..path)
+	local x = love.filesystem.newFile(BeatmapDir..path, "r")
 	
 	if not(x) then return nil end
 	
 	return love.graphics.newVideo(love.video.newVideoStream(x), loadaudio)
+end
+
+local function RelativeLoadImage(path)
+	local x = love.filesystem.newFileData(BeatmapDir..path)
+	
+	if not(x) then return nil end
+	
+	return love.graphics.newImage(x)
 end
 
 -- Storyboard lua file
@@ -18,7 +26,8 @@ function LuaStoryboard.Load(file)
 	
 	-- Copy environment
 	local env = {
-		RelativeLoadVideo = RelativeLoadVideo
+		RelativeLoadVideo = RelativeLoadVideo,
+		RelativeLoadImage = RelativeLoadImage
 	}
 	for n, v in pairs(_G) do
 		env[n] = v

@@ -27,18 +27,18 @@ local idol_image_pos = {	-- idol image position
 	{816, 96 }
 }
 -- local notes_moving_angle = {90, 112.46575563415, 134.89859164657, 157.34706707977, 180, -157.4794343971, -135, -112.5205656029, -90}
+local background_image = {}
+local __arg					-- Used to reset state
 local livesim_delay = LIVESIM_DELAY or 1000
 local notes_list			-- SIF format notes list
 local BEATMAP_AUDIO			-- beatmap audio handle
 local BEATMAP_NAME = nil	-- name of the beatmap to be loaded
 local tap_circle_image		-- Tap circle image handle.
 local start_livesim = livesim_delay	-- used internally (delay)
-local __arg					-- Used to reset state
 local elapsed_time = -livesim_delay
 local DEBUG_SWITCH = false
 local NOTES_QUEUE = {}
 local DEBUG_FONT
-local DEBUG_FONT_OUTLINE_SHADER
 local audio_playing = false
 local NOTE_LOADER			-- Note loader function
 local stamina_number_image = {}	-- Stamina number image
@@ -54,6 +54,9 @@ local noteicon_anim = {}
 local SAVE_DIR
 local SCREEN_X, SCREEN_Y, SCALE_OVERALL, OFF_X, OFF_Y
 local storyboard_handle
+local liveheader_canvas
+local live_opacity = 255
+local bgdim_opacity = 255
 
 function path_save_dir(path)
 	return love.filesystem.getSaveDirectory().."/"..path
@@ -79,6 +82,18 @@ end
 
 local function substitute_extension(file, ext_without_dot)
 	return file:sub(1,((file:find("%.[^%.]*$")) or #file+1)-1).."."..ext_without_dot
+end
+
+function SetLiveOpacity(opacity)
+	opacity = math.max(math.min(opacity or 255, 255), 0)
+	
+	live_opacity = opacity
+end
+
+function SetBackgroundDimOpacity(opacity)
+	opacity = math.max(math.min(opacity or 255, 255), 0)
+	
+	bgdim_opacity = opacity
 end
 
 function load_audio_safe(path, noorder)
@@ -109,6 +124,22 @@ function load_audio_safe(path, noorder)
 	
 	if _ == false then return nil
 	else return token_image end
+end
+
+local function load_config(config_name, default_value)
+	local file = love.filesystem.newFile(config_name..".txt", "r")
+	
+	if file == nil then
+		file = io.open(love.filesystem.getSaveDirectory().."/"..config_name..".txt", "wb")
+		file:write(tostring(default_value))
+		file:close()
+		
+		return default_value
+	end
+	
+	local data = file:read()
+	
+	return tonumber(data) or data
 end
 
 local function cubicbezier(x1, y1, x2, y2)
@@ -173,12 +204,12 @@ score_eclipsef.routine = coroutine.wrap(function()
 		coroutine.yield()	-- love.draw part
 		
 		if eclipse_tween:update(deltaT) == false then
-			graphics.setColor(255, 255, 255, eclipse_data.opacity)
+			graphics.setColor(255, 255, 255, eclipse_data.opacity * live_opacity / 255)
 			graphics.draw(score_eclipsef.img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
 		end
 		
 		if bar_data.tween:update(deltaT) == false then
-			graphics.setColor(255, 255, 255, bar_data.opacity)
+			graphics.setColor(255, 255, 255, bar_data.opacity * live_opacity / 255)
 			graphics.draw(score_eclipsef.img2, 5, 8)
 		end
 		
@@ -222,7 +253,7 @@ perfect_node.routine = coroutine.wrap(function()
 		-- love.draw
 		
 		if et < 500 then
-			graphics.setColor(255, 255, 255, perfect_data.opacity)
+			graphics.setColor(255, 255, 255, perfect_data.opacity * live_opacity / 255)
 			graphics.draw(perfect_node.img, 480, 320, 0, perfect_data.scale, perfect_data.scale, 99, 19)
 			graphics.setColor(255, 255, 255, 255)
 		end
@@ -241,7 +272,7 @@ noteicon_anim.circleroutine = function()
 			break
 		end
 		
-		graphics.setColor(255, 255, 255, circ_data.opacity)
+		graphics.setColor(255, 255, 255, circ_data.opacity * live_opacity / 255)
 		graphics.draw(noteicon_anim.img2, 480, 160, 0, circ_data.scale, circ_data.scale, 34, 34)
 		graphics.setColor(255, 255, 255, 255)
 	end
@@ -292,7 +323,9 @@ noteicon_anim.routine = coroutine.wrap(function()
 			
 			-- love.draw
 			coroutine.yield()
+			graphics.setColor(255, 255, 255, live_opacity)
 			graphics.draw(noteicon_anim.img, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
+			graphics.setColor(255, 255, 255, 255)
 		end
 	end
 end)
@@ -340,6 +373,7 @@ score_node.routine = function(score)
 	-- Draw all in canvas
 	graphics.setCanvas(score_canvas)
 	graphics.setBlendMode("alpha", "premultiplied")
+	graphics.setColor(255, 255, 255, live_opacity)
 	graphics.draw(score_node.img.plus)
 	
 	do
@@ -349,6 +383,7 @@ score_node.routine = function(score)
 			i = i + 1
 		end
 	end
+	graphics.setColor(255, 255, 255, 255)
 	graphics.setBlendMode("alpha")
 	graphics.setCanvas()
 	
@@ -578,6 +613,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 		elseif not(longnote_data.first_sound_play) then
 			circle_sound:play()
 			longnote_data.first_sound_play = true
+			perfect_node.replay_animation = true
 		end
 		
 		local x = math.floor(note_draw.x + 0.5)
@@ -611,10 +647,10 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 				math.floor((longnote_data.last_circle.y + (s2 * 60) * math.sin(longnote_data.direction)) + 0.5),	-- y
 			}
 			
-			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 127}
+			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 127 * live_opacity / 255}
 			drawing_order[#drawing_order + 1] = {graphics.polygon, "fill", vert[1], vert[2], vert[3], vert[4], vert[5], vert[6]}
 			drawing_order[#drawing_order + 1] = {graphics.polygon, "fill", vert[5], vert[6], vert[7], vert[8], vert[1], vert[2]}
-			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 255}
+			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, live_opacity}
 			
 			drawing_order[#drawing_order + 1] = {graphics.draw, drawn_circle, x, y, 0, s, s, 64, 64} -- Draw tap circle BEFORE end long note indicator
 			
@@ -623,6 +659,7 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 			end
 		
 		else
+			drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, live_opacity}
 			drawing_order[#drawing_order + 1] = {graphics.draw, drawn_circle, x, y, 0, s, s, 64, 64}		-- Draw tap circle
 		end
 		
@@ -637,6 +674,8 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 		if star_note_bit then
 			drawing_order[#drawing_order + 1] = {graphics.draw, tap_circle_image.starnote, x, y, 0, s, s, 64, 64}		-- Layer star note
 		end
+		
+		drawing_order[#drawing_order + 1] = {graphics.setColor, 255, 255, 255, 255}
 		
 		coroutine.yield(score)
 		
@@ -685,6 +724,25 @@ function love.load(argv)
 	love.filesystem.createDirectory("beatmap")
 	print("R/W Directory: "..SAVE_DIR)
 	
+	-- Load config
+	LIVESIM_DELAY = load_config("LIVESIM_DELAY", 1000)
+	livesim_delay = LIVESIM_DELAY
+	start_livesim = livesim_delay
+	elapsed_time = -livesim_delay
+	BACKGROUND_IMAGE = load_config("BACKGROUND_IMAGE", 1)
+	IDOL_IMAGE = {}
+	do
+		local idol_img = load_config("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
+		
+		for w in idol_img:gmatch("[^,]+") do
+			IDOL_IMAGE[#IDOL_IMAGE + 1] = w
+		end
+	end
+	
+	NOTE_SPEED = load_config("NOTE_SPEED", 800)
+	STAMINA_DISPLAY = load_config("STAMINA_DISPLAY", 32)
+	SCORE_ADD_NOTE = load_config("SCORE_ADD_NOTE", 1024)
+	
 	-- Initialize libraries
 	__arg = argv
 	ROOT_DIR = love.filesystem.getRealDirectory("main.lua")
@@ -694,7 +752,7 @@ function love.load(argv)
 	effect_player = require("effect_player")
 	graphics = love.graphics
 	BEATMAP_NAME = argv[2]
-	NOTE_SPEED = (tonumber(argv[4] or "") or NOTE_SPEED) * 1000
+	NOTE_SPEED = tonumber(argv[4] or "") or NOTE_SPEED
 	NOTE_LOADER = require("note_loader")
 	
 	if BEATMAP_NAME then
@@ -710,7 +768,11 @@ function love.load(argv)
 		tap_sound = love.audio.newSource("sound/SE_306.ogg", "static")
 		
 		-- Load background
-		background_image = love.graphics.newImage(BACKGROUND_IMAGE)
+		background_image[0] = love.graphics.newImage("image/liveback_"..BACKGROUND_IMAGE..".png")
+		background_image[1] = love.graphics.newImage(string.format("image/background/b_liveback_%03d_01.png", BACKGROUND_IMAGE))
+		background_image[2] = love.graphics.newImage(string.format("image/background/b_liveback_%03d_02.png", BACKGROUND_IMAGE))
+		background_image[3] = love.graphics.newImage(string.format("image/background/b_liveback_%03d_03.png", BACKGROUND_IMAGE))
+		background_image[4] = love.graphics.newImage(string.format("image/background/b_liveback_%03d_04.png", BACKGROUND_IMAGE))
 		background_dim.tween = tween.new(livesim_delay, background_dim, {opacity = 170})
 		
 		-- Load live header
@@ -741,7 +803,7 @@ function love.load(argv)
 			simulnote = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
 			starnote = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
 			endlongnote = love.graphics.newImage("image/tap_circle/tap_circle-44.png"),
-			tokennote = load_token_note(argv[4] or TOKEN_IMAGE),
+			tokennote = load_token_note("image/tap_circle/e_icon_01.png"),
 			
 			-- Tap circle effect
 			ef_316_000 = love.graphics.newImage("image/ef_316_000.png"),
@@ -794,6 +856,32 @@ function love.load(argv)
 		noteicon_anim.img2 = love.graphics.newImage("image/ef_308_001.png")
 		noteicon_anim.routine()
 		
+		-- Static live-related canvas
+		liveheader_canvas = love.graphics.newCanvas()
+		
+		-- Draw static data
+		do
+			love.graphics.setCanvas(liveheader_canvas)
+			love.graphics.setBlendMode("alpha", "premultiplied")
+			
+			-- Draw idols
+			for i = 1, 9 do
+				love.graphics.draw(idol_image_handle[i], unpack(idol_image_pos[i]))
+			end
+			
+			-- Draw stamina
+			love.graphics.draw(stamina_bar_image, 14, 60)
+			for i = 1, #stamina_number_image.draw_target do
+				love.graphics.draw(stamina_number_image.draw_target[i], 290 + 16 * i, 66)
+			end
+			
+			-- Draw header
+			love.graphics.draw(live_header.header)
+			
+			love.graphics.setBlendMode("alpha")
+			love.graphics.setCanvas()
+		end
+		
 		-- Load font
 		DEBUG_FONT = love.graphics.newFont("MTLmr3m.ttf", 24)
 	end
@@ -811,34 +899,33 @@ function love.draw()
 		if storyboard_handle then
 			storyboard_handle.Draw(deltaT)
 		else
-			graphics.draw(background_image)
+			graphics.draw(background_image[0])
+			graphics.draw(background_image[1], -88, 0)
+			graphics.draw(background_image[2], 960, 0)
+			graphics.draw(background_image[3], 0, -43)
+			graphics.draw(background_image[4], 0, 640)
 		end
 		
-		graphics.setColor(0, 0, 0, background_dim.opacity)
-		graphics.rectangle("fill", 0, 0, 960, 640)
+		graphics.setColor(0, 0, 0, background_dim.opacity * bgdim_opacity / 255)
+		graphics.rectangle("fill", -88, -43, 1136, 726)
 		graphics.setColor(255, 255, 255, 255)
 		
 		if livesim_started then
-			-- Draw header
-			graphics.draw(live_header.header)
+			graphics.setColor(255, 255, 255, live_opacity)
+			
+			-- Draw static live header canvas
+			graphics.draw(liveheader_canvas)
+			
+			-- Draw score gauge
 			graphics.draw(live_header.score_gauge, 5, 8, 0, 0.99545454, 0.86842105)
-			
-			-- Draw idols
-			for i = 1, 9 do
-				graphics.draw(idol_image_handle[i], unpack(idol_image_pos[i]))
-			end
-			
-			-- Draw stamina
-			graphics.draw(stamina_bar_image, 14, 60)
-			for i = 1, #stamina_number_image.draw_target do
-				graphics.draw(stamina_number_image.draw_target[i], 290 + 16 * i, 66)
-			end
 			
 			-- Draw score
 			score_update_coroutine()
 			
 			-- Draw combo
 			combo_system.draw_routine()
+			
+			graphics.setColor(255, 255, 255, 255)
 		end
 		
 		-- Draw notes
@@ -992,7 +1079,6 @@ function love.keypressed(key, scancode, repeat_bit)
 			end
 			
 			-- Reset state
-			--dofile(ROOT_DIR.."/conf.lua")
 			love.filesystem.load("livesim.lua")()
 			love.load(__arg)
 		end

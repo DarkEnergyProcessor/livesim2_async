@@ -1,20 +1,10 @@
--- Live simulator config
-LIVESIM_DELAY = 2000
-BACKGROUND_IMAGE = "image/liveback_12.png"	-- Defaults if no storyboard is used
-IDOL_IMAGE = {	-- Order: leftmost > rightmost
-"574.png", "763.png", "222.png", "180.png", "902.png", "873.png", "602.png", "156.png", "556.png"
-}
-NOTE_SPEED = 0.8
-TOKEN_IMAGE = "image/tap_circle/e_icon_08.png"
 RANDOM_NOTE_IMAGE = false
-STAMINA_DISPLAY = 32
-SCORE_ADD_NOTE = 1221	-- Raw score value added when taping a note
 
 -- Love2d config function
 function love.conf(t)
 	t.identity = "DEPLS"                -- The name of the save directory (string)
 	t.version = "0.10.0"                -- The LÖVE version this game was made for (string)
-	t.console = true                    -- Attach a console (boolean, Windows only)
+	t.console = false                   -- Attach a console (boolean, Windows only)
 	t.accelerometerjoystick = true      -- Enable the accelerometer on iOS and Android by exposing it as a Joystick (boolean)
 	t.externalstorage = true            -- True to save files (and read from the save directory) in external storage on Android (boolean) 
 	t.gammacorrect = false              -- Enable gamma-correct rendering, when supported by the system (boolean)
