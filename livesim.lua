@@ -29,13 +29,13 @@ local idol_image_pos = {	-- idol image position
 -- local notes_moving_angle = {90, 112.46575563415, 134.89859164657, 157.34706707977, 180, -157.4794343971, -135, -112.5205656029, -90}
 local background_image = {}
 local __arg					-- Used to reset state
-local livesim_delay = LIVESIM_DELAY or 1000
+local livesim_delay
 local notes_list			-- SIF format notes list
 local BEATMAP_AUDIO			-- beatmap audio handle
 local BEATMAP_NAME = nil	-- name of the beatmap to be loaded
 local tap_circle_image		-- Tap circle image handle.
-local start_livesim = livesim_delay	-- used internally (delay)
-local elapsed_time = -livesim_delay
+local start_livesim			-- used internally (delay)
+local elapsed_time
 local DEBUG_SWITCH = false
 local NOTES_QUEUE = {}
 local DEBUG_FONT
@@ -57,6 +57,8 @@ local storyboard_handle
 local liveheader_canvas
 local live_opacity = 255
 local bgdim_opacity = 255
+local should_update = true
+local circletap_effect_routine
 
 function path_save_dir(path)
 	return love.filesystem.getSaveDirectory().."/"..path
@@ -84,6 +86,31 @@ local function substitute_extension(file, ext_without_dot)
 	return file:sub(1,((file:find("%.[^%.]*$")) or #file+1)-1).."."..ext_without_dot
 end
 
+local function distance(a, b)
+	return math.sqrt(a ^ 2 + b ^ 2)
+end
+
+local function angle_from(x1, y1, x2, y2)
+	return math.atan2(y2 - y1, x2 - x1) - math.pi / 2
+end
+
+-- https://love2d.org/forums/viewtopic.php?t=2126
+function HSL(h, s, l)
+	if s == 0 then return l,l,l end
+	h, s, l = h/256*6, s/255, l/255
+	local c = (1-math.abs(2*l-1))*s
+	local x = (1-math.abs(h%2-1))*c
+	local m,r,g,b = (l-.5*c), 0,0,0
+	if h < 1     then r,g,b = c,x,0
+	elseif h < 2 then r,g,b = x,c,0
+	elseif h < 3 then r,g,b = 0,c,x
+	elseif h < 4 then r,g,b = 0,x,c
+	elseif h < 5 then r,g,b = x,0,c
+	else              r,g,b = c,0,x
+	end
+   return math.ceil((r+m)*256),math.ceil((g+m)*256),math.ceil((b+m)*256)
+end
+
 function SetLiveOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
@@ -94,6 +121,53 @@ function SetBackgroundDimOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
 	bgdim_opacity = opacity
+end
+
+function SpawnSpotEffect(pos, r, g, b)
+	pos = 10 - pos
+	r = r or 255
+	g = g or 255
+	b = b or 255
+	
+	local idolpos = idol_image_pos[pos]
+	local idx = idolpos[1] + 64
+	local idy = idolpos[2] + 64
+	local func = coroutine.wrap(function()
+		local deltaT
+		local dist = distance(idolpos[1] - 416, idolpos[2] - 96) / 256
+		local direction = angle_from(480, 160, idx, idy)
+		local popn_data = {scale = 1.3333, opacity = 255}
+		local keep_render = false
+		popn_data.tween = tween.new(500, popn_data, {scale = 0, opacity = 0})
+		
+		while keep_render == false do
+			deltaT = coroutine.yield()
+			keep_render = popn_data.tween:update(deltaT)
+			
+			graphics.setBlendMode("add")
+			graphics.setColor(r, g, b, popn_data.opacity)
+			graphics.draw(tap_circle_image.display, idx, idy, direction, popn_data.scale, dist, 48, 256)
+			graphics.setColor(255, 255, 255, 255)
+			graphics.setBlendMode("alpha")
+		end
+		
+		while true do coroutine.yield(true) end
+	end)
+	
+	func()
+	effect_player.spawn(func)
+end
+
+function SpawnCircleTapEffect(pos, r, g, b)
+	pos = 10 - pos
+	
+	local effect = coroutine.wrap(circletap_effect_routine)
+	effect(pos, r, g, b)
+	effect_player.spawn(effect)
+end
+
+function GetCurrentElapsedTime()
+	return elapsed_time
 end
 
 function load_audio_safe(path, noorder)
@@ -125,6 +199,8 @@ function load_audio_safe(path, noorder)
 	if _ == false then return nil
 	else return token_image end
 end
+
+LoadAudio = load_audio_safe
 
 local function load_config(config_name, default_value)
 	local file = love.filesystem.newFile(config_name..".txt", "r")
@@ -356,10 +432,6 @@ local score_update_coroutine = coroutine.wrap(function(deltaT)
 	end
 end)
 
-local function sine_tween_func(t, b, c, d)
-	return c * (math.floor(math.sin(t/d * math.pi) * 1000000) / 1000000) + b
-end
-
 -- Added score update routine
 score_node.routine = function(score)
 	local score_canvas = graphics.newCanvas(500, 32)
@@ -437,6 +509,8 @@ local function add_score(score_val)
 	effect_player.spawn(score_routine_eff)
 end
 
+AddScore = add_score
+
 local function get_combo_color_index(combo)
 	if combo < 50 then
 		-- 0-49
@@ -504,7 +578,11 @@ combo_system.draw_routine = coroutine.wrap(function()
 	end
 end)
 
-local function circletap_effect_routine(position)
+circletap_effect_routine = function(position, r, g, b)
+	r = r or 255
+	g = g or 255
+	b = b or 255
+	
 	local deltaT
 	local el_t = 0
 	local circle = tap_circle_image.ef_316_001
@@ -525,7 +603,7 @@ local function circletap_effect_routine(position)
 		if circle1_tween and circle1_tween:update(deltaT) == false then
 			-- graphics.draw(drawn_circle, x, y, 0, s, s, 64, 64)
 			still_has_render = true
-			graphics.setColor(255, 255, 255, circle1_data.opacity)
+			graphics.setColor(r, g, b, circle1_data.opacity)
 			graphics.draw(circle, pos[1], pos[2], 0, circle1_data.scale, circle1_data.scale, 37.5, 37.5)
 			graphics.setColor(255, 255, 255, 255)
 		else
@@ -534,7 +612,7 @@ local function circletap_effect_routine(position)
 		
 		if circle2_tween and circle2_tween:update(deltaT) == false then
 			still_has_render = true
-			graphics.setColor(255, 255, 255, circle2_data.opacity)
+			graphics.setColor(r, g, b, circle2_data.opacity)
 			graphics.draw(circle, pos[1], pos[2], 0, circle2_data.scale, circle2_data.scale, 37.5, 37.5)
 			graphics.setColor(255, 255, 255, 255)
 		else
@@ -543,7 +621,7 @@ local function circletap_effect_routine(position)
 		
 		if el_t >= 75 and stareff_tween:update(deltaT) == false then
 			still_has_render = true
-			graphics.setColor(255, 255, 255, stareff_data.opacity)
+			graphics.setColor(r, g, b, stareff_data.opacity)
 			graphics.draw(stareff, pos[1], pos[2], 0, 1.5, 1.5, 50, 50)
 			graphics.setColor(255, 255, 255, 255)
 		end
@@ -556,14 +634,6 @@ local function circletap_effect_routine(position)
 	while true do
 		coroutine.yield(true)	-- Tell effect player to remove this
 	end
-end
-
-local function distance(a, b)
-	return math.sqrt(a ^ 2 + b ^ 2)
-end
-
-local function angle_from(x1, y1, x2, y2)
-	return math.atan2(y2 - y1, x2 - x1) - math.pi / 2
 end
 
 -- Note drawing coroutine
@@ -711,8 +781,9 @@ end
 function love.load(argv)
 	math.randomseed(os.time())
 	
-	local SCALE_X, SCALE_Y
+	if love.filesystem.isFused() and argv[1] ~= "\0" then table.insert(argv, 1, "\0") end
 	
+	local SCALE_X, SCALE_Y
 	SAVE_DIR = love.filesystem.getSaveDirectory()
 	SCREEN_X, SCREEN_Y = love.graphics.getDimensions()
 	SCALE_X, SCALE_Y = SCREEN_X / 960, SCREEN_Y / 640
@@ -800,6 +871,7 @@ function love.load(argv)
 			
 			-- Tap circle layering
 			display = love.graphics.newImage("image/popn.png"),
+			display2 = love.graphics.newCanvas(96, 256),
 			simulnote = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
 			starnote = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
 			endlongnote = love.graphics.newImage("image/tap_circle/tap_circle-44.png"),
@@ -809,6 +881,12 @@ function love.load(argv)
 			ef_316_000 = love.graphics.newImage("image/ef_316_000.png"),
 			ef_316_001 = love.graphics.newImage("image/ef_316_001.png")
 		}
+		
+		love.graphics.setCanvas(tap_circle_image.display2)
+		love.graphics.setBlendMode("screen", "premultiplied")
+		love.graphics.draw(tap_circle_image.display)
+		love.graphics.setBlendMode("alpha")
+		love.graphics.setCanvas()
 		
 		-- Load stamina bar
 		stamina_bar_image = love.graphics.newImage("image/live_gauge_02_02.png")
@@ -857,7 +935,7 @@ function love.load(argv)
 		noteicon_anim.routine()
 		
 		-- Static live-related canvas
-		liveheader_canvas = love.graphics.newCanvas()
+		liveheader_canvas = love.graphics.newCanvas(960, 640)
 		
 		-- Draw static data
 		do
@@ -889,6 +967,13 @@ end
 
 function love.draw()
 	local deltaT = love.timer.getDelta() * 1000
+	
+	-- Sync love.draw/love.update calls
+	if should_update then
+		return
+	else
+		should_update = true
+	end
 	
 	graphics.push()
 	graphics.translate(OFF_X, OFF_Y)
@@ -963,13 +1048,18 @@ function love.draw()
 		if DEBUG_SWITCH then
 			local str = string.format([[
 %d FPS
+SAVE_DIR = %s
 NOTE_SPEED = %d ms
+ELAPSED_TIME = %d ms
 AVAILABLE_NOTES = %d
 QUEUED_NOTES = %d
 CURRENT_COMBO = %d
 RUNNING_EFFECT = %d
-SAVE_DIR = %s
-]], love.timer.getFPS(), NOTE_SPEED, notes_list.len, #NOTES_QUEUE, current_combo, #effect_player.list, SAVE_DIR)
+ACTIVE_DEBUG_EFFECT = %s
+LIVE_OPACITY = %.2f
+BACKGROUND_BLACKNESS = %.2f
+]], love.timer.getFPS(), SAVE_DIR, NOTE_SPEED, elapsed_time, notes_list.len, #NOTES_QUEUE, current_combo,
+#effect_player.list, debug_effect_name[debug_effect_default][1], live_opacity, bgdim_opacity)
 			local oldfont = graphics.getFont()
 			
 			graphics.setFont(DEBUG_FONT)
@@ -994,6 +1084,13 @@ end
 function love.update(deltaT)
 	deltaT = deltaT * 1000	-- In ms
 	elapsed_time = elapsed_time + deltaT
+	
+	-- Sync love.update/love.draw calls
+	if should_update then
+		should_update = false
+	else
+		return
+	end
 	
 	if BEATMAP_NAME then
 		if start_livesim > 0 then
@@ -1069,6 +1166,10 @@ function love.update(deltaT)
 	end
 end
 
+local spot_debug_touch_test = {"a","s","d","f","space","j","k","l",";"}
+local debug_effect_name = {{"spot", SpawnSpotEffect}, {"circletap", SpawnCircleTapEffect}}
+local debug_effect_default = 1
+
 function love.keypressed(key, scancode, repeat_bit)
 	if repeat_bit == false then
 		if key == "lshift" then
@@ -1081,6 +1182,22 @@ function love.keypressed(key, scancode, repeat_bit)
 			-- Reset state
 			love.filesystem.load("livesim.lua")()
 			love.load(__arg)
+		else
+			local key_byte = string.byte(key)
+			
+			if key_byte >= 48 and key_byte <= 57 then
+				local idx = key_byte - 48
+				
+				if debug_effect_name[idx] then
+					debug_effect_default = idx
+				end
+			elseif start_livesim <= 0 then
+				for i = 1, #spot_debug_touch_test do
+					if key == spot_debug_touch_test[i] then
+						debug_effect_name[debug_effect_default][2](10 - i, HSL(255 / 9 * i, 255, 127))
+					end
+				end
+			end
 		end
 	end
 end
@@ -1093,4 +1210,27 @@ function love.resize(w, h)
 	SCALE_OVERALL = math.min(SCALE_X, SCALE_Y)
 	OFF_X = (SCREEN_X - SCALE_OVERALL * 960) / 2
 	OFF_Y = (SCREEN_Y - SCALE_OVERALL * 640) / 2
+end
+
+local function calculate_touch_position(x, y)
+	return (x - OFF_X) / SCALE_OVERALL, (y - OFF_Y) / SCALE_OVERALL
+end
+
+function love.mousepressed(x, y, button, touch_bit)
+	x, y = calculate_touch_position(x, y)
+	
+	if start_livesim <= 0 and x >= 905 and x <= 960 and y >= 0 and y <= 45 then
+		if BEATMAP_AUDIO then
+			BEATMAP_AUDIO:stop()
+		end
+		
+		love.filesystem.load("livesim.lua")()
+		love.load(__arg)
+	elseif start_livesim <= 0 then
+		for i = 1, 9 do
+			if distance(idol_image_pos[i][1] + 64 - x, idol_image_pos[i][2] + 64 - y) <= 64 then
+				debug_effect_name[debug_effect_default][2](10 - i, HSL(255 / 9 * i, 255, 127))
+			end
+		end
+	end
 end
