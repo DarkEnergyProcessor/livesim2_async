@@ -59,6 +59,7 @@ local live_opacity = 255
 local bgdim_opacity = 255
 local should_update = true
 local circletap_effect_routine
+local shake_data = {time = 0, magnitude = 2}
 
 function path_save_dir(path)
 	return love.filesystem.getSaveDirectory().."/"..path
@@ -168,6 +169,11 @@ end
 
 function GetCurrentElapsedTime()
 	return elapsed_time
+end
+
+function ShakeScreen(ms, magnitude)
+	shake_data.time = ms
+	shake_data.magnitude = magnitude
 end
 
 function load_audio_safe(path, noorder)
@@ -777,6 +783,10 @@ local function circletap_drawing_coroutine(note_data, simul_note_bit)
 	while true do coroutine.yield(score) end
 end
 
+local spot_debug_touch_test = {"a","s","d","f","space","j","k","l",";"}
+local debug_effect_name = {{"spot", SpawnSpotEffect}, {"circletap", SpawnCircleTapEffect}}
+local debug_effect_default = 1
+
 -- Initialization function
 function love.load(argv)
 	math.randomseed(os.time())
@@ -832,7 +842,7 @@ function love.load(argv)
 		
 		-- Load beatmap audio
 		if not(BEATMAP_AUDIO) then
-			BEATMAP_AUDIO = load_audio_safe("audio/"..(argv[3] or BEATMAP_NAME)..".wav", not(not(argv[3])))
+			BEATMAP_AUDIO = load_audio_safe("audio/"..(argv[3] or BEATMAP_NAME..".wav"), not(not(argv[3])))
 		end
 		
 		-- Load perfect sound
@@ -975,6 +985,11 @@ function love.draw()
 		should_update = true
 	end
 	
+	if shake_data.time > 0 then
+		graphics.push()
+		graphics.translate(math.random(-shake_data.magnitude, shake_data.magnitude), math.random(-shake_data.magnitude, shake_data.magnitude))
+	end
+	
 	graphics.push()
 	graphics.translate(OFF_X, OFF_Y)
 	graphics.scale(SCALE_OVERALL, SCALE_OVERALL)
@@ -1079,6 +1094,11 @@ Usage: love livesim <beatmap>.json <sound=beatmap.wav> <notes speed = 0.8> <toke
 	end
 	
 	graphics.pop()
+	
+	if shake_data.time > 0 then
+		graphics.pop()
+		shake_data.time = math.max(shake_data.time - deltaT, 0)
+	end
 end
 
 function love.update(deltaT)
@@ -1166,10 +1186,6 @@ function love.update(deltaT)
 	end
 end
 
-local spot_debug_touch_test = {"a","s","d","f","space","j","k","l",";"}
-local debug_effect_name = {{"spot", SpawnSpotEffect}, {"circletap", SpawnCircleTapEffect}}
-local debug_effect_default = 1
-
 function love.keypressed(key, scancode, repeat_bit)
 	if repeat_bit == false then
 		if key == "lshift" then
@@ -1217,6 +1233,8 @@ local function calculate_touch_position(x, y)
 end
 
 function love.mousepressed(x, y, button, touch_bit)
+	if touch_bit == true then return end	-- Will be handled separately
+	
 	x, y = calculate_touch_position(x, y)
 	
 	if start_livesim <= 0 and x >= 905 and x <= 960 and y >= 0 and y <= 45 then
@@ -1233,4 +1251,8 @@ function love.mousepressed(x, y, button, touch_bit)
 			end
 		end
 	end
+end
+
+function love.touchpressed(id, x, y, dx, dy, pressure)
+	love.mousepressed(x, y, 1, 2)
 end

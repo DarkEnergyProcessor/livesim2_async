@@ -1,17 +1,6 @@
 -- DEPLS Note Loader function
 local List = require("List")
 local JSON = require("JSON")
-local CBFPos = {
-	L4 = 9,
-	L3 = 8,
-	L2 = 7,
-	L1 = 6,
-	C = 5,
-	R1 = 4,
-	R2 = 3,
-	R3 = 2,
-	R4 = 1
-}
 
 -- Usage: push from right, pop from left
 local noteloader
@@ -67,6 +56,18 @@ noteloader = function(path)
 		sifsimu2sif(love.filesystem.getSaveDirectory().."/beatmap/"..path..".txt", love.filesystem.getSaveDirectory().."/beatmap/"..path..".json")
 		
 		return noteloader(path)
+	elseif love.filesystem.isFile("beatmap/"..path..".mid") then
+		local midi2sif = require("midi2sif")
+		local f = assert(io.open(love.filesystem.getSaveDirectory().."/beatmap/"..path..".mid", "rb"))
+		local ndata = midi2sif(f)
+		
+		f:close()
+		
+		notes_list = List.new()
+		
+		for i = 1, #ndata do
+			notes_list:pushright(ndata[i])
+		end
 	else
 		-- Unsupported beatmap
 		error("Cannot open beatmap \""..path.."\"")

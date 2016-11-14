@@ -5,9 +5,7 @@ function love.load(argv)
 	
 	if os_type == "Android" then
 		-- Since we can't pass arguments to Android intent, we have to use txt
-		print("DEPLS", love.graphics.getDimensions())
 		local x = love.filesystem.newFile("command_line.txt", "r")
-		argv = {"DEPLS"}
 		
 		if x then
 			for line in x:lines() do
