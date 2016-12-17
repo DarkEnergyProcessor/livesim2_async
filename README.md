@@ -8,23 +8,53 @@ You need LOVE2D v0.10.1 or above to run this live simulator.
 How to run
 ==========
 
-Start love2d with this command-line
+Start LOVE2D with this command-line
 
-    love <current directory> <beatmap_name>.json <beatmap_audio = <beatmap>.wav> <notes_speed = 0.8>
+    love <current directory> livesim <beatmap_name>
 
-Example:
+There are 2 example beatmap which you can specify in `beatmap_name` argument.
 
-	love DEPLS test_beatmap.json m_006.ogg
+* `::1` - Daydream Warrior beatmap made by yuyu
 
-It will play `test_beatmap.json` with `m_006.ogg` as the audio.
+* `::2` - MOMENT RING beatmap made by yuyu (including fancy colored notes)
 
-Don't worry, I've put some testing beatmap in there, `test_beatmap` and `love_marginal`. Also I put 1 song (Mermaid Festa vol.1, named `m_006.ogg`)
+Put your beatmap in `<DEPLS Save Directory>/beatmap` folder and the audio in `<DEPLS Save Directory>/audio`.
+Beatmap name and audio name must match, but the extension doesn't need to, and will try to load WAV or OGG, in order.
 
-To add your own, place the music in `audio` folder and place the beatmap in `beatmap` folder. It expects `notes_list` from real SIF beatmap data.
-
-Support for another beatmap format (like SifSimu, CBF, and SIFTrain beatmap) is planned.
+Save directory can be seen if `lovec` is invoked (in Windows) or running `love` from terminal (Ubuntu and Mac OS X)
 
 Status
 ======
 
-Currently this is still incomplete, but it's now possible to play beatmap, although still less fancy (no tap flash animation, no combo counter, etc.)
+You can play with keyboard or just view beatmap, although installing beatmaps is bit tricky.
+
+At the moment, only desktop operating system are supported (Windows, Mac OS X, and Ubuntu).
+Running it under Android is possible, but the audio delay is unacceptable, and will refuse to run under iOS
+
+Controls
+========
+
+* A, S, D, F, Space, J, K, L, Semicolon = Tap notes
+
+* Left Shift = Show debug information (FPS, Elapsed time, ...)
+
+* Left Ctrl = Toggle Autoplay On/Off
+
+* Left Alt = Show note distance
+
+Supported Beatmaps
+==================
+
+* Raw SIF beatmap, this is main beatmap format that DEPLS uses.
+
+* Sukufesu Simulator beatmap, yuyu live simulator beatmap.  Conversion will be done on load.
+
+* Custom Beatmap Festival project folder. Conversion will be done on load
+
+* MIDI, specialized MIDI file. MIDI is loaded and converted on-the-fly.
+
+Disclaimer
+==========
+
+This live simulator uses some assets from Sukufesu Simulator made by yuyu, like the different note color.
+This live simulator also uses many ssets from Love Live! School Idol Festival game (background, header, ...)

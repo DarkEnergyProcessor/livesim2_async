@@ -1,4 +1,5 @@
 -- Lua storyboard handler
+local DEPLS = _G.DEPLS
 local LuaStoryboard = {}
 local BeatmapDir
 local StoryboardLua
@@ -26,10 +27,15 @@ function LuaStoryboard.Load(file)
 	
 	-- Copy environment
 	local env = {
+		DEPLS = DEPLS,
 		RelativeLoadVideo = RelativeLoadVideo,
-		RelativeLoadImage = RelativeLoadImage
+		RelativeLoadImage = RelativeLoadImage,
+		GetCurrentElapsedTime = function() return DEPLS.ElapsedTime end
 	}
 	for n, v in pairs(_G) do
+		env[n] = v
+	end
+	for n, v in pairs(DEPLS.StoryboardFunctions) do
 		env[n] = v
 	end
 	

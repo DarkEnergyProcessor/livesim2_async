@@ -7,11 +7,11 @@ local ep_list = {}
 ep.list = ep_list
 
 -- Should be already coroutine-wrapped.
-function ep.spawn(func)
+function ep.Spawn(func)
 	table.insert(ep_list, func)
 end
 
-function ep.update(deltaT)
+function ep.Update(deltaT)
 	-- Always iterate in reverse order
 	for i = #ep_list, 1, -1 do
 		if ep_list[i](deltaT) then
