@@ -8,8 +8,9 @@ local List = require("List")
 local JSON = require("JSON")
 local DEPLS = {
 	ElapsedTime = 0,	-- Elapsed time, in milliseconds
-	DebugDisplay = true,
+	DebugDisplay = false,
 	SaveDirectory = "",	-- DEPLS Save Directory
+	BeatmapAudioVolume = 0.8,	-- The audio volume
 	LogicalScale = {
 		ScreenX = 960,
 		ScreenY = 640,
@@ -697,7 +698,7 @@ function DEPLS.StoryboardFunctions.SetLiveOpacity(opacity)
 end
 
 --! @brief Sets background blackness
---! @param opacity Transparency. 1 = full black, 0 = full light
+--! @param opacity Transparency. 0 = full black, 255 = full light
 function DEPLS.StoryboardFunctions.SetBackgroundDimOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
@@ -835,7 +836,21 @@ function DEPLS.Start(argv)
 	
 	-- Load beatmap
 	local notes_list
-	notes_list, DEPLS.StoryboardHandle, DEPLS.Sound.BeatmapAudio = DEPLS.NoteLoader(argv[2])
+	local noteloader_data = DEPLS.NoteLoader(argv[2])
+	local custom_background = false
+	notes_list = noteloader_data.notes_list
+	DEPLS.StoryboardHandle = noteloader_data.storyboard
+	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
+	
+	if type(noteloader_data.background) == "number" then
+		BackgroundID = noteloader_data.background
+	elseif type(noteloader_data.background) == "table" then
+		for i = 0, 4 do
+			DEPLS.BackgroundImage[i][1] = noteloader_data.background[i]
+		end
+		
+		custom_background = true
+	end
 	
 	-- Add to note manager
 	for i = 1, #notes_list do
@@ -858,7 +873,7 @@ function DEPLS.Start(argv)
 	----------------------
 	
 	-- Load background if no storyboard present
-	if not(DEPLS.StoryboardHandle) then
+	if not(DEPLS.StoryboardHandle) and not(custom_background) then
 		DEPLS.BackgroundImage[0][1] = love.graphics.newImage("image/liveback_"..BackgroundID..".png")
 		
 		for i = 1, 4 do
@@ -875,6 +890,7 @@ function DEPLS.Start(argv)
 	DEPLS.Images.ScoreGauge = love.graphics.newImage("image/live_gauge_03_02.png")
 	
 	-- Load unit icons
+	noteloader_data.units = noteloader_data.units or {}
 	local IdolImagePath = {}
 	do
 		local idol_img = DEPLS.LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
@@ -884,7 +900,7 @@ function DEPLS.Start(argv)
 		end
 	end
 	for i = 1, 9 do
-		DEPLS.IdolImageData[i] = {DEPLS.LoadUnitIcon(IdolImagePath[10 - i]), 255}
+		DEPLS.IdolImageData[i] = {noteloader_data.units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i]), 255}
 	end
 	
 	-- Load stamina image (bar and number)
@@ -974,7 +990,7 @@ function DEPLS.Update(deltaT)
 	if ElapsedTime > 0 then
 		-- TODO update all
 		if DEPLS.Sound.BeatmapAudio and audioplaying == false then
-			DEPLS.Sound.BeatmapAudio:setVolume(0.8)
+			DEPLS.Sound.BeatmapAudio:setVolume(DEPLS.BeatmapAudioVolume)
 			DEPLS.Sound.BeatmapAudio:seek(ElapsedTime / 1000)
 			DEPLS.Sound.BeatmapAudio:play()
 			audioplaying = true
@@ -1014,7 +1030,9 @@ function DEPLS.Draw(deltaT)
 		local BackgroundImage = DEPLS.BackgroundImage
 		
 		for i = 0, 4 do
-			draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+			if BackgroundImage[i][1] then
+				draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+			end
 		end
 	end
 	
@@ -1069,12 +1087,13 @@ CURRENT_COMBO = %d
 RUNNING_EFFECT = %d
 LIVE_OPACITY = %.2f
 BACKGROUND_BLACKNESS = %.2f
+AUDIO_VOLUME = %.2f
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
 ]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime
 			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
-			, DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good
+			, DEPLS.BeatmapAudioVolume, DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good
 			, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 		setColor(0, 0, 0, 255)
 		love.graphics.print(text, 1, 1)
@@ -1155,6 +1174,12 @@ function love.mousereleased(x, y, button, touch_id)
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
 end
 
+local function update_audio_volume()
+	if DEPLS.Sound.BeatmapAudio then
+		DEPLS.Sound.BeatmapAudio:setVolume(DEPLS.BeatmapAudioVolume)
+	end
+end
+
 -- LOVE2D key press
 function love.keypressed(key, scancode, repeat_bit)
 	if repeat_bit == false then
@@ -1171,6 +1196,12 @@ function love.keypressed(key, scancode, repeat_bit)
 			DEPLS.AutoPlay = not(DEPLS.AutoPlay)
 		elseif key == "lalt" then
 			DEPLS.DebugNoteDistance = not(DEPLS.DebugNoteDistance)
+		elseif key == "f6" then
+			DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
+			update_audio_volume()
+		elseif scancode == "f5" then
+			DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
+			update_audio_volume()
 		elseif DEPLS.ElapsedTime >= 0 then
 			for i = 1, 9 do
 				if key == DEPLS.Keys[i] then

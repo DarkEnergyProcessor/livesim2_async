@@ -567,8 +567,6 @@ end
 function Note.SetTouch(pos, touchid, release)
 	if DEPLS.AutoPlay then return end
 	
-	print(release and "ReleaseTouch" or "PressTouch", touchid, pos)
-	
 	local ElapsedTime = DEPLS.ElapsedTime
 	local noteobj
 	local score = 0

@@ -30,6 +30,8 @@ function LuaStoryboard.Load(file)
 		DEPLS = DEPLS,
 		RelativeLoadVideo = RelativeLoadVideo,
 		RelativeLoadImage = RelativeLoadImage,
+		LoadVideo = RelativeLoadVideo,
+		LoadImage = RelativeLoadImage,
 		GetCurrentElapsedTime = function() return DEPLS.ElapsedTime end
 	}
 	for n, v in pairs(_G) do

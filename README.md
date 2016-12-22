@@ -42,6 +42,12 @@ Controls
 
 * Left Alt = Show note distance
 
+* F5 = Turn the song volume down by 5% (default is 80%)
+
+* F6 = Turn the song volume up by5%
+
+* Backspace = Restart live simulator
+
 Supported Beatmaps
 ==================
 
