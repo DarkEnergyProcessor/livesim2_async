@@ -20,4 +20,10 @@ function ep.Update(deltaT)
 	end
 end
 
+function ep.Clear()
+	for i = #ep_list, 1, -1 do
+		ep_list[i] = nil
+	end
+end
+
 return ep

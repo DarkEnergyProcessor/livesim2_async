@@ -52,6 +52,12 @@ local DEPLS = {
 	Stamina = 32,
 	NotesSpeed = 800,
 	ScoreBase = 500,
+	ScoreData = {		-- Contains C score, B score, A score, S score data, in order.
+		1,
+		2,
+		3,
+		4
+	},
 	
 	Images = {		-- Lists of loaded images
 		Note = {},
@@ -463,6 +469,57 @@ DEPLS.Routines.NoteIcon.Draw = coroutine.wrap(function()
 	end
 end)
 
+-- Score bar routine
+DEPLS.Routines.ScoreBar = coroutine.wrap(function(deltaT)
+	local ScoreUpdate = DEPLS.Routines.ScoreUpdate
+	local ScoreData = DEPLS.ScoreData
+	local LogicalScale = DEPLS.LogicalScale
+	local newImage = love.graphics.newImage
+	local setScissor = love.graphics.setScissor
+	local draw = love.graphics.draw
+	local no_score = newImage("image/live_gauge_03_03.png")
+	local c_score = newImage("image/live_gauge_03_04.png")
+	local b_score = newImage("image/live_gauge_03_05.png")
+	local a_score = newImage("image/live_gauge_03_06.png")
+	local s_score = newImage("image/live_gauge_03_07.png")
+	local draw_area = 960
+	local used_score = nil
+	
+	while true do
+		repeat
+			deltaT = coroutine.yield()
+		until deltaT
+		
+		if ScoreUpdate.CurrentScore >= ScoreData[4] then
+			-- S score
+			used_score = s_score
+			draw_area = 960
+		elseif ScoreUpdate.CurrentScore >= ScoreData[3] then
+			-- A score
+			used_score = a_score
+			draw_area = 791 + math.floor((ScoreData[3] - ScoreUpdate.CurrentScore) / (ScoreData[3] - ScoreData[4]) * 84 + 0.5)
+		elseif ScoreUpdate.CurrentScore >= ScoreData[2] then
+			-- B score
+			used_score = b_score
+			draw_area = 667 + math.floor((ScoreData[2] - ScoreUpdate.CurrentScore) / (ScoreData[2] - ScoreData[3]) * 125 + 0.5)
+		elseif ScoreUpdate.CurrentScore >= ScoreData[1] then
+			-- C score
+			used_score = c_score
+			draw_area = 504 + math.floor((ScoreData[1] - ScoreUpdate.CurrentScore) / (ScoreData[1] - ScoreData[2]) * 164 + 0.5)
+		else
+			-- No score
+			used_score = no_score
+			draw_area = 48 + math.floor(ScoreUpdate.CurrentScore / ScoreData[1] * 456 + 0.5)
+		end
+		
+		while coroutine.yield() do end
+		
+		setScissor(LogicalScale.OffX, LogicalScale.OffY, draw_area * LogicalScale.ScaleOverall, 640)
+		draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
+		setScissor()
+	end
+end)
+
 -- Score display routine
 DEPLS.Routines.ScoreUpdate.Draw = coroutine.wrap(function(deltaT)
 	local ScoreUpdate = DEPLS.Routines.ScoreUpdate
@@ -764,6 +821,7 @@ function DEPLS.Start(argv)
 	DEPLS.Arg = argv
 	package.loaded.DEPLS = DEPLS
 	_G.DEPLS = DEPLS
+	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
 	DEPLS.Sound.PerfectTap = love.audio.newSource("sound/SE_306.ogg", "static")
@@ -862,6 +920,22 @@ function DEPLS.Start(argv)
 		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] * 1000 / DEPLS.NotesSpeed
 	end
 	
+	-- Calculate score bar
+	if noteloader_data.score then
+		for i = 1, 4 do
+			-- Use info from beatmap
+			DEPLS.ScoreData[i] = noteloader_data.score[i]
+		end
+	else
+		-- Calculate using master difficulty preset
+		local s_score = #notes_list * 739
+		
+		DEPLS.ScoreData[1] = math.floor(s_score * 0.285521 + 0.5)
+		DEPLS.ScoreData[2] = math.floor(s_score * 0.71448 + 0.5)
+		DEPLS.ScoreData[3] = math.floor(s_score * 0.856563 + 0.5)
+		DEPLS.ScoreData[4] = s_score
+	end
+	
 	-- Load beatmap audio
 	if not(DEPLS.Sound.BeatmapAudio) then
 		-- Beatmap audio needs to be safe loaded
@@ -939,6 +1013,9 @@ function DEPLS.Start(argv)
 	-- Initialize score flash
 	DEPLS.Routines.ScoreEclipseF.Draw()
 	
+	-- Init score bar
+	DEPLS.Routines.ScoreBar()
+	
 	-- Load score node number
 	for i = 21, 30 do
 		DEPLS.Images.ScoreNode[i - 21] = love.graphics.newImage("image/score_num/l_num_"..i..".png")
@@ -1004,6 +1081,7 @@ function DEPLS.Update(deltaT)
 		Routines.NoteIcon.Draw(deltaT)
 		Routines.ScoreEclipseF.Draw(deltaT)
 		Routines.ScoreUpdate.Draw(deltaT)
+		Routines.ScoreBar(deltaT)
 		Routines.PerfectNode.Draw(deltaT)
 	end
 end
@@ -1069,6 +1147,7 @@ function DEPLS.Draw(deltaT)
 		-- Draw routines
 		Routines.ComboCounter.Draw()
 		Routines.NoteIcon.Draw()
+		Routines.ScoreBar()
 		Routines.ScoreEclipseF.Draw()
 		Routines.ScoreUpdate.Draw()
 		Routines.PerfectNode.Draw()
