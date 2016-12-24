@@ -53,11 +53,11 @@ Supported Beatmaps
 
 * Raw SIF beatmap, this is main beatmap format that DEPLS uses.
 
-* Sukufesu Simulator beatmap, yuyu live simulator beatmap.  Conversion will be done on load.
+* Sukufesu Simulator beatmap, yuyu live simulator beatmap.  Beatmap is loaded on-the-fly
 
 * Custom Beatmap Festival project folder. Conversion will be done on load
 
-* MIDI, specialized MIDI file. MIDI is loaded and converted on-the-fly.
+* MIDI, specialized MIDI file. MIDI is loaded and converted on-the-fly
 
 Disclaimer
 ==========

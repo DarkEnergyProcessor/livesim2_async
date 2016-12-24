@@ -2,7 +2,7 @@ return function(...)
 	local arg = {...}
 
 	if arg[1] == nil then
-		print("Usage: sifsimu2sif.lua <sifsimu> [sif=stdout]")
+		print("Usage: sifsimu2sif.lua <sifsimu>")
 		print("Variable tempo isn't supported yet")
 		return
 	end
@@ -21,8 +21,8 @@ return function(...)
 		-- Parse BPM
 		bpm = tonumber(x():match("BPM = (%d+)")) or 120
 		
-		-- Parse offset
-		offset_ms = (tonumber(x():match("OFFSET = (%d+)")) or 0) * 10
+		-- Parse offset. Offset time unit is in "count" (in Excel)
+		offset_ms = (tonumber(x():match("OFFSET = ([-]?%d+)")) or 0) * 1250 / bpm
 		x()
 		
 		-- Parse attribute
@@ -35,13 +35,19 @@ return function(...)
 	end
 
 	sifsimu:close()
+	
+	local stop_time_count = 0
 
 	for a, b, c in beatmap_string:gmatch("([^,]+),([^,]+),([^,]+)") do
-		a, b, c = assert(tonumber(a)), assert(tonumber(b)), assert(tonumber(c))
+		a, b, c = assert(tonumber(a)) + stop_time_count, assert(tonumber(b)), assert(tonumber(c))
 		local c_abs = math.abs(c)
 		
 		if b == 18 then
+			-- Note attribute change
 			attribute = math.min(c + 1, 10)
+		elseif b == 19 then
+			-- Add stop time
+			stop_time_count = stop_time_count + c
 		elseif b < 10 then
 			local effect = 1
 			local effect_value = 2
@@ -65,16 +71,6 @@ return function(...)
 	end
 
 	table.sort(sif_beatmap_data, function(a, b) return a.timing_sec < b.timing_sec end)
-
-	if arg[2] then
-		sifsimu = io.open(arg[2], "wb") or io.stdout
-	else
-		sifsimu = io.stdout
-	end
-
-	sifsimu:write(JSON:encode(sif_beatmap_data))
-
-	if sifsimu ~= io.stdout then
-		sifsimu:close()
-	end
+	
+	return sif_beatmap_data
 end

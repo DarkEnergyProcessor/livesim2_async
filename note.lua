@@ -134,7 +134,8 @@ function Note.Add(note_data)
 		-- Long note functions is different than normal tap function routine
 		function noteobj.Update(this, deltaT)
 			-- deltaT is in milliseconds
-			ElapsedTime = ElapsedTime + deltaT
+			--ElapsedTime = ElapsedTime + deltaT
+			ElapsedTime = DEPLS.ElapsedTime - note_data.timing_sec * 1000  + notes_speed
 			
 			FirstCircle[1], FirstCircle[2] = unpack(idolpos)
 			CircleScale = 1
@@ -356,7 +357,8 @@ function Note.Add(note_data)
 		-- Single tap note
 		function noteobj.Update(this, deltaT)
 			-- deltaT is in milliseconds
-			ElapsedTime = ElapsedTime + deltaT
+			--ElapsedTime = ElapsedTime + deltaT
+			ElapsedTime = DEPLS.ElapsedTime - note_data.timing_sec * 1000  + notes_speed
 			
 			FirstCircle[1] = notepos_x_diff * (ElapsedTime / notes_speed) + 480
 			FirstCircle[2] = notepos_y_diff * (ElapsedTime / notes_speed) + 160

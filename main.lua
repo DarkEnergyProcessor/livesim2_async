@@ -32,10 +32,10 @@ function love.load(argv)
 		table.remove(argv, 1)
 	end
 	
-	local progname = argv[1]
+	local progname = argv[1] or "main_menu"
 	
 	if loader[progname] then
-		if #argv - 1 >= loader[progname][1] then
+		if loader[progname][1] == 0 or #argv - 1 >= loader[progname][1] then
 			local scriptfile = love.filesystem.load(loader[progname][2])
 			scriptfile().Start(argv)
 		end

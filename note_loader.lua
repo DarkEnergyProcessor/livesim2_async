@@ -132,9 +132,8 @@ noteloader = function(path)
 		-- SifSimu beatmap
 		local sifsimu2sif = require("sifsimu2sif")
 		
-		sifsimu2sif(love.filesystem.getSaveDirectory().."/beatmap/"..path..".txt", love.filesystem.getSaveDirectory().."/beatmap/"..path..".json")
-		
-		return noteloader(path)
+		-- No longer creates additional JSON
+		output.notes_list = sifsimu2sif(love.filesystem.getSaveDirectory().."/beatmap/"..path..".txt", love.filesystem.getSaveDirectory().."/beatmap/"..path..".json")
 	elseif love.filesystem.isFile("beatmap/"..path..".mid") then
 		-- MIDI beatmap
 		local midi2sif = require("midi2sif")
