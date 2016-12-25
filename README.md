@@ -5,6 +5,8 @@ DEPLS (pronounced **Deep Less**) is a Love Live! School Idol Festival Live Show 
 
 You need LOVE2D v0.10.1 or above to run this live simulator.
 
+**This one has been superseded by [DEPLS2](https://github.com/MikuAuahDark/DEPLS/tree/DEPLS2)**
+
 How to run
 ==========
 
