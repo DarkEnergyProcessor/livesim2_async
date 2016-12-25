@@ -62,5 +62,5 @@ Supported Beatmaps
 Disclaimer
 ==========
 
-This live simulator uses some assets from Sukufesu Simulator made by yuyu, like the different note color.
-This live simulator also uses many ssets from Love Live! School Idol Festival game (background, header, ...)
+This live simulator uses some assets from Sukufesu Simulator made by yuyu, like note image with different colors.
+This live simulator also uses many assets from Love Live! School Idol Festival game (background, header, ...)

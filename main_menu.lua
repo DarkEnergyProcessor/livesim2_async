@@ -16,7 +16,7 @@ local LogicalScale = {
 local selection_image = love.graphics.newImage("image/s_button_03.png")
 local selection_image_se = love.graphics.newImage("image/s_button_03se.png")
 local background = love.graphics.newImage("image/liveback_2.png")
-local MTLMr3m = love.graphics.newFont("MTLMr3m.ttf", 30)
+local MTLMr3m = love.graphics.newFont("MTLmr3m.ttf", 30)
 local mouse_data = {false, 0, 0}	-- click?, x click, y click
 
 local menu_select = {
