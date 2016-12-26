@@ -476,6 +476,7 @@ DEPLS.Routines.ScoreBar = coroutine.wrap(function(deltaT)
 	local LogicalScale = DEPLS.LogicalScale
 	local newImage = love.graphics.newImage
 	local setScissor = love.graphics.setScissor
+	local setColor = love.graphics.setColor
 	local draw = love.graphics.draw
 	local no_score = newImage("image/live_gauge_03_03.png")
 	local c_score = newImage("image/live_gauge_03_04.png")
@@ -515,7 +516,9 @@ DEPLS.Routines.ScoreBar = coroutine.wrap(function(deltaT)
 		while coroutine.yield() do end
 		
 		setScissor(LogicalScale.OffX, LogicalScale.OffY, draw_area * LogicalScale.ScaleOverall, 640)
+		setColor(255, 255, 255, DEPLS.LiveOpacity)
 		draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
+		setColor(255, 255, 255, 255)
 		setScissor()
 	end
 end)
@@ -747,7 +750,7 @@ do
 end
 
 --! @brief Sets foreground live opacity
---! @param opacity Transparency. 1 = opaque, 0 = invisible
+--! @param opacity Transparency. 255 = opaque, 0 = invisible
 function DEPLS.StoryboardFunctions.SetLiveOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
@@ -760,6 +763,18 @@ function DEPLS.StoryboardFunctions.SetBackgroundDimOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
 	DEPLS.BackgroundOpacity = 255 - opacity
+end
+
+--! @brief Gets current elapsed time
+--! @returns Elapsed time, in milliseconds. Negative value means simulator is not started yet
+function DEPLS.StoryboardFunctions.GetCurrentElapsedTime()
+	return DEPLS.ElapsedTime
+end
+
+--! @brief Gets live simulator delay. Delay before live simulator is shown
+--! @returns Live simulator delay, in milliseconds
+function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay()
+	return DEPLS.LiveDelay
 end
 
 --! @brief Spawn spotlight effect in the specificed idol position and with specificed color
@@ -1262,7 +1277,9 @@ end
 -- LOVE2D key press
 function love.keypressed(key, scancode, repeat_bit)
 	if repeat_bit == false then
-		if key == "backspace" then
+		if key == "escape" then
+			love.event.quit()
+		elseif key == "backspace" then
 			if DEPLS.Sound.BeatmapAudio then
 				DEPLS.Sound.BeatmapAudio:stop()
 			end
