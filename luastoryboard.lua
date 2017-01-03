@@ -88,6 +88,7 @@ local isolated_love = {
 	timer = love.timer
 }
 
+-- List of whitelisted libraries for storyboard
 local allowed_libs = {
 	JSON = require("JSON"),
 	List = require("List"),
@@ -126,6 +127,7 @@ function LuaStoryboard.Load(file)
 	env.dofile = nil
 	env.package = nil
 	env.love = isolated_love
+	env.file_get_contents = nil
 	env.require = function(libname)
 		if allowed_libs[libname] then
 			return allowed_libs[libname]

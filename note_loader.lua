@@ -132,7 +132,6 @@ noteloader = function(path)
 		-- SifSimu beatmap
 		local sifsimu2sif = require("sifsimu2sif")
 		
-		-- No longer creates additional JSON
 		output.notes_list = sifsimu2sif(love.filesystem.getSaveDirectory().."/beatmap/"..path..".txt", love.filesystem.getSaveDirectory().."/beatmap/"..path..".json")
 	elseif love.filesystem.isFile("beatmap/"..path..".mid") then
 		-- MIDI beatmap
@@ -143,6 +142,37 @@ noteloader = function(path)
 		f:close()
 		
 		output.notes_list = ndata
+	elseif love.filesystem.isFile("beatmap/"..path..".llp") then
+		-- LLPractice beatmap
+		local llp2sif = require("llp2sif")
+		local ndata = JSON:decode(assert(love.filesystem.newFileData("beatmap/"..path..".llp")):getString())
+		
+		output.notes_list = llp2sif(ndata)
+		
+		if ndata.audiofile and #ndata.audiofile > 0 then
+			output.song_file = DEPLS.LoadAudio("audio/"..ndata.audiofile..".wav")
+		end
+	elseif love.filesystem.isFile("beatmap/"..path..".rs") then
+		-- SIFTrain beatmap
+		error("SIFTrain beatmap format is currently disabled")
+		
+		local rs2sif = require("rs2sif")
+		local ndata = JSON:decode(assert(love.filesystem.newFileData("beatmap/"..path..".rs")):getString())
+		
+		output.notes_list = rs2sif(ndata)
+		
+		if ndata.music_file and #ndata.music_file > 0 then
+			output.song_file = DEPLS.LoadAudio("audio/"..ndata.music_file..".wav")
+		end
+		
+		if ndata.rank_info then
+			output.score = {
+				ndata.rank_info[1].rank_max,
+				ndata.rank_info[2].rank_max,
+				ndata.rank_info[3].rank_max,
+				ndata.rank_info[4].rank_max
+			}
+		end
 	else
 		-- Unsupported beatmap
 		error("Cannot open beatmap \""..path.."\"")
