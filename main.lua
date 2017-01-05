@@ -1,4 +1,15 @@
--- Wrapper to start DEPLS in mobile devices
+-- DEPLS2 main lua
+
+DEPLS_VERSION = "2070106"
+
+LogicalScale = {
+	ScreenX = 960,
+	ScreenY = 640,
+	OffX = 0,
+	OffY = 0,
+	ScaleOverall = 1
+}
+CurrentEntry = {}
 
 local loader = {
 	livesim = {1, "livesim.lua"},
@@ -105,6 +116,8 @@ end
 function love.load(argv)
 	local os_type = love.system.getOS()
 	
+	if jit and jit.on then jit.on() end
+	
 	print("R/W Directory: "..love.filesystem.getSaveDirectory())
 	
 	if os_type == "Android" then
@@ -131,13 +144,19 @@ function love.load(argv)
 	
 	-- Parse arguments
 	for i = 1, #argv do
+		::loop_start::
 		local arg = argv[i]
+		local remove_arg = false
+		
+		if not(arg) then break end
 		
 		do
 			local width = arg:match("/width=(%d+)")
 			
 			if width then
 				DesiredWindowSize[1] = tonumber(width)
+				
+				remove_arg = true
 			end
 		end
 		
@@ -146,11 +165,20 @@ function love.load(argv)
 			
 			if height then
 				DesiredWindowSize[2] = tonumber(height)
+				
+				remove_arg = true
 			end
 		end
 		
 		if arg == "/fullscreen" then
 			Fullscreen = true
+			
+			remove_arg = true
+		end
+		
+		if remove_arg then
+			table.remove(argv, i)
+			goto loop_start
 		end
 	end
 	
@@ -158,25 +186,37 @@ function love.load(argv)
 		DesiredWindowSize = {0, 0}
 	end
 	
+	-- Set window resolution
 	if DesiredWindowSize[1] or DesiredWindowSize[2] then
-		love.window.setMode(DesiredWindowSize[1] or 960, DesiredWindowSize[2] or 640, {fullscreen = Fullscreen, fullscreentype = "desktop"})
+		love.window.setMode(DesiredWindowSize[1] or 960, DesiredWindowSize[2] or 640, {
+			fullscreen = Fullscreen,
+			fullscreentype = "desktop",
+			resizable = true
+		})
 	end
+	
+	-- Calculate logical scale
+	LogicalScale.ScreenX, LogicalScale.ScreenY = love.graphics.getDimensions()
+	LogicalScale.ScaleX = LogicalScale.ScreenX / 960
+	LogicalScale.ScaleY = LogicalScale.ScreenY / 640
+	LogicalScale.ScaleOverall = math.min(LogicalScale.ScaleX, LogicalScale.ScaleY)
+	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
+	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
 	
 	local progname = argv[1] or "main_menu"
 	
 	if loader[progname] then
 		if loader[progname][1] == 0 or #argv - 1 >= loader[progname][1] then
 			local scriptfile = love.filesystem.load(loader[progname][2])
-			scriptfile().Start(argv)
+			CurrentEntry = scriptfile()
+			CurrentEntry.Start(argv)
+			
+			return
 		end
 	end
-end
-
-function love.update(deltaT)
-end
-
-function love.draw()
-	love.graphics.print([[
+	
+	function love.draw()
+		love.graphics.print([[
 
 Usage: love livesim <module = main_menu> <module options>
 Module options:
@@ -186,4 +226,35 @@ Module options:
  - beatmap_select: <default selected beatmap name>
  - unit_editor: none
 ]], 10)
+	end
+end
+
+function love.update(deltaT)
+	CurrentEntry.Update(deltaT * 1000)
+end
+
+function love.draw()
+	local deltaT = love.timer.getDelta() * 1000
+	
+	love.graphics.push()
+	love.graphics.translate(LogicalScale.OffX, LogicalScale.OffY)
+	love.graphics.scale(LogicalScale.ScaleOverall, LogicalScale.ScaleOverall)
+	CurrentEntry.Draw(deltaT)
+	love.graphics.pop()
+end
+
+-- LOVE2D on window resize
+function love.resize(w, h)
+	LogicalScale.ScreenX, LogicalScale.ScreenY = w, h
+	LogicalScale.ScaleX = LogicalScale.ScreenX / 960
+	LogicalScale.ScaleY = LogicalScale.ScreenY / 640
+	LogicalScale.ScaleOverall = math.min(LogicalScale.ScaleX, LogicalScale.ScaleY)
+	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
+	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
+	
+	print("=== Resize ===")
+	print("New Dimension", w, h)
+	print("Scale", LogicalScale.ScaleX, LogicalScale.ScaleY, LogicalScale.ScaleOverall)
+	print("Offset", LogicalScale.OffX, LogicalScale.OffY)
+	print("=== Resize ===")
 end

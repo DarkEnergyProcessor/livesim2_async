@@ -2,6 +2,7 @@
 
 -- The DEPLS handle
 local DEPLS = _G.DEPLS
+
 -- The Lua storyboard
 local LuaStoryboard = {}
 local BeatmapDir
@@ -32,6 +33,27 @@ local function RelativeLoadImage(path)
 	if not(x) then return nil end
 	
 	return love.graphics.newImage(x)
+end
+
+-- Used to isolate function and returns table of all created global variable
+local function isolate_globals(func)
+	local env = {}
+	local created_vars = {}
+	
+	for n, v in pairs(_G) do
+		env[n] = v
+	end
+	
+	setmetatable(env, {
+		__newindex = function(a, b, c)
+			created_vars[b] = c
+			rawset(a, b, c)
+		end
+	})
+	setfenv(func, env)
+	func()
+	
+	return created_vars
 end
 
 local isolated_love = {
@@ -94,10 +116,15 @@ local allowed_libs = {
 	List = require("List"),
 	tween = require("tween"),
 	EffectPlayer = require("effect_player"),
+	luafft = isolate_globals(love.filesystem.load("luafft.lua")),
 	string = string,
 	table = table,
 	math = math,
 	coroutine = coroutine,
+	os = {
+		time = os.time,
+		clock = os.clock
+	}
 }
 
 -- Storyboard lua file
@@ -111,9 +138,11 @@ function LuaStoryboard.Load(file)
 		LoadImage = RelativeLoadImage,
 		ReadFile = RelativeReadFile
 	}
+	
 	for n, v in pairs(_G) do
 		env[n] = v
 	end
+	
 	for n, v in pairs(DEPLS.StoryboardFunctions) do
 		env[n] = v
 	end
@@ -128,6 +157,7 @@ function LuaStoryboard.Load(file)
 	env.package = nil
 	env.love = isolated_love
 	env.file_get_contents = nil
+	env.LogicalScale = nil
 	env.require = function(libname)
 		if allowed_libs[libname] then
 			return allowed_libs[libname]
@@ -147,9 +177,9 @@ function LuaStoryboard.Load(file)
 	end
 	
 	StoryboardLua = {
-		coroutine.wrap(lua),	-- The lua storyboard
-		env,					-- The global variables
-		env.Update,				-- New DEPLS2 storyboard or usual DEPLS storyboard
+		coroutine.wrap(lua),				-- The lua storyboard
+		env,								-- The global variables
+		env.Update or env.Initialize,		-- New DEPLS2 storyboard or usual DEPLS storyboard
 	}
 end
 

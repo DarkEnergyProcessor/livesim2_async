@@ -44,7 +44,7 @@ Controls
 
 * F5 = Turn the song volume down by 5% (default is 80%)
 
-* F6 = Turn the song volume up by5%
+* F6 = Turn the song volume up by 5%
 
 * Backspace = Restart live simulator
 
@@ -53,14 +53,16 @@ Supported Beatmaps
 
 * Raw SIF beatmap, this is main beatmap format that DEPLS uses.
 
-* Sukufesu Simulator beatmap, yuyu live simulator beatmap.  Beatmap is loaded on-the-fly
+* Sukufesu Simulator beatmap, yuyu live simulator beatmap.
 
-* Custom Beatmap Festival project folder. Conversion will be done on load
+* Custom Beatmap Festival project folder.
 
-* MIDI, specialized MIDI file. MIDI is loaded and converted on-the-fly
+* MIDI, specialized MIDI file.
 
 Disclaimer
 ==========
 
 This live simulator uses some assets from Sukufesu Simulator made by yuyu, like note image with different colors.
 This live simulator also uses many assets from Love Live! School Idol Festival game (background, header, ...)
+
+Please see `LICENSE.md` for more details

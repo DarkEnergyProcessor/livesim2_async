@@ -1,7 +1,13 @@
--- Midi to SIF convert
+-- MIDI beatmap loader
+-- Part of DEPLS2
 
+local DEPLS = _G.DEPLS
+local NoteLoader = DEPLS.NoteLoader
 local stringstream = require("stringstream")
-local JSON = require("JSON")
+
+local MIDIBeatmap = {
+	Extension = "mid"
+}
 
 local function str2dword_be(str)
 	return str:sub(1,1):byte() * 16777216 + str:sub(2,2):byte() * 65536 + str:sub(3,3):byte() * 256 + str:sub(4,4):byte()
@@ -22,7 +28,7 @@ local function read_varint(fs)
 end
 
 -- returns table, not JSON-encoded file.
-return function(stream)
+local function midi2sif(stream)
 	if stream:read(4) ~= "MThd" then
 		error("Not MIDI")
 	end
@@ -214,3 +220,20 @@ return function(stream)
 	
 	return sif_beatmap
 end
+
+--! @brief Loads MIDI beatmap
+--! @param file Table contains:
+--!        - path relative to DEPLS save dir
+--!        - absolute path
+--!        - forward slashed and not contain trailing slash
+--! @returns table with these data
+--!          - notes_list is the SIF-compilant notes data
+function MIDIBeatmap.Load(file)
+	local f = io.open(file[2]..".mid", "rb")
+	local out = {notes_list = midi2sif(f)}
+	
+	f:close()
+	return out
+end
+
+return MIDIBeatmap

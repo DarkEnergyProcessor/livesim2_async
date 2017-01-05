@@ -1,5 +1,3 @@
-RANDOM_NOTE_IMAGE = false
-
 -- Love2d config function
 function love.conf(t)
 	t.identity = "DEPLS"                -- The name of the save directory (string)

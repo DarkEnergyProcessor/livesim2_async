@@ -11,13 +11,6 @@ local DEPLS = {
 	DebugDisplay = false,
 	SaveDirectory = "",	-- DEPLS Save Directory
 	BeatmapAudioVolume = 0.8,	-- The audio volume
-	LogicalScale = {
-		ScreenX = 960,
-		ScreenY = 640,
-		OffX = 0,
-		OffY = 0,
-		ScaleOverall = 1
-	},
 	
 	BackgroundOpacity = 255,	-- User background opacity set from storyboard
 	BackgroundImage = {	-- Index 0 is the main background
@@ -473,7 +466,7 @@ end)
 DEPLS.Routines.ScoreBar = coroutine.wrap(function(deltaT)
 	local ScoreUpdate = DEPLS.Routines.ScoreUpdate
 	local ScoreData = DEPLS.ScoreData
-	local LogicalScale = DEPLS.LogicalScale
+	local LogicalScale = LogicalScale
 	local newImage = love.graphics.newImage
 	local setScissor = love.graphics.setScissor
 	local setColor = love.graphics.setColor
@@ -699,8 +692,8 @@ function DEPLS.LoadAudio(path, noorder)
 	do
 		local file = love.filesystem.newFile(path)
 		
-		if file then
-			_, token_image = pcall(love.audio.newSource, path, "static")
+		if file:open("r") then
+			_, token_image = pcall(love.sound.newSoundData, file)
 			
 			if _ then
 				return token_image
@@ -708,7 +701,7 @@ function DEPLS.LoadAudio(path, noorder)
 		end
 	end
 	
-	_, token_image = pcall(love.audio.newSource, path, "static")
+	_, token_image = pcall(love.sound.newSoundData, path)
 	
 	if _ == false then return nil, token_image
 	else return token_image end
@@ -748,6 +741,10 @@ do
 		return img
 	end
 end
+
+--------------------------------------
+-- Functions exported to storyboard --
+--------------------------------------
 
 --! @brief Sets foreground live opacity
 --! @param opacity Transparency. 255 = opaque, 0 = invisible
@@ -830,11 +827,86 @@ function DEPLS.StoryboardFunctions.SpawnCircleTapEffect(pos, r, g, b)
 	EffectPlayer.Spawn(effect)
 end
 
+--! @brief Set unit visibility
+--! @param pos The unit position (9 is leftmost)
+--! @param opacity The desired opacity. 0 is fully transparent, 255 is fully opaque (255 default)
+function DEPLS.StoryboardFunctions.SetUnitOpacity(pos, opacity)
+	local data = DEPLS.IdolImageData[pos]
+	
+	if data == nil then
+		error("Invalid pos specificed")
+	end
+	
+	data[2] = math.min(math.max(opacity or 255, 0), 255)
+end
+
+do
+	local channels
+	
+	local function getsample_safe(sound_data, pos)
+		local _, sample = pcall(sound_data.getSample, sound_data, pos)
+		
+		if _ == false then
+			return 0
+		end
+		
+		return sample
+	end
+	
+	--! @brief Gets current playing audio sample with specificed size
+	--! @param size The sample size (1 default = 1 sample)
+	--! @returns table containing the samples with size `size`
+	--! @note This function handles mono/stereo input and this function still works even
+	--!       if no audio is found, where in that case the sample is simply 0
+	function DEPLS.StoryboardFunctions.GetCurrentAudioSample(size)
+		size = size or 1
+		
+		local audio = DEPLS.Sound.BeatmapAudio
+		local sample_list = {}
+		
+		if not(audio) then
+			for i = 1, size do
+				sample_list[#sample_list + 1] = {0, 0}
+			end
+			
+			return sample_list
+		end
+		
+		if not(channels) then
+			channels = audio:getChannels()
+		end
+		
+		local pos = DEPLS.Sound.LiveAudio:tell("samples")
+		
+		if channels == 1 then
+			for i = pos, pos + size - 1 do
+				-- Mono
+				local sample = getsample_safe(audio, i)
+				
+				sample_list[#sample_list + 1] = {sample, sample}
+			end
+		elseif channels == 2 then
+			for i = pos, pos + size - 1 do
+				-- Stereo
+				sample_list[#sample_list + 1] = {
+					getsample_safe(audio, i * 2),
+					getsample_safe(audio, i * 2 + 1),
+				}
+			end
+		end
+		
+		return sample_list
+	end
+end
+
+-----------------------------
+-- The Live simuator logic --
+-----------------------------
+
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
 	DEPLS.Arg = argv
-	package.loaded.DEPLS = DEPLS
 	_G.DEPLS = DEPLS
 	EffectPlayer.Clear()
 	
@@ -865,15 +937,7 @@ function DEPLS.Start(argv)
 		Token = love.graphics.newImage("image/tap_circle/e_icon_01.png"),
 	}
 	DEPLS.Images.Spotlight = love.graphics.newImage("image/popn.png")
-	
-	-- Calculate display resolution scale
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
-	DEPLS.LogicalScale.ScreenX, DEPLS.LogicalScale.ScreenY = love.graphics.getDimensions()
-	DEPLS.LogicalScale.ScaleX = DEPLS.LogicalScale.ScreenX / 960
-	DEPLS.LogicalScale.ScaleY = DEPLS.LogicalScale.ScreenY / 640
-	DEPLS.LogicalScale.ScaleOverall = math.min(DEPLS.LogicalScale.ScaleX, DEPLS.LogicalScale.ScaleY)
-	DEPLS.LogicalScale.OffX = (DEPLS.LogicalScale.ScreenX - DEPLS.LogicalScale.ScaleOverall * 960) / 2
-	DEPLS.LogicalScale.OffY = (DEPLS.LogicalScale.ScreenY - DEPLS.LogicalScale.ScaleOverall * 640) / 2
 	
 	-- Force love2d to make directory
 	love.filesystem.createDirectory("audio")
@@ -909,7 +973,7 @@ function DEPLS.Start(argv)
 	
 	-- Load beatmap
 	local notes_list
-	local noteloader_data = DEPLS.NoteLoader(argv[2])
+	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[2])
 	local custom_background = false
 	notes_list = noteloader_data.notes_list
 	DEPLS.StoryboardHandle = noteloader_data.storyboard
@@ -955,6 +1019,11 @@ function DEPLS.Start(argv)
 	if not(DEPLS.Sound.BeatmapAudio) then
 		-- Beatmap audio needs to be safe loaded
 		DEPLS.Sound.BeatmapAudio = DEPLS.LoadAudio("audio/"..(argv[3] or argv[2]..".wav"), not(not(argv[3])))
+	end
+	
+	-- BeatmapAudio is actually SoundData, LiveAudio is the real Source
+	if DEPLS.Sound.BeatmapAudio then
+		DEPLS.Sound.LiveAudio = love.audio.newSource(DEPLS.Sound.BeatmapAudio)
 	end
 	
 	----------------------
@@ -1081,10 +1150,10 @@ function DEPLS.Update(deltaT)
 	
 	if ElapsedTime > 0 then
 		-- TODO update all
-		if DEPLS.Sound.BeatmapAudio and audioplaying == false then
-			DEPLS.Sound.BeatmapAudio:setVolume(DEPLS.BeatmapAudioVolume)
-			DEPLS.Sound.BeatmapAudio:seek(ElapsedTime / 1000)
-			DEPLS.Sound.BeatmapAudio:play()
+		if DEPLS.Sound.LiveAudio and audioplaying == false then
+			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
+			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
+			DEPLS.Sound.LiveAudio:play()
 			audioplaying = true
 		end
 		
@@ -1172,6 +1241,7 @@ function DEPLS.Draw(deltaT)
 	end
 	
 	if DEPLS.DebugDisplay then
+		local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
 		local text = string.format([[
 %d FPS
 SAVE_DIR = %s
@@ -1182,49 +1252,18 @@ RUNNING_EFFECT = %d
 LIVE_OPACITY = %.2f
 BACKGROUND_BLACKNESS = %.2f
 AUDIO_VOLUME = %.2f
+AUDIO_SAMPLE = %5.2f, %5.2f
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
 ]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime
 			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
-			, DEPLS.BeatmapAudioVolume, DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good
-			, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
+			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great
+			, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 		setColor(0, 0, 0, 255)
 		love.graphics.print(text, 1, 1)
 		setColor(255, 255, 255, 255)
 		love.graphics.print(text)
-	end
-end
-
--- LOVE2D update routines
-function love.update(deltaT)
-	local Update = DEPLS.Update
-	
-	-- Skip 1 frame
-	function love.update(deltaT)
-		deltaT = deltaT * 1000
-		Update(deltaT)
-	end
-end
-
--- LOVE2D draw routines
-function love.draw()
-	local Draw = DEPLS.Draw
-	local push = love.graphics.push
-	local pop = love.graphics.pop
-	local translate = love.graphics.translate
-	local scale = love.graphics.scale
-	local LogicalScale = DEPLS.LogicalScale
-	
-	-- Skip 1 frame
-	function love.draw()
-		local deltaT = love.timer.getDelta() * 1000
-		
-		push()
-		translate(LogicalScale.OffX, LogicalScale.OffY)
-		scale(LogicalScale.ScaleOverall, LogicalScale.ScaleOverall)
-		Draw(deltaT)
-		pop()
 	end
 end
 
@@ -1234,8 +1273,8 @@ end
 --! @returns Logical x and y coordinate
 local function calculate_touch_position(x, y)
 	return
-		(x - DEPLS.LogicalScale.OffX) / DEPLS.LogicalScale.ScaleOverall,
-		(y - DEPLS.LogicalScale.OffY) / DEPLS.LogicalScale.ScaleOverall
+		(x - LogicalScale.OffX) / LogicalScale.ScaleOverall,
+		(y - LogicalScale.OffY) / LogicalScale.ScaleOverall
 end
 
 -- LOVE2D mouse/touch pressed
@@ -1269,8 +1308,8 @@ function love.mousereleased(x, y, button, touch_id)
 end
 
 local function update_audio_volume()
-	if DEPLS.Sound.BeatmapAudio then
-		DEPLS.Sound.BeatmapAudio:setVolume(DEPLS.BeatmapAudioVolume)
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
 	end
 end
 
@@ -1280,12 +1319,13 @@ function love.keypressed(key, scancode, repeat_bit)
 		if key == "escape" then
 			love.event.quit()
 		elseif key == "backspace" then
-			if DEPLS.Sound.BeatmapAudio then
-				DEPLS.Sound.BeatmapAudio:stop()
+			if DEPLS.Sound.LiveAudio then
+				DEPLS.Sound.LiveAudio:stop()
 			end
 			
 			-- Restart
-			love.filesystem.load("livesim.lua")().Start(DEPLS.Arg)
+			CurrentEntry = love.filesystem.load("livesim.lua")()
+			CurrentEntry.Start(DEPLS.Arg)
 		elseif key == "lshift" then
 			DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 		elseif key == "lctrl" then
@@ -1319,22 +1359,6 @@ function love.keyreleased(key)
 			break
 		end
 	end
-end
-
--- LOVE2D on window resize
-function love.resize(w, h)
-	DEPLS.LogicalScale.ScreenX, DEPLS.LogicalScale.ScreenY = w, h
-	DEPLS.LogicalScale.ScaleX = DEPLS.LogicalScale.ScreenX / 960
-	DEPLS.LogicalScale.ScaleY = DEPLS.LogicalScale.ScreenY / 640
-	DEPLS.LogicalScale.ScaleOverall = math.min(DEPLS.LogicalScale.ScaleX, DEPLS.LogicalScale.ScaleY)
-	DEPLS.LogicalScale.OffX = (DEPLS.LogicalScale.ScreenX - DEPLS.LogicalScale.ScaleOverall * 960) / 2
-	DEPLS.LogicalScale.OffY = (DEPLS.LogicalScale.ScreenY - DEPLS.LogicalScale.ScaleOverall * 640) / 2
-	
-	print("=== Resize ===")
-	print("New Dimension", w, h)
-	print("Scale", DEPLS.LogicalScale.ScaleX, DEPLS.LogicalScale.ScaleY, DEPLS.LogicalScale.ScaleOverall)
-	print("Offset", DEPLS.LogicalScale.OffX, DEPLS.LogicalScale.OffY)
-	print("=== Resize ===")
 end
 
 require("touch_manager")

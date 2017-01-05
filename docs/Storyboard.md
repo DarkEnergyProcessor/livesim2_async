@@ -13,7 +13,7 @@ This function only exist on storyboard lua script.
 
 *************************************************
 
-### `void SetLiveOpacity (number opacity)`
+### `void SetLiveOpacity ([number opacity = 255])`
 
 Sets the Live Show! image opacity. This includes unit, header, notes, and more.
 
@@ -25,7 +25,7 @@ Returns: *none*
 
 *************************************************
 
-### `void SetBackgroundDimOpacity(number opacity)`
+### `void SetBackgroundDimOpacity([number opacity = 255])`
 
 Sets background blackness (but not entirely black)
 
@@ -108,3 +108,31 @@ Parameters:
 * `path` - File to get it's contents
 
 Returns: The contents of the file, or `nil` on failure
+
+*************************************************
+
+### `void SetUnitOpacity(number pos [, number opacity = 255])`
+
+Set unit visibility
+
+Parameters:
+
+* `pos` - The unit position. 9 is leftmost, 1 is rightmost
+
+* `opacity` - The desired opacity. 0 is fully transparent, 255 is fully opaque
+
+Returns: *none*
+
+*************************************************
+
+### `table GetCurrentAudioSample([number size = 1])`
+
+Gets current playing audio sample, with specificed size
+
+Parameters:
+
+* `size` - The sample size
+
+Returns: Stereo audio sample with size `size` (index 1 is L channel, index 2 is R channel)
+
+> This function handles mono/stereo input and this function still works even if no audio is found, where in that case the sample is simply 0

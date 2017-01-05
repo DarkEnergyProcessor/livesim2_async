@@ -1,14 +1,29 @@
-return function(...)
-	local arg = {...}
+-- Sukufest Simulator beatmap loader
+-- Part of DEPLS2
 
-	if arg[1] == nil then
-		print("Usage: sifsimu2sif.lua <sifsimu>")
-		print("Variable tempo isn't supported yet")
-		return
-	end
+local DEPLS = _G.DEPLS
+local NoteLoader = DEPLS.NoteLoader
 
-	local JSON = require("JSON")
-	local sifsimu = assert(io.open(arg[1], "rb"))
+local SIFSBeatmap = {
+	Extension = "txt"
+}
+
+local function basename(f)
+	local _ = f:reverse()
+	return _:sub(1,(_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
+end
+
+--! @brief Loads Sukufesu Simulator beatmap
+--! @param file Table contains:
+--!        - path relative to DEPLS save dir
+--!        - absolute path
+--!        - forward slashed and not contain trailing slash
+--! @returns table with these data
+--!          - notes_list is the SIF-compilant notes data
+--!          - song_file is the song file handle (Source object) or nil
+function SIFSBeatmap.Load(file)
+	local sifsimu = assert(io.open(file[2]..".txt", "rb"))
+	local song_file
 	local offset_ms = 0
 	local bpm = 120
 	local attribute = 3
@@ -27,6 +42,10 @@ return function(...)
 		
 		-- Parse attribute
 		attribute = (tonumber(x():match("ATTRIBUTE = (%d+)")) or 2) + 1
+		
+		-- Get song file
+		x()
+		song_file = basename(x():match("MUSIC = GetCurrentScriptDirectory~\"([^\"]+)\";"))
 		
 		-- Skip until beatmap
 		while x():find("BEATMAP") == nil do end
@@ -72,5 +91,10 @@ return function(...)
 
 	table.sort(sif_beatmap_data, function(a, b) return a.timing_sec < b.timing_sec end)
 	
-	return sif_beatmap_data
+	return {
+		notes_list = sif_beatmap_data,
+		song_file = DEPLS.LoadAudio("audio/"..song_file)
+	}
 end
+
+return SIFSBeatmap

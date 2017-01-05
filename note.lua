@@ -1,7 +1,7 @@
 --! @file note.lua
 -- Note management routines
 
-local DEPLS = require("DEPLS")
+local DEPLS = _G.DEPLS
 local List = require("List")
 local EffectPlayer = require("effect_player")
 local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0}

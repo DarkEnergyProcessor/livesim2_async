@@ -1,17 +1,5 @@
 -- Main Menu
-
-local DEPLS_VERSION = "20161224"
-if not(_G.DEPLS_VERSION) then _G.DEPLS_VERSION = DEPLS_VERSION end
-
 local MainMenu = {}
-
-local LogicalScale = {
-	ScreenX = 960,
-	ScreenY = 640,
-	OffX = 0,
-	OffY = 0,
-	ScaleOverall = 1
-}
 
 local selection_image = love.graphics.newImage("image/s_button_03.png")
 local selection_image_se = love.graphics.newImage("image/s_button_03se.png")
@@ -34,14 +22,6 @@ local function calculate_touch_position(x, y)
 end
 
 function MainMenu.Start()
-	-- Calculate display resolution scale
-	LogicalScale.ScreenX, LogicalScale.ScreenY = love.graphics.getDimensions()
-	LogicalScale.ScaleX = LogicalScale.ScreenX / 960
-	LogicalScale.ScaleY = LogicalScale.ScreenY / 640
-	LogicalScale.ScaleOverall = math.min(LogicalScale.ScaleX, LogicalScale.ScaleY)
-	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
-	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
-	
 	-- Pre-calculate Y position of buttons
 	for i = 1, #menu_select do
 		menu_select[i][3] = 120 + i * 80
@@ -77,20 +57,6 @@ function MainMenu.Draw(deltaT)
 	setColor(64, 64, 255, 255)
 	drawtext("DEPLS2 rel ".._G.DEPLS_VERSION, 3, 608)
 	setColor(255, 255, 255, 255)
-end
-
-function love.update(deltaT)
-	MainMenu.Update(deltaT * 1000)
-end
-
-function love.draw()
-	local deltaT = love.timer.getDelta() * 1000
-	
-	love.graphics.push()
-	love.graphics.translate(LogicalScale.OffX, LogicalScale.OffY)
-	love.graphics.scale(LogicalScale.ScaleOverall, LogicalScale.ScaleOverall)
-	MainMenu.Draw(deltaT)
-	love.graphics.pop()
 end
 
 function love.mousepressed(x, y, button, touch_id)
@@ -145,15 +111,6 @@ function love.mousereleased(x, y)
 			break
 		end
 	end
-end
-
-function love.resize(w, h)
-	LogicalScale.ScreenX, LogicalScale.ScreenY = w, h
-	LogicalScale.ScaleX = LogicalScale.ScreenX / 960
-	LogicalScale.ScaleY = LogicalScale.ScreenY / 640
-	LogicalScale.ScaleOverall = math.min(LogicalScale.ScaleX, LogicalScale.ScaleY)
-	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
-	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
 end
 
 return MainMenu
