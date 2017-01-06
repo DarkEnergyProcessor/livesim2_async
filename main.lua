@@ -22,6 +22,26 @@ local loader = {
 local function error_printer(msg, layer)
 	print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
 end
+
+--! @brief Load configuration
+--! @param config_name The configuration name
+--! @param default_value The default value of the configuration
+--! @returns Configuration value or `default_value` (and save it as `default_value`)
+function LoadConfig(config_name, default_value)
+	local file = love.filesystem.newFile(config_name..".txt")
+	
+	if not(file:open("r")) then
+		assert(file:open("w"))
+		file:write(tostring(default_value))
+		file:close()
+		
+		return default_value
+	end
+	
+	local data = file:read()
+	
+	return tonumber(data) or data
+end
  
 function love.errhand(msg)
 	msg = tostring(msg)

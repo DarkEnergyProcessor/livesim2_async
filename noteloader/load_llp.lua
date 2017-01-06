@@ -20,7 +20,7 @@ local LLPBeatmap = {
 --! @note Modify `LLP_SIFT_DEFATTR` config to change default attribute
 function LLPBeatmap.Load(file)
 	local llp = JSON:decode(love.filesystem.newFileData(file[1]..".llp"):getString())
-	local attribute = DEPLS.LoadConfig("LLP_SIFT_DEFATTR", 1)	-- Smile is default
+	local attribute = LoadConfig("LLP_SIFT_DEFATTR", 1)	-- Smile is default
 	local sif_map = {}
 	
 	for n, v in pairs(llp.lane) do

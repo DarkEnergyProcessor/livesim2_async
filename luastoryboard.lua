@@ -197,7 +197,10 @@ function LuaStoryboard.Draw(deltaT)
 		status, msg = pcall(StoryboardLua[1], deltaT)
 	end
 	
-	graphics.pop()
+	for i = 1, PushPopCount do
+		graphics.pop()
+	end
+	PushPopCount = 0
 	
 	-- Cleanup
 	graphics.setCanvas()

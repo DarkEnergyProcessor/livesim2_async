@@ -1,0 +1,3 @@
+-- DEPLS settings
+
+local Settings = {}

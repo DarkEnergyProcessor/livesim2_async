@@ -38,7 +38,11 @@ local DEPLS = {
 		{569, 465}, {416, 496}, {262, 465},
 		{133, 378}, {46 , 249}, {16 , 96 },
 	},
-	IdolImageData = {},	-- [idol positon] = {image handle, opacity}
+	IdolImageData = {	-- [idol positon] = {image handle, opacity}
+		{nil, 255}, {nil, 255}, {nil, 255},
+		{nil, 255}, {nil, 255}, {nil, 255},
+		{nil, 255}, {nil, 255}, {nil, 255}
+	},
 	NoteAccuracy = {{16, nil}, {40, nil}, {64, nil}, {112, nil}, {128, nil}},	-- Note accuracy
 	NoteManager = nil,
 	NoteLoader = nil,
@@ -647,26 +651,6 @@ function DEPLS.LoadImageSafe(path)
 	else return token_image end
 end
 
---! @brief Load configuration
---! @param config_name The configuration name
---! @param default_value The default value of the configuration
---! @returns Configuration value or `default_value` (and save it as `default_value`)
-function DEPLS.LoadConfig(config_name, default_value)
-	local file = love.filesystem.newFile(config_name..".txt", "r")
-	
-	if file == nil then
-		file = io.open(DEPLS.SaveDirectory.."/"..config_name..".txt", "wb")
-		file:write(tostring(default_value))
-		file:close()
-		
-		return default_value
-	end
-	
-	local data = file:read()
-	
-	return tonumber(data) or data
-end
-
 --! @brief Load audio
 --! @param path The audio path
 --! @param noorder Force existing extension?
@@ -899,6 +883,19 @@ do
 	end
 end
 
+--! @brief Loads DEPLS2 image file
+--! @param path The image path
+--! @returns Image handle or nil on failure
+function DEPLS.StoryboardFunctions.LoadDEPLSImage(path)
+	local _, a = pcall(love.graphics.newImage, path)
+	
+	if _ then
+		return a
+	end
+	
+	return nil
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -944,14 +941,14 @@ function DEPLS.Start(argv)
 	love.filesystem.createDirectory("beatmap")
 	
 	-- Load configuration
-	local BackgroundID = DEPLS.LoadConfig("BACKGROUND_IMAGE", 11)
-	local Keys = DEPLS.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
-	local Auto = DEPLS.LoadConfig("AUTOPLAY", 0)
-	DEPLS.LiveDelay = DEPLS.LoadConfig("LIVESIM_DELAY", 1000)
+	local BackgroundID = LoadConfig("BACKGROUND_IMAGE", 11)
+	local Keys = LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
+	local Auto = LoadConfig("AUTOPLAY", 0)
+	DEPLS.LiveDelay = LoadConfig("LIVESIM_DELAY", 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
-	DEPLS.NotesSpeed = DEPLS.LoadConfig("NOTE_SPEED", 800)
-	DEPLS.Stamina = DEPLS.LoadConfig("STAMINA_DISPLAY", 32)
-	DEPLS.ScoreBase = DEPLS.LoadConfig("SCORE_ADD_NOTE", 1024)
+	DEPLS.NotesSpeed = LoadConfig("NOTE_SPEED", 800)
+	DEPLS.Stamina = LoadConfig("STAMINA_DISPLAY", 32)
+	DEPLS.ScoreBase = LoadConfig("SCORE_ADD_NOTE", 1024)
 	DEPLS.Keys = {}
 	do
 		local i = 9
@@ -1051,14 +1048,14 @@ function DEPLS.Start(argv)
 	noteloader_data.units = noteloader_data.units or {}
 	local IdolImagePath = {}
 	do
-		local idol_img = DEPLS.LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
+		local idol_img = LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
 		
 		for w in idol_img:gmatch("[^,]+") do
 			IdolImagePath[#IdolImagePath + 1] = w
 		end
 	end
 	for i = 1, 9 do
-		DEPLS.IdolImageData[i] = {noteloader_data.units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i]), 255}
+		DEPLS.IdolImageData[i][1] = noteloader_data.units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
 	end
 	
 	-- Load stamina image (bar and number)

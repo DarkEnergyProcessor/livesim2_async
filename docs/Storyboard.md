@@ -6,6 +6,30 @@ Please note that Lua script running as Lua storyboard is sandboxed, which means 
 functions doesn't exist in here or modified to prevent alteration of the rendering state, and
 to prevent malicious Lua storyboard script writing anywhere.
 
+Storyboard Entry Points
+=======================
+
+Lua storyboard needs to create this function in global namespace. Although there's way to use
+it without this entry points by using coroutines, but it's usage is discouraged and only
+provided for legacy DEPLS storyboard lua script.
+
+*************************************************
+
+### `void Initialize()`
+
+Storyboard initialization. This function is called everytime storyboard is loaded. Load your
+images here
+
+*************************************************
+
+### `void Update(number deltaT)`
+
+Storyboard frame update. Draw and calculate everything for the storyboard in here.
+
+Parameters:
+
+* deltaT - The delta-time, in milliseconds
+
 Storyboard Functions
 ====================
 
@@ -136,3 +160,15 @@ Parameters:
 Returns: Stereo audio sample with size `size` (index 1 is L channel, index 2 is R channel)
 
 > This function handles mono/stereo input and this function still works even if no audio is found, where in that case the sample is simply 0
+
+*************************************************
+
+### `Image|nil LoadDEPLS2Image(string path)`
+
+Loads game image (not relative to beatmap directory)
+
+Parameters:
+
+* `path` - The image path
+
+Returns: Image handle or `nil` on failure

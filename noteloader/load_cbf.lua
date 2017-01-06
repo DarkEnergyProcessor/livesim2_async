@@ -58,7 +58,7 @@ function CBFBeatmap.Load(file)
 	end
 	
 	local notes_data = {}
-	local desired_attribute = DEPLS.LoadConfig("LLP_SIFT_DEFATTR", 1)
+	local desired_attribute = LoadConfig("LLP_SIFT_DEFATTR", 1)
 	
 	if cbf.SONG_ATTRIBUTE == "Pure" then
 		desired_attribute = 2
