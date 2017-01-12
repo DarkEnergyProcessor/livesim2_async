@@ -80,6 +80,7 @@ local isolated_love = {
 		newImage = RelativeLoadImage,
 		newMesh = love.graphics.newMesh,
 		newParticleSystem = love.graphics.newParticleSystem,
+		newShader = love.graphics.newShader,
 		newSpriteBatch = love.graphics.newSpriteBatch,
 		newQuad = love.graphics.newQuad,
 		newVideo = RelativeLoadVideo,
@@ -158,6 +159,9 @@ function LuaStoryboard.Load(file)
 	env.love = isolated_love
 	env.file_get_contents = nil
 	env.LogicalScale = nil
+	env.CalculateTouchPosition = nil
+	env.LoadConfig = nil
+	env.LoadEntryPoint = nil
 	env.require = function(libname)
 		if allowed_libs[libname] then
 			return allowed_libs[libname]
@@ -203,6 +207,7 @@ function LuaStoryboard.Draw(deltaT)
 	PushPopCount = 0
 	
 	-- Cleanup
+	graphics.pop()
 	graphics.setCanvas()
 	graphics.setScissor()
 	graphics.setColor(255, 255, 255, 255)
@@ -212,6 +217,19 @@ function LuaStoryboard.Draw(deltaT)
 	
 	if status == false then
 		print("Storyboard Error: "..msg)
+	end
+end
+
+-- Callback functions
+function LuaStoryboard.On(name, ...)
+	local callback_name = "On"..name
+	
+	if StoryboardLua[3] and StoryboardLua[2][callback_name] then
+		local a, b = {pcall(StoryboardLua[2][callback_name], ...)}
+		
+		if a == false then
+			print("Storyboard Error "..callback_name..": "..b)
+		end
 	end
 end
 

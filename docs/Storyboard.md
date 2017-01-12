@@ -1,10 +1,10 @@
 Lua Storyboard
 ==============
 
-Lua storyboard is simply a Lua script which controls how objects shown behind the simulator.
-Please note that Lua script running as Lua storyboard is sandboxed, which means most of `love`
-functions doesn't exist in here or modified to prevent alteration of the rendering state, and
-to prevent malicious Lua storyboard script writing anywhere.
+Lua storyboard is simply a Lua script which controls how objects shown behind the simulator,
+hence it's named Lua storyboard. Please note that Lua script running as Lua storyboard is
+sandboxed, which means most of `love` functions doesn't exist in here or modified to prevent
+alteration of the rendering state, and to prevent malicious Lua storyboard from running.
 
 Storyboard Entry Points
 =======================
@@ -33,7 +33,8 @@ Parameters:
 Storyboard Functions
 ====================
 
-This function only exist on storyboard lua script.
+This function is exported explicitly by DEPLS with `DEPLS.StoryboardFunctions`
+table, thus it only exist on storyboard lua script.
 
 *************************************************
 
@@ -172,3 +173,100 @@ Parameters:
 * `path` - The image path
 
 Returns: Image handle or `nil` on failure
+
+*************************************************
+
+### `number SetNotesSpeed([number notes_speed])`
+
+Get or set notes speed
+
+Parameters:
+
+* `notes_speed` - Note speed, in milliseconds. 0.8 notes speed in SIF is equal to 800 in here
+
+Returns: Previous notes speed
+
+> This function throws error if notes_speed is less than 400ms
+
+*************************************************
+
+### `number SetPlaySpeed([number speed_factor])`
+
+Get or set play speed. This affects how fast the live simulator are
+
+Parameters:
+
+* `speed_factor` - The speed factor, in decimals. 1 means 100% speed (runs normally)
+
+Returns: Previous play speed factor
+
+> This function throws error if speed_factor is zero or less
+
+Additional Storyboard Functions
+===============================
+
+These functions were declared as global function in DEPLS, thus it also can be used in storyboards too
+
+*************************************************
+
+### `number,number,number HSL(number h, number s, number l)`
+
+Parameters:
+
+* `h`
+
+* `s`
+
+* `l`
+
+Returns: R, G, and B color (3 values)
+
+Storyboard Callback Functions
+=============================
+
+The stoyboard also can accept callbacks for specific event. You have to
+declare the callback function as global in your storyboard.
+
+Below is the list of storyboard callback functions:
+
+*************************************************
+
+### `void OnNoteTap(number pos, number accuracy, number distance, number attribute, boolean is_star, boolean is_simul, boolean is_token)`
+
+Triggered everytime note is tapped on screen
+
+Parameters:
+
+* `pos` - Idol unit position. 9 is leftmost
+
+* `accuracy` - The note tap accuracy. 1 for Perfect, 0.88 for Great, 0.8 for Good, 0.4 for Bad, and 0 for **Miss**
+
+* `distance` - The note distance from the idol unit position, in pixels
+
+* `attribute` - Note attribute. 1, 2, 3 are Smile, Pure, and Cool respectively. The others depends on beatmap type.
+
+* `is_star` - Is the note is a star note (dangerous note)?
+
+* `is_simul` - Is the note is a simultaneous note?
+
+* `is_token` - Is the note is a token note?
+
+*************************************************
+
+### `void OnLongNoteTap(boolean release, number pos, number accuracy, number distance, number attribute, boolean is_simul)`
+
+Triggered everytime long note is tapped (and currently holding) or released
+
+Parameters:
+
+* `release` - Is this a long note release callback?
+
+* `pos` - Idol unit position. 9 is leftmost
+
+* `accuracy` - The note tap accuracy. 1 for Perfect, 0.88 for Great, 0.8 for Good, 0.4 for Bad, and 0 for **Miss** (in this case, release will never be triggered)
+
+* `distance` - The note distance from the idol unit position, in pixels
+
+* `attribute` - Note attribute. 1, 2, 3 are Smile, Pure, and Cool respectively. The others depends on beatmap type.
+
+* `is_simul` - Is the note is a simultaneous note? (start holding only)

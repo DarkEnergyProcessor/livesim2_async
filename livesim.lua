@@ -11,6 +11,8 @@ local DEPLS = {
 	DebugDisplay = false,
 	SaveDirectory = "",	-- DEPLS Save Directory
 	BeatmapAudioVolume = 0.8,	-- The audio volume
+	PlaySpeed = 1.0,	-- Play speed factor. 1 = normal
+	PlaySpeedAlterDisabled = false,	-- Disallow alteration of DEPLS play speed factor
 	
 	BackgroundOpacity = 255,	-- User background opacity set from storyboard
 	BackgroundImage = {	-- Index 0 is the main background
@@ -48,6 +50,7 @@ local DEPLS = {
 	NoteLoader = nil,
 	Stamina = 32,
 	NotesSpeed = 800,
+	NotesSpeedAlterDisabled = false,
 	ScoreBase = 500,
 	ScoreData = {		-- Contains C score, B score, A score, S score data, in order.
 		1,
@@ -96,6 +99,10 @@ function HSL(h, s, l)
 	end
    return math.ceil((r+m)*256),math.ceil((g+m)*256),math.ceil((b+m)*256)
 end
+
+-----------------------
+-- Private functions --
+-----------------------
 
 --! Function used to replace extension on file
 local function substitute_extension(file, ext_without_dot)
@@ -240,6 +247,8 @@ DEPLS.Routines.ComboCounter.Draw = coroutine.wrap(function()
 	local deltaT
 	local combo_scale = {s = 1.15}
 	local combo_tween = tween.new(150, combo_scale, {s = 1}, "inOutSine")
+	local combo_boom = {s = 1.25, op = 127}
+	local combo_boom_tween = tween.new(330, combo_boom, {s = 1.65, op = 0})
 	local ComboCounter = DEPLS.Routines.ComboCounter
 	local ComboNumbers = DEPLS.Images.ComboNumbers
 	local CurrentCombo
@@ -255,6 +264,7 @@ DEPLS.Routines.ComboCounter.Draw = coroutine.wrap(function()
 		
 		if ComboCounter.Replay then
 			combo_tween:reset()
+			combo_boom_tween:reset()
 			ComboCounter.Replay = false
 		end
 		
@@ -263,6 +273,7 @@ DEPLS.Routines.ComboCounter.Draw = coroutine.wrap(function()
 			-- "combo" pos: 541x267+61+17
 			-- number pos: 451x267+24+24; aligh right; subtract by 43 for distance
 			combo_tween:update(deltaT)
+			combo_boom_tween:update(deltaT)
 			
 			local combo_str = {string.byte(tostring(CurrentCombo), 1, 2147483647)}
 			local img = ComboNumbers[ComboCounter.GetComboColorIndex(CurrentCombo)]
@@ -277,9 +288,11 @@ DEPLS.Routines.ComboCounter.Draw = coroutine.wrap(function()
 				draw(img[combo_str[i] - 47], 451 - (#combo_str - i) * 43, 267, 0, combo_scale.s, combo_scale.s, 24, 24)
 			end
 			
-			draw(img.combo, 541, 267, 0, combo_scale.s, combo_scale.s, 61, 17)
-			
+			setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
+			draw(img.combo, 541, 266, 0, combo_boom.s, combo_boom.s, 61, 18)
 			setColor(255, 255, 255, DEPLS.LiveOpacity)
+			draw(img.combo, 541, 267, 0, combo_scale.s, combo_scale.s, 61, 17)
+			setColor(255, 255, 255, 255)
 		else
 			::draw_update_sync3::
 			if coroutine.yield() then goto draw_update_sync3 end	-- draw nothing
@@ -886,7 +899,7 @@ end
 --! @brief Loads DEPLS2 image file
 --! @param path The image path
 --! @returns Image handle or nil on failure
-function DEPLS.StoryboardFunctions.LoadDEPLSImage(path)
+function DEPLS.StoryboardFunctions.LoadDEPLS2Image(path)
 	local _, a = pcall(love.graphics.newImage, path)
 	
 	if _ then
@@ -896,9 +909,95 @@ function DEPLS.StoryboardFunctions.LoadDEPLSImage(path)
 	return nil
 end
 
+--! @brief Disable play speed alteration and set play speed to 1
+--! @note This function should be called on storyboard initialization, as calling it
+--!       multiple times is a waste of CPU
+function DEPLS.StoryboardFunctions.DisablePlaySpeedAlteration()
+	DEPLS.PlaySpeedAlterDisabled = true
+	
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:setPitch(1)
+	end
+end
+
+--! @brief Get or set notes speed
+--! @param notes_speed Note speed, in milliseconds. 0.8 notes speed in SIF is equal to 800 in here
+--! @returns Previous notes speed
+--! @warning This function throws error if notes_speed is less than 400ms
+function DEPLS.StoryboardFunctions.SetNotesSpeed(notes_speed)
+	if notes_speed then
+		assert(notes_speed >= 400, "notes_speed can't be less than 400ms")
+	end
+	
+	local prev = DEPLS.NotesSpeed
+	DEPLS.NotesSpeed = notes_speed or prev
+	
+	-- Recalculate accuracy
+	for i = 1, 5 do
+		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] * 1000 / notes_speed
+	end
+	
+	return prev
+end
+
+--! @brief Get or set play speed. This affects how fast the live simulator are
+--! @param speed_factor The speed factor, in decimals. 1 means 100% speed (runs normally)
+--! @returns Previous play speed factor
+--! @warning This function throws error if speed_factor is zero
+function DEPLS.StoryboardFunctions.SetPlaySpeed(speed_factor)
+	if speed_factor then
+		assert(speed_factor > 0, "speed_factor can't be zero")
+	end
+	
+	local factorrest = speed_factor or DEPLS.PlaySpeed
+	
+	DEPLS.PlaySpeed = factorrest
+	
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:setPitch(factorrest)
+	end
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
+
+--! @brief Call storyboard callback
+--! @param name Callback name
+--! @param ... Additional arguments passed to callback function
+function DEPLS.StoryboardCallback(name, ...)
+	if DEPLS.StoryboardHandle then
+		DEPLS.StoryboardHandle.On(name, ...)
+	end
+end
+
+local mount_target
+--! @brief Mount a zip file, relative to DEPLS save directory.
+--!        Unmounts previous mounted zip file, so only one zip file
+--!        can be mounted.
+--! @param path The Zip file path (or nil to clear)
+--! @param target The Zip mount point
+--! @returns Previous mounted ZIP filename (or nil if no Zip was mounted)
+function DEPLS.MountZip(path, target)
+	local prev_mount = mount_target
+	
+	if path ~= nil and mount_target == path then
+		return prev_mount
+	end
+	
+	if mount_target then
+		love.filesystem.unmount(mount_target)
+		mount_target = nil
+	end
+	
+	if path then
+		assert(love.filesystem.mount(path, target), "Cannot mount "..path)
+		
+		mount_target = path
+	end
+	
+	return prev_mount
+end
 
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
@@ -1132,10 +1231,13 @@ end
 -- Used internally
 local persistent_bg_opacity = 0
 local audioplaying = false
+local audiodeltaT = 0
+local audiolasttime = 0
 
 --! @brief DEPLS Update function. It is separated to allow offline rendering
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Update(deltaT)
+	deltaT = deltaT * DEPLS.PlaySpeed
 	DEPLS.ElapsedTime = DEPLS.ElapsedTime + deltaT
 	
 	local ElapsedTime = DEPLS.ElapsedTime
@@ -1146,11 +1248,10 @@ function DEPLS.Update(deltaT)
 	end
 	
 	if ElapsedTime > 0 then
-		-- TODO update all
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
 			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
-			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
 			DEPLS.Sound.LiveAudio:play()
+			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
 			audioplaying = true
 		end
 		
@@ -1170,6 +1271,7 @@ end
 --! @brief DEPLS Draw function. It is separated to allow offline rendering
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Draw(deltaT)
+	deltaT = deltaT * DEPLS.PlaySpeed
 	-- Localize love functions
 	local graphics = love.graphics
 	local rectangle = graphics.rectangle
@@ -1244,8 +1346,9 @@ function DEPLS.Draw(deltaT)
 SAVE_DIR = %s
 NOTE_SPEED = %d ms
 ELAPSED_TIME = %d ms
+SPEED_FACTOR = %.2f%%
 CURRENT_COMBO = %d
-RUNNING_EFFECT = %d
+PLAYING_EFFECT = %d
 LIVE_OPACITY = %.2f
 BACKGROUND_BLACKNESS = %.2f
 AUDIO_VOLUME = %.2f
@@ -1253,7 +1356,7 @@ AUDIO_SAMPLE = %5.2f, %5.2f
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime
+]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
 			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
 			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great
 			, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
@@ -1264,29 +1367,19 @@ AUTOPLAY = %s
 	end
 end
 
---! @brief Translates physical touch position to logical touch position
---! @param x Physical touch x coordinate
---! @param y Physical touch y coordinate
---! @returns Logical x and y coordinate
-local function calculate_touch_position(x, y)
-	return
-		(x - LogicalScale.OffX) / LogicalScale.ScaleOverall,
-		(y - LogicalScale.OffY) / LogicalScale.ScaleOverall
-end
-
 -- LOVE2D mouse/touch pressed
 function love.mousepressed(x, y, button, touch_id)
 	if touch_id == true then return end
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	touch_id = touch_id or 0
-	x, y = calculate_touch_position(x, y)
+	x, y = CalculateTouchPosition(x, y)
 	
 	-- Calculate idol
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
 		
-		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 74 then
+		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
 			DEPLS.NoteManager.SetTouch(i, touch_id)
 		end
 	end
@@ -1298,7 +1391,7 @@ function love.mousereleased(x, y, button, touch_id)
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	touch_id = touch_id or 0
-	x, y = calculate_touch_position(x, y)
+	x, y = CalculateTouchPosition(x, y)
 	
 	-- Send unset touch message
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
@@ -1312,29 +1405,44 @@ end
 
 -- LOVE2D key press
 function love.keypressed(key, scancode, repeat_bit)
-	if repeat_bit == false then
+	if key == "f6" then
+		DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
+		update_audio_volume()
+	elseif scancode == "f5" then
+		DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
+		update_audio_volume()
+	elseif repeat_bit == false then
 		if key == "escape" then
-			love.event.quit()
+			if DEPLS.Sound.LiveAudio then
+				DEPLS.Sound.LiveAudio:stop()
+			end
+			
+			-- Back
+			DEPLS.MountZip()	-- Unmount
+			LoadEntryPoint("main_menu.lua")
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then
 				DEPLS.Sound.LiveAudio:stop()
 			end
 			
 			-- Restart
-			CurrentEntry = love.filesystem.load("livesim.lua")()
-			CurrentEntry.Start(DEPLS.Arg)
+			LoadEntryPoint("livesim.lua", DEPLS.Arg)
 		elseif key == "lshift" then
 			DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 		elseif key == "lctrl" then
 			DEPLS.AutoPlay = not(DEPLS.AutoPlay)
 		elseif key == "lalt" then
 			DEPLS.DebugNoteDistance = not(DEPLS.DebugNoteDistance)
-		elseif key == "f6" then
-			DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
-			update_audio_volume()
-		elseif scancode == "f5" then
-			DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
-			update_audio_volume()
+		elseif key == "pageup" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed < 4 then
+			-- Increase play speed
+			DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 2)
+		elseif key == "pagedown" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed > 0.0625 then
+			-- Decrease play speed
+			DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 0.5)
+		elseif key == "up" then
+			DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed + 100)
+		elseif key == "down" and DEPLS.NotesSpeed > 400 then
+			DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed - 100)
 		elseif DEPLS.ElapsedTime >= 0 then
 			for i = 1, 9 do
 				if key == DEPLS.Keys[i] then

@@ -11,15 +11,9 @@ local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
 	{"Play", function() end, nil, 0},
 	{"Edit Units", function() end, nil, 0},
-	{"Settings", function() end, nil, 0},
+	{"Settings", function() LoadEntryPoint("setting_view.lua") end, nil, 0},
 	{"Exit", love.event.quit, nil, 0}
 }
-
-local function calculate_touch_position(x, y)
-	return
-		(x - LogicalScale.OffX) / LogicalScale.ScaleOverall,
-		(y - LogicalScale.OffY) / LogicalScale.ScaleOverall
-end
 
 function MainMenu.Start()
 	-- Pre-calculate Y position of buttons
@@ -60,7 +54,7 @@ function MainMenu.Draw(deltaT)
 end
 
 function love.mousepressed(x, y, button, touch_id)
-	x, y = calculate_touch_position(x, y)
+	x, y = CalculateTouchPosition(x, y)
 	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
@@ -76,7 +70,7 @@ function love.mousepressed(x, y, button, touch_id)
 end
 
 function love.mousemoved(x, y)
-	x, y = calculate_touch_position(x, y)
+	x, y = CalculateTouchPosition(x, y)
 	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
@@ -94,7 +88,7 @@ function love.mousemoved(x, y)
 end
 
 function love.mousereleased(x, y)
-	x, y = calculate_touch_position(x, y)
+	x, y = CalculateTouchPosition(x, y)
 	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]

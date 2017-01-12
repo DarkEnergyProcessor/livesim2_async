@@ -1,6 +1,6 @@
 -- DEPLS2 main lua
 
-DEPLS_VERSION = "2070106"
+DEPLS_VERSION = "2070112"
 
 LogicalScale = {
 	ScreenX = 960,
@@ -42,6 +42,26 @@ function LoadConfig(config_name, default_value)
 	
 	return tonumber(data) or data
 end
+
+--! @brief Loads entry point
+--! @param name The entry point Lua script file
+--! @param arg Additional argument to be passed
+function LoadEntryPoint(name, arg)
+	local scriptfile = love.filesystem.load(name)
+	CurrentEntry = scriptfile()
+	CurrentEntry.Start(arg)
+end
+
+--! @brief Translates physical touch position to logical touch position
+--! @param x Physical touch x coordinate
+--! @param y Physical touch y coordinate
+--! @returns Logical x and y coordinate
+function CalculateTouchPosition(x, y)
+	return
+		(x - LogicalScale.OffX) / LogicalScale.ScaleOverall,
+		(y - LogicalScale.OffY) / LogicalScale.ScaleOverall
+end
+
  
 function love.errhand(msg)
 	msg = tostring(msg)
@@ -227,9 +247,7 @@ function love.load(argv)
 	
 	if loader[progname] then
 		if loader[progname][1] == 0 or #argv - 1 >= loader[progname][1] then
-			local scriptfile = love.filesystem.load(loader[progname][2])
-			CurrentEntry = scriptfile()
-			CurrentEntry.Start(argv)
+			LoadEntryPoint(loader[progname][2], argv)
 			
 			return
 		end

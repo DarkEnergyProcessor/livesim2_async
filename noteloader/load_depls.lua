@@ -16,6 +16,12 @@ local DEPLS2Beatmap = {
 --!        - forward slashed and not contain trailing slash
 --! @returns true if it's DEPLS2 beatmap, false otherwise
 function DEPLS2Beatmap.Detect(file)
+	local zip = file[1]..".zip"
+	
+	if love.filesystem.isFile(zip) then
+		DEPLS.MountZip(zip, file[1])
+	end
+			
 	return love.filesystem.isFile(file[1].."/beatmap.json")
 end
 
