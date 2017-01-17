@@ -2,7 +2,7 @@
 -- Part of DEPLS2
 
 local DEPLS = _G.DEPLS
-local NoteLoader = DEPLS.NoteLoader
+local NoteLoader = _G.NoteLoader
 local JSON = require("JSON")
 
 local LLPBeatmap = {

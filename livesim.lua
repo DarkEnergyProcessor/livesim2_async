@@ -1,5 +1,6 @@
 --! @file livesim.lua
 -- DEPLS, playable version
+-- Copyright © 2038 Dark Energy Processor
 
 local love = love
 local tween = require("tween")
@@ -16,7 +17,7 @@ local DEPLS = {
 	
 	BackgroundOpacity = 255,	-- User background opacity set from storyboard
 	BackgroundImage = {	-- Index 0 is the main background
-		-- {handle, logical x, logical y}
+		-- {handle, logical x, logical y, x size, y size}
 		{nil, -88, 0},
 		{nil, 960, 0},
 		{nil, 0, -43},
@@ -971,34 +972,6 @@ function DEPLS.StoryboardCallback(name, ...)
 	end
 end
 
-local mount_target
---! @brief Mount a zip file, relative to DEPLS save directory.
---!        Unmounts previous mounted zip file, so only one zip file
---!        can be mounted.
---! @param path The Zip file path (or nil to clear)
---! @param target The Zip mount point
---! @returns Previous mounted ZIP filename (or nil if no Zip was mounted)
-function DEPLS.MountZip(path, target)
-	local prev_mount = mount_target
-	
-	if path ~= nil and mount_target == path then
-		return prev_mount
-	end
-	
-	if mount_target then
-		love.filesystem.unmount(mount_target)
-		mount_target = nil
-	end
-	
-	if path then
-		assert(love.filesystem.mount(path, target), "Cannot mount "..path)
-		
-		mount_target = path
-	end
-	
-	return prev_mount
-end
-
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
@@ -1069,7 +1042,7 @@ function DEPLS.Start(argv)
 	
 	-- Load beatmap
 	local notes_list
-	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[2])
+	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[1])
 	local custom_background = false
 	notes_list = noteloader_data.notes_list
 	DEPLS.StoryboardHandle = noteloader_data.storyboard
@@ -1078,16 +1051,25 @@ function DEPLS.Start(argv)
 	if type(noteloader_data.background) == "number" then
 		BackgroundID = noteloader_data.background
 	elseif type(noteloader_data.background) == "table" then
-		for i = 0, 4 do
-			DEPLS.BackgroundImage[i][1] = noteloader_data.background[i]
-		end
+		DEPLS.BackgroundImage[0][1] = noteloader_data.background[0]
+		DEPLS.BackgroundImage[0][4] = 960 / noteloader_data.background[0]:getWidth()
+		DEPLS.BackgroundImage[0][5] = 640 / noteloader_data.background[0]:getHeight()
+		DEPLS.BackgroundImage[1][1] = noteloader_data.background[1]
+		DEPLS.BackgroundImage[2][1] = noteloader_data.background[2]
+		DEPLS.BackgroundImage[3][1] = noteloader_data.background[3]
+		DEPLS.BackgroundImage[4][1] = noteloader_data.background[4]
+		print(DEPLS.BackgroundImage[0][4], DEPLS.BackgroundImage[0][5])
 		
 		custom_background = true
 	end
 	
 	-- Add to note manager
-	for i = 1, #notes_list do
-		DEPLS.NoteManager.Add(notes_list[i])
+	do
+		local a = os.clock()
+		for i = 1, #notes_list do
+			DEPLS.NoteManager.Add(notes_list[i])
+		end
+		print("Note added in "..((os.clock() - a) * 1000).." ms")
 	end
 	
 	-- Calculate note accuracy
@@ -1114,7 +1096,7 @@ function DEPLS.Start(argv)
 	-- Load beatmap audio
 	if not(DEPLS.Sound.BeatmapAudio) then
 		-- Beatmap audio needs to be safe loaded
-		DEPLS.Sound.BeatmapAudio = DEPLS.LoadAudio("audio/"..(argv[3] or argv[2]..".wav"), not(not(argv[3])))
+		DEPLS.Sound.BeatmapAudio = DEPLS.LoadAudio("audio/"..(argv[2] or argv[1]..".wav"), not(not(argv[2])))
 	end
 	
 	-- BeatmapAudio is actually SoundData, LiveAudio is the real Source
@@ -1290,7 +1272,16 @@ function DEPLS.Draw(deltaT)
 		-- No storyboard. Draw background
 		local BackgroundImage = DEPLS.BackgroundImage
 		
-		for i = 0, 4 do
+		draw(
+			BackgroundImage[0][1],
+			BackgroundImage[0][2],
+			BackgroundImage[0][3],
+			0,
+			BackgroundImage[0][4] or 1,
+			BackgroundImage[0][5] or 1
+		)
+		
+		for i = 1, 4 do
 			if BackgroundImage[i][1] then
 				draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
 			end
@@ -1418,7 +1409,7 @@ function love.keypressed(key, scancode, repeat_bit)
 			end
 			
 			-- Back
-			DEPLS.MountZip()	-- Unmount
+			MountZip()	-- Unmount
 			LoadEntryPoint("main_menu.lua")
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then

@@ -4,12 +4,14 @@ local MainMenu = {}
 local selection_image = love.graphics.newImage("image/s_button_03.png")
 local selection_image_se = love.graphics.newImage("image/s_button_03se.png")
 local background = love.graphics.newImage("image/liveback_2.png")
-local MTLMr3m = love.graphics.newFont("MTLmr3m.ttf", 30)
+local MTLMr3m = FontManager.GetFont("MTLmr3m.ttf", 30)
+local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 72)
+local TitleIcon = love.graphics.newImage("image/icon_128x128.png")
 local mouse_data = {false, 0, 0}	-- click?, x click, y click
 
 local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
-	{"Play", function() end, nil, 0},
+	{"Play", function() LoadEntryPoint("select_beatmap.lua") end, nil, 0},
 	{"Edit Units", function() end, nil, 0},
 	{"Settings", function() LoadEntryPoint("setting_view.lua") end, nil, 0},
 	{"Exit", love.event.quit, nil, 0}
@@ -27,10 +29,11 @@ end
 function MainMenu.Update(deltaT)
 end
 
+local draw = love.graphics.draw
+local drawtext = love.graphics.print
+local setColor = love.graphics.setColor
+local setFont = love.graphics.setFont
 function MainMenu.Draw(deltaT)
-	local draw = love.graphics.draw
-	local drawtext = love.graphics.print
-	local setColor = love.graphics.setColor
 	
 	-- Draw background
 	draw(background, 0, 0)
@@ -48,7 +51,15 @@ function MainMenu.Draw(deltaT)
 		drawtext(mobj[1], 48, mobj[3] + 16)
 	end
 	
+	draw(TitleIcon, 140, 46)
+	setFont(TitleFont)
+	setColor(0, 0, 0, 127)
+	drawtext("Live Simulator: 2", 282, 80)
+	drawtext("Live Simulator: 2", 279, 77)
+	setColor(255, 255, 255, 255)
+	drawtext("Live Simulator: 2", 280, 78)
 	setColor(64, 64, 255, 255)
+	setFont(MTLMr3m)
 	drawtext("DEPLS2 rel ".._G.DEPLS_VERSION, 3, 608)
 	setColor(255, 255, 255, 255)
 end

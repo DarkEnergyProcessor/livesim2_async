@@ -1,8 +1,9 @@
 -- Custom Beatmap Festival beatmap loader
 -- Part of DEPLS2
 
+local bit = require("bit")
 local DEPLS = _G.DEPLS
-local NoteLoader = DEPLS.NoteLoader
+local NoteLoader = _G.NoteLoader
 local CBFBeatmap = {
 	Extension = nil,	-- No extension, that means detect function is necessary
 }
@@ -30,6 +31,11 @@ function CBFBeatmap.Detect(file)
 	-- 2. absolute path
 	-- dir separator is forward slash
 	-- does not contain trailing slash
+	local zip = file[1]..".zip"
+	
+	if love.filesystem.isFile(zip) then
+		MountZip(zip, file[1])
+	end
 	
 	return
 		love.filesystem.isFile(file[1].."/beatmap.txt") and
@@ -48,12 +54,12 @@ end
 --!          - units is custom units image list or nil
 function CBFBeatmap.Load(file)
 	local cbf = {
-		beatmap = assert(io.open(file[2].."/beatmap.txt", "rb")),
-		projectConfig = assert(io.open(file[2].."/projectConfig.txt", "rb"))
+		beatmap = assert(love.filesystem.newFile(file[1].."/beatmap.txt", "r")),
+		projectConfig = assert(love.filesystem.newFile(file[1].."/projectConfig.txt", "r"))
 	}
 	
 	-- Add keys
-	for key, value in cbf.projectConfig:read("*a"):gmatch("%[([^%]]+)%];([^;]+);") do
+	for key, value in cbf.projectConfig:read():gmatch("%[([^%]]+)%];([^;]+);") do
 		cbf[key] = value
 	end
 	
@@ -85,10 +91,15 @@ function CBFBeatmap.Load(file)
 
 	-- Parse notes
 	for _, line in pairs(readed_notes_data) do
-		local time, pos, is_hold, is_release, release_time, hold_time, is_star = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/")
+		local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+);")
 		local num_pos = position_translation[pos]
+		local attri = desired_attribute
 		release_time = tonumber(release_time)
 		hold_time = tonumber(hold_time)
+		
+		if is_customcol == "True" then
+			attri = bit.bor(bit.bor(bit.lshift(tonumber(r) * 255, 23), bit.lshift(tonumber(g) * 255, 14)), bit.bor(bit.lshift(tonumber(b) * 255, 5), 31))
+		end
 		
 		if is_release == "True" then
 			local last = assert(hold_note_queue[num_pos], "unbalanced release note")
@@ -98,7 +109,7 @@ function CBFBeatmap.Load(file)
 		elseif is_hold == "True" then
 			local val = {
 				timing_sec = time + 0,
-				notes_attribute = desired_attribute,
+				notes_attribute = attri,
 				notes_level = 1,
 				effect = 3,
 				effect_value = 0,
@@ -112,7 +123,7 @@ function CBFBeatmap.Load(file)
 		else
 			table.insert(notes_data, {
 				timing_sec = time + 0,
-				notes_attribute = desired_attribute,
+				notes_attribute = attri,
 				notes_level = 1,
 				effect = is_star == "True" and 4 or 1,
 				effect_value = 2,

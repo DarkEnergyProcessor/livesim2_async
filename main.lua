@@ -1,7 +1,10 @@
--- DEPLS2 main lua
+-- DEPLS2 main initialization script
+-- Copyright © 2038 Dark Energy Processor
 
+local JSON = require("JSON")
 DEPLS_VERSION = "2070112"
 
+FontManager = require("font_manager")
 LogicalScale = {
 	ScreenX = 960,
 	ScreenY = 640,
@@ -43,6 +46,7 @@ function LoadConfig(config_name, default_value)
 	return tonumber(data) or data
 end
 
+local skip_val = 0
 --! @brief Loads entry point
 --! @param name The entry point Lua script file
 --! @param arg Additional argument to be passed
@@ -50,6 +54,8 @@ function LoadEntryPoint(name, arg)
 	local scriptfile = love.filesystem.load(name)
 	CurrentEntry = scriptfile()
 	CurrentEntry.Start(arg)
+	
+	skip_val = 2
 end
 
 --! @brief Translates physical touch position to logical touch position
@@ -62,6 +68,33 @@ function CalculateTouchPosition(x, y)
 		(y - LogicalScale.OffY) / LogicalScale.ScaleOverall
 end
 
+local mount_target
+--! @brief Mount a zip file, relative to DEPLS save directory.
+--!        Unmounts previous mounted zip file, so only one zip file
+--!        can be mounted.
+--! @param path The Zip file path (or nil to clear)
+--! @param target The Zip mount point
+--! @returns Previous mounted ZIP filename (or nil if no Zip was mounted)
+function MountZip(path, target)
+	local prev_mount = mount_target
+	
+	if path ~= nil and mount_target == path then
+		return prev_mount
+	end
+	
+	if mount_target then
+		love.filesystem.unmount(mount_target)
+		mount_target = nil
+	end
+	
+	if path then
+		assert(love.filesystem.mount(path, target))
+		
+		mount_target = path
+	end
+	
+	return prev_mount
+end
  
 function love.errhand(msg)
 	msg = tostring(msg)
@@ -156,7 +189,12 @@ end
 function love.load(argv)
 	local os_type = love.system.getOS()
 	
-	if jit and jit.on then jit.on() end
+	if jit and jit.on then
+		jit.on()
+		
+		-- Disable some function to be JIT'd
+		
+	end
 	
 	print("R/W Directory: "..love.filesystem.getSaveDirectory())
 	
@@ -243,10 +281,10 @@ function love.load(argv)
 	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
 	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
 	
-	local progname = argv[1] or "main_menu"
+	local progname = table.remove(argv, 1) or "main_menu"
 	
 	if loader[progname] then
-		if loader[progname][1] == 0 or #argv - 1 >= loader[progname][1] then
+		if loader[progname][1] == 0 or #argv >= loader[progname][1] then
 			LoadEntryPoint(loader[progname][2], argv)
 			
 			return
@@ -268,10 +306,20 @@ Module options:
 end
 
 function love.update(deltaT)
+	if skip_val > 0 then
+		skip_val = skip_val - 1
+		return
+	end
+	
 	CurrentEntry.Update(deltaT * 1000)
 end
 
 function love.draw()
+	if skip_val > 0 then
+		skip_val = skip_val - 1
+		return
+	end
+	
 	local deltaT = love.timer.getDelta() * 1000
 	
 	love.graphics.push()

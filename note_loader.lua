@@ -1,10 +1,24 @@
--- DEPLS Note Loader function
+-- DEPLS2 Note Loader function
+-- Copyright © 2038 Dark Energy Processor
+
 local DEPLS = _G.DEPLS
 local JSON = require("JSON")
 local love = love
 
 local testbeatmap = {{"dwr", "ogg"} , {"1154_mod", "ogg"}}
 local NoteLoader = {}
+
+_G.NoteLoader = NoteLoader
+
+local loaders = {
+	love.filesystem.load("noteloader/load_depls.lua")(),
+	love.filesystem.load("noteloader/load_cbf.lua")(),
+	love.filesystem.load("noteloader/load_sif.lua")(),
+	love.filesystem.load("noteloader/load_sifs.lua")(),
+	love.filesystem.load("noteloader/load_llp.lua")(),
+	love.filesystem.load("noteloader/load_mid.lua")()
+}
+NoteLoader.Loaders = loaders
 
 do
 	local unit_alr_loaded = {}
@@ -62,22 +76,13 @@ function NoteLoader.NoteLoader(path)
 		if bm then
 			return {
 				notes_list = JSON:decode(love.filesystem.newFileData("test/"..bm[1]..".json"):getString()),
-				song_file = love.audio.newSource("test/"..bm[1].."."..bm[2], "static")
+				song_file = love.sound.newSoundData("test/"..bm[1].."."..bm[2])
 			}
 		else
 			error("Invalid test beatmap ID")
 		end
 	end
 	
-	local loadfile = love.filesystem.load
-	local loaders = {
-		loadfile("noteloader/load_depls.lua")(),
-		loadfile("noteloader/load_cbf.lua")(),
-		loadfile("noteloader/load_sif.lua")(),
-		loadfile("noteloader/load_sifs.lua")(),
-		loadfile("noteloader/load_llp.lua")(),
-		loadfile("noteloader/load_mid.lua")()
-	}
 	local path = {
 		"beatmap/"..path,
 		love.filesystem.getSaveDirectory().."/beatmap/"..path
@@ -100,6 +105,73 @@ function NoteLoader.NoteLoader(path)
 	end
 	
 	error("Cannot open beatmap \""..path[1].."\"")
+end
+
+local beatmap_names = {
+	"DEPLS Beatmap Folder",
+	"Custom Beatmap Festival",
+	"SIF Beatmap",
+	"Sukufesu Simulator Beatmap",
+	"LLPractice Beatmap",
+	"MIDI Beatmap"
+}
+
+--! @brief Enumerates beatmap list in <save directory>/beatmap folder
+--! @returns List of beatmaps, with following data:
+--!          - name, beatmap name
+--!          - type, beatmap format
+function NoteLoader.Enumerate()
+	local files = love.filesystem.getDirectoryItems("beatmap/")
+	local beatmap_list = {}
+	local save_dir = love.filesystem.getSaveDirectory()
+	
+	for n, v in pairs(files) do
+		local found = false
+		local name = v:match("(.*)%..*") or v
+		
+		for a, b in pairs(beatmap_list) do
+			if b.name == name then
+				found = true
+				break
+			end
+		end
+		
+		if not(found) then
+			local btype
+			local path = {
+				"beatmap/"..name,
+				save_dir.."/beatmap/"..name
+			}
+			
+			for i = 1, #loaders do
+				local loader = loaders[i]
+				
+				-- Detect it
+				if loader.Extension then
+					if love.filesystem.isFile(path[1].."."..loader.Extension) then
+						btype = beatmap_names[i]
+					end
+				elseif loader.Extension == nil and loader.Detect then
+					if loader.Detect(path) then
+						btype = beatmap_names[i]
+					end
+				else
+					error("Invalid beatmap loader "..i)
+				end
+				
+				if btype then break end
+			end
+			
+			if btype then
+				beatmap_list[#beatmap_list + 1] = {
+					name = name,
+					type = btype
+				}
+			end
+		end
+	end
+	
+	return beatmap_list
 end
 
 return NoteLoader

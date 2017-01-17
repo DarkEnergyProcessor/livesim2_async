@@ -1,4 +1,5 @@
 -- Lua storyboard handler
+-- Copyright © 2038 Dark Energy Processor
 
 -- The DEPLS handle
 local DEPLS = _G.DEPLS
@@ -129,9 +130,9 @@ local allowed_libs = {
 }
 
 -- Storyboard lua file
-function LuaStoryboard.Load(file)
-	local lua = love.filesystem.load(file)
-	BeatmapDir = file:sub(1, file:find("[^/]+$") - 1)
+function LuaStoryboard.LoadString(str, dir)
+	local lua = type(str) == "function" and str or loadstring(str)
+	BeatmapDir = dir
 	
 	-- Copy environment
 	local env = {
@@ -185,6 +186,10 @@ function LuaStoryboard.Load(file)
 		env,								-- The global variables
 		env.Update or env.Initialize,		-- New DEPLS2 storyboard or usual DEPLS storyboard
 	}
+end
+
+function LuaStoryboard.Load(file)
+	LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1))
 end
 
 local graphics = love.graphics

@@ -3,7 +3,7 @@
 -- Part of DEPLS2
 
 local DEPLS = _G.DEPLS
-local NoteLoader = DEPLS.NoteLoader
+local NoteLoader = _G.NoteLoader
 local JSON = require("JSON")
 local DEPLS2Beatmap = {
 	Extension = nil		-- Detect function is necessary
@@ -19,10 +19,24 @@ function DEPLS2Beatmap.Detect(file)
 	local zip = file[1]..".zip"
 	
 	if love.filesystem.isFile(zip) then
-		DEPLS.MountZip(zip, file[1])
+		MountZip(zip, file[1])
+	end
+	
+	-- Enum loaders
+	for i = 1, #NoteLoader.Loaders do
+		local loader = NoteLoader.Loaders[i]
+		
+		if
+			(loader.Extension and loader.Extension ~= "txt") or
+			(loader.Extension == "txt" and love.filesystem.isFile(file[1].."/projectConfig.txt") == false)
+		then
+			if love.filesystem.isFile(file[1].."/beatmap."..loader.Extension) then
+				return true
+			end
+		end
 	end
 			
-	return love.filesystem.isFile(file[1].."/beatmap.json")
+	return false
 end
 
 --! @brief Loads DEPLS2 beatmap
@@ -37,8 +51,28 @@ end
 --!          - background is beatmap-specific background ID or handle list (extended backgrounds) (jpg supported) or nil
 --!          - units is custom units image list or nil
 function DEPLS2Beatmap.Load(file)
-	local notes_data = JSON:decode(love.filesystem.newFileData(file[1].."/beatmap.json"):getString())
+	local notes_data
 	local storyboard
+	local scoreinfo
+	
+	-- Enum loaders
+	for i = 1, #NoteLoader.Loaders do
+		local loader = NoteLoader.Loaders[i]
+		
+		if loader.Extension then
+			if love.filesystem.isFile(file[1].."/beatmap."..loader.Extension) then
+				local out = loader.Load({
+					file[1].."/beatmap",
+					file[2].."/beatmap"
+				})
+				
+				notes_data = out.notes_list
+				scoreinfo = out.score
+			end
+		end
+		
+		if notes_data then break end
+	end
 	
 	table.sort(notes_data, function(a, b) return a.timing_sec < b.timing_sec end)
 	
@@ -99,7 +133,8 @@ function DEPLS2Beatmap.Load(file)
 	local out = {
 		notes_list = notes_data,
 		storyboard = storyboard,
-		song_file = DEPLS.LoadAudio(file[1].."/songFile.wav")
+		song_file = DEPLS.LoadAudio(file[1].."/songFile.wav"),
+		score = scoreinfo
 	}
 	
 	if background_id then

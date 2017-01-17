@@ -1,9 +1,11 @@
 --! @file note.lua
--- Note management routines
+-- DEPLS2 Note management routines
+-- Copyright © 2038 Dark Energy Processor
 
 local DEPLS = _G.DEPLS
 local List = require("List")
 local EffectPlayer = require("effect_player")
+local bit = require("bit")
 local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0}
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
@@ -14,533 +16,582 @@ local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
 local floor = math.floor
 
---! @brief Check if there's another note with same timing
---! @param timing_sec The note timing to check
---! @param multiply1000 Is the `timing_sec` is in seconds?
---! @returns `true` if there's one, false otherwise
---! @note This function modifies the note object that already queued if necessary
-local function CheckSimulNote(timing_sec, multiply1000)
-	if multiply1000 then
-		timing_sec = timing_sec * 1000
-	end
-	
-	for i = 1, 9 do
-		for j = 1, #Note[i] do
-			local notedata = Note[i][j]
-			
+local CheckSimulNote
+do
+	local function internal_simulnote_check(timing_sec, i)
+		local j = 1
+		local notedata = Note[i][j]
+		
+		while notedata do
 			if floor(notedata.ZeroAccuracyTime) == floor(timing_sec) then
 				notedata.SimulNoteImage = DEPLS.Images.Note.Simultaneous
 				return true
 			end
+			
+			j = j + 1
+			notedata = Note[i][j]
 		end
 	end
 	
-	return false
+	--! @brief Check if there's another note with same timing
+	--! @param timing_sec The note timing to check
+	--! @param multiply1000 Is the `timing_sec` is in seconds?
+	--! @returns `true` if there's one, false otherwise
+	--! @note This function modifies the note object that already queued if necessary
+	CheckSimulNote = function(timing_sec, multiply1000)
+		if multiply1000 then
+			timing_sec = timing_sec * 1000
+		end
+		
+		return
+			internal_simulnote_check(timing_sec, 1) or
+			internal_simulnote_check(timing_sec, 2) or
+			internal_simulnote_check(timing_sec, 3) or
+			internal_simulnote_check(timing_sec, 4) or
+			internal_simulnote_check(timing_sec, 5) or
+			internal_simulnote_check(timing_sec, 6) or
+			internal_simulnote_check(timing_sec, 7) or
+			internal_simulnote_check(timing_sec, 8) or
+			internal_simulnote_check(timing_sec, 9)
+	end
 end
 
---! @brief Add note
+local SingleNoteObject = {}
+local LongNoteObject = {}
+
+--! @brief Creates new SingleNoteObject
 --! @param note_data SIF-compilant note data
-function Note.Add(note_data)
-	local unpack = unpack or table.unpack
-	local math = math
-	local noteobj = {}
-	local idolpos = DEPLS.IdolPosition[note_data.position]
+--! @returns New NoteObject
+local function NewNoteObject(note_data)
+	local noteobj = {
+		ZeroAccuracyTime = note_data.timing_sec * 1000,
+		Attribute = note_data.notes_attribute,
+		Position = note_data.position,
+		Audio = {
+			Perfect = DEPLS.Sound.PerfectTap:clone(),
+			Great = DEPLS.Sound.GreatTap:clone(),
+			Good = DEPLS.Sound.GoodTap:clone(),
+			Bad = DEPLS.Sound.BadTap:clone(),
+		},
+		FirstCircle = {480, 160}
+	}
+	local idolpos = assert(DEPLS.IdolPosition[note_data.position], "Invalid idol position")
 	
-	-- Define the elapsed time variable
-	local ElapsedTime = 0
-	-- Store the timing sec
-	local ZeroAccuracyTime = note_data.timing_sec * 1000
-	noteobj.ZeroAccuracyTime = ZeroAccuracyTime
-	-- Note scale
-	local CircleScale = 0
+	-- Idol position
+	noteobj.NoteposDiff = {idolpos[1] - 416, idolpos[2] - 96}
+	noteobj.CenterIdol = {idolpos[1] + 64, idolpos[2] + 64}
+	noteobj.Direction = angle_from(480, 160, noteobj.CenterIdol[1], noteobj.CenterIdol[2])
 	
-	-- Set the note image
-	local NoteImage = assert(DEPLS.Images.Note[note_data.notes_attribute], "Invalid note attribute specificed")
-	-- If it's token note, add token note image too
-	if note_data.effect == 2 then
-		noteobj.TokenImage = DEPLS.Images.Note.Token
-	end
-	-- If it's star note, add star note image
-	if note_data.effect == 4 then
-		noteobj.StarImage = DEPLS.Images.Note.Star
-	end
-	-- Simultaneous note image
-	if CheckSimulNote(ZeroAccuracyTime) then
+	-- Simultaneous check
+	if CheckSimulNote(noteobj.ZeroAccuracyTime) then
 		noteobj.SimulNoteImage = DEPLS.Images.Note.Simultaneous
 	end
 	
-	-- love.graphics functions
-	local draw = love.graphics.draw
-	local setColor = love.graphics.setColor
-	local setBlendMode = love.graphics.setBlendMode
-	local printf = love.graphics.print
-	
-	-- Cloned audios
-	local Audio = {
-		Perfect = DEPLS.Sound.PerfectTap:clone(),
-		Great = DEPLS.Sound.GreatTap:clone(),
-		Good = DEPLS.Sound.GoodTap:clone(),
-		Bad = DEPLS.Sound.BadTap:clone()
-	}
-	
-	-- Center position of the idol image
-	local idx, idy = idolpos[1] + 64, idolpos[2] + 64
-	
-	-- Used for our custom tween
-	local notepos_x_diff = idolpos[1] - 416
-	local notepos_y_diff = idolpos[2] - 96
-	
-	-- First circle position
-	local FirstCircle = {480, 160}
-	
-	noteobj.ScoreMultipler2 = 1
-	
-	if note_data.effect == 3 then
-		-- Determine note trail direction and drawing origin coordinate
-		local direction = angle_from(480, 160, idx, idy)
-		
-		-- Set end note time
-		local ZeroAccuracyEndNote = note_data.effect_value * 1000
-		noteobj.ZeroAccuracyEndNote = ZeroAccuracyEndNote
-		-- Spotlight Image
-		local SpotlightImage = DEPLS.Images.Spotlight
-		-- Spotlight scale
-		local SpotlightImageScale = 0
-		-- End note circle scale
-		local EndCircleScale = 0
-		-- End note circle image
-		local EndNoteImage = DEPLS.Images.Note.NoteEnd
-		-- Second circle position
-		local SecondCircle = {480, 160}
-		-- Note trail vertices
-		local Vert = {0, 0, 0, 0, 0, 0, 0, 0}
-		local polygon = love.graphics.polygon
-		
-		-- Endnote audio
-		local Audio2 = {
+	if note_data.effect == 2 then
+		-- Token note
+		noteobj.TokenImage = DEPLS.Images.Note.Token
+	elseif note_data.effect == 4 then
+		-- Star note
+		noteobj.StarImage = DEPLS.Images.Note.Star
+	elseif note_data.effect == 3 then
+		-- Long note. Use LongNoteObject metatable
+		noteobj.Audio2 = {
 			Perfect = DEPLS.Sound.PerfectTap:clone(),
 			Great = DEPLS.Sound.GreatTap:clone(),
 			Good = DEPLS.Sound.GoodTap:clone(),
 			Bad = DEPLS.Sound.BadTap:clone(),
 		}
+		noteobj.Vert = {}
+		noteobj.SecondCircle = {480, 160}
+		noteobj.ZeroAccuracyEndNote = note_data.effect_value * 1000
+		noteobj.EndNoteImage = DEPLS.Images.Note.NoteEnd
+		noteobj.EndCircleScale = 0
 		
-		-- Long note functions is different than normal tap function routine
-		function noteobj.Update(this, deltaT)
-			-- deltaT is in milliseconds
-			--ElapsedTime = ElapsedTime + deltaT
-			ElapsedTime = DEPLS.ElapsedTime - ZeroAccuracyTime + DEPLS.NotesSpeed
-			
-			FirstCircle[1], FirstCircle[2] = unpack(idolpos)
-			CircleScale = 1
-			EndCircleScale = 0
-			
-			if this.TouchID == nil then
-				-- The note isn't in tapping state
-				FirstCircle[1] = notepos_x_diff * ElapsedTime / DEPLS.NotesSpeed + 480
-				FirstCircle[2] = notepos_y_diff * ElapsedTime / DEPLS.NotesSpeed + 160
-				CircleScale = ElapsedTime / DEPLS.NotesSpeed
-			else
-				FirstCircle[1] = idx
-				FirstCircle[2] = idy
-				CircleScale = 1
-			end
-			
-			-- If it's not pressed/holded for long time, and it's beyond miss range, make it miss
-			do
-				local cmp = this.TouchID and SecondCircle or FirstCircle
-				local cmp2 = this.TouchID and DEPLS.NotesSpeed + ZeroAccuracyEndNote or DEPLS.NotesSpeed
-				
-				if ElapsedTime >= cmp2 then
-					local notedistance = distance(cmp[1] - idx, cmp[2] - idy)
-					
-					if notedistance >= NoteAccuracy[5][2] then
-						DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
-						DEPLS.Routines.PerfectNode.Replay = true
-						DEPLS.Routines.ComboCounter.Reset = true
-						this.ScoreMultipler = 0
-						this.Delete = true
-						Note.Miss = Note.Miss + 1
-						
-						storyboard_callback("LongNoteTap",
-							cmp == SecondCircle,			-- release
-							note_data.position,				-- pos
-							0, 								-- accuracy (miss)
-							notedistance,					-- distance
-							note_data.notes_attribute,		-- attribute
-							not(not(this.SimulNoteImage))	-- is_simul
-						)
-						return
-					end
-				end
-			end
-			
-			if -ZeroAccuracyEndNote + ElapsedTime >= 0 then
-				-- Spawn end note circle
-				local EndNoteElapsedTime = DEPLS.ElapsedTime - (ZeroAccuracyTime + ZeroAccuracyEndNote) + DEPLS.NotesSpeed
-				
-				SecondCircle[1] = notepos_x_diff * EndNoteElapsedTime / DEPLS.NotesSpeed + 480
-				SecondCircle[2] = notepos_y_diff * EndNoteElapsedTime / DEPLS.NotesSpeed + 160
-				EndCircleScale = EndNoteElapsedTime / DEPLS.NotesSpeed
-			end
-			
-				-- First position
-			Vert[1] = math.floor((FirstCircle[1] + (CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
-			Vert[2] = math.floor((FirstCircle[2] + (CircleScale * 62) * math.sin(direction)) + 0.5)		-- y
-				-- Second position
-			Vert[3] = math.floor((FirstCircle[1] + (CircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
-			Vert[4] = math.floor((FirstCircle[2] + (CircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
-				-- Third position
-			Vert[5] = math.floor((SecondCircle[1] + (EndCircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
-			Vert[6] = math.floor((SecondCircle[2] + (EndCircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
-				-- Fourth position
-			Vert[7] = math.floor((SecondCircle[1] + (EndCircleScale * 62) * math.cos(direction)) + 0.5)		-- x
-			Vert[8] = math.floor((SecondCircle[2] + (EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
-		end
-		
-		function noteobj.Draw(this)
-			-- Draw note trail
-			setBlendMode("add")
-			if this.TouchID then
-				setColor(255, 255, 64, DEPLS.LiveOpacity * 0.5)
-			else
-				setColor(255, 255, 255, DEPLS.LiveOpacity * 0.5)
-			end
-			
-			polygon("fill", Vert[1], Vert[2], Vert[3], Vert[4], Vert[5], Vert[6])
-			polygon("fill", Vert[5], Vert[6], Vert[7], Vert[8], Vert[1], Vert[2])
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
-			setBlendMode("alpha")
-			
-			-- Draw note image
-			draw(NoteImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			
-			-- Draw simultaneous note bar if it is
-			if noteobj.SimulNoteImage then
-				draw(noteobj.SimulNoteImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			end
-			
-			local draw_endcircle = EndCircleScale > 0
-			-- Draw end note trail if it is
-			if draw_endcircle then
-				draw(EndNoteImage, SecondCircle[1], SecondCircle[2], 0, EndCircleScale, EndCircleScale, 64, 64)
-			end
-			
-			--setColor(255, 255, 255, 255)
-			if DEPLS.DebugNoteDistance then
-				local notedistance = distance(FirstCircle[1] - idx, FirstCircle[2] - idy)
-				
-				setColor(0, 0, 0, 255)
-				printf(("%.2f"):format(notedistance), FirstCircle[1], FirstCircle[2])
-				setColor(255, 255, 255, 255)
-				printf(("%.2f"):format(notedistance), FirstCircle[1] + 1, FirstCircle[2] + 1)
-				
-				if draw_endcircle then
-					notedistance = distance(SecondCircle[1] - idx, SecondCircle[2] - idy)
-					
-					setColor(0, 0, 0, 255)
-					printf(("%.2f"):format(notedistance), SecondCircle[1], SecondCircle[2])
-					setColor(255, 255, 255, 255)
-					printf(("%.2f"):format(notedistance), SecondCircle[1] + 1, SecondCircle[2] + 1)
-				end
-			else
-				setColor(255, 255, 255, 255)
-			end
-		end
-		
-		function noteobj.SetTouchID(this, touchid)
-			local notedistance = distance(FirstCircle[1] - idx, FirstCircle[2] - idy)
-			
-			local function done_tap()
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.TouchID = touchid
+		setmetatable(noteobj, {__index = LongNoteObject})
+		return noteobj
+	end
+	-- SingleNoteObject in here
+	noteobj.Audio.StarExplode = DEPLS.Sound.StarExplode:clone()
+	noteobj.ScoreMultipler2 = 1
+	
+	setmetatable(noteobj, {__index = SingleNoteObject})
+	return noteobj
+end
 
-				storyboard_callback("LongNoteTap",
-					false,							-- release
-					note_data.position,				-- pos
-					this.ScoreMultipler, 			-- accuracy
-					notedistance,					-- distance
-					note_data.notes_attribute,		-- attribute
-					not(not(this.SimulNoteImage))	-- is_simul
-				)
-			end
-			
-			if DEPLS.AutoPlay then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.ScoreMultipler = 1
-				
-				Audio.Perfect:play()
-				Note.Perfect = Note.Perfect + 1
-				
-				--[[
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.TouchID = touchid
-				
-				]]
-				done_tap()
-				
-				return
-			end
-			
-			-- We don't want someone accidentally tap it while it's in long distance
-			if notedistance <= NoteAccuracy[4][2] then
-				if notedistance <= NoteAccuracy[1][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-					this.ScoreMultipler = 1
-					
-					Audio.Perfect:play()
-					Note.Perfect = Note.Perfect + 1
-				elseif notedistance <= NoteAccuracy[2][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
-					this.ScoreMultipler = 0.88
-					
-					Audio.Great:play()
-					Note.Great = Note.Great + 1
-				elseif notedistance <= NoteAccuracy[3][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
-					DEPLS.Routines.ComboCounter.Reset = true
-					this.ScoreMultipler = 0.8
-					
-					Audio.Good:play()
-					Note.Good = Note.Good + 1
-				else
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
-					DEPLS.Routines.ComboCounter.Reset = true
-					this.ScoreMultipler = 0.4
-					
-					Audio.Bad:play()
-					Note.Bad = Note.Bad + 1
-				end
-				
-				done_tap()
-			end
+--! @brief SingleNoteObject Update routine
+--! @param this NoteObject
+--! @param deltaT Delta-time between frame, in milliseconds
+function SingleNoteObject.Update(this, deltaT)
+	-- deltaT is in milliseconds
+	local NotesSpeed = DEPLS.NotesSpeed
+	local ElapsedTime = DEPLS.ElapsedTime - this.ZeroAccuracyTime + NotesSpeed
+	
+	this.FirstCircle[1] = this.NoteposDiff[1] * (ElapsedTime / NotesSpeed) + 480
+	this.FirstCircle[2] = this.NoteposDiff[2] * (ElapsedTime / NotesSpeed) + 160
+	this.CircleScale = ElapsedTime / DEPLS.NotesSpeed
+	
+	-- If it's not pressed, and it's beyond miss range, make it miss
+	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
+		DEPLS.Routines.PerfectNode.Replay = true
+		DEPLS.Routines.ComboCounter.Reset = true
+		this.ScoreMultipler = 0
+		this.Delete = true
+		
+		if this.StarImage then
+			this.Audio.StarExplode:play()
 		end
 		
-		function noteobj.UnsetTouchID(this, touchid)
-			if this.TouchID ~= touchid then return end
-			
-			local notedistance = distance(SecondCircle[1] - idx, SecondCircle[2] - idy)
-			local is_miss = false
-			
-			-- Check if perfect
-			if DEPLS.AutoPlay or notedistance <= NoteAccuracy[1][2] then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.ScoreMultipler2 = 1
-				
-				Audio2.Perfect:play()
-				Note.Perfect = Note.Perfect + 1
-			elseif notedistance <= NoteAccuracy[2][2] then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.ScoreMultipler2 = 0.88
-				
-				Audio2.Great:play()
-				Note.Great = Note.Great + 1
-			elseif notedistance <= NoteAccuracy[3][2] then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
-				DEPLS.Routines.PerfectNode.Replay = true
-				DEPLS.Routines.ComboCounter.Reset = true
-				this.ScoreMultipler2 = 0.8
-				
-				Audio2.Good:play()
-				Note.Good = Note.Good + 1
-			elseif notedistance <= NoteAccuracy[4][2] then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
-				DEPLS.Routines.PerfectNode.Replay = true
-				DEPLS.Routines.ComboCounter.Reset = true
-				this.ScoreMultipler2 = 0.4
-				
-				Audio2.Bad:play()
-				Note.Bad = Note.Bad + 1
-			else
-				Note.Miss = Note.Miss + 1
-				is_miss = true
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
-				DEPLS.Routines.PerfectNode.Replay = true
-				DEPLS.Routines.ComboCounter.Reset = true
-				this.ScoreMultipler2 = 0
-			end
-			
-			if not(is_miss) then
-				local AfterCircleTap = coroutine.wrap(DEPLS.Routines.CircleTapEffect)
-				AfterCircleTap(SecondCircle[1], SecondCircle[2], 255, 255, 255)
-				EffectPlayer.Spawn(AfterCircleTap)
-			end
-			
-			this.Delete = true
-			
-			storyboard_callback("LongNoteTap",
-				true,							-- release
-				note_data.position,				-- pos
-				this.ScoreMultipler2, 			-- accuracy
-				notedistance,					-- distance
-				note_data.notes_attribute,		-- attribute
-				not(not(this.SimulNoteImage))	-- is_simul
-			)
-		end
+		-- Storyboard callback
+		storyboard_callback("NoteTap",
+			this.Position,					-- pos
+			0, 								-- accuracy (miss)
+			notedistance,					-- distance
+			this.Attribute,		-- attribute
+			not(not(this.StarImage)),		-- is_star
+			not(not(this.SimulNoteImage)),	-- is_simul
+			not(not(this.TokenImage))		-- is_token
+		)
+		
+		Note.Miss = Note.Miss + 1
+		return
+	end
+	
+end
+
+function SingleNoteObject.Draw(this)
+	local NoteImage
+	local draw = love.graphics.draw
+	local setColor = love.graphics.setColor
+	
+	-- Draw note image
+	if bit.band(this.Attribute, 31) == 31 then
+		-- CBF extension: colored note
+		setColor(
+			bit.band(bit.rshift(this.Attribute, 23), 511),
+			bit.band(bit.rshift(this.Attribute, 14), 511),
+			bit.band(bit.rshift(this.Attribute, 5), 511),
+			DEPLS.LiveOpacity
+		)
+		NoteImage = DEPLS.Images.Note[9]
 	else
-		Audio.StarExplode = DEPLS.Sound.StarExplode:clone()
-		-- Single tap note
-		function noteobj.Update(this, deltaT)
-			-- deltaT is in milliseconds
-			--ElapsedTime = ElapsedTime + deltaT
-			ElapsedTime = DEPLS.ElapsedTime - ZeroAccuracyTime  + DEPLS.NotesSpeed
+		setColor(255, 255, 255, DEPLS.LiveOpacity)
+		NoteImage = DEPLS.Images.Note[this.Attribute]
+	end
+	
+	draw(NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	
+	-- Draw token image if any
+	if this.TokenImage then
+		draw(this.TokenImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	end
+	
+	-- Draw star image if any
+	if this.StarImage then
+		draw(this.StarImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	end
+	
+	-- Draw simultaneous note bar if it is
+	if this.SimulNoteImage then
+		draw(this.SimulNoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	end
+	
+	if DEPLS.DebugNoteDistance then
+		local dist = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+		local printf = love.graphics.print
+		setColor(0, 0, 0, 255)
+		printf(("%.2f"):format(dist), this.FirstCircle[1], this.FirstCircle[2])
+		setColor(255, 255, 255, 255)
+		printf(("%.2f"):format(dist), this.FirstCircle[1] + 1, this.FirstCircle[2] + 1)
+	else
+		setColor(255, 255, 255, 255)
+	end
+end
+
+local function coroutine_wrapper(func)
+	return coroutine.wrap(func)
+end
+
+function SingleNoteObject.SetTouchID(this, touchid)
+	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	
+	if DEPLS.AutoPlay then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
+		DEPLS.Routines.PerfectNode.Replay = true
+		this.ScoreMultipler = 1
+		this.Audio.Perfect:play()
+		this.Delete = true
+		
+		Note.Perfect = Note.Perfect + 1
+		
+		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
+		AfterCircleTap(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		EffectPlayer.Spawn(AfterCircleTap)
+		
+		-- Call storyboard callback
+		storyboard_callback("NoteTap",
+			this.Position,					-- pos
+			this.ScoreMultipler, 			-- accuracy
+			notedistance,					-- distance
+			this.Attribute,		-- attribute
+			not(not(this.StarImage)),		-- is_star
+			not(not(this.SimulNoteImage)),	-- is_simul
+			not(not(this.TokenImage))		-- is_token
+		)
+		
+		return
+	end
+	
+	-- We don't want someone accidentally tap it while it's in long distance
+	if notedistance <= NoteAccuracy[4][2] then
+		if notedistance <= NoteAccuracy[1][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			
-			FirstCircle[1] = notepos_x_diff * (ElapsedTime / DEPLS.NotesSpeed) + 480
-			FirstCircle[2] = notepos_y_diff * (ElapsedTime / DEPLS.NotesSpeed) + 160
-			CircleScale = ElapsedTime / DEPLS.NotesSpeed
+			this.ScoreMultipler = 1
+			this.Audio.Perfect:play()
 			
-			-- If it's not pressed, and it's beyond miss range, make it miss
-			local notedistance = distance(FirstCircle[1] - idx, FirstCircle[2] - idy)
-			if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
+			Note.Perfect = Note.Perfect + 1
+		elseif notedistance <= NoteAccuracy[2][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
+			
+			this.ScoreMultipler = 0.88
+			this.Audio.Great:play()
+			
+			Note.Great = Note.Great + 1
+		elseif notedistance <= NoteAccuracy[3][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
+			DEPLS.Routines.ComboCounter.Reset = true
+			
+			this.ScoreMultipler = 0.8
+			this.Audio.Good:play()
+			
+			Note.Good = Note.Good + 1
+		else
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
+			DEPLS.Routines.ComboCounter.Reset = true
+			
+			this.ScoreMultipler = 0.4
+			this.Audio.Bad:play()
+			
+			Note.Bad = Note.Bad + 1
+		end
+		
+		DEPLS.Routines.PerfectNode.Replay = true
+		
+		if DEPLS.Routines.ComboCounter.Reset and this.StarImage then
+			this.Audio.StarExplode:play()
+			-- TODO: play star explode effect
+		end
+		
+		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
+		AfterCircleTap(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		EffectPlayer.Spawn(AfterCircleTap)
+		
+		this.Delete = true
+		
+		-- Call storyboard callback
+		storyboard_callback("NoteTap",
+			this.Position,					-- pos
+			this.ScoreMultipler, 			-- accuracy
+			notedistance,					-- distance
+			this.Attribute,		-- attribute
+			not(not(this.StarImage)),		-- is_star
+			not(not(this.SimulNoteImage)),	-- is_simul
+			not(not(this.TokenImage))		-- is_token
+		)
+	end
+end
+
+--! @brief LongNoteObject Update routine
+--! @param this NoteObject
+--! @param deltaT Delta-time between frame, in milliseconds
+function LongNoteObject.Update(this, deltaT)
+	local direction = this.Direction
+	local NotesSpeed = DEPLS.NotesSpeed
+	local ElapsedTime = DEPLS.ElapsedTime - this.ZeroAccuracyTime + NotesSpeed
+	
+	if this.TouchID == nil then
+		-- The note isn't in tapping state
+		this.FirstCircle[1] = this.NoteposDiff[1] * ElapsedTime / NotesSpeed + 480
+		this.FirstCircle[2] = this.NoteposDiff[2] * ElapsedTime / NotesSpeed + 160
+		this.CircleScale = ElapsedTime / NotesSpeed
+	else
+		this.FirstCircle[1] = this.CenterIdol[1]
+		this.FirstCircle[2] = this.CenterIdol[2]
+		this.CircleScale = 1
+	end
+	
+	-- If it's not pressed/holded for long time, and it's beyond miss range, make it miss
+	do
+		local cmp = this.TouchID and this.SecondCircle or this.FirstCircle
+		local cmp2 = this.TouchID and NotesSpeed + this.ZeroAccuracyEndNote or NotesSpeed
+		
+		if ElapsedTime >= cmp2 then
+			local notedistance = distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
+			
+			if notedistance >= NoteAccuracy[5][2] then
 				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
 				this.ScoreMultipler = 0
 				this.Delete = true
+				Note.Miss = Note.Miss + 1
 				
-				if this.StarImage then
-					Audio.StarExplode:play()
-				end
-				
-				-- Storyboard callback
-				storyboard_callback("NoteTap",
-					note_data.position,				-- pos
+				storyboard_callback("LongNoteTap",
+					cmp == this.SecondCircle,		-- release
+					this.Position,					-- pos
 					0, 								-- accuracy (miss)
 					notedistance,					-- distance
-					note_data.notes_attribute,		-- attribute
-					not(not(this.StarImage)),		-- is_star
-					not(not(this.SimulNoteImage)),	-- is_simul
-					not(not(this.TokenImage))		-- is_token
+					this.Attribute,					-- attribute
+					not(not(this.SimulNoteImage))	-- is_simul
 				)
-				
-				Note.Miss = Note.Miss + 1
 				return
-			end
-			
-		end
-		
-		function noteobj.Draw(this)
-			local dist = distance(FirstCircle[1] - idx, FirstCircle[2] - idy)
-			
-			-- Draw note image
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
-			draw(NoteImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			
-			-- Draw token image if any
-			if this.TokenImage then
-				draw(this.TokenImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			end
-			
-			-- Draw star image if any
-			if this.StarImage then
-				draw(this.StarImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			end
-			
-			
-			-- Draw simultaneous note bar if it is
-			if noteobj.SimulNoteImage then
-				draw(noteobj.SimulNoteImage, FirstCircle[1], FirstCircle[2], 0, CircleScale, CircleScale, 64, 64)
-			end
-			
-			if DEPLS.DebugNoteDistance then
-				setColor(0, 0, 0, 255)
-				printf(("%.2f"):format(dist), FirstCircle[1], FirstCircle[2])
-				setColor(255, 255, 255, 255)
-				printf(("%.2f"):format(dist), FirstCircle[1] + 1, FirstCircle[2] + 1)
-			else
-				setColor(255, 255, 255, 255)
-			end
-		end
-		
-		function noteobj.SetTouchID(this, touchid)
-			local notedistance = distance(FirstCircle[1] - idx, FirstCircle[2] - idy)
-			
-			local function done_tap()
-				local AfterCircleTap = coroutine.wrap(DEPLS.Routines.CircleTapEffect)
-				AfterCircleTap(FirstCircle[1], FirstCircle[2], 255, 255, 255)
-				EffectPlayer.Spawn(AfterCircleTap)
-				
-				--DEPLS.Routines.PerfectNode.Replay = true
-				this.Delete = true
-				
-				-- Call storyboard callback
-				storyboard_callback("NoteTap",
-					note_data.position,				-- pos
-					this.ScoreMultipler, 			-- accuracy
-					notedistance,					-- distance
-					note_data.notes_attribute,		-- attribute
-					not(not(this.StarImage)),		-- is_star
-					not(not(this.SimulNoteImage)),	-- is_simul
-					not(not(this.TokenImage))		-- is_token
-				)
-			end
-			
-			if DEPLS.AutoPlay then
-				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-				DEPLS.Routines.PerfectNode.Replay = true
-				this.ScoreMultipler = 1
-				
-				Audio.Perfect:play()
-				Note.Perfect = Note.Perfect + 1
-				--[[
-				local AfterCircleTap = coroutine.wrap(DEPLS.Routines.CircleTapEffect)
-				AfterCircleTap(FirstCircle[1], FirstCircle[2], 255, 255, 255)
-				EffectPlayer.Spawn(AfterCircleTap)
-				
-				this.Delete = true
-				
-				return
-				]]
-				
-				done_tap()
-				
-				return
-			end
-			
-			-- We don't want someone accidentally tap it while it's in long distance
-			if notedistance <= NoteAccuracy[4][2] then
-				if notedistance <= NoteAccuracy[1][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-					this.ScoreMultipler = 1
-					
-					Audio.Perfect:play()
-					Note.Perfect = Note.Perfect + 1
-				elseif notedistance <= NoteAccuracy[2][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
-					this.ScoreMultipler = 0.88
-					
-					Audio.Great:play()
-					Note.Great = Note.Great + 1
-				elseif notedistance <= NoteAccuracy[3][2] then
-					DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
-					DEPLS.Routines.ComboCounter.Reset = true
-					this.ScoreMultipler = 0.8
-					
-					Audio.Good:play()
-					Note.Good = Note.Good + 1
-				else
-					DEPLS.Routines.ComboCounter.Reset = true
-					this.ScoreMultipler = 0.4
-					
-					Audio.Bad:play()
-					Note.Bad = Note.Bad + 1
-				end
-				
-				DEPLS.Routines.PerfectNode.Replay = true
-				
-				if DEPLS.Routines.ComboCounter.Reset and this.StarImage then
-					Audio.StarExplode:play()
-					-- TODO: play star explode effect
-				end
-				
-				done_tap()
 			end
 		end
 	end
 	
-	table.insert(Note[note_data.position], noteobj)
+	if -this.ZeroAccuracyEndNote + ElapsedTime >= 0 then
+		-- Spawn end note circle
+		local EndNoteElapsedTime = DEPLS.ElapsedTime - (this.ZeroAccuracyTime + this.ZeroAccuracyEndNote) + NotesSpeed
+		
+		this.SecondCircle[1] = this.NoteposDiff[1] * EndNoteElapsedTime / NotesSpeed + 480
+		this.SecondCircle[2] = this.NoteposDiff[2] * EndNoteElapsedTime / NotesSpeed + 160
+		this.EndCircleScale = EndNoteElapsedTime / NotesSpeed
+	end
+	
+	-- First position
+	this.Vert[1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
+	this.Vert[2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	-- Second position
+	this.Vert[3] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
+	this.Vert[4] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	-- Third position
+	this.Vert[5] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
+	this.Vert[6] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	-- Fourth position
+	this.Vert[7] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction)) + 0.5)		-- x
+	this.Vert[8] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+end
+
+--! @brief LongNoteObject draw routine
+--! @param this NoteObject
+function LongNoteObject.Draw(this)
+	local NoteImage
+	local setColor = love.graphics.setColor
+	local draw = love.graphics.draw
+	
+	-- Draw note trail
+	love.graphics.setBlendMode("add")
+	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity * 0.5)
+	
+	love.graphics.polygon("fill", this.Vert[1], this.Vert[2], this.Vert[3], this.Vert[4], this.Vert[5], this.Vert[6])
+	love.graphics.polygon("fill", this.Vert[5], this.Vert[6], this.Vert[7], this.Vert[8], this.Vert[1], this.Vert[2])
+	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	love.graphics.setBlendMode("alpha")
+	
+	-- Draw note image
+	if bit.band(this.Attribute, 31) == 31 then
+		-- CBF extension: colored note
+		setColor(
+			bit.band(bit.rshift(this.Attribute, 23), 511),
+			bit.band(bit.rshift(this.Attribute, 14), 511),
+			bit.band(bit.rshift(this.Attribute, 5), 511),
+			DEPLS.LiveOpacity
+		)
+		NoteImage = DEPLS.Images.Note[9]
+	else
+		setColor(255, 255, 255, DEPLS.LiveOpacity)
+		NoteImage = DEPLS.Images.Note[this.Attribute]
+	end
+	
+	draw(NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	
+	-- Draw simultaneous note bar if it is
+	if this.SimulNoteImage then
+		draw(this.SimulNoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	end
+	
+	local draw_endcircle = this.EndCircleScale > 0
+	-- Draw end note trail if it is
+	if draw_endcircle then
+		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
+	end
+	
+	if DEPLS.DebugNoteDistance then
+		local printf = love.graphics.print
+		local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+		
+		setColor(0, 0, 0, 255)
+		printf(("%.2f"):format(notedistance), this.FirstCircle[1], this.FirstCircle[2])
+		setColor(255, 255, 255, 255)
+		printf(("%.2f"):format(notedistance), this.FirstCircle[1] + 1, this.FirstCircle[2] + 1)
+		
+		if draw_endcircle then
+			notedistance = distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
+			
+			setColor(0, 0, 0, 255)
+			printf(("%.2f"):format(notedistance), this.SecondCircle[1], this.SecondCircle[2])
+			setColor(255, 255, 255, 255)
+			printf(("%.2f"):format(notedistance), this.SecondCircle[1] + 1, this.SecondCircle[2] + 1)
+		end
+	else
+		setColor(255, 255, 255, 255)
+	end
+end
+
+--! @brief LongNoteObject on hold note
+--! @param this NoteObject
+--! @param touchid Unique touch identified which needs to be same on release
+function LongNoteObject.SetTouchID(this, touchid)
+	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	
+	if DEPLS.AutoPlay then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
+		DEPLS.Routines.PerfectNode.Replay = true
+		
+		this.ScoreMultipler = 1
+		this.TouchID = touchid
+		this.Audio.Perfect:play()
+		
+		Note.Perfect = Note.Perfect + 1
+
+		storyboard_callback("LongNoteTap",
+			false,							-- release
+			this.Position,					-- pos
+			this.ScoreMultipler, 			-- accuracy
+			notedistance,					-- distance
+			this.Attribute,		-- attribute
+			not(not(this.SimulNoteImage))	-- is_simul
+		)
+		
+		return
+	end
+	
+	-- We don't want someone accidentally tap it while it's in long distance
+	if notedistance <= NoteAccuracy[4][2] then
+		if notedistance <= NoteAccuracy[1][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
+			
+			this.ScoreMultipler = 1
+			this.Audio.Perfect:play()
+			
+			Note.Perfect = Note.Perfect + 1
+		elseif notedistance <= NoteAccuracy[2][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
+			this.ScoreMultipler = 0.88
+			this.Audio.Great:play()
+			
+			Note.Great = Note.Great + 1
+		elseif notedistance <= NoteAccuracy[3][2] then
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
+			DEPLS.Routines.ComboCounter.Reset = true
+			
+			this.ScoreMultipler = 0.8
+			this.Audio.Good:play()
+			
+			Note.Good = Note.Good + 1
+		else
+			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
+			DEPLS.Routines.ComboCounter.Reset = true
+			
+			this.ScoreMultipler = 0.4
+			this.Audio.Bad:play()
+			
+			Note.Bad = Note.Bad + 1
+		end
+		
+		DEPLS.Routines.PerfectNode.Replay = true
+		this.TouchID = touchid
+
+		storyboard_callback("LongNoteTap",
+			false,							-- release
+			this.Position,					-- pos
+			this.ScoreMultipler, 			-- accuracy
+			notedistance,					-- distance
+			this.Attribute,					-- attribute
+			not(not(this.SimulNoteImage))	-- is_simul
+		)
+	end
+end
+
+--! @brief LongNoteObject on hold note released
+--! @param this NoteObject
+--! @param touchid Touch ID passed to SetTouchID before
+function LongNoteObject.UnsetTouchID(this, touchid)
+	if this.TouchID ~= touchid then return end
+	
+	local notedistance = distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
+	local is_miss = false
+	
+	-- Check if perfect
+	if DEPLS.AutoPlay or notedistance <= NoteAccuracy[1][2] then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
+		DEPLS.Routines.PerfectNode.Replay = true
+		
+		this.ScoreMultipler2 = 1
+		this.Audio2.Perfect:play()
+		
+		Note.Perfect = Note.Perfect + 1
+	elseif notedistance <= NoteAccuracy[2][2] then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
+		DEPLS.Routines.PerfectNode.Replay = true
+		
+		this.ScoreMultipler2 = 0.88
+		this.Audio2.Great:play()
+		
+		Note.Great = Note.Great + 1
+	elseif notedistance <= NoteAccuracy[3][2] then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
+		DEPLS.Routines.PerfectNode.Replay = true
+		DEPLS.Routines.ComboCounter.Reset = true
+		
+		this.ScoreMultipler2 = 0.8
+		this.Audio2.Good:play()
+		
+		Note.Good = Note.Good + 1
+	elseif notedistance <= NoteAccuracy[4][2] then
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
+		DEPLS.Routines.PerfectNode.Replay = true
+		DEPLS.Routines.ComboCounter.Reset = true
+		
+		this.ScoreMultipler2 = 0.4
+		this.Audio2.Bad:play()
+		
+		Note.Bad = Note.Bad + 1
+	else
+		Note.Miss = Note.Miss + 1
+		is_miss = true
+		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
+		DEPLS.Routines.PerfectNode.Replay = true
+		DEPLS.Routines.ComboCounter.Reset = true
+		this.ScoreMultipler2 = 0
+	end
+	
+	if not(is_miss) then
+		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
+		AfterCircleTap(this.SecondCircle[1], this.SecondCircle[2], 255, 255, 255)
+		EffectPlayer.Spawn(AfterCircleTap)
+	end
+	
+	this.Delete = true
+	
+	storyboard_callback("LongNoteTap",
+		true,							-- release
+		this.Position,					-- pos
+		this.ScoreMultipler2, 			-- accuracy
+		notedistance,					-- distance
+		this.Attribute,					-- attribute
+		not(not(this.SimulNoteImage))	-- is_simul
+	)
+end
+
+--! @brief Add note
+--! @param note_data SIF-compilant note data
+function Note.Add(note_data)
+	table.insert(Note[note_data.position], NewNoteObject(note_data))
 end
 
 local ComboCounter = DEPLS.Routines.ComboCounter

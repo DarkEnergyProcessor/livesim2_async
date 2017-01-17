@@ -1,4 +1,6 @@
 -- DEPLS settings
+-- Copyright © 2038 Dark Energy Processor
+-- TODO: complete it
 
 local love = love
 local Settings = {
