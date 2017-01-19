@@ -1,11 +1,13 @@
+#This one has been superseded by [DEPLS2](https://github.com/MikuAuahDark/DEPLS/tree/master). This one is only provided for learning purpose and should not be used/migrate to DEPLS2.
+
+**********************************
+
 Dark Enegy Processor Live Simulator
 ===================================
 
 DEPLS (pronounced **Deep Less**) is a Love Live! School Idol Festival Live Show Simulator written in Lua meant to be run under LOVE2D framework.
 
 You need LOVE2D v0.10.1 or above to run this live simulator.
-
-**This one has been superseded by [DEPLS2](https://github.com/MikuAuahDark/DEPLS/tree/DEPLS2)**
 
 How to run
 ==========
