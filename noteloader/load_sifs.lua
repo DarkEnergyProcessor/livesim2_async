@@ -1,5 +1,6 @@
 -- Sukufest Simulator beatmap loader
 -- Part of DEPLS2
+-- TODO: support for new format https://twitter.com/yuyu0127_/status/823520047582748673
 
 local DEPLS = _G.DEPLS
 local NoteLoader = _G.NoteLoader

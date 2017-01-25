@@ -2,7 +2,7 @@
 -- Copyright © 2038 Dark Energy Processor
 
 local JSON = require("JSON")
-DEPLS_VERSION = "2070112"
+DEPLS_VERSION = "20170125"
 
 FontManager = require("font_manager")
 LogicalScale = {
@@ -53,7 +53,7 @@ local skip_val = 0
 function LoadEntryPoint(name, arg)
 	local scriptfile = love.filesystem.load(name)
 	CurrentEntry = scriptfile()
-	CurrentEntry.Start(arg)
+	CurrentEntry.Start(arg or {})
 	
 	skip_val = 2
 end
@@ -338,9 +338,11 @@ function love.resize(w, h)
 	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
 	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
 	
+	--[[
 	print("=== Resize ===")
 	print("New Dimension", w, h)
 	print("Scale", LogicalScale.ScaleX, LogicalScale.ScaleY, LogicalScale.ScaleOverall)
 	print("Offset", LogicalScale.OffX, LogicalScale.OffY)
 	print("=== Resize ===")
+	]]
 end

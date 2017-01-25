@@ -14,6 +14,9 @@ local DEPLS = {
 	BeatmapAudioVolume = 0.8,	-- The audio volume
 	PlaySpeed = 1.0,	-- Play speed factor. 1 = normal
 	PlaySpeedAlterDisabled = false,	-- Disallow alteration of DEPLS play speed factor
+	HasCoverImage = false,	-- Used to get livesim delay
+	CoverShown = 0,	-- Cover shown if this value starts at 3167
+	CoverData = {},
 	
 	BackgroundOpacity = 255,	-- User background opacity set from storyboard
 	BackgroundImage = {	-- Index 0 is the main background
@@ -618,6 +621,102 @@ DEPLS.Routines.ScoreNode = function(score)
 	while true do coroutine.yield(true) end	-- Stop
 end
 
+--! @brief Image cover preview routines. Takes 3167ms to complete. Used as effect player
+--! @param cover_data Table which contains image used, cover title, and optionally cover arrangement
+DEPLS.Routines.CoverPreview = coroutine.wrap(function(cover_data)
+	local deltaT
+	local ElapsedTime = 0
+	local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 40)
+	local ArrFont = FontManager.GetFont("MTLmr3m.ttf", 16)
+	local Imagescale = {
+		400 / cover_data.image:getWidth(),
+		400 / cover_data.image:getHeight()
+	}
+	local FirstTrans = {imageopacity = 0, textpos = 0, textopacity = 255}
+	local FirstTransTween = tween.new(233, FirstTrans, {imageopacity = 255, textpos = 480})
+	local TextAura = {textpos = 480, opacity = 127}
+	local TextAuraTween = tween.new(667, TextAura, {textpos = 580, opacity = 0})
+	local SecondTransTween = tween.new(333, FirstTrans, {imageopacity = 0, textopacity = 0})
+	
+	local drawtext = love.graphics.print
+	local draw = love.graphics.draw
+	local setFont = love.graphics.setFont
+	local setColor = love.graphics.setColor
+	
+	local TitleWidth = TitleFont:getWidth(cover_data.title)
+	local ArrWidth
+	
+	if cover_data.arrangement then
+		ArrWidth = ArrFont:getWidth(cover_data.arrangement)
+	end
+	
+	while true do
+		local FirstTransComplete
+		local SecondTransComplete
+		local TextAuraComplete
+		
+		while not(deltaT) do
+			deltaT = coroutine.yield()
+		end
+		
+		ElapsedTime = ElapsedTime + deltaT
+		FirstTransComplete = FirstTransTween:update(deltaT)
+		
+		if FirstTransComplete then
+			TextAuraComplete = TextAuraTween:update(deltaT)
+		end
+		
+		if ElapsedTime >= 2833 then
+			SecondTransComplete = SecondTransTween:update(deltaT)
+		end
+		
+		setFont(TitleFont)
+		setColor(0, 0, 0, FirstTrans.textopacity * 0.5)
+		drawtext(cover_data.title, FirstTrans.textpos - 2 - TitleWidth * 0.5, 507)
+		drawtext(cover_data.title, FirstTrans.textpos + 2 - TitleWidth * 0.5, 509)
+		setColor(255, 255, 255, FirstTrans.textopacity)
+		drawtext(cover_data.title, FirstTrans.textpos - TitleWidth * 0.5, 508)
+		
+		if FirstTransComplete and not(TextAuraComplete) then
+			setColor(0, 0, 0, TextAura.opacity * 0.5)
+			drawtext(cover_data.title, TextAura.textpos - 2 - TitleWidth * 0.5, 507)
+			drawtext(cover_data.title, TextAura.textpos + 2 - TitleWidth * 0.5, 509)
+			setColor(255, 255, 255, TextAura.opacity)
+			drawtext(cover_data.title, TextAura.textpos - TitleWidth * 0.5, 508)
+			setColor(255, 255, 255, FirstTrans.textopacity)
+		end
+		
+		if cover_data.arrangement then
+			setFont(ArrFont)
+			setColor(0, 0, 0, FirstTrans.textopacity * 0.5)
+			drawtext(cover_data.arrangement, FirstTrans.textpos - 1 - ArrWidth * 0.5, 553)
+			drawtext(cover_data.arrangement, FirstTrans.textpos + 1 - ArrWidth * 0.5, 555)
+			setColor(255, 255, 255, FirstTrans.textopacity)
+			drawtext(cover_data.arrangement, FirstTrans.textpos - ArrWidth * 0.5, 554)
+			
+			if FirstTransComplete and not(TextAuraComplete) then
+				setColor(0, 0, 0, TextAura.opacity * 0.5)
+				drawtext(cover_data.arrangement, TextAura.textpos - 1 - ArrWidth * 0.5, 553)
+				drawtext(cover_data.arrangement, TextAura.textpos + 1 - ArrWidth * 0.5, 555)
+				setColor(255, 255, 255, TextAura.opacity)
+				drawtext(cover_data.arrangement, TextAura.textpos - ArrWidth * 0.5, 554)
+			end
+		end
+		
+		setColor(255, 255, 255, FirstTrans.imageopacity)
+		draw(cover_data.image, 280, 80, 0, Imagescale[1], Imagescale[2])
+		setColor(255, 255, 255, 255)
+		
+		deltaT = nil
+		if FirstTransComplete and TextAuraComplete and SecondTransComplete then
+			break
+		end
+	end
+	
+	DEPLS.CoverShown = 0
+	while true do coroutine.yield(true) end	-- Stop
+end)
+
 --------------------------------
 -- Another public functions   --
 -- Some is part of storyboard --
@@ -767,8 +866,13 @@ function DEPLS.StoryboardFunctions.GetCurrentElapsedTime()
 end
 
 --! @brief Gets live simulator delay. Delay before live simulator is shown
+--! @param nocover Don't take cover image display time into account?
 --! @returns Live simulator delay, in milliseconds
-function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay()
+function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay(nocover)
+	if nocover and DEPLS.HasCoverImage then
+		return DEPLS.LiveDelay + 3167
+	end
+	
 	return DEPLS.LiveDelay
 end
 
@@ -897,6 +1001,24 @@ do
 	end
 end
 
+--! @brief Get current audio sample rate
+--! @returns Audio sample rate (or 22050 if there's no sound)
+function DEPLS.StoryboardFunctions.GetCurrentAudioSampleRate()
+	local a = DEPLS.Sound.BeatmapAudio
+	
+	if not(a) then
+		return 22050
+	end
+	
+	local _, v = pcall(a.getSampleRate, a)
+	
+	if _ == false then
+		return 22050
+	end
+	
+	return v * 0.5
+end
+
 --! @brief Loads DEPLS2 image file
 --! @param path The image path
 --! @returns Image handle or nil on failure
@@ -1016,12 +1138,14 @@ function DEPLS.Start(argv)
 	local BackgroundID = LoadConfig("BACKGROUND_IMAGE", 11)
 	local Keys = LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
 	local Auto = LoadConfig("AUTOPLAY", 0)
-	DEPLS.LiveDelay = LoadConfig("LIVESIM_DELAY", 1000)
+	DEPLS.LiveDelay = math.max(LoadConfig("LIVESIM_DELAY", 1000), 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
-	DEPLS.NotesSpeed = LoadConfig("NOTE_SPEED", 800)
-	DEPLS.Stamina = LoadConfig("STAMINA_DISPLAY", 32)
+	DEPLS.NotesSpeed = math.max(LoadConfig("NOTE_SPEED", 800), 400)
+	DEPLS.Stamina = math.min(LoadConfig("STAMINA_DISPLAY", 32) % 100, 99)
 	DEPLS.ScoreBase = LoadConfig("SCORE_ADD_NOTE", 1024)
 	DEPLS.Keys = {}
+	assert(DEPLS.LiveDelay > 0, "LIVESIM_DELAY must be positive and not zero")
+	assert(DEPLS.ScoreBase > 0, "SCORE_ADD_NOTE must be positive and not zero")
 	do
 		local i = 9
 		for w in Keys:gmatch("[^\t]+") do
@@ -1063,13 +1187,25 @@ function DEPLS.Start(argv)
 		custom_background = true
 	end
 	
+	DEPLS.ScoreBase = noteloader_data.scoretap or DEPLS.ScoreBase
+	DEPLS.Stamina = noteloader_data.staminadisp or DEPLS.Stamina
+	
+	if noteloader_data.cover then
+		DEPLS.HasCoverImage = true
+		DEPLS.CoverShown = 3167
+		DEPLS.ElapsedTime = DEPLS.ElapsedTime - 3167
+		noteloader_data.cover.title = noteloader_data.cover.title or argv[1]
+		
+		DEPLS.Routines.CoverPreview(noteloader_data.cover)
+	end
+	
 	-- Add to note manager
 	do
-		local a = os.clock()
+		--local a = os.clock()
 		for i = 1, #notes_list do
 			DEPLS.NoteManager.Add(notes_list[i])
 		end
-		print("Note added in "..((os.clock() - a) * 1000).." ms")
+		--print("Note added in "..((os.clock() - a) * 1000).." ms")
 	end
 	
 	-- Calculate note accuracy
@@ -1206,8 +1342,7 @@ function DEPLS.Start(argv)
 	DEPLS.Images.NoteIconCircle = love.graphics.newImage("image/ef_308_001.png")
 	
 	-- Load Font
-	DEPLS.MTLmr3m = love.graphics.newFont("MTLmr3m.ttf", 24)
-	love.graphics.setFont(DEPLS.MTLmr3m)
+	DEPLS.MTLmr3m = FontManager.GetFont("MTLmr3m.ttf", 24)
 end
 
 -- Used internally
@@ -1289,9 +1424,14 @@ function DEPLS.Draw(deltaT)
 	end
 	
 	-- Draw background blackness
-	setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity / 255)
-	rectangle("fill", -88, -43, 1136, 726)
-	setColor(255, 255, 255, 255)
+	if DEPLS.CoverShown > 0 then
+		DEPLS.Routines.CoverPreview(deltaT)
+		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
+	else
+		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity / 255)
+		rectangle("fill", -88, -43, 1136, 726)
+		setColor(255, 255, 255, 255)
+	end
 		
 	if AllowedDraw then
 		-- Draw header
@@ -1351,6 +1491,7 @@ AUTOPLAY = %s
 			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
 			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great
 			, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
+		love.graphics.setFont(DEPLS.MTLmr3m)
 		setColor(0, 0, 0, 255)
 		love.graphics.print(text, 1, 1)
 		setColor(255, 255, 255, 255)
@@ -1410,7 +1551,7 @@ function love.keypressed(key, scancode, repeat_bit)
 			
 			-- Back
 			MountZip()	-- Unmount
-			LoadEntryPoint("main_menu.lua")
+			LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then
 				DEPLS.Sound.LiveAudio:stop()

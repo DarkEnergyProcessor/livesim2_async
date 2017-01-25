@@ -6,6 +6,7 @@ local DEPLS = _G.DEPLS
 
 -- The Lua storyboard
 local LuaStoryboard = {}
+local AdditionalData = {}
 local BeatmapDir
 local StoryboardLua
 
@@ -13,27 +14,51 @@ local StoryboardLua
 local PushPopCount = 0
 
 local function RelativeReadFile(path)
-	local x = love.filesystem.newFileData(BeatmapDir..path)
+	if AdditionalData[path] then
+		return AdditionalData[path]:getString()
+	end
 	
-	if not(x) then return nil end
+	if BeatmapDir then
+		local x = love.filesystem.newFileData(BeatmapDir..path)
+		
+		if not(x) then return nil end
+		
+		return x:getString()
+	end
 	
-	return x:getString()
+	return nil
 end
 
 local function RelativeLoadVideo(path, loadaudio)
-	local x = love.filesystem.newFile(BeatmapDir..path, "r")
+	if AdditionalData[path] then
+		return love.graphics.newVideo(AdditionalData[path], loadaudio)
+	end
 	
-	if not(x) then return nil end
+	if BeatmapDir then
+		local x = love.filesystem.newFile(BeatmapDir..path, "r")
+		
+		if not(x) then return nil end
+		
+		return love.graphics.newVideo(love.video.newVideoStream(x), loadaudio)
+	end
 	
-	return love.graphics.newVideo(love.video.newVideoStream(x), loadaudio)
+	return nil
 end
 
 local function RelativeLoadImage(path)
-	local x = love.filesystem.newFileData(BeatmapDir..path)
+	if AdditionalData[path] then
+		return love.graphics.newImage(AdditionalData[path])
+	end
 	
-	if not(x) then return nil end
+	if BeatmapDir then
+		local x = love.filesystem.newFileData(BeatmapDir..path)
+		
+		if not(x) then return nil end
+		
+		return love.graphics.newImage(x)
+	end
 	
-	return love.graphics.newImage(x)
+	return nil
 end
 
 -- Used to isolate function and returns table of all created global variable
@@ -90,6 +115,8 @@ local isolated_love = {
 		setCanvas = love.graphics.setCanvas,
 		setColor = love.graphics.setColor,
 		setColorMask = love.graphics.setColorMask,
+		setLineStyle = love.graphics.setLineStyle,
+		setLineWidth = love.graphics.setLineWidth,
 		setScissor = love.graphics.setScissor,
 		setShader = love.graphics.setShader,
 		
@@ -123,6 +150,7 @@ local allowed_libs = {
 	table = table,
 	math = math,
 	coroutine = coroutine,
+	bit = require("bit"),
 	os = {
 		time = os.time,
 		clock = os.clock
@@ -201,7 +229,8 @@ function LuaStoryboard.Draw(deltaT)
 	
 	local status, msg
 	if StoryboardLua[3] then
-		status, msg = pcall(StoryboardLua[2].Update, deltaT)
+		--status, msg = pcall(StoryboardLua[2].Update, deltaT)
+		StoryboardLua[2].Update(deltaT)
 	else
 		status, msg = pcall(StoryboardLua[1], deltaT)
 	end
@@ -223,6 +252,10 @@ function LuaStoryboard.Draw(deltaT)
 	if status == false then
 		print("Storyboard Error: "..msg)
 	end
+end
+
+function LuaStoryboard.SetAdditionalFiles(datas)
+	AdditionalData = assert(type(datas) == "table" and datas, "bad argument #1 to 'SetAdditionalFiles' (table expected)")
 end
 
 -- Callback functions

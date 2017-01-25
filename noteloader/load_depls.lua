@@ -64,7 +64,7 @@ function DEPLS2Beatmap.Load(file)
 				local out = loader.Load({
 					file[1].."/beatmap",
 					file[2].."/beatmap"
-				})
+				}, file[1].."/")
 				
 				notes_data = out.notes_list
 				scoreinfo = out.score
@@ -129,12 +129,31 @@ function DEPLS2Beatmap.Load(file)
 		end
 	end
 	
+	-- Get cover image
+	local covr
+	if love.filesystem.isFile(file[1].."/cover.png") then
+		covr = {image = love.graphics.newImage(love.filesystem.newFileData(file[1].."/cover.png"))}
+		
+		if love.filesystem.isFile(file[1].."/cover.txt") then
+			local fs = assert(love.filesystem.newFileData(file[1].."/cover.txt")):getString()
+			local title, arr = fs:match("([^\r\n|\r|\n]+)[\r\n|\r|\n]*(.*)")
+			
+			covr.title = title
+			if #arr > 0 then
+				covr.arrangement = arr
+			end
+		end
+		
+		
+	end
+	
 	-- Result
 	local out = {
 		notes_list = notes_data,
 		storyboard = storyboard,
 		song_file = DEPLS.LoadAudio(file[1].."/songFile.wav"),
-		score = scoreinfo
+		score = scoreinfo,
+		cover = covr
 	}
 	
 	if background_id then

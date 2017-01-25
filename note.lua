@@ -166,7 +166,7 @@ function SingleNoteObject.Draw(this)
 	local setColor = love.graphics.setColor
 	
 	-- Draw note image
-	if bit.band(this.Attribute, 31) == 31 then
+	if bit.band(this.Attribute, 15) == 15 then
 		-- CBF extension: colored note
 		setColor(
 			bit.band(bit.rshift(this.Attribute, 23), 511),
@@ -336,6 +336,7 @@ function LongNoteObject.Update(this, deltaT)
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
 				this.ScoreMultipler = 0
+				this.ScoreMultipler2 = 0
 				this.Delete = true
 				Note.Miss = Note.Miss + 1
 				
@@ -392,7 +393,7 @@ function LongNoteObject.Draw(this)
 	love.graphics.setBlendMode("alpha")
 	
 	-- Draw note image
-	if bit.band(this.Attribute, 31) == 31 then
+	if bit.band(this.Attribute, 15) == 15 then
 		-- CBF extension: colored note
 		setColor(
 			bit.band(bit.rshift(this.Attribute, 23), 511),

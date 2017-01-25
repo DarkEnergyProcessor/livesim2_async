@@ -11,12 +11,13 @@ local NoteLoader = {}
 _G.NoteLoader = NoteLoader
 
 local loaders = {
-	love.filesystem.load("noteloader/load_depls.lua")(),
-	love.filesystem.load("noteloader/load_cbf.lua")(),
-	love.filesystem.load("noteloader/load_sif.lua")(),
-	love.filesystem.load("noteloader/load_sifs.lua")(),
-	love.filesystem.load("noteloader/load_llp.lua")(),
-	love.filesystem.load("noteloader/load_mid.lua")()
+	assert(assert(love.filesystem.load("noteloader/load_depls.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_cbf.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_ls2.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_sif.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_sifs.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_llp.lua"))()),
+	assert(assert(love.filesystem.load("noteloader/load_mid.lua"))())
 }
 NoteLoader.Loaders = loaders
 
@@ -66,6 +67,9 @@ end
 --!          - unit_image - The beatmap-specific unit image or nil
 --!			 - background - The beatmap-specific background ID or handle or nil
 --!          - score - The beatmap score info (C, B, A, S score in table) or nil
+--!          - cover - Beatmap cover image information or nil
+--!          - scoretap
+--!          - staminadisp
 --! @warning This function causes lua error if the beatmap is not found
 function NoteLoader.NoteLoader(path)
 	if path:find("::") == 1 then
@@ -79,7 +83,7 @@ function NoteLoader.NoteLoader(path)
 				song_file = love.sound.newSoundData("test/"..bm[1].."."..bm[2])
 			}
 		else
-			error("Invalid test beatmap ID")
+			assert(false, "Invalid test beatmap ID")
 		end
 	end
 	
@@ -100,16 +104,17 @@ function NoteLoader.NoteLoader(path)
 				return loader.Load(path)
 			end
 		else
-			error("Invalid beatmap loader "..i)
+			assert(false, "Invalid beatmap loader #"..i)
 		end
 	end
 	
-	error("Cannot open beatmap \""..path[1].."\"")
+	assert(false, "Cannot open beatmap \""..path[1].."\"")
 end
 
 local beatmap_names = {
 	"DEPLS Beatmap Folder",
 	"Custom Beatmap Festival",
+	"LS2 Packed Beatmap",
 	"SIF Beatmap",
 	"Sukufesu Simulator Beatmap",
 	"LLPractice Beatmap",

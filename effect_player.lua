@@ -7,7 +7,7 @@ local ep_list = {}
 ep.list = ep_list
 
 -- Should be already coroutine-wrapped.
-function ep.Spawn(func)
+function ep.Spawn(func, func2)
 	table.insert(ep_list, func)
 end
 
