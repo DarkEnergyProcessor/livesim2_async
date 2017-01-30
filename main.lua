@@ -346,3 +346,11 @@ function love.resize(w, h)
 	print("=== Resize ===")
 	]]
 end
+
+function love.filedropped(file)
+	print("File Dropped", file:getFilename())
+end
+
+function love.directorydropped(dir)
+	print("Dir Dropped", dir)
+end

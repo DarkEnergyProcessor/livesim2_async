@@ -1,5 +1,6 @@
 -- Lua storyboard handler
 -- Copyright © 2038 Dark Energy Processor
+local Shelsha = require("Shelsha")
 
 -- The DEPLS handle
 local DEPLS = _G.DEPLS
@@ -56,6 +57,26 @@ local function RelativeLoadImage(path)
 		if not(x) then return nil end
 		
 		return love.graphics.newImage(x)
+	end
+	
+	return nil
+end
+
+local function LoadTextureBank(file)
+	if AdditionalData[file] then
+		local _, a = pcall(Shelsha.newTextureBank, AdditionalData[file])
+		
+		if _ then return a end
+	end
+	
+	if BeatmapDir then
+		local x = love.filesystem.newFileData(BeatmapDir..file)
+		
+		if not(x) then return nil end
+		
+		local _, a = pcall(Shelsha.newTextureBank, x)
+		
+		if _ then return a end
 	end
 	
 	return nil
@@ -166,7 +187,9 @@ function LuaStoryboard.LoadString(str, dir)
 	local env = {
 		LoadVideo = RelativeLoadVideo,
 		LoadImage = RelativeLoadImage,
-		ReadFile = RelativeReadFile
+		ReadFile = RelativeReadFile,
+		DrawObject = love.graphics.draw,
+		LoadTextureBank = LoadTextureBank,
 	}
 	
 	for n, v in pairs(_G) do

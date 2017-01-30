@@ -869,7 +869,7 @@ end
 --! @param nocover Don't take cover image display time into account?
 --! @returns Live simulator delay, in milliseconds
 function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay(nocover)
-	if nocover and DEPLS.HasCoverImage then
+	if not(nocover) and DEPLS.HasCoverImage then
 		return DEPLS.LiveDelay + 3167
 	end
 	
@@ -1126,6 +1126,7 @@ function DEPLS.Start(argv)
 		Star = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
 		Simultaneous = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
 		Token = love.graphics.newImage("image/tap_circle/e_icon_01.png"),
+		LongNote = love.graphics.newImage("image/ef_326_000.png")
 	}
 	DEPLS.Images.Spotlight = love.graphics.newImage("image/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()

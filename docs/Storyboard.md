@@ -221,6 +221,19 @@ Parameters:
 
 Returns: R, G, and B color (3 values)
 
+*************************************************
+
+### `ShelshaObject LoadTextureBank(string filename)`
+
+Load Playground texture bank (TEXB). Uses [Shelsha](https://github.com/MikuAuahDark/Shelsha) LOVE library to load
+Playground TEXB and parse it's mesh data, so you should check Shelsha documentation for function reference.
+
+Parameters:
+
+* `filename` - The texture bank filename. The TEXB must be decrypted before used (and DEPLS2 doesn't ship with HonokaMiku decrypter for this)
+
+Returns: `ShelshaObject` or `nil` on failure.
+
 Storyboard Callback Functions
 =============================
 

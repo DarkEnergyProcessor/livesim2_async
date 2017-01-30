@@ -105,7 +105,15 @@ local function NewNoteObject(note_data)
 		noteobj.SecondCircle = {480, 160}
 		noteobj.ZeroAccuracyEndNote = note_data.effect_value * 1000
 		noteobj.EndNoteImage = DEPLS.Images.Note.NoteEnd
+		noteobj.LongNoteMesh = love.graphics.newMesh(4, "strip", "stream")
 		noteobj.EndCircleScale = 0
+		
+		noteobj.Vert[1] = {40, 0, 1, 0.0625}
+		noteobj.Vert[2] = {40, 0, 1, 0.9375}
+		noteobj.Vert[3] = {-1, -1, 0, 0.9375}
+		noteobj.Vert[4] = {-1, -1, 0, 0.0625}
+		
+		noteobj.LongNoteMesh:setTexture(DEPLS.Images.Note.LongNote)
 		
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
@@ -148,7 +156,7 @@ function SingleNoteObject.Update(this, deltaT)
 			this.Position,					-- pos
 			0, 								-- accuracy (miss)
 			notedistance,					-- distance
-			this.Attribute,		-- attribute
+			this.Attribute,					-- attribute
 			not(not(this.StarImage)),		-- is_star
 			not(not(this.SimulNoteImage)),	-- is_simul
 			not(not(this.TokenImage))		-- is_token
@@ -235,7 +243,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			this.Position,					-- pos
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
-			this.Attribute,		-- attribute
+			this.Attribute,					-- attribute
 			not(not(this.StarImage)),		-- is_star
 			not(not(this.SimulNoteImage)),	-- is_simul
 			not(not(this.TokenImage))		-- is_token
@@ -296,7 +304,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			this.Position,					-- pos
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
-			this.Attribute,		-- attribute
+			this.Attribute,					-- attribute
 			not(not(this.StarImage)),		-- is_star
 			not(not(this.SimulNoteImage)),	-- is_simul
 			not(not(this.TokenImage))		-- is_token
@@ -363,34 +371,36 @@ function LongNoteObject.Update(this, deltaT)
 	end
 	
 	-- First position
-	this.Vert[1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
-	this.Vert[2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	this.Vert[4][1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
+	this.Vert[4][2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction)) + 0.5)		-- y
 	-- Second position
-	this.Vert[3] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
-	this.Vert[4] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	this.Vert[3][1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
+	this.Vert[3][2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
 	-- Third position
-	this.Vert[5] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
-	this.Vert[6] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	this.Vert[1][1] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
+	this.Vert[1][2] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
 	-- Fourth position
-	this.Vert[7] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction)) + 0.5)		-- x
-	this.Vert[8] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	this.Vert[2][1] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction)) + 0.5)		-- x
+	this.Vert[2][2] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	
+	this.LongNoteMesh:setVertices(this.Vert)
 end
 
 --! @brief LongNoteObject draw routine
 --! @param this NoteObject
 function LongNoteObject.Draw(this)
 	local NoteImage
+	local graphics = love.graphics
 	local setColor = love.graphics.setColor
 	local draw = love.graphics.draw
 	
 	-- Draw note trail
-	love.graphics.setBlendMode("add")
-	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity * 0.5)
+	graphics.setBlendMode("add")
+	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity)
 	
-	love.graphics.polygon("fill", this.Vert[1], this.Vert[2], this.Vert[3], this.Vert[4], this.Vert[5], this.Vert[6])
-	love.graphics.polygon("fill", this.Vert[5], this.Vert[6], this.Vert[7], this.Vert[8], this.Vert[1], this.Vert[2])
+	draw(this.LongNoteMesh)
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	love.graphics.setBlendMode("alpha")
+	graphics.setBlendMode("alpha")
 	
 	-- Draw note image
 	if bit.band(this.Attribute, 15) == 15 then
@@ -422,7 +432,7 @@ function LongNoteObject.Draw(this)
 	end
 	
 	if DEPLS.DebugNoteDistance then
-		local printf = love.graphics.print
+		local printf = graphics.print
 		local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 		
 		setColor(0, 0, 0, 255)
