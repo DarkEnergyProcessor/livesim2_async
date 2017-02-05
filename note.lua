@@ -6,7 +6,8 @@ local DEPLS = _G.DEPLS
 local List = require("List")
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
-local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0}
+local Yohane = require("Yohane")
+local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0, NoteRemaining = 0, HighestCombo = 0}
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
 local AddScore = DEPLS.AddScore
@@ -15,6 +16,27 @@ local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
 local floor = math.floor
+local notes_bomb = Yohane.newFlashFromFilename("live_notes_bomb.flsh")
+notes_bomb:setMovie("ef_317")
+
+local function note_bomb_effect(x, y)
+	local a = notes_bomb:clone()
+	local deltaT
+	a:jumpToLabel("bomb")
+	
+	while not(a:isFrozen()) do
+		while not(deltaT) do
+			deltaT = coroutine.yield()
+		end
+		
+		a:update(deltaT)
+		a:draw(x, y)
+		
+		deltaT = nil
+	end
+	
+	while true do coroutine.yield(true) end
+end
 
 local CheckSimulNote
 do
@@ -148,6 +170,9 @@ function SingleNoteObject.Update(this, deltaT)
 		this.Delete = true
 		
 		if this.StarImage then
+			local ef = coroutine.wrap(note_bomb_effect)
+			ef(this.CenterIdol[1], this.CenterIdol[2])
+			EffectPlayer.Spawn(ef)
 			this.Audio.StarExplode:play()
 		end
 		
@@ -602,6 +627,7 @@ end
 --! @brief Add note
 --! @param note_data SIF-compilant note data
 function Note.Add(note_data)
+	Note.NoteRemaining = Note.NoteRemaining + 1
 	table.insert(Note[note_data.position], NewNoteObject(note_data))
 end
 
@@ -643,6 +669,8 @@ function Note.Update(deltaT)
 					else
 						ComboCounter.CurrentCombo = ComboCounter.CurrentCombo + 1
 					end
+					Note.NoteRemaining = Note.NoteRemaining - 1
+					Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
 					
 					ComboCounter.Replay = true
 				else
@@ -737,6 +765,8 @@ function Note.SetTouch(pos, touchid, release)
 			else
 				ComboCounter.CurrentCombo = ComboCounter.CurrentCombo + 1
 			end
+			Note.NoteRemaining = Note.NoteRemaining - 1
+			Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
 			
 			ComboCounter.Replay = true
 		end

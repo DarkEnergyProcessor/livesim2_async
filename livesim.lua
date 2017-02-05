@@ -7,6 +7,7 @@ local tween = require("tween")
 local EffectPlayer = require("effect_player")
 local List = require("List")
 local JSON = require("JSON")
+local Yohane = require("Yohane")
 local DEPLS = {
 	ElapsedTime = 0,	-- Elapsed time, in milliseconds
 	DebugDisplay = false,
@@ -29,6 +30,9 @@ local DEPLS = {
 	},
 	LiveOpacity = 255,	-- Live opacity
 	AutoPlay = false,	-- Autoplay?
+	
+	LiveShowCleared = Yohane.newFlashFromFilename("live_clear.flsh"),
+	FullComboAnim = Yohane.newFlashFromFilename("live_fullcombo.flsh"),
 	
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
 	Routines = {			-- Table to store all DEPLS effect routines
@@ -717,6 +721,51 @@ DEPLS.Routines.CoverPreview = coroutine.wrap(function(cover_data)
 	while true do coroutine.yield(true) end	-- Stop
 end)
 
+-- Live show complete animation routine (incl. FULLCOMBO)
+-- Uses Yohane Flash Abstraction
+DEPLS.Routines.LiveClearAnim = coroutine.wrap(function()
+	local deltaT
+	local isFCDetermined = false
+	local ElapsedTime = 0
+	
+	while true do
+		while not(deltaT) do
+			deltaT = coroutine.yield()
+		end
+		
+		if not(isFCDetermined) then
+			if
+				DEPLS.NoteManager.Good == 0 and
+				DEPLS.NoteManager.Bad == 0 and
+				DEPLS.NoteManager.Miss == 0
+			then
+				print(DEPLS.NoteManager.Good == 0, DEPLS.NoteManager.Bad == 0, DEPLS.NoteManager.Miss == 0)
+				-- Full Combo
+				ElapsedTime = 2500
+			end
+			
+			isFCDetermined = true
+		end
+		
+		if ElapsedTime > 0 then
+			ElapsedTime = ElapsedTime - deltaT
+			DEPLS.FullComboAnim:update(deltaT)
+		else
+			DEPLS.LiveShowCleared:update(deltaT)
+		end
+		
+		while coroutine.yield() do end
+		
+		if ElapsedTime > 0 then
+			DEPLS.FullComboAnim:draw(480, 320)
+		else
+			DEPLS.LiveShowCleared:draw(480, 320)
+		end
+	end
+	
+	coroutine.yield(true)
+end)
+
 --------------------------------
 -- Another public functions   --
 -- Some is part of storyboard --
@@ -1214,6 +1263,11 @@ function DEPLS.Start(argv)
 		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] * 1000 / DEPLS.NotesSpeed
 	end
 	
+	-- Initialize flash animation
+	DEPLS.LiveShowCleared:setMovie("ef_311")
+	DEPLS.FullComboAnim:setMovie("ef_329")
+	DEPLS.Routines.LiveClearAnim()
+	
 	-- Calculate score bar
 	if noteloader_data.score then
 		for i = 1, 4 do
@@ -1383,6 +1437,13 @@ function DEPLS.Update(deltaT)
 		Routines.ScoreUpdate.Draw(deltaT)
 		Routines.ScoreBar(deltaT)
 		Routines.PerfectNode.Draw(deltaT)
+		
+		if
+			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
+			DEPLS.NoteManager.NoteRemaining == 0
+		then
+			Routines.LiveClearAnim(deltaT)
+		end
 	end
 end
 
@@ -1469,6 +1530,14 @@ function DEPLS.Draw(deltaT)
 		
 		-- Update effect player
 		EffectPlayer.Update(deltaT)
+
+		-- Live clear animation
+		if
+			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
+			DEPLS.NoteManager.NoteRemaining == 0
+		then
+			Routines.LiveClearAnim()
+		end
 	end
 	
 	if DEPLS.DebugDisplay then

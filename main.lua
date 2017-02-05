@@ -2,7 +2,8 @@
 -- Copyright © 2038 Dark Energy Processor
 
 local JSON = require("JSON")
-DEPLS_VERSION = "20170125"
+local Yohane = require("Yohane")
+DEPLS_VERSION = "20170205"
 
 FontManager = require("font_manager")
 LogicalScale = {
@@ -24,6 +25,11 @@ local loader = {
 
 local function error_printer(msg, layer)
 	print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
+end
+
+local function basename(f)
+	local _ = f:reverse()
+	return _:sub(1,(_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
 end
 
 --! @brief Load configuration
@@ -94,6 +100,57 @@ function MountZip(path, target)
 	end
 	
 	return prev_mount
+end
+
+-- Yohane initialization
+function Yohane.Platform.ResolveImage(path)
+	return love.graphics.newImage("image/"..basename(path))
+end
+
+function Yohane.Platform.ResolveAudio(path)
+	return love.audio.newSource("sound/"..basename(path)..".ogg")
+end
+
+function Yohane.Platform.CloneImage(image_handle)
+	return image_handle
+end
+
+function Yohane.Platform.CloneAudio(audio)
+	if audio then
+		return audio:clone()
+	end
+	
+	return nil
+end
+
+function Yohane.Platform.PlayAudio(audio)
+	if audio then
+		audio:stop()
+		audio:play()
+	end
+end
+
+function Yohane.Platform.Draw(drawdatalist)
+	
+	local r, g, b, a = love.graphics.getColor()
+	
+	for _, drawdata in ipairs(drawdatalist) do
+		love.graphics.setColor(drawdata.r, drawdata.g, drawdata.b, drawdata.a)
+		love.graphics.draw(
+			drawdata.image, drawdata.x, drawdata.y,
+			drawdata.rotation,
+			drawdata.scaleX, drawdata.scaleY
+		)
+	end
+	
+	love.graphics.setColor(r, g, b, a)
+end
+
+function Yohane.Platform.OpenReadFile(fn)
+	local x = assert(love.filesystem.newFile("flash/"..basename(fn), "r"))
+	x:seek(0)
+	
+	return x
 end
  
 function love.errhand(msg)
@@ -196,7 +253,8 @@ function love.load(argv)
 		
 	end
 	
-	print("R/W Directory: "..love.filesystem.getSaveDirectory())
+	io.write("R/W Directory: ", love.filesystem.getSaveDirectory(), "\n")
+	Yohane.Init(love.filesystem.load)
 	
 	if os_type == "Android" then
 		-- Since we can't pass arguments to Android intent, we have to use txt
