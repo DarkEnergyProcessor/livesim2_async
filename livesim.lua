@@ -726,6 +726,7 @@ end)
 DEPLS.Routines.LiveClearAnim = coroutine.wrap(function()
 	local deltaT
 	local isFCDetermined = false
+	local isVoicePlayed = false
 	local ElapsedTime = 0
 	
 	while true do
@@ -739,7 +740,6 @@ DEPLS.Routines.LiveClearAnim = coroutine.wrap(function()
 				DEPLS.NoteManager.Bad == 0 and
 				DEPLS.NoteManager.Miss == 0
 			then
-				print(DEPLS.NoteManager.Good == 0, DEPLS.NoteManager.Bad == 0, DEPLS.NoteManager.Miss == 0)
 				-- Full Combo
 				ElapsedTime = 2500
 			end
@@ -751,6 +751,11 @@ DEPLS.Routines.LiveClearAnim = coroutine.wrap(function()
 			ElapsedTime = ElapsedTime - deltaT
 			DEPLS.FullComboAnim:update(deltaT)
 		else
+			if DEPLS.Sound.LiveClear and not(isVoicePlayed) then
+				DEPLS.Sound.LiveClear:play()
+				isVoicePlayed = true
+			end
+			
 			DEPLS.LiveShowCleared:update(deltaT)
 		end
 		
@@ -919,10 +924,10 @@ end
 --! @returns Live simulator delay, in milliseconds
 function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay(nocover)
 	if not(nocover) and DEPLS.HasCoverImage then
-		return DEPLS.LiveDelay + 3167
+		return DEPLS.LiveDelay
 	end
 	
-	return DEPLS.LiveDelay
+	return DEPLS.LiveDelay + 3167
 end
 
 --! @brief Spawn spotlight effect in the specificed idol position and with specificed color
@@ -1221,6 +1226,7 @@ function DEPLS.Start(argv)
 	notes_list = noteloader_data.notes_list
 	DEPLS.StoryboardHandle = noteloader_data.storyboard
 	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
+	DEPLS.Sound.LiveClear = noteloader_data.live_clear
 	
 	if type(noteloader_data.background) == "number" then
 		BackgroundID = noteloader_data.background
@@ -1232,7 +1238,6 @@ function DEPLS.Start(argv)
 		DEPLS.BackgroundImage[2][1] = noteloader_data.background[2]
 		DEPLS.BackgroundImage[3][1] = noteloader_data.background[3]
 		DEPLS.BackgroundImage[4][1] = noteloader_data.background[4]
-		print(DEPLS.BackgroundImage[0][4], DEPLS.BackgroundImage[0][5])
 		
 		custom_background = true
 	end
@@ -1554,13 +1559,14 @@ LIVE_OPACITY = %.2f
 BACKGROUND_BLACKNESS = %.2f
 AUDIO_VOLUME = %.2f
 AUDIO_SAMPLE = %5.2f, %5.2f
+REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
 ]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
 			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
-			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great
-			, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
+			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
+			, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 		love.graphics.setFont(DEPLS.MTLmr3m)
 		setColor(0, 0, 0, 255)
 		love.graphics.print(text, 1, 1)

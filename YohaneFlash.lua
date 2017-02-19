@@ -148,8 +148,8 @@ function YohaneFlash._internal.parseStream(stream)
 		elseif mtrxType == 3 then
 			-- MATRIX_TG, Translation, Skew, and Scale
 			matrixData = {Type = 3,
-				floats[mtrxIdx]    , floats[mtrxIdx + 1], floats[mtrxIdx + 2],
-				floats[mtrxIdx + 3], floats[mtrxIdx + 4], floats[mtrxIdx + 5]
+				floats[mtrxIdx]    , floats[mtrxIdx + 2], floats[mtrxIdx + 3],
+				floats[mtrxIdx + 1], floats[mtrxIdx + 4], floats[mtrxIdx + 5]
 			}
 		elseif mtrxType == 4 then
 			-- MATRIX_COL, RGBA color component, from 0.0 to 1.0
@@ -222,7 +222,6 @@ function YohaneFlash._internal._mt.clone(this)
 	local flsh = {
 		timeModulate = 0,
 		msPerFrame = this.msPerFrame,
-		currentMovie = this.currentMovie,
 		strings = Yohane.CopyTable(this.strings),
 		audios = {},
 		matrixTransf = {},
@@ -238,9 +237,14 @@ function YohaneFlash._internal._mt.clone(this)
 	
 	-- Copy movie data
 	for i = 0, #this.movieData do
+		
 		if this.movieData[i].type == "flash" then
 			flsh.movieData[i] = Yohane.CopyTable(this.movieData[i], "data")
 			flsh.movieData[i].data = Yohane.Movie.newMovie(flsh.movieData[i], flsh)
+			
+			if this.movieData[i].data == this.currentMovie then
+				flsh.currentMovie = flsh.movieData[i].data
+			end
 		elseif this.movieData[i].type == "image" then
 			flsh.movieData[i] = Yohane.CopyTable(this.movieData[i], "imageHandle")
 			flsh.movieData[i].imageHandle = Yohane.Platform.CloneImage(this.movieData[i].imageHandle)

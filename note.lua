@@ -87,7 +87,7 @@ local LongNoteObject = {}
 local function NewNoteObject(note_data)
 	local noteobj = {
 		ZeroAccuracyTime = note_data.timing_sec * 1000,
-		Attribute = note_data.notes_attribute,
+		Attribute = tonumber(note_data.notes_attribute),
 		Position = note_data.position,
 		Audio = {
 			Perfect = DEPLS.Sound.PerfectTap:clone(),

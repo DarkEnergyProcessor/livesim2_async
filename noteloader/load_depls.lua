@@ -156,6 +156,12 @@ function DEPLS2Beatmap.Load(file)
 		cover = covr
 	}
 	
+	local live_clear = DEPLS.LoadAudio(file[1].."/live_clear.wav")
+	if live_clear then
+		out.live_clear = love.audio.newSource(live_clear)
+	end
+	
+	
 	if background_id then
 		out.background = background_id
 	elseif background[0] then

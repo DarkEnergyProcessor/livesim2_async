@@ -11,8 +11,10 @@ local love = require("love")
 -- String to little endian dword (signed)
 local function string2dword(str)
 	return bit.bor(
-		bit.bor(str:byte(), bit.lshift(str:sub(2,2):byte(), 8)),
-		bit.bor(bit.lshift(str:sub(3,3):byte(), 16), bit.lshift(str:sub(4,4):byte(), 24))
+		str:byte(),
+		bit.lshift(str:sub(2,2):byte(), 8),
+		bit.lshift(str:sub(3,3):byte(), 16),
+		bit.lshift(str:sub(4,4):byte(), 24)
 	)
 end
 
@@ -76,7 +78,7 @@ local function process_BMPM(stream)
 		
 		if bit.rshift(note_effect, 31) == 1 then
 			-- Long note
-			effect_new_val = bit.band(note_effect, 0x7FFFFFF0) / 1000
+			effect_new_val = bit.band(note_effect, 0x7FFFFFF0) / 16000
 			effect_new = 3
 		else
 			local is_token = bit.band(note_effect, 16) == 16
@@ -304,7 +306,7 @@ local function process_ADIO(stream)
 	
 	return love.sound.newSoundData(love.filesystem.newFileData(
 		readstring(stream),
-		table.concat({"_", extension[ext]})
+		"_" .. extension[ext]
 	))
 end
 
@@ -313,7 +315,7 @@ end
 local function process_COVR(stream)
 	local title = readstring(stream)
 	local arr = readstring(stream)
-	local img = love.graphics.newImage(love.graphics.newFileData(
+	local img = love.graphics.newImage(love.filesystem.newFileData(
 		readstring(stream),
 		"cover.png"
 	))
@@ -385,7 +387,7 @@ function ls2.parsestream(stream, path)
 			output.song_file = process_ADIO(stream)
 		elseif section == "COVR" then
 			assert(output.cover == nil, "Only one COVR can exist")
-			output.song_file = process_COVR(stream)
+			output.cover = process_COVR(stream)
 		else
 			assert(false, string.format("Invalid section %s", section))
 		end

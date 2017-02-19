@@ -63,6 +63,7 @@ function MainMenu.Draw(deltaT)
 	drawtext("DEPLS2 rel ".._G.DEPLS_VERSION, 3, 608)
 	setColor(255, 255, 255, 255)
 end
+jit.off(MainMenu.Draw)
 
 function love.mousepressed(x, y, button, touch_id)
 	x, y = CalculateTouchPosition(x, y)

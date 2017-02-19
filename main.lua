@@ -20,7 +20,8 @@ local loader = {
 	settings = {0, "setting_view.lua"},
 	main_menu = {0, "main_menu.lua"},
 	beatmap_select = {0, "select_beatmap.lua"},
-	unit_editor = {0, "unit_editor.lua"}
+	unit_editor = {0, "unit_editor.lua"},
+	about = {0, "about_screen.lua"}
 }
 
 local function error_printer(msg, layer)
@@ -131,16 +132,21 @@ function Yohane.Platform.PlayAudio(audio)
 end
 
 function Yohane.Platform.Draw(drawdatalist)
-	
 	local r, g, b, a = love.graphics.getColor()
 	
 	for _, drawdata in ipairs(drawdatalist) do
+		local wh = drawdata.image:getWidth() * 0.5
+		local hh = drawdata.image:getHeight() * 0.5
 		love.graphics.setColor(drawdata.r, drawdata.g, drawdata.b, drawdata.a)
-		love.graphics.draw(
-			drawdata.image, drawdata.x, drawdata.y,
-			drawdata.rotation,
-			drawdata.scaleX, drawdata.scaleY
-		)
+		
+		-- Since rotation is first, use push/pop methods
+		love.graphics.push()
+		love.graphics.translate(drawdata.x + wh, drawdata.y + hh)
+		love.graphics.rotate(drawdata.rotation)
+		love.graphics.translate(-wh, -hh)
+		love.graphics.scale(drawdata.scaleX, drawdata.scaleY)
+		love.graphics.draw(drawdata.image)
+		love.graphics.pop()
 	end
 	
 	love.graphics.setColor(r, g, b, a)
@@ -246,11 +252,8 @@ end
 function love.load(argv)
 	local os_type = love.system.getOS()
 	
-	if jit and jit.on then
+	if jit and jit.on and os_type == "Android" then
 		jit.on()
-		
-		-- Disable some function to be JIT'd
-		
 	end
 	
 	io.write("R/W Directory: ", love.filesystem.getSaveDirectory(), "\n")
@@ -395,14 +398,6 @@ function love.resize(w, h)
 	LogicalScale.ScaleOverall = math.min(LogicalScale.ScaleX, LogicalScale.ScaleY)
 	LogicalScale.OffX = (LogicalScale.ScreenX - LogicalScale.ScaleOverall * 960) / 2
 	LogicalScale.OffY = (LogicalScale.ScreenY - LogicalScale.ScaleOverall * 640) / 2
-	
-	--[[
-	print("=== Resize ===")
-	print("New Dimension", w, h)
-	print("Scale", LogicalScale.ScaleX, LogicalScale.ScaleY, LogicalScale.ScaleOverall)
-	print("Offset", LogicalScale.OffX, LogicalScale.OffY)
-	print("=== Resize ===")
-	]]
 end
 
 function love.filedropped(file)

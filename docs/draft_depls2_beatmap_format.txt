@@ -96,3 +96,6 @@ Sections:
 	string - Cover title (can be empty, defaults to filename)
 	string - Cover arrangement (can be empty)
 	string - Image data (PNG only)
+
+11. LCLR - Live Clear Audio SFX. Optional. Only one can be specificed
+	* Note: same as ADIO

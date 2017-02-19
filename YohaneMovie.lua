@@ -228,7 +228,7 @@ function YohaneMovie._internal._mt:stepFrame()
 					-- MATRIX_TG
 					layerdata.matrix.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[3] * tm[3])
 					layerdata.matrix.scaleY = math_sign(tm[4]) * math.sqrt(tm[2] * tm[2] + tm[4] * tm[4])
-					layerdata.matrix.rotation = math.acos(tm[1] / layerdata.matrix.scaleX)
+					layerdata.matrix.rotation = math.atan2(tm[3], tm[4])
 					layerdata.matrix.translateX = tm[5]
 					layerdata.matrix.translateY = tm[6]
 				elseif tm.Type == 4 then

@@ -140,6 +140,7 @@ local isolated_love = {
 		setLineWidth = love.graphics.setLineWidth,
 		setScissor = love.graphics.setScissor,
 		setShader = love.graphics.setShader,
+		setFont = love.graphics.setFont,
 		
 		pop = function()
 			if PushPopCount > 0 then
@@ -248,7 +249,7 @@ local graphics = love.graphics
 function LuaStoryboard.Draw(deltaT)
 	if not(StoryboardLua) then return end
 	
-	graphics.push()
+	graphics.push("all")
 	
 	local status, msg
 	if StoryboardLua[3] then
@@ -258,6 +259,7 @@ function LuaStoryboard.Draw(deltaT)
 		status, msg = pcall(StoryboardLua[1], deltaT)
 	end
 	
+	-- Rebalance push/pop
 	for i = 1, PushPopCount do
 		graphics.pop()
 	end
@@ -265,12 +267,6 @@ function LuaStoryboard.Draw(deltaT)
 	
 	-- Cleanup
 	graphics.pop()
-	graphics.setCanvas()
-	graphics.setScissor()
-	graphics.setColor(255, 255, 255, 255)
-	graphics.setColorMask()
-	graphics.setBlendMode("alpha")
-	graphics.setShader()
 	
 	if status == false then
 		print("Storyboard Error: "..msg)
