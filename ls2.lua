@@ -245,7 +245,7 @@ end
 --! @returns Lua storyboard object
 local function process_SRYL(stream, path)
 	local storyboard = readstring(stream)
-	local luastoryboard = love.filesystem.load("luastoryboard.lua")()
+	local luastoryboard = {Storyboard = love.filesystem.load("luastoryboard.lua")()}
 	
 	do
 		local a, b = pcall(love.math.decompress, storyboard, "zlib")
@@ -253,7 +253,7 @@ local function process_SRYL(stream, path)
 		storyboard = a and b or storyboard
 	end
 	
-	luastoryboard.LoadString(storyboard, path)
+	luastoryboard.Load = function() luastoryboard.LoadString(storyboard.Storyboard, path) end
 	return luastoryboard
 end
 
@@ -406,7 +406,7 @@ function ls2.parsestream(stream, path)
 	
 	-- If there's storyboard, add file search from additional datas
 	if output.storyboard then
-		output.storyboard.SetAdditionalFiles(additional_data)
+		output.storyboard.Storyboard.SetAdditionalFiles(additional_data)
 	end
 	
 	-- Background ID or background data. Background data has higher priority

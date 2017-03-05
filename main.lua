@@ -3,7 +3,7 @@
 
 local JSON = require("JSON")
 local Yohane = require("Yohane")
-DEPLS_VERSION = "20170205"
+DEPLS_VERSION = "20170304"
 
 FontManager = require("font_manager")
 LogicalScale = {
@@ -366,9 +366,16 @@ Module options:
 	end
 end
 
+local is_update = true
 function love.update(deltaT)
 	if skip_val > 0 then
 		skip_val = skip_val - 1
+		return
+	end
+	
+	if is_update then
+		is_update = false
+	else
 		return
 	end
 	
@@ -378,6 +385,12 @@ end
 function love.draw()
 	if skip_val > 0 then
 		skip_val = skip_val - 1
+		return
+	end
+	
+	if not(is_update) then
+		is_update = true
+	else
 		return
 	end
 	
@@ -407,3 +420,5 @@ end
 function love.directorydropped(dir)
 	print("Dir Dropped", dir)
 end
+
+require("touch_manager")

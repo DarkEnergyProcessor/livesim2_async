@@ -78,8 +78,8 @@ function DEPLS2Beatmap.Load(file)
 	
 	-- Get storyboard
 	if love.filesystem.isFile(file[1].."/storyboard.lua") then
-		storyboard = love.filesystem.load("luastoryboard.lua")()
-		storyboard.Load(file[1].."/storyboard.lua")
+		storyboard = {Storyboard = love.filesystem.load("luastoryboard.lua")()}
+		storyboard.Load = function() storyboard.Storyboard.Load(file[1].."/storyboard.lua") end
 	end
 	
 	-- Get background

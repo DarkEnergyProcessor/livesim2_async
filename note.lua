@@ -259,8 +259,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 		
 		Note.Perfect = Note.Perfect + 1
 		
-		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
-		AfterCircleTap(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
 		EffectPlayer.Spawn(AfterCircleTap)
 		
 		-- Call storyboard callback
@@ -607,8 +606,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 	end
 	
 	if not(is_miss) then
-		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
-		AfterCircleTap(this.SecondCircle[1], this.SecondCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.SecondCircle[1], this.SecondCircle[2], 255, 255, 255)
 		EffectPlayer.Spawn(AfterCircleTap)
 	end
 	

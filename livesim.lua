@@ -35,13 +35,7 @@ local DEPLS = {
 	FullComboAnim = Yohane.newFlashFromFilename("live_fullcombo.flsh"),
 	
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
-	Routines = {			-- Table to store all DEPLS effect routines
-		ComboCounter = {CurrentCombo = 0},
-		PerfectNode = {},
-		ScoreUpdate = {CurrentScore = 0},
-		ScoreEclipseF = {},
-		NoteIcon = {}
-	},
+	Routines = {},			-- Table to store all DEPLS effect routines
 	
 	IdolPosition = {	-- Idol position. 9 is leftmost
 		{816, 96 }, {785, 249}, {698, 378},
@@ -69,7 +63,8 @@ local DEPLS = {
 	
 	Images = {		-- Lists of loaded images
 		Note = {},
-		ScoreNode = {}
+		ScoreNode = {},
+		ComboNumbers = require("combo_num")
 	},
 	Sound = {}
 }
@@ -133,497 +128,22 @@ end
 -- Animation routines --
 ------------------------
 
---! @brief Circletap aftertap effect routine. Meant to be run via coroutine
---! @param x The x position relative to center of the image
---! @param y The y position relative to center of the image
---! @param r The RGB red value. Defaults to 255
---! @param g The RGB green value. Defaults to 255
---! @param b The RGB blue value. Defaults to 255
-function DEPLS.Routines.CircleTapEffect(x, y, r, g, b)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	
-	-- Initialize tons of locals
-	local deltaT
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local el_t = 0
-	local circle = DEPLS.Images.ef_316_001
-	local stareff = DEPLS.Images.ef_316_000
-	local circle1_data = {scale = 2, opacity = 255}
-	local circle2_data = {scale = 2, opacity = 255}
-	local circle3_data = {scale = 2, opacity = 255}
-	local stareff_data = {opacity = 255}
-	local circle1_tween = tween.new(125, circle1_data, {scale = 3.5})
-	local circle2_tween = tween.new(200, circle2_data, {scale = 3.5})
-	local circle3_tween = tween.new(250, circle3_data, {scale = 3.5})
-	local circle1_tween_op = tween.new(125, circle1_data, {opacity = 0}, "inQuad")
-	local circle2_tween_op = tween.new(200, circle2_data, {opacity = 0}, "inQuad")
-	local circle3_tween_op = tween.new(250, circle3_data, {opacity = 0}, "inQuad")
-	local stareff_tween = tween.new(250, stareff_data, {opacity = 0}, "inQuad")
-	local pos = {x, y}
-	
-	while true do
-		local still_has_render = false
-		deltaT = coroutine.yield()
-		el_t = el_t + deltaT
-		
-		if circle1_tween and circle1_tween:update(deltaT) == false then
-			still_has_render = true
-			
-			circle1_tween_op:update(deltaT)
-			setColor(r, g, b, circle1_data.opacity)
-			draw(circle, pos[1], pos[2], 0, circle1_data.scale, circle1_data.scale, 37.5, 37.5)
-			setColor(255, 255, 255, 255)
-		else
-			circle1_tween = nil
-		end
-		
-		if circle2_tween and circle2_tween:update(deltaT) == false then
-			still_has_render = true
-			
-			circle2_tween_op:update(deltaT)
-			setColor(r, g, b, circle2_data.opacity)
-			draw(circle, pos[1], pos[2], 0, circle2_data.scale, circle2_data.scale, 37.5, 37.5)
-			setColor(255, 255, 255, 255)
-		else
-			circle2_tween = nil
-		end
-		
-		if circle3_tween and circle3_tween:update(deltaT) == false then
-			still_has_render = true
-			
-			circle3_tween_op:update(deltaT)
-			setColor(r, g, b, circle3_data.opacity)
-			draw(circle, pos[1], pos[2], 0, circle3_data.scale, circle3_data.scale, 37.5, 37.5)
-			setColor(255, 255, 255, 255)
-		else
-			circle3_tween = nil
-		end
-		
-		if el_t >= 75 and stareff_tween:update(deltaT) == false then
-			still_has_render = true
-			setColor(r, g, b, stareff_data.opacity)
-			draw(stareff, pos[1], pos[2], 0, 1.5, 1.5, 50, 50)
-			setColor(255, 255, 255, 255)
-		end
-		
-		if still_has_render == false then
-			break
-		end
-	end
-	
-	while true do
-		coroutine.yield(true)	-- Tell effect player to remove this
-	end
-end
-
-function DEPLS.Routines.ComboCounter.GetComboColorIndex(combo)
-	if combo < 50 then
-		-- 0-49
-		return 1
-	elseif combo < 100 then
-		-- 50-99
-		return 2
-	elseif combo < 200 then
-		-- 100-199
-		return 3
-	elseif combo < 300 then
-		-- 200-299
-		return 4
-	elseif combo < 400 then
-		-- 300-399
-		return 5
-	elseif combo < 500 then
-		-- 400-499
-		return 6
-	elseif combo < 600 then
-		-- 500-599
-		return 7
-	elseif combo < 1000 then
-		-- 600-999
-		return 8
-	else
-		-- >= 1000
-		return 9
-	end
-end
-
---! Combo counter animation routine
-DEPLS.Routines.ComboCounter.Draw = coroutine.wrap(function()
-	local deltaT
-	local combo_scale = {s = 1.15}
-	local combo_tween = tween.new(150, combo_scale, {s = 1}, "inOutSine")
-	local combo_boom = {s = 1.25, op = 127}
-	local combo_boom_tween = tween.new(330, combo_boom, {s = 1.65, op = 0})
-	local ComboCounter = DEPLS.Routines.ComboCounter
-	local ComboNumbers = DEPLS.Images.ComboNumbers
-	local CurrentCombo
-	local draw = love.graphics.draw
-	local setColor = love.graphics.setColor
-	
-	while true do
-		::draw_update_sync1::
-		deltaT = coroutine.yield()	-- love.update part
-		if not(deltaT) then goto draw_update_sync1 end
-		
-		CurrentCombo = ComboCounter.CurrentCombo
-		
-		if ComboCounter.Replay then
-			combo_tween:reset()
-			combo_boom_tween:reset()
-			ComboCounter.Replay = false
-		end
-		
-		-- Don't draw if combo is 0
-		if CurrentCombo > 0 then
-			-- "combo" pos: 541x267+61+17
-			-- number pos: 451x267+24+24; aligh right; subtract by 43 for distance
-			combo_tween:update(deltaT)
-			combo_boom_tween:update(deltaT)
-			
-			local combo_str = {string.byte(tostring(CurrentCombo), 1, 2147483647)}
-			local img = ComboNumbers[ComboCounter.GetComboColorIndex(CurrentCombo)]
-			
-			::draw_update_sync2::
-			if coroutine.yield() then goto draw_update_sync2 end	-- love.draw part
-			
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
-			
-			for i = 1, #combo_str do
-				-- Draw numbers
-				draw(img[combo_str[i] - 47], 451 - (#combo_str - i) * 43, 267, 0, combo_scale.s, combo_scale.s, 24, 24)
-			end
-			
-			setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
-			draw(img.combo, 541, 266, 0, combo_boom.s, combo_boom.s, 61, 18)
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
-			draw(img.combo, 541, 267, 0, combo_scale.s, combo_scale.s, 61, 17)
-			setColor(255, 255, 255, 255)
-		else
-			::draw_update_sync3::
-			if coroutine.yield() then goto draw_update_sync3 end	-- draw nothing
-		end
-	end
-end)
-
---! Tap accuracy display routine
-DEPLS.Routines.PerfectNode.Draw = coroutine.wrap(function()
-	local deltaT
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local et = 500
-	local perfect_data = {opacity = 0, scale = 0}
-	local perfect_tween = tween.new(50, perfect_data, {opacity = 255, scale = 2}, "outSine")
-	local perfect_tween_fadeout = tween.new(200, perfect_data, {opacity = 0})
-	local PerfectNode = DEPLS.Routines.PerfectNode
-	
-	perfect_tween:update(50)
-	perfect_tween_fadeout:update(200)
-	
-	while true do
-		::draw_update_sync1::
-		deltaT = coroutine.yield()	-- love.update part
-		if not(deltaT) then goto draw_update_sync1 end
-		
-		et = et + deltaT
-		
-		if PerfectNode.Replay then
-			et = deltaT
-			perfect_tween:reset()
-			perfect_tween_fadeout:reset()
-			PerfectNode.Replay = false
-		end
-		
-		perfect_tween:update(deltaT)
-		
-		if et > 200 then
-			perfect_tween_fadeout:update(deltaT)
-		end
-		
-		-- To prevnet overflow
-		if et > 5000 then
-			et = et - 4000
-		end
-		
-		::draw_update_sync2::
-		if coroutine.yield() then goto draw_update_sync2 end	-- love.draw part
-		
-		if et < 500 then
-			setColor(255, 255, 255, perfect_data.opacity * DEPLS.LiveOpacity / 255)
-			draw(PerfectNode.Image, 480, 320, 0, perfect_data.scale, perfect_data.scale,
-				PerfectNode.Center[PerfectNode.Image][1], PerfectNode.Center[PerfectNode.Image][2])
-			setColor(255, 255, 255, 255)
-		end
-	end
-end)
-
---! Score flash animation routine
-DEPLS.Routines.ScoreEclipseF.Draw = coroutine.wrap(function()
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local deltaT
-	local eclipse_data = {scale = 1, opacity = 255}
-	local eclipse_tween = tween.new(500, eclipse_data, {scale = 1.6, opacity = 0}, "outSine")
-	local bar_data = {opacity = 255}
-	local ScoreEclipseF = DEPLS.Routines.ScoreEclipseF
-	
-	bar_data.tween = tween.new(300, bar_data, {opacity = 0})
-	
-	-- Seek to end
-	eclipse_tween:update(500)
-	bar_data.tween:update(300)
-	
-	while true do
-		::draw_update_sync1::
-		deltaT = coroutine.yield()	-- love.update part
-		if not(deltaT) then goto draw_update_sync1 end
-		
-		if ScoreEclipseF.Replay then
-			eclipse_tween:reset()
-			bar_data.tween:reset()
-			ScoreEclipseF.Replay = false
-		end
-		
-		::draw_update_sync2::
-		if coroutine.yield() then goto draw_update_sync2 end	-- love.draw part
-		
-		if eclipse_tween:update(deltaT) == false then
-			setColor(255, 255, 255, eclipse_data.opacity * DEPLS.LiveOpacity / 255)
-			draw(ScoreEclipseF.Img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
-		end
-		
-		if bar_data.tween:update(deltaT) == false then
-			setColor(255, 255, 255, bar_data.opacity * DEPLS.LiveOpacity / 255)
-			draw(ScoreEclipseF.Img2, 5, 8)
-		end
-		
-		setColor(255, 255, 255, 255)
-	end
-end)
-
--- Circle effect function in the note icon
-DEPLS.Routines.NoteIcon.CircleEffect = function()
-	local deltaT
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local circ_data = {scale = 0.6, opacity = 255}
-	local circ_tween = tween.new(1600, circ_data, {scale = 2.5, opacity = 0})
-	local NoteIconCircle = DEPLS.Images.NoteIconCircle
-	local draw = love.graphics.draw
-	local NoteIcon = DEPLS.Images.NoteIcon
-	
-	while true do
-		deltaT = coroutine.yield()
-		
-		if circ_tween:update(deltaT) == true then
-			break
-		end
-		
-		setColor(255, 255, 255, circ_data.opacity * DEPLS.LiveOpacity / 255)
-		draw(NoteIconCircle, 480, 160, 0, circ_data.scale, circ_data.scale, 34, 34)
-		setColor(255, 255, 255, 255)
-	end
-	
-	while true do coroutine.yield(true) end
-end
-
--- Note icon draw function
-DEPLS.Routines.NoteIcon.Draw = coroutine.wrap(function()
-	local deltaT
-	local et = 0
-	local noteicon_data = {scale = 1}
-	local noteicon_tween = tween.new(800, noteicon_data, {scale = 0.8})
-	local noteicon_tween2 = tween.new(1200, noteicon_data, {scale = 1}, "outSine")
-	local active_tween = noteicon_tween
-	local circledraw_time = {0, 300, 600}
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local NoteIcon = DEPLS.Images.NoteIcon
-	
-	while true do
-		repeat
-			deltaT = coroutine.yield()
-		until deltaT
-		
-		if deltaT then
-			et = et + deltaT
-			
-			if et >= 2000 then
-				et = et - 2000
-				noteicon_tween:reset()
-				noteicon_tween2:reset()
-				active_tween = noteicon_tween
-				circledraw_time[1] = 0
-				circledraw_time[2] = 300
-				circledraw_time[3] = 600
-			end
-			
-			if active_tween:update(deltaT) == true then
-				active_tween = noteicon_tween2
-			end
-			
-			-- Draw circle
-			for i = 1, 3 do
-				circledraw_time[i] = circledraw_time[i] - deltaT
-				
-				if circledraw_time[i] <= 0 then
-					local cr = coroutine.wrap(DEPLS.Routines.NoteIcon.CircleEffect)
-					cr()
-					EffectPlayer.Spawn(cr)
-					
-					circledraw_time[i] = 1234567
-				end
-			end
-			
-			-- love.draw
-			while coroutine.yield() do end
-			
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
-			draw(NoteIcon, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
-			setColor(255, 255, 255, 255)
-		end
-	end
-end)
-
--- Score bar routine
-DEPLS.Routines.ScoreBar = coroutine.wrap(function(deltaT)
-	local ScoreUpdate = DEPLS.Routines.ScoreUpdate
-	local ScoreData = DEPLS.ScoreData
-	local LogicalScale = LogicalScale
-	local newImage = love.graphics.newImage
-	local setScissor = love.graphics.setScissor
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	local no_score = newImage("image/live_gauge_03_03.png")
-	local c_score = newImage("image/live_gauge_03_04.png")
-	local b_score = newImage("image/live_gauge_03_05.png")
-	local a_score = newImage("image/live_gauge_03_06.png")
-	local s_score = newImage("image/live_gauge_03_07.png")
-	local draw_area = 960
-	local used_score = nil
-	
-	while true do
-		repeat
-			deltaT = coroutine.yield()
-		until deltaT
-		
-		if ScoreUpdate.CurrentScore >= ScoreData[4] then
-			-- S score
-			used_score = s_score
-			draw_area = 960
-		elseif ScoreUpdate.CurrentScore >= ScoreData[3] then
-			-- A score
-			used_score = a_score
-			draw_area = 791 + math.floor((ScoreData[3] - ScoreUpdate.CurrentScore) / (ScoreData[3] - ScoreData[4]) * 84 + 0.5)
-		elseif ScoreUpdate.CurrentScore >= ScoreData[2] then
-			-- B score
-			used_score = b_score
-			draw_area = 667 + math.floor((ScoreData[2] - ScoreUpdate.CurrentScore) / (ScoreData[2] - ScoreData[3]) * 125 + 0.5)
-		elseif ScoreUpdate.CurrentScore >= ScoreData[1] then
-			-- C score
-			used_score = c_score
-			draw_area = 504 + math.floor((ScoreData[1] - ScoreUpdate.CurrentScore) / (ScoreData[1] - ScoreData[2]) * 164 + 0.5)
-		else
-			-- No score
-			used_score = no_score
-			draw_area = 48 + math.floor(ScoreUpdate.CurrentScore / ScoreData[1] * 456 + 0.5)
-		end
-		
-		while coroutine.yield() do end
-		
-		setScissor(LogicalScale.OffX, LogicalScale.OffY, draw_area * LogicalScale.ScaleOverall, 640)
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
-		draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
-		setColor(255, 255, 255, 255)
-		setScissor()
-	end
-end)
-
+-- Circletap aftertap effect namespace
+DEPLS.Routines.CircleTapEffect = love.filesystem.load("livesim/circletap_effect.lua")(DEPLS)
+-- Combo counter effect namespace
+DEPLS.Routines.ComboCounter = love.filesystem.load("livesim/combocounter.lua")(DEPLS)
+-- Tap accuracy display routine
+DEPLS.Routines.PerfectNode = love.filesystem.load("livesim/perfectnode.lua")(DEPLS)
+-- Score flash animation routine
+DEPLS.Routines.ScoreEclipseF = love.filesystem.load("livesim/score_eclipsef.lua")(DEPLS)
+-- Note icon (note spawn pos) animation
+DEPLS.Routines.NoteIcon = love.filesystem.load("livesim/noteicon.lua")(DEPLS)
 -- Score display routine
-DEPLS.Routines.ScoreUpdate.Draw = coroutine.wrap(function(deltaT)
-	local ScoreUpdate = DEPLS.Routines.ScoreUpdate
-	local newImage = love.graphics.newImage
-	local draw = love.graphics.draw
-	local setColor = love.graphics.setColor
-	local score_str = {string.byte(tostring(ScoreUpdate.CurrentScore), 1, 2147483647)}
-	local score_images = {}
-	local score_digit_len = 0
-	local xpos
-	
-	for i = 0, 9 do
-		score_images[i] = newImage("image/score_num/l_num_0"..i..".png")
-	end
-	
-	while true do
-		repeat
-			deltaT = coroutine.yield()
-		until deltaT
-		
-		score_str = {string.byte(tostring(ScoreUpdate.CurrentScore), 1, 2147483647)}
-		score_digit_len = #score_str
-		xpos = 448 - 16 * score_digit_len
-		
-		while coroutine.yield() do end
-		
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
-		
-		for i = 1, score_digit_len do
-			draw(score_images[score_str[i] - 48], xpos + 32 * i, 53)
-		end
-		
-		setColor(255, 255, 255, 255)
-	end
-end)
-
--- Added score, update routine
-DEPLS.Routines.ScoreNode = function(score)
-	local Images = DEPLS.Images
-	local graphics = love.graphics
-	local score_canvas = graphics.newCanvas(500, 32)
-	local score_info = {opacity = 0, scale = 0.9, x = 530}
-	local opacity_tw = tween.new(100, score_info, {opacity = 255})
-	local scale_tw = tween.new(200, score_info, {scale = 1}, "inOutSine")
-	local xpos_tw = tween.new(250, score_info, {x = 570}, "outSine")
-	local deltaT
-	local elapsed_time = 0
-	
-	-- Draw all in canvas
-	graphics.setCanvas(score_canvas)
-	graphics.setBlendMode("alpha", "premultiplied")
-	graphics.setColor(255, 255, 255, DEPLS.LiveOpacity)
-	graphics.draw(Images.ScoreNode.Plus)
-	
-	do
-		local i = 1
-		for w in tostring(score):gmatch("%d") do
-			graphics.draw(Images.ScoreNode[tonumber(w)], i * 24, 0)
-			i = i + 1
-		end
-	end
-	graphics.setColor(255, 255, 255, 255)
-	graphics.setBlendMode("alpha")
-	graphics.setCanvas()
-	
-	deltaT = coroutine.yield()
-	elapsed_time = elapsed_time + deltaT
-	
-	while elapsed_time < 500 do
-		xpos_tw:update(deltaT)
-		opacity_tw:update(elapsed_time > 350 and -deltaT or deltaT)
-		scale_tw:update(elapsed_time > 200 and -deltaT or deltaT)
-		
-		graphics.setColor(255, 255, 255, score_info.opacity * DEPLS.LiveOpacity / 255)
-		graphics.draw(score_canvas, score_info.x, 72, 0, score_info.scale, score_info.scale, 0, 16)
-		graphics.setColor(255, 255, 255, 255)
-		
-		deltaT = coroutine.yield()
-		elapsed_time = elapsed_time + deltaT
-	end
-	
-	while true do coroutine.yield(true) end	-- Stop
-end
+DEPLS.Routines.ScoreUpdate = love.filesystem.load("livesim/scoreupdate.lua")(DEPLS)
+-- Score bar routine. Depends on score display
+DEPLS.Routines.ScoreBar = love.filesystem.load("livesim/scorebar.lua")(DEPLS)
+-- Added score, update routine effect
+DEPLS.Routines.ScoreNode = love.filesystem.load("livesim/scorenode_effect.lua")(DEPLS)
 
 --! @brief Image cover preview routines. Takes 3167ms to complete. Used as effect player
 --! @param cover_data Table which contains image used, cover title, and optionally cover arrangement
@@ -803,8 +323,7 @@ function DEPLS.AddScore(score)
 	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + added_score
 	DEPLS.Routines.ScoreEclipseF.Replay = true
 	
-	local sc = coroutine.wrap(DEPLS.Routines.ScoreNode)
-	sc(added_score)
+	local sc = DEPLS.Routines.ScoreNode.Create(added_score)
 	EffectPlayer.Spawn(sc)
 end
 
@@ -923,11 +442,15 @@ end
 --! @param nocover Don't take cover image display time into account?
 --! @returns Live simulator delay, in milliseconds
 function DEPLS.StoryboardFunctions.GetLiveSimulatorDelay(nocover)
-	if not(nocover) and DEPLS.HasCoverImage then
+	if DEPLS.HasCoverImage then
+		if nocover then
+			return DEPLS.LiveDelay
+		else
+			return DEPLS.LiveDelay + 3167
+		end
+	else
 		return DEPLS.LiveDelay
 	end
-	
-	return DEPLS.LiveDelay + 3167
 end
 
 --! @brief Spawn spotlight effect in the specificed idol position and with specificed color
@@ -977,9 +500,9 @@ end
 --! @param g The RGB green value
 --! @param b The RGB blue value
 function DEPLS.StoryboardFunctions.SpawnCircleTapEffect(pos, r, g, b)
-	local effect = coroutine.wrap(DEPLS.Routines.CircleTapEffect)
 	local x, y = DEPLS.IdolPosition[pos][1] + 64, DEPLS.IdolPosition[pos][2] + 64
-	effect(x, y, r, g, b)
+	local effect = DEPLS.Routines.CircleTapEffect.Create(x, y, r, g, b)
+	
 	EffectPlayer.Spawn(effect)
 end
 
@@ -1224,7 +747,7 @@ function DEPLS.Start(argv)
 	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[1])
 	local custom_background = false
 	notes_list = noteloader_data.notes_list
-	DEPLS.StoryboardHandle = noteloader_data.storyboard
+	DEPLS.StoryboardHandle = noteloader_data.storyboard and noteloader_data.storyboard.Storyboard
 	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
 	DEPLS.Sound.LiveClear = noteloader_data.live_clear
 	
@@ -1254,13 +777,16 @@ function DEPLS.Start(argv)
 		DEPLS.Routines.CoverPreview(noteloader_data.cover)
 	end
 	
+	-- Initialize storyboard
+	if noteloader_data.storyboard then
+		noteloader_data.storyboard.Load()
+	end
+	
 	-- Add to note manager
 	do
-		--local a = os.clock()
 		for i = 1, #notes_list do
 			DEPLS.NoteManager.Add(notes_list[i])
 		end
-		--print("Note added in "..((os.clock() - a) * 1000).." ms")
 	end
 	
 	-- Calculate note accuracy
@@ -1360,19 +886,9 @@ function DEPLS.Start(argv)
 		DEPLS.Images.StaminaRelated.DrawTarget = stamina_number_image
 	end
 	
-	-- Load combo numbers
-	DEPLS.Images.ComboNumbers = require("combo_num")
-	-- Start combo counter routine
-	DEPLS.Routines.ComboCounter.Draw()
-	
 	-- Load score eclipse related image
 	DEPLS.Routines.ScoreEclipseF.Img = love.graphics.newImage("image/l_etc_46.png")
 	DEPLS.Routines.ScoreEclipseF.Img2 = love.graphics.newImage("image/l_gauge_17.png")
-	-- Initialize score flash
-	DEPLS.Routines.ScoreEclipseF.Draw()
-	
-	-- Init score bar
-	DEPLS.Routines.ScoreBar()
 	
 	-- Load score node number
 	for i = 21, 30 do
@@ -1436,12 +952,14 @@ function DEPLS.Update(deltaT)
 		DEPLS.NoteManager.Update(deltaT)
 		
 		-- Update routines
-		Routines.ComboCounter.Draw(deltaT)
-		Routines.NoteIcon.Draw(deltaT)
-		Routines.ScoreEclipseF.Draw(deltaT)
-		Routines.ScoreUpdate.Draw(deltaT)
-		Routines.ScoreBar(deltaT)
-		Routines.PerfectNode.Draw(deltaT)
+		Routines.ComboCounter.Update(deltaT)
+		Routines.NoteIcon.Update(deltaT)
+		Routines.ScoreEclipseF.Update(deltaT)
+		Routines.ScoreUpdate.Update(deltaT)
+		Routines.ScoreBar.Update(deltaT)
+		Routines.PerfectNode.Update(deltaT)
+		
+		EffectPlayer.Update(deltaT)
 		
 		if
 			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
@@ -1528,13 +1046,13 @@ function DEPLS.Draw(deltaT)
 		-- Draw routines
 		Routines.ComboCounter.Draw()
 		Routines.NoteIcon.Draw()
-		Routines.ScoreBar()
+		Routines.ScoreBar.Draw()
 		Routines.ScoreEclipseF.Draw()
 		Routines.ScoreUpdate.Draw()
 		Routines.PerfectNode.Draw()
 		
 		-- Update effect player
-		EffectPlayer.Update(deltaT)
+		EffectPlayer.Draw()
 
 		-- Live clear animation
 		if
@@ -1673,8 +1191,6 @@ function love.keyreleased(key)
 		end
 	end
 end
-
-require("touch_manager")
 
 DEPLS.Distance = distance
 DEPLS.AngleFrom = angle_from
