@@ -130,11 +130,11 @@ function NoteLoader.Enumerate()
 	local beatmap_list = {}
 	local save_dir = love.filesystem.getSaveDirectory()
 	
-	for n, v in pairs(files) do
+	for n, v in ipairs(files) do
 		local found = false
 		local name = v:match("(.*)%..*") or v
 		
-		for a, b in pairs(beatmap_list) do
+		for a, b in ipairs(beatmap_list) do
 			if b.name == name then
 				found = true
 				break

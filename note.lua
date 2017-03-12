@@ -38,44 +38,41 @@ local function note_bomb_effect(x, y)
 	while true do coroutine.yield(true) end
 end
 
-local CheckSimulNote
-do
-	local function internal_simulnote_check(timing_sec, i)
-		local j = 1
-		local notedata = Note[i][j]
-		
-		while notedata do
-			if floor(notedata.ZeroAccuracyTime) == floor(timing_sec) then
-				notedata.SimulNoteImage = DEPLS.Images.Note.Simultaneous
-				return true
-			end
-			
-			j = j + 1
-			notedata = Note[i][j]
+local function internal_simulnote_check(timing_sec, i)
+	local j = 1
+	local notedata = Note[i][j]
+	
+	while notedata ~= nil do
+		if floor(notedata.ZeroAccuracyTime) == floor(timing_sec) then
+			notedata.SimulNoteImage = DEPLS.Images.Note.Simultaneous
+			return true
 		end
+		
+		j = j + 1
+		notedata = Note[i][j]
+	end
+end
+
+--! @brief Check if there's another note with same timing
+--! @param timing_sec The note timing to check
+--! @param multiply1000 Is the `timing_sec` is in seconds?
+--! @returns `true` if there's one, false otherwise
+--! @note This function modifies the note object that already queued if necessary
+local function CheckSimulNote(timing_sec, multiply1000)
+	if multiply1000 then
+		timing_sec = timing_sec * 1000
 	end
 	
-	--! @brief Check if there's another note with same timing
-	--! @param timing_sec The note timing to check
-	--! @param multiply1000 Is the `timing_sec` is in seconds?
-	--! @returns `true` if there's one, false otherwise
-	--! @note This function modifies the note object that already queued if necessary
-	CheckSimulNote = function(timing_sec, multiply1000)
-		if multiply1000 then
-			timing_sec = timing_sec * 1000
-		end
-		
-		return
-			internal_simulnote_check(timing_sec, 1) or
-			internal_simulnote_check(timing_sec, 2) or
-			internal_simulnote_check(timing_sec, 3) or
-			internal_simulnote_check(timing_sec, 4) or
-			internal_simulnote_check(timing_sec, 5) or
-			internal_simulnote_check(timing_sec, 6) or
-			internal_simulnote_check(timing_sec, 7) or
-			internal_simulnote_check(timing_sec, 8) or
-			internal_simulnote_check(timing_sec, 9)
-	end
+	return
+		internal_simulnote_check(timing_sec, 1) or
+		internal_simulnote_check(timing_sec, 2) or
+		internal_simulnote_check(timing_sec, 3) or
+		internal_simulnote_check(timing_sec, 4) or
+		internal_simulnote_check(timing_sec, 5) or
+		internal_simulnote_check(timing_sec, 6) or
+		internal_simulnote_check(timing_sec, 7) or
+		internal_simulnote_check(timing_sec, 8) or
+		internal_simulnote_check(timing_sec, 9)
 end
 
 local SingleNoteObject = {}
@@ -162,6 +159,7 @@ function SingleNoteObject.Update(this, deltaT)
 	
 	-- If it's not pressed, and it's beyond miss range, make it miss
 	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+
 	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 		DEPLS.Routines.PerfectNode.Replay = true
@@ -636,48 +634,43 @@ local ComboCounter = DEPLS.Routines.ComboCounter
 function Note.Update(deltaT)
 	local ElapsedTime = DEPLS.ElapsedTime
 	local score = 0
-	local noteobj
 	
 	for i = 1, 9 do
 		local j = 1
+		local noteobj = Note[i][j]
 		
-		while true do
-			noteobj = Note[i][j]
+		while noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed do
+			noteobj:Update(deltaT)
 			
-			if noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
-				noteobj:Update(deltaT)
-				
-				-- If autoplay, make it always perfect
-				if DEPLS.AutoPlay then
-					if ElapsedTime >= noteobj.ZeroAccuracyTime - deltaT and noteobj.TouchID == nil then
-						noteobj:SetTouchID("")
-					elseif noteobj.ZeroAccuracyEndNote and ElapsedTime >= noteobj.ZeroAccuracyEndNote + noteobj.ZeroAccuracyTime - deltaT then
-						noteobj:UnsetTouchID("")
-					end
+			-- If autoplay, make it always perfect
+			if DEPLS.AutoPlay then
+				if ElapsedTime >= noteobj.ZeroAccuracyTime - deltaT and noteobj.TouchID == nil then
+					noteobj:SetTouchID("")
+				elseif noteobj.ZeroAccuracyEndNote and ElapsedTime >= noteobj.ZeroAccuracyEndNote + noteobj.ZeroAccuracyTime - deltaT then
+					noteobj:UnsetTouchID("")
 				end
-				
-				if noteobj.Delete then
-					-- Calculate score and remove
-					score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1)
-					table.remove(Note[i], j)
-					
-					if ComboCounter.Reset == true then
-						ComboCounter.CurrentCombo = 0
-						ComboCounter.Reset = false
-					else
-						ComboCounter.CurrentCombo = ComboCounter.CurrentCombo + 1
-					end
-					Note.NoteRemaining = Note.NoteRemaining - 1
-					Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
-					
-					ComboCounter.Replay = true
-				else
-					j = j + 1
-				end
-				
-			else
-				break
 			end
+			
+			if noteobj.Delete then
+				-- Calculate score and remove
+				score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1)
+				table.remove(Note[i], j)
+				
+				if ComboCounter.Reset == true then
+					ComboCounter.CurrentCombo = 0
+					ComboCounter.Reset = false
+				else
+					ComboCounter.CurrentCombo = ComboCounter.CurrentCombo + 1
+				end
+				Note.NoteRemaining = Note.NoteRemaining - 1
+				Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
+				
+				ComboCounter.Replay = true
+			else
+				j = j + 1
+			end
+			
+			noteobj = Note[i][j]
 		end
 	end
 	
@@ -689,11 +682,10 @@ end
 --! Function to draw the note
 function Note.Draw()
 	local ElapsedTime = DEPLS.ElapsedTime
-	local noteobj
 	
 	for i = 1, 9 do
 		for j = 1, #Note[i] do
-			noteobj = Note[i][j]
+			local noteobj = Note[i][j]
 			
 			-- Only update if it should be spawned
 			if ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
@@ -737,7 +729,6 @@ function Note.SetTouch(pos, touchid, release)
 					ComboCounter.Replay = true
 				end
 				
-				--break
 			end
 		end
 		

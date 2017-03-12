@@ -47,6 +47,5 @@ function ScoreBar.Draw()
 	setColor(255, 255, 255, 255)
 	setScissor()
 end
-jit.off(ScoreBar.Draw)
 
 return ScoreBar

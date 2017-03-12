@@ -36,6 +36,5 @@ function ScoreEclipseF.Draw()
 		draw(ScoreEclipseF.Img2, 5, 8)
 	end
 end
-jit.off(ScoreEclipseF.Draw)
 
 return ScoreEclipseF

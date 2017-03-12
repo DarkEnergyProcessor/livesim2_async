@@ -56,15 +56,19 @@ function NoteIcon.Update(deltaT)
 	end
 end
 
-function NoteIcon.Draw(deltaT)
-	for i = 1, 3 do
-		local ni = noteicon_circle[i]
-		
-		if ni.time <= 0 then
-			setColor(255, 255, 255, ni.data.opacity * DEPLS.LiveOpacity / 255)
-			draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
-		end
+local function noteicon_draw(i)
+	local ni = noteicon_circle[i]
+	
+	if ni.time <= 0 then
+		setColor(255, 255, 255, ni.data.opacity * DEPLS.LiveOpacity / 255)
+		draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
 	end
+end
+
+function NoteIcon.Draw(deltaT)
+	noteicon_draw(1)
+	noteicon_draw(2)
+	noteicon_draw(3)
 	
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
 	draw(Images.NoteIcon, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)

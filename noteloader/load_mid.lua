@@ -18,13 +18,13 @@ local function read_varint(fs)
 	local out = 0
 	
 	repeat
-		local b = fs:read(1):byte()
+		local b = tonumber(fs:read(1):byte())
 		
 		last_bit_set = b / 128 >= 1
 		out = out * 128 + (b % 128)
 	until last_bit_set == false
 	
-	return out
+	return (tonumber(out))
 end
 
 -- returns table, not JSON-encoded file.

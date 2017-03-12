@@ -114,6 +114,5 @@ function CircleTapEffect.Draw(this)
 	draw(DEPLS.Images.ef_316_000, this.pos[1], this.pos[2], 0, 1.5, 1.5, 50, 50)
 	setColor(255, 255, 255, 255)
 end
-jit.off(CircleTapEffect.Draw)
 
 return CircleTapEffect

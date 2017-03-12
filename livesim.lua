@@ -323,8 +323,7 @@ function DEPLS.AddScore(score)
 	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + added_score
 	DEPLS.Routines.ScoreEclipseF.Replay = true
 	
-	local sc = DEPLS.Routines.ScoreNode.Create(added_score)
-	EffectPlayer.Spawn(sc)
+	EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(added_score))
 end
 
 --! @brief Load image
@@ -1030,14 +1029,12 @@ function DEPLS.Draw(deltaT)
 		end
 		
 		-- Draw idol unit
-		do
-			local IdolData = DEPLS.IdolImageData
-			local IdolPos = DEPLS.IdolPosition
-			
-			for i = 1, 9 do
-				setColor(255, 255, 255, DEPLS.LiveOpacity * IdolData[i][2] / 255)
-				draw(IdolData[i][1], unpack(IdolPos[i]))
-			end
+		local IdolData = DEPLS.IdolImageData
+		local IdolPos = DEPLS.IdolPosition
+		
+		for i = 1, 9 do
+			setColor(255, 255, 255, DEPLS.LiveOpacity * IdolData[i][2] / 255)
+			draw(IdolData[i][1], unpack(IdolPos[i]))
 		end
 		
 		-- Update note

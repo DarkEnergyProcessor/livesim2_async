@@ -18,6 +18,7 @@ function ScoreNode.Create(score)
 	out.elapsed_time = 0
 	
 	-- Draw all in canvas
+	graphics.push("all")
 	graphics.setCanvas(out.score_canvas)
 	graphics.setBlendMode("alpha", "premultiplied")
 	graphics.setColor(255, 255, 255, DEPLS.LiveOpacity)
@@ -31,13 +32,9 @@ function ScoreNode.Create(score)
 		end
 	end
 	
-	graphics.setColor(255, 255, 255, 255)
-	graphics.setBlendMode("alpha")
-	graphics.setCanvas()
-	
-	return setmetatable(out, _common_meta)
+	graphics.pop()
+	return (setmetatable(out, _common_meta))
 end
-jit.off(ScoreNode.Create)
 
 function ScoreNode.Update(this, deltaT)
 	this.xpos_tw:update(deltaT)
@@ -54,6 +51,5 @@ function ScoreNode.Draw(this)
 	graphics.draw(this.score_canvas, this.score_info.x, 72, 0, this.score_info.scale, this.score_info.scale, 0, 16)
 	graphics.setColor(255, 255, 255, 255)
 end
-jit.off(ScoreNode.Draw)
 
 return ScoreNode

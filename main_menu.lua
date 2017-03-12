@@ -33,8 +33,8 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
+local versionText = "DEPLS2 rel ".._G.DEPLS_VERSION.." running "..(jit and jit.version or _VERSION)
 function MainMenu.Draw(deltaT)
-	
 	-- Draw background
 	draw(background, 0, 0)
 	
@@ -60,10 +60,9 @@ function MainMenu.Draw(deltaT)
 	drawtext("Live Simulator: 2", 280, 78)
 	setColor(64, 64, 255, 255)
 	setFont(MTLMr3m)
-	drawtext("DEPLS2 rel ".._G.DEPLS_VERSION, 3, 608)
+	drawtext(versionText, 3, 608)
 	setColor(255, 255, 255, 255)
 end
-jit.off(MainMenu.Draw)
 
 function love.mousepressed(x, y, button, touch_id)
 	x, y = CalculateTouchPosition(x, y)

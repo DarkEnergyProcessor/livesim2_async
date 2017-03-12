@@ -79,6 +79,5 @@ function ComboCounter.Draw()
 		setColor(255, 255, 255, 255)
 	end
 end
-jit.off(ComboCounter.Draw)
 
 return ComboCounter
