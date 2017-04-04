@@ -19,23 +19,31 @@ local floor = math.floor
 local notes_bomb = Yohane.newFlashFromFilename("live_notes_bomb.flsh")
 notes_bomb:setMovie("ef_317")
 
-local function note_bomb_effect(x, y)
-	local a = notes_bomb:clone()
-	local deltaT
-	a:jumpToLabel("bomb")
+local NoteBombEffect = {}
+NoteBombEffect._common_meta = {__index = NoteBombEffect}
+
+function NoteBombEffect.Create(x, y)
+	local out = {}
+	out.flash = notes_bomb:clone()
+	out.x = x
+	out.y = y
 	
-	while not(a:isFrozen()) do
-		while not(deltaT) do
-			deltaT = coroutine.yield()
-		end
+	out.flash:jumpToLabel("bomb")
+	return (setmetatable(out, NoteBombEffect._common_meta))
+end
+
+function NoteBombEffect:Update(deltaT)
+	if not(self.flash:isFrozen()) then
+		self.flash:update(deltaT)
 		
-		a:update(deltaT)
-		a:draw(x, y)
-		
-		deltaT = nil
+		return false
+	else
+		return true
 	end
-	
-	while true do coroutine.yield(true) end
+end
+
+function NoteBombEffect:Draw()
+	self.flash:draw(self.x, self.y)
 end
 
 local function internal_simulnote_check(timing_sec, i)
@@ -44,7 +52,7 @@ local function internal_simulnote_check(timing_sec, i)
 	
 	while notedata ~= nil do
 		if floor(notedata.ZeroAccuracyTime) == floor(timing_sec) then
-			notedata.SimulNoteImage = DEPLS.Images.Note.Simultaneous
+			notedata.SimulNote = true
 			return true
 		end
 		
@@ -103,15 +111,15 @@ local function NewNoteObject(note_data)
 	
 	-- Simultaneous check
 	if CheckSimulNote(noteobj.ZeroAccuracyTime) then
-		noteobj.SimulNoteImage = DEPLS.Images.Note.Simultaneous
+		noteobj.SimulNote = true
 	end
 	
 	if note_data.effect == 2 then
 		-- Token note
-		noteobj.TokenImage = DEPLS.Images.Note.Token
+		noteobj.TokenNote = true
 	elseif note_data.effect == 4 then
 		-- Star note
-		noteobj.StarImage = DEPLS.Images.Note.Star
+		noteobj.StarNote = true
 	elseif note_data.effect == 3 then
 		-- Long note. Use LongNoteObject metatable
 		noteobj.Audio2 = {
@@ -137,6 +145,7 @@ local function NewNoteObject(note_data)
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
 	end
+	
 	-- SingleNoteObject in here
 	noteobj.Audio.StarExplode = DEPLS.Sound.StarExplode:clone()
 	noteobj.ScoreMultipler2 = 1
@@ -167,9 +176,9 @@ function SingleNoteObject.Update(this, deltaT)
 		this.ScoreMultipler = 0
 		this.Delete = true
 		
-		if this.StarImage then
-			local ef = coroutine.wrap(note_bomb_effect)
-			ef(this.CenterIdol[1], this.CenterIdol[2])
+		if this.StarNote then
+			local ef = NoteBombEffect.Create(this.CenterIdol[1], this.CenterIdol[2])
+			
 			EffectPlayer.Spawn(ef)
 			this.Audio.StarExplode:play()
 		end
@@ -180,9 +189,10 @@ function SingleNoteObject.Update(this, deltaT)
 			0, 								-- accuracy (miss)
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			not(not(this.StarImage)),		-- is_star
-			not(not(this.SimulNoteImage)),	-- is_simul
-			not(not(this.TokenImage))		-- is_token
+			this.StarNote,					-- is_star
+			this.SimulNote,					-- is_simul
+			this.TokenNote,					-- is_token
+			this.SlideNote					-- is_slide
 		)
 		
 		Note.Miss = Note.Miss + 1
@@ -191,43 +201,15 @@ function SingleNoteObject.Update(this, deltaT)
 	
 end
 
+local setBlendMode = love.graphics.setBlendMode
 function SingleNoteObject.Draw(this)
-	local NoteImage
 	local draw = love.graphics.draw
 	local setColor = love.graphics.setColor
 	
-	-- Draw note image
-	if bit.band(this.Attribute, 15) == 15 then
-		-- CBF extension: colored note
-		setColor(
-			bit.band(bit.rshift(this.Attribute, 23), 511),
-			bit.band(bit.rshift(this.Attribute, 14), 511),
-			bit.band(bit.rshift(this.Attribute, 5), 511),
-			DEPLS.LiveOpacity
-		)
-		NoteImage = DEPLS.Images.Note[9]
-	else
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
-		NoteImage = DEPLS.Images.Note[this.Attribute]
-	end
-	
-	draw(NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	
-	-- Draw token image if any
-	if this.TokenImage then
-		draw(this.TokenImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
-	end
-	
-	-- Draw star image if any
-	if this.StarImage then
-		draw(this.StarImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
-	end
-	
-	-- Draw simultaneous note bar if it is
-	if this.SimulNoteImage then
-		draw(this.SimulNoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
-	end
+	setBlendMode("alpha", "premultiplied")
+	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	setBlendMode("alpha")
 	
 	if DEPLS.DebugNoteDistance then
 		local dist = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
@@ -237,7 +219,7 @@ function SingleNoteObject.Draw(this)
 		setColor(255, 255, 255, 255)
 		printf(("%.2f"):format(dist), this.FirstCircle[1] + 1, this.FirstCircle[2] + 1)
 	else
-		setColor(255, 255, 255, 255)
+		setColor(255, 255, 255)
 	end
 end
 
@@ -266,9 +248,10 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			not(not(this.StarImage)),		-- is_star
-			not(not(this.SimulNoteImage)),	-- is_simul
-			not(not(this.TokenImage))		-- is_token
+			this.StarNote,					-- is_star
+			this.SimulNote,					-- is_simul
+			this.TokenNote,					-- is_token
+			this.SlideNote					-- is_slide
 		)
 		
 		return
@@ -315,8 +298,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			-- TODO: play star explode effect
 		end
 		
-		local AfterCircleTap = coroutine_wrapper(DEPLS.Routines.CircleTapEffect)
-		AfterCircleTap(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
 		EffectPlayer.Spawn(AfterCircleTap)
 		
 		this.Delete = true
@@ -327,9 +309,10 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			not(not(this.StarImage)),		-- is_star
-			not(not(this.SimulNoteImage)),	-- is_simul
-			not(not(this.TokenImage))		-- is_token
+			this.StarNote,					-- is_star
+			this.SimulNote,					-- is_simul
+			this.TokenNote,					-- is_token
+			this.SlideNote					-- is_slide
 		)
 	end
 end
@@ -376,7 +359,7 @@ function LongNoteObject.Update(this, deltaT)
 					0, 								-- accuracy (miss)
 					notedistance,					-- distance
 					this.Attribute,					-- attribute
-					not(not(this.SimulNoteImage))	-- is_simul
+					this.SimulNoteImage				-- is_simul
 				)
 				return
 			end
@@ -422,24 +405,10 @@ function LongNoteObject.Draw(this)
 	
 	draw(this.LongNoteMesh)
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	graphics.setBlendMode("alpha")
 	
-	-- Draw note image
-	if bit.band(this.Attribute, 15) == 15 then
-		-- CBF extension: colored note
-		setColor(
-			bit.band(bit.rshift(this.Attribute, 23), 511),
-			bit.band(bit.rshift(this.Attribute, 14), 511),
-			bit.band(bit.rshift(this.Attribute, 5), 511),
-			DEPLS.LiveOpacity
-		)
-		NoteImage = DEPLS.Images.Note[9]
-	else
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
-		NoteImage = DEPLS.Images.Note[this.Attribute]
-	end
-	
-	draw(NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	setBlendMode("alpha", "premultiplied")
+	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	setBlendMode("alpha")
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
 	
 	-- Draw simultaneous note bar if it is
@@ -496,8 +465,8 @@ function LongNoteObject.SetTouchID(this, touchid)
 			this.Position,					-- pos
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
-			this.Attribute,		-- attribute
-			not(not(this.SimulNoteImage))	-- is_simul
+			this.Attribute,					-- attribute
+			this.SimulNoteImage				-- is_simul
 		)
 		
 		return
@@ -545,7 +514,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			not(not(this.SimulNoteImage))	-- is_simul
+			this.SimulNote					-- is_simul
 		)
 	end
 end
@@ -616,7 +585,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 		this.ScoreMultipler2, 			-- accuracy
 		notedistance,					-- distance
 		this.Attribute,					-- attribute
-		not(not(this.SimulNoteImage))	-- is_simul
+		this.SimulNote					-- is_simul
 	)
 end
 
@@ -625,6 +594,21 @@ end
 function Note.Add(note_data)
 	Note.NoteRemaining = Note.NoteRemaining + 1
 	table.insert(Note[note_data.position], NewNoteObject(note_data))
+end
+
+local function initnote_pos(a)
+	for i = 1, #Note[a] do
+		local obj = Note[a][i]
+		
+		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote)
+	end
+end
+
+--! @brief Loads image for notes
+function Note.InitializeImage()
+	for i = 1, 9 do
+		initnote_pos(i)
+	end
 end
 
 local ComboCounter = DEPLS.Routines.ComboCounter

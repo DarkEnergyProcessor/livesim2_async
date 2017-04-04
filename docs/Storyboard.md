@@ -230,9 +230,23 @@ Playground TEXB and parse it's mesh data, so you should check Shelsha documentat
 
 Parameters:
 
-* `filename` - The texture bank filename. The TEXB must be decrypted before used (and DEPLS2 doesn't ship with HonokaMiku decrypter for this)
+* `filename` - The texture bank filename. The TEXB must be decrypted before used. **DEPLS2 doesn't ship with HonokaMiku decrypter**
 
 Returns: `ShelshaObject` or `nil` on failure.
+
+> Due to it's extensive usage of FFI library, this function is not available/exist when running under Lua 5.1, like under LOVE.js
+
+*************************************************
+
+### `void ForceNewNoteStyle(boolean new_style)`
+
+Sets and forces note style.
+
+Parameters:
+
+* `new_style` - Use new-style (SIF v5.0) note (`true`) or use old-style (SIF pre-v5.0) note (`false`)
+
+> This function can only be called inside `Initialize` function.
 
 Storyboard Callback Functions
 =============================
@@ -244,7 +258,7 @@ Below is the list of storyboard callback functions:
 
 *************************************************
 
-### `void OnNoteTap(number pos, number accuracy, number distance, number attribute, boolean is_star, boolean is_simul, boolean is_token)`
+### `void OnNoteTap(number pos, number accuracy, number distance, number attribute, boolean is_star, boolean is_simul, boolean is_token, any is_slide)`
 
 Triggered everytime note is tapped on screen
 
@@ -263,6 +277,8 @@ Parameters:
 * `is_simul` - Is the note is a simultaneous note?
 
 * `is_token` - Is the note is a token note?
+
+* `is_slide` - Is the note is a slide note?
 
 *************************************************
 

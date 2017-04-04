@@ -20,11 +20,11 @@ Before you proceed, make sure your device comply these requirements
 
 * Android: Android v2.3 or above.
 
-* **iOS: Not supported!**
+* **iOS: Not tested!**
 
 ##Getting LOVE2D and run DEPLS
 
-If your device comply with requirements above, then proceed. DEPLS2 requires LOVE2D v0.10.0 (or later) game framework. Below are steps to get LOVE2D installed.
+If your device comply with requirements above, then proceed. DEPLS2 requires LOVE2D v0.10.1 (or later) game framework. Below are steps to get LOVE2D installed.
 
 ###Windows
 
@@ -60,7 +60,7 @@ If your device comply with requirements above, then proceed. DEPLS2 requires LOV
 
 3. Find DEPLS2 `main.lua` in your phone, and open it with LOVE2D
 
-4. If it works, you'll see DEPLS2 main menu, but to play beatmaps, you have to specify it **in command-line**. Well, you can't pass the beatmap name in command-line because there is no such thing in Android, so special steps is required for Android. See below
+4. If it works, you'll see DEPLS2 main menu.
 
 ##Determining DEPLS R/W directory
 
@@ -72,21 +72,21 @@ If you're under Android, most of the time it's in `/sdcard/Android/data/org.love
 
 DEPLS2 supports these beatmap formats:
 
-* DEPLS beatmap folder. It combines CBF format and raw SIF format. Additionaly with storyboard support.
+* DEPLS beatmap folder. It inherits from CBF format. Beatmap file can be LS2 beatmap, SIF beatmap, CBF, MIDI, or LLP. Additionaly with storyboard support. Can be in ZIP.
 
 * LS2 beatmap file. This is new DEPLS2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file structure is available.
 
-* Raw SIF beatmap, without score information. Stripped from SIF response data. This is beatmap format internally used by DEPLS, without any modification. The extension is `.json` (captured ones is also supported, with score information)
+* Raw SIF beatmap, with or without score information. This is beatmap format internally used by DEPLS, without any modification. The extension is `.json`.
 
-* yuyu live simulator beatmap, the one with `.txt` extension (not `.ssp` one). TODO: support for the new beatmap format
+* yuyu live simulator beatmap, the one with `.txt` extension (not `.ssp` one). **TODO: support for the new beatmap format**
 
-* Custom Beatmap Festival project folder.
+* Custom Beatmap Festival project folder. Can be in ZIP.
 
 * Specialized MIDI file. The extension is `.mid`
 
 * LLPractice beatmap. The extension is `.llp` (make sure to rename it to prevent confusion)
 
-* SIFTrain beatmap. The extension is `.rs`. **Currently disabled due to processing bug**. There's problem in SIFTrain beatmap which causes JSON parse error. This is SIFTrain fault, since DEPLS2 uses JSON library which comply with JSON standards. To fix it, open the beatmap with text editor and add double quote to the value in the `music_file`.
+* ~~SIFTrain beatmap. The extension is `.rs`.~~ **Currently disabled due to processing bug**. There's problem in SIFTrain beatmap which causes JSON parse error. This is SIFTrain fault, since DEPLS2 uses JSON library which comply with JSON standards. To fix it, open the beatmap with text editor and add double quote to the value in the `music_file`.
 
 DEPLS supports these audio formats
 

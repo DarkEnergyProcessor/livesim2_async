@@ -1,5 +1,5 @@
 -- DEPLS2 beatmap loader
--- Inherited from CBF and SIF beatmap format, most complex beatmap
+-- Inherited from CBF and SIF beatmap format, 2nd most complex beatmap
 -- Part of DEPLS2
 
 local DEPLS = _G.DEPLS
@@ -143,8 +143,6 @@ function DEPLS2Beatmap.Load(file)
 				covr.arrangement = arr
 			end
 		end
-		
-		
 	end
 	
 	-- Result

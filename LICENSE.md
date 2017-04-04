@@ -22,8 +22,7 @@ SOFTWARE.
 This Live Simulator uses Motoya L Maru font. Please see **MTLmr3m.LICENSE** for
 Motoya L Maru font license.
 
-This Live Simulator uses image asset from Love Live! School Idol Festival and
-Sukufesu Simulator. Images are belong to their respective owners.
+This Live Simulator uses image asset from Love Live! School Idol Festival.
 
 This Live Simulator uses these external libraries:
 
@@ -32,5 +31,7 @@ This Live Simulator uses these external libraries:
 * [JSON.lua](http://regex.info/blog/lua/json)
 
 * Lua FFT library (`luafft.lua`)
+
+* LuaBit library (`bit.lua`) (fallback if `bit` library is unavailable)
 
 Please see respective files (or website) for license of those libraries.

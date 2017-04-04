@@ -60,10 +60,19 @@ Supported Beatmaps
 
 * MIDI, specialized MIDI file.
 
+* LLPractice beatmap, with some bit complex setup.
+
 Disclaimer
 ==========
 
-This live simulator uses some assets from Sukufesu Simulator made by yuyu, like note image with different colors.
 This live simulator also uses many assets from Love Live! School Idol Festival game (background, header, ...)
+
+Special Thanks
+==============
+
+* [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images and example beatmaps.
+
+License
+=======
 
 Please see `LICENSE.md` for more details

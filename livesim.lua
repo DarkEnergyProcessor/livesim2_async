@@ -68,6 +68,23 @@ local DEPLS = {
 	},
 	Sound = {}
 }
+local ScreenshotThreadCode = [[
+local lt = require("love.timer")
+local li = require("love.image")
+local arg = {...}
+local encode = love.image.newImageData(1, 1).encode
+local name = string.format("screenshots/screenshot_%s_%d.png",
+	os.date("%Y_%m_%d_%H_%M_%S"),
+	math.floor((lt.getTime() % 1) * 1000)
+)
+
+encode(arg[1], "png", name)
+print("Screenshot saved as", name)
+]]
+
+function love.threaderror(t, msg)
+	assert(false, msg)
+end
 ----------------------
 -- Public functions --
 ----------------------
@@ -657,6 +674,13 @@ function DEPLS.StoryboardFunctions.SetPlaySpeed(speed_factor)
 	end
 end
 
+--! @brief Force set the note style between old ones and new ones
+--! @param new_style Force new style (true) or force old style (false)
+--! @note This function can only be called in pre-initialize or in Initialize function
+function DEPLS.StoryboardFunctions.ForceNewNoteStyle(new_style)
+	DEPLS.ForceNoteStyle = new_style and 2 or 1
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -686,30 +710,21 @@ function DEPLS.Start(argv)
 	
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
-		love.graphics.newImage("image/tap_circle/tap_circle-0.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-4.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-8.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-12.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-16.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-20.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-24.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-28.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-32.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-36.png"),
-		love.graphics.newImage("image/tap_circle/tap_circle-40.png"),
-		
 		NoteEnd = love.graphics.newImage("image/tap_circle/tap_circle-44.png"),
 		Star = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
 		Simultaneous = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
 		Token = love.graphics.newImage("image/tap_circle/e_icon_01.png"),
-		LongNote = love.graphics.newImage("image/ef_326_000.png")
+		LongNote = love.graphics.newImage("image/ef_326_000.png"),
+		Slide = love.graphics.newImage("image/tap_circle/ef_315_arrow_1.png")
 	}
 	DEPLS.Images.Spotlight = love.graphics.newImage("image/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
+	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS),
 	
 	-- Force love2d to make directory
 	love.filesystem.createDirectory("audio")
 	love.filesystem.createDirectory("beatmap")
+	love.filesystem.createDirectory("screenshots")
 	
 	-- Load configuration
 	local BackgroundID = LoadConfig("BACKGROUND_IMAGE", 11)
@@ -781,12 +796,18 @@ function DEPLS.Start(argv)
 		noteloader_data.storyboard.Load()
 	end
 	
+	-- If note style forcing is not enabled, get from config
+	if not(DEPLS.ForceNoteStyle) then
+		DEPLS.ForceNoteStyle = LoadConfig("NOTE_STYLE", 1)
+	end
+	
 	-- Add to note manager
 	do
 		for i = 1, #notes_list do
 			DEPLS.NoteManager.Add(notes_list[i])
 		end
 	end
+	DEPLS.NoteManager.InitializeImage()
 	
 	-- Calculate note accuracy
 	for i = 1, 5 do
@@ -1150,6 +1171,8 @@ function love.keypressed(key, scancode, repeat_bit)
 			
 			-- Restart
 			LoadEntryPoint("livesim.lua", DEPLS.Arg)
+		elseif key == "f12" then
+			love.thread.newThread(ScreenshotThreadCode):start(love.graphics.newScreenshot())
 		elseif key == "lshift" then
 			DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 		elseif key == "lctrl" then

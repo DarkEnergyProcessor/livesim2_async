@@ -3,7 +3,7 @@
 
 local JSON = require("JSON")
 local Yohane = require("Yohane")
-DEPLS_VERSION = "20170304"
+DEPLS_VERSION = "20170404"
 
 FontManager = require("font_manager")
 LogicalScale = {
@@ -282,8 +282,7 @@ function love.load(argv)
 	local Fullscreen = false
 	
 	-- Parse arguments
-	for i = 1, #argv do
-		::loop_start::
+	for i = #argv, 1, -1 do
 		local arg = argv[i]
 		local remove_arg = false
 		
@@ -317,7 +316,6 @@ function love.load(argv)
 		
 		if remove_arg then
 			table.remove(argv, i)
-			goto loop_start
 		end
 	end
 	

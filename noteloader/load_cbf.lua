@@ -191,6 +191,15 @@ function CBFBeatmap.Load(file)
 		out.units = units
 	end
 	
+	-- Get cover
+	if cbf.COVERIMAGE_EXTENSION ~= "null" then
+		-- Has cover image
+		local cover = {image = love.graphics.newImage(love.filesystem.newFileData(file[1].."/cover"..cbf.COVERIMAGE_EXTENSION))}
+		cover.title = cbf.SONG_NAME
+		
+		out.cover = cover
+	end
+	
 	return out
 end
 

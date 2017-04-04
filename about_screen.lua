@@ -4,13 +4,10 @@ local TextFont = FontManager.GetFont("MTLmr3m.ttf", 15)
 local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 60)
 local TitleIcon = love.graphics.newImage("image/icon_128x128.png")
 local Background = love.graphics.newImage("image/liveback_12.png")
-local ExternalLicenses = loadstring(
-	love.math.decompress(love.filesystem.newFileData("about_screen_license"), "zlib"),
-	"about_screen_license"
-)()
+local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
 Written By:		AuahDark
-Assets From:	   Love Live! School Idol Festival and Sukufesu Simulator
+Special Thanks:	@yuyu0127_ for the SIF v5-style note images.
 
 License:
 
@@ -36,8 +33,8 @@ This Live Simulator uses these external libraries:
 	* JSON.lua				 	License
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
-	* Shelsha TEXB Loader	  	License
-
+	* Shelsha TEXB Loader	  	License		(Unavailable when running under Lua 5.1)
+	* LuaBitOp					 License		(Used when running under Lua 5.1)
 
 
 

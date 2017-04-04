@@ -1,6 +1,10 @@
 -- Lua storyboard handler
 -- Copyright © 2038 Dark Energy Processor
-local Shelsha = require("Shelsha")
+local Shelsha = nil
+
+if package.loaded.ffi or package.preload.ffi then
+	Shelsha = require("Shelsha")
+end
 
 -- The DEPLS handle
 local DEPLS = _G.DEPLS
@@ -189,9 +193,12 @@ function LuaStoryboard.LoadString(str, dir)
 		LoadVideo = RelativeLoadVideo,
 		LoadImage = RelativeLoadImage,
 		ReadFile = RelativeReadFile,
-		DrawObject = love.graphics.draw,
-		LoadTextureBank = LoadTextureBank,
+		DrawObject = love.graphics.draw
 	}
+	
+	if Shelsha then
+		env.LoadTextureBank = LoadTextureBank
+	end
 	
 	for n, v in pairs(_G) do
 		env[n] = v
@@ -201,7 +208,8 @@ function LuaStoryboard.LoadString(str, dir)
 		env[n] = v
 	end
 	
-	-- Disable some libraries
+	-- Disable some functions
+	env._G = env
 	env.DEPLS = nil
 	env.io = nil
 	env.os = nil
@@ -211,17 +219,18 @@ function LuaStoryboard.LoadString(str, dir)
 	env.package = nil
 	env.love = isolated_love
 	env.file_get_contents = nil
+	env.arg = nil
+	env.require = function(libname)
+		return (assert(allowed_libs[libname], "require is limited in storyboard lua script"))
+	end
+	
+	-- DEPLS-specific function
 	env.LogicalScale = nil
 	env.CalculateTouchPosition = nil
 	env.LoadConfig = nil
 	env.LoadEntryPoint = nil
-	env.require = function(libname)
-		if allowed_libs[libname] then
-			return allowed_libs[libname]
-		end
-		
-		error("require is limited in storyboard lua script")
-	end
+	env.MountZip = nil
+	env.NoteLoader = nil
 	
 	setfenv(lua, env)
 	
@@ -253,8 +262,7 @@ function LuaStoryboard.Draw(deltaT)
 	
 	local status, msg
 	if StoryboardLua[3] then
-		--status, msg = pcall(StoryboardLua[2].Update, deltaT)
-		StoryboardLua[2].Update(deltaT)
+		status, msg = pcall(StoryboardLua[2].Update, deltaT)
 	else
 		status, msg = pcall(StoryboardLua[1], deltaT)
 	end
