@@ -169,8 +169,10 @@ function CBFBeatmap.Load(file)
 	
 	for i = 1, 9 do
 		for j = 1, 2 do
-			if love.filesystem.isFile(file[1].."/unit_pos_"..i.."."..units_ext[j]) then
-				units[i] = NoteLoader.UnitLoader(file[1].."/unit_pos_"..i.."."..units_ext[j])
+			local fn = file[1].."/unit_pos_"..i.."."..units_ext[j]
+			
+			if love.filesystem.isFile(fn) then
+				units[i] = NoteLoader.UnitLoader(fn)
 				has_custom_units = true
 				break
 			end
@@ -192,12 +194,19 @@ function CBFBeatmap.Load(file)
 	end
 	
 	-- Get cover
-	if cbf.COVERIMAGE_EXTENSION ~= "null" then
-		-- Has cover image
-		local cover = {image = love.graphics.newImage(love.filesystem.newFileData(file[1].."/cover"..cbf.COVERIMAGE_EXTENSION))}
-		cover.title = cbf.SONG_NAME
+	local cover_ext = {"jpg", "png"}
+	
+	for i = 1, 2 do
+		local fn = file[1].."/cover."..cover_ext[i]
 		
-		out.cover = cover
+		if love.filesystem.isFile(file[1].."/cover."..cover_ext[i]) then
+			-- Has cover image
+			local cover = {image = love.graphics.newImage(love.filesystem.newFileData(fn))}
+			cover.title = cbf.SONG_NAME
+			
+			out.cover = cover
+			break
+		end
 	end
 	
 	return out

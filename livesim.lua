@@ -719,12 +719,7 @@ function DEPLS.Start(argv)
 	}
 	DEPLS.Images.Spotlight = love.graphics.newImage("image/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
-	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS),
-	
-	-- Force love2d to make directory
-	love.filesystem.createDirectory("audio")
-	love.filesystem.createDirectory("beatmap")
-	love.filesystem.createDirectory("screenshots")
+	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS)
 	
 	-- Load configuration
 	local BackgroundID = LoadConfig("BACKGROUND_IMAGE", 11)

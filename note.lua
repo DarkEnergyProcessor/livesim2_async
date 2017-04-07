@@ -207,9 +207,7 @@ function SingleNoteObject.Draw(this)
 	local setColor = love.graphics.setColor
 	
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	setBlendMode("alpha", "premultiplied")
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
-	setBlendMode("alpha")
 	
 	if DEPLS.DebugNoteDistance then
 		local dist = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
@@ -400,16 +398,13 @@ function LongNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	
 	-- Draw note trail
-	graphics.setBlendMode("add")
+	setBlendMode("add")
 	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity)
-	
 	draw(this.LongNoteMesh)
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
 	
-	setBlendMode("alpha", "premultiplied")
-	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
 	setBlendMode("alpha")
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	-- Draw simultaneous note bar if it is
 	if this.SimulNoteImage then

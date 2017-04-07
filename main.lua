@@ -21,7 +21,8 @@ local loader = {
 	main_menu = {0, "main_menu.lua"},
 	beatmap_select = {0, "select_beatmap.lua"},
 	unit_editor = {0, "unit_editor.lua"},
-	about = {0, "about_screen.lua"}
+	about = {0, "about_screen.lua"},
+	render = {3, "render_livesim.lua"}
 }
 
 local function error_printer(msg, layer)
@@ -258,6 +259,11 @@ function love.load(argv)
 	
 	io.write("R/W Directory: ", love.filesystem.getSaveDirectory(), "\n")
 	Yohane.Init(love.filesystem.load)
+	
+	-- Force love2d to make directory
+	love.filesystem.createDirectory("audio")
+	love.filesystem.createDirectory("beatmap")
+	love.filesystem.createDirectory("screenshots")
 	
 	if os_type == "Android" then
 		-- Since we can't pass arguments to Android intent, we have to use txt

@@ -56,7 +56,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous,
 		noteimg = assert(new_style[attribute], "Invalid note attribute")
 	end
 	
-	local cache_name = string.format("new_%d%d%d%d%d", attribute,
+	local cache_name = string.format("new_%08x%d%d%d%d", attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
@@ -126,6 +126,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous,
 	
 	love.graphics.pop()
 	
+	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
 	image_cache[cache_name] = canvas_composition
 	return canvas_composition
 end
@@ -133,7 +134,7 @@ end
 function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous, is_star, is_slide)
 	local noteimg
 	local cbf_ext = bit.band(attribute, 15) == 15
-	local cache_name = string.format("old_%d%d%d%d%d", attribute,
+	local cache_name = string.format("old_%08x%d%d%d%d", attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
@@ -183,6 +184,7 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous
 	
 	love.graphics.pop()
 	
+	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
 	image_cache[cache_name] = canvas_composition
 	return canvas_composition
 end

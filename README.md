@@ -62,6 +62,19 @@ Supported Beatmaps
 
 * LLPractice beatmap, with some bit complex setup.
 
+Screenshots
+===========
+
+Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8) (added to example beatmap soon)
+
+Note circle Pre-5.0
+
+![Note circle Pre-5.0](http://i.imgur.com/qTe7zaW.png)
+
+Note circle 5.0 style
+
+![Note circle 5.0 style](http://i.imgur.com/6GbKrrw.png)
+
 Disclaimer
 ==========
 
