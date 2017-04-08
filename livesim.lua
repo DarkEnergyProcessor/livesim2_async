@@ -958,8 +958,8 @@ function DEPLS.Update(deltaT)
 	if ElapsedTime > 0 then
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
 			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
-			DEPLS.Sound.LiveAudio:play()
 			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
+			DEPLS.Sound.LiveAudio:play()
 			audioplaying = true
 		end
 		

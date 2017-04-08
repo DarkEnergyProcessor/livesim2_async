@@ -9,6 +9,7 @@ local love = love
 local lsys = require("love.system")
 local ffi = require("ffi")
 local bit = require("bit")
+local reg = debug.getregistry()
 local RenderMode = {
 	DeltaTime = 50 / 3,
 	ElapsedTime = 0,
@@ -16,23 +17,26 @@ local RenderMode = {
 }
 local AudioMixer = {
 	NewSource = love.audio.newSource,
+	SoundDataMetatable = reg.SoundData,
+	SourceMetatable = reg.Source,
 	
 	SourceList = {},
 	SoundDataBuffer = {
 		Position = 0
 	}
 }
+local VideoManager = {
+	VideoMetatable = reg.Video,
+	NewVideo = love.graphics.newVideo,
+	
+	VideoList = {}
+}
 local RenderManager = {
 	Threads = {}
 }
 
 do
-	local a = love.sound.newSoundData(1)
-	local b = love.audio.newSource(a)
 	local c = lsys.getProcessorCount()
-	
-	AudioMixer.SoundDataMetatable = getmetatable(a)
-	AudioMixer.SourceMetatable = getmetatable(b)
 	
 	for i = 1, c do
 		RenderManager.Threads[i] = love.thread.newThread [[
@@ -81,11 +85,8 @@ local function resample_data(oldsd, newsd)
 end
 
 -- Sample must be range in -1..1
--- Source http://atastypixel.com/blog/how-to-mix-audio-samples-properly-on-ios/
 local function mix_audio_signal(a, b)
-	local sub = (a < 0 and b < 0) and -(a * b) or ((a > 0 and b > 0) and a * b or 0)
-	
-	return a + b - sub	
+	return math.max(math.min(a + b, 1), -1)
 end
 
 -- Override love.audio.newSource
@@ -148,7 +149,13 @@ end
 function AudioMixer.SourceMetatable.play(audio)
 	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
 	
+	print("Source play", audio)
 	sourcetbl.Playing = true
+end
+
+-- Override Source:isPlaying
+function AudioMixer.SourceMetatable.isPlaying(audio)
+	return assert(AudioMixer.SourceList[audio], "Invalid audio passed").Playing
 end
 
 -- Override Source:clone
@@ -165,6 +172,76 @@ function AudioMixer.SourceMetatable.clone(audio)
 	AudioMixer.SourceList[sourceobj] = sourcetbl2
 	
 	return sourceobj
+end
+
+-- Override Source:seek
+local SourceSeek = AudioMixer.SourceMetatable.seek
+local SourceTell = AudioMixer.SourceMetatable.tell
+function AudioMixer.SourceMetatable.seek(audio, pos, timeunit)
+	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
+	
+	SourceSeek(audio, pos, timeunit)
+	sourcetbl.Position = SourceTell(audio, "samples")
+end
+
+-- Override Source:tell
+function AudioMixer.SourceMetatable.tell(audio, timeunit)
+	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
+	
+	if timeunit == "samples" then
+		return sourcetbl.Position
+	else
+		return sourcetbl.Position / 44100
+	end
+end
+
+-- Override love.graphics.newVideo
+-- Audio is not supported atm
+function love.graphics.newVideo(vid)
+	local video = VideoManager.NewVideo(vid)
+	local vidtbl = {}
+	
+	vidtbl.Position = 0	-- In seconds
+	vidtbl.Playing = false
+	
+	VideoManager.VideoList[video] = vidtbl
+	return video
+end
+
+-- Override Video:play
+function VideoManager.VideoMetatable.play(video)
+	local vidtbl = assert(VideoManager.VideoList[video], "Invalid video passed")
+	
+	vidtbl.Playing = true
+end
+
+-- Override Video:pause
+function VideoManager.VideoMetatable.pause(video)
+	local vidtbl = assert(VideoManager.VideoList[video], "Invalid video passed")
+	
+	vidtbl.Playing = false
+end
+
+-- Override Video:isPlaying
+function VideoManager.VideoMetatable.pause(video)
+	return assert(VideoManager.VideoList[video], "Invalid video passed").Playing
+end
+
+-- Override Video:seek
+local VideoSeek = VideoManager.VideoMetatable.seek
+function VideoManager.VideoMetatable.seek(video, sec)
+	local vidtbl = assert(VideoManager.VideoList[video], "Invalid video passed")
+	
+	vidtbl.Position = sec
+	VideoSeek(video, sec)
+end
+
+-- Override Video:rewind
+function VideoManager.VideoMetatable(video)
+	local vidtbl = assert(VideoManager.VideoList[video], "Invalid video passed")
+	
+	vidtbl.Position = 0
+	VideoSeek(video, 0)
 end
 
 -- Render manager
@@ -203,6 +280,7 @@ function RenderMode.Start(arg)
 	RenderMode.Destination = arg[1]
 	RenderMode.Duration = assert(tonumber(arg[2]), "Please specify max render duration in seconds")
 	
+	-- Prevent window resizing
 	do
 		local w, h, flgs = love.window.getMode()
 		
@@ -217,16 +295,29 @@ function RenderMode.Start(arg)
 		local x = math.random()
 	end
 	
+	-- Init DEPLS
 	RenderMode.DEPLS = love.filesystem.load("livesim.lua")()
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
-	RenderMode.DEPLS.DebugDisplay = true
+	--RenderMode.DEPLS.DebugDisplay = true
 	
-	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100))
+	-- Set audio
+	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
+	
+	-- Post-init
+	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
+	
+	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
 	RenderMode.Duration = RenderMode.Duration * 1000
 end
 
+local function SetSampleBreak(i, l, r)
+	if pcall(AudioMixer.SoundDataMetatable.setSample, AudioMixer.SoundDataBuffer.Handle, i, l, r) == false then
+		assert(false, "Sample out-of-range index "..i)
+	end
+end
+
 function RenderMode.Update(deltaT)
-	if RenderMode.ElapsedTime >= RenderMode.Duration then
+	if RenderMode.ElapsedTime >= RenderMode.Duration or RenderManager.HasFreeThreads() == false then
 		if RenderManager.IsIdle() then
 			love.event.quit()
 		end
@@ -238,6 +329,15 @@ function RenderMode.Update(deltaT)
 	RenderMode.DEPLS.Update(RenderMode.DeltaTime)
 	RenderMode.ElapsedTime = RenderMode.ElapsedTime + RenderMode.DeltaTime
 	
+	-- Step video
+	local DeltaTime = RenderMode.DeltaTime / 1000
+	for n, v in pairs(VideoManager.VideoList) do
+		if v.Playing then
+			v.Position = v.Position + DeltaTime
+			VideoSeek(n, v.Position)
+		end
+	end
+	
 	-- Mix any audios. Process 735 samples at time
 	for i = 1, 735 do
 		local as_l, as_r = 0, 0
@@ -247,27 +347,28 @@ function RenderMode.Update(deltaT)
 				local sd = v.SoundData
 				
 				if v.Position < v.MaxSamples then
-					local vol = n:getVolume()
+					local vol = n:getVolume() * 0.8
 					local sl, sr = sd:getSample(v.Position * 2) * vol, sd:getSample(v.Position * 2 + 1) * vol
 					
 					as_l, as_r = mix_audio_signal(as_l, sl), mix_audio_signal(as_r, sr)
 					
 					v.Position = v.Position + 1
-					n:seek(v.Position, "samples")
 				else
 					v.Playing = false
 				end
 			end
 		end
 		
-		AudioMixer.SoundDataBuffer.Handle:setSample(AudioMixer.SoundDataBuffer.Position * 2, as_l)
-		AudioMixer.SoundDataBuffer.Handle:setSample(AudioMixer.SoundDataBuffer.Position * 2 + 1, as_r)
+		SetSampleBreak(AudioMixer.SoundDataBuffer.Position * 2, as_l)
+		SetSampleBreak(AudioMixer.SoundDataBuffer.Position * 2 + 1, as_r)
 		AudioMixer.SoundDataBuffer.Position = AudioMixer.SoundDataBuffer.Position + 1
 	end
+	
+	collectgarbage("collect")
 end
 
 function RenderMode.Draw(deltaT)
-	if RenderManager.HasFreeThreads() then
+	if RenderManager.HasFreeThreads() and RenderMode.ElapsedTime < RenderMode.Duration then
 		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
 		RenderMode.Frame = RenderMode.Frame + 1
 		
