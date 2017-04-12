@@ -1,5 +1,5 @@
 -- Score bar render
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local ScoreBar = {}
 
 local ScoreUpdate = DEPLS.Routines.ScoreUpdate

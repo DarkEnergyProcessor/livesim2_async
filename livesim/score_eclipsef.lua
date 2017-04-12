@@ -1,6 +1,6 @@
 -- Score eclipse flash animation with new DEPLS routine architecture
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local ScoreEclipseF = {}
 
 local eclipse_data = {scale = 1, opacity = 255}

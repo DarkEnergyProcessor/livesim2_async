@@ -1,6 +1,6 @@
 -- Combo counter animation using the new DEPLS routine architecture
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local ComboCounter = {CurrentCombo = 0}
 
 local combo_scale = {s = 1.15}

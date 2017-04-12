@@ -1,5 +1,5 @@
 -- Score display
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local ScoreUpdate = {CurrentScore = 0}
 
 local draw = love.graphics.draw

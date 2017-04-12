@@ -1,6 +1,6 @@
 -- Perfect node animation with new DEPLS routine architecture
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local PerfectNode = {}
 
 local et = 500

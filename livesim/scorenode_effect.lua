@@ -1,6 +1,6 @@
 -- Added score, update routine using the new EffectPlayer
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local ScoreNode = {}
 
 local _common_meta = {__index = ScoreNode}

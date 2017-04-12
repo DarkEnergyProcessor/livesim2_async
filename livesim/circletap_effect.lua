@@ -1,6 +1,6 @@
 -- Circle tap effect routines using the new EffectPlayer
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local CircleTapEffect = {}
 
 local _common_meta = {__index = CircleTapEffect}

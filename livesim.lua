@@ -161,6 +161,8 @@ DEPLS.Routines.ScoreUpdate = love.filesystem.load("livesim/scoreupdate.lua")(DEP
 DEPLS.Routines.ScoreBar = love.filesystem.load("livesim/scorebar.lua")(DEPLS)
 -- Added score, update routine effect
 DEPLS.Routines.ScoreNode = love.filesystem.load("livesim/scorenode_effect.lua")(DEPLS)
+-- Spot effect
+DEPLS.Routines.SpotEffect = love.filesystem.load("livesim/spot_effect.lua")(DEPLS)
 
 --! @brief Image cover preview routines. Takes 3167ms to complete. Used as effect player
 --! @param cover_data Table which contains image used, cover title, and optionally cover arrangement
@@ -479,35 +481,8 @@ function DEPLS.StoryboardFunctions.SpawnSpotEffect(pos, r, g, b)
 	g = g or 255
 	b = b or 255
 	
-	local graphics = love.graphics
-	local idolpos = DEPLS.IdolPosition[pos]
-	local idx = idolpos[1] + 64
-	local idy = idolpos[2] + 64
-	local spotlight = DEPLS.Images.Spotlight
-	local func = coroutine.wrap(function()
-		local deltaT
-		local dist = distance(idolpos[1] - 416, idolpos[2] - 96) / 256
-		local direction = angle_from(480, 160, idx, idy)
-		local popn_data = {scale = 1.3333, opacity = 255}
-		local keep_render = false
-		popn_data.tween = tween.new(500, popn_data, {scale = 0, opacity = 0})
-		
-		while keep_render == false do
-			deltaT = coroutine.yield()
-			keep_render = popn_data.tween:update(deltaT)
-			
-			graphics.setBlendMode("add")
-			graphics.setColor(r, g, b, popn_data.opacity)
-			graphics.draw(spotlight, idx, idy, direction, popn_data.scale, dist, 48, 256)
-			graphics.setColor(255, 255, 255, 255)
-			graphics.setBlendMode("alpha")
-		end
-		
-		while true do coroutine.yield(true) end
-	end)
-	
-	func()
-	EffectPlayer.Spawn(func)
+	local obj = DEPLS.Routines.SpotEffect.Create(pos, r, g, b)
+	EffectPlayer.Spawn(obj)
 end
 
 --! @brief Spawn circletap effect in the specificed idol position and with specificed color

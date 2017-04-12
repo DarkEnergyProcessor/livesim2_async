@@ -1,7 +1,6 @@
 -- DEPLS2 Render mode. Render frame by frame, and render audio to WAV
 -- It's your turn to encode the image frames to videos and mix the audio
--- It might gives unexpected results on storyboard with videos.
--- Only supported in Desktop environment.
+-- Only supported in Desktop environment, unless you have a beast phone.
 
 assert(jit, "Render mode is unavailable in Lua 5.1")
 
@@ -37,17 +36,18 @@ local RenderManager = {
 
 do
 	local c = lsys.getProcessorCount()
+	print("Processors", c)
 	
 	for i = 1, c do
-		RenderManager.Threads[i] = love.thread.newThread [[
-local arg = {...}	-- [1] = ImageData, [2] = output name
+		RenderManager.Threads[i] = {Thread = love.thread.newThread [[
+local id, out = ...	-- [1] = ImageData, [2] = output name
 local li = require("love.image")
 local encode = getmetatable(li.newImageData(1, 1)).encode
 
-local f = assert(io.open(arg[2], "wb"))
-f:write(encode(arg[1], "png"):getString())
+local f = assert(io.open(out, "wb"))
+f:write(encode(id, "png"):getString())
 f:close()
-]]
+]]}
 	end
 end
 
@@ -223,7 +223,7 @@ function VideoManager.VideoMetatable.pause(video)
 end
 
 -- Override Video:isPlaying
-function VideoManager.VideoMetatable.pause(video)
+function VideoManager.VideoMetatable.isPlaying(video)
 	return assert(VideoManager.VideoList[video], "Invalid video passed").Playing
 end
 
@@ -247,7 +247,9 @@ end
 -- Render manager
 function RenderManager.HasFreeThreads()
 	for i = 1, #RenderManager.Threads do
-		if RenderManager.Threads[i]:isRunning() == false then
+		if RenderManager.Threads[i].Thread:isRunning() == false then
+			RenderManager.Threads[i].Image = nil
+			
 			return true
 		end
 	end
@@ -257,8 +259,10 @@ end
 
 function RenderManager.IsIdle()
 	for i = 1, #RenderManager.Threads do
-		if RenderManager.Threads[i]:isRunning() == true then
+		if RenderManager.Threads[i].Thread:isRunning() then
 			return false
+		else
+			RenderManager.Threads[i].Image = nil
 		end
 	end
 	
@@ -267,8 +271,10 @@ end
 
 function RenderManager.EncodeFrame(id, frame)
 	for i = 1, #RenderManager.Threads do
-		if RenderManager.Threads[i]:isRunning() == false then
-			RenderManager.Threads[i]:start(id, string.format("%s/%010d.png", RenderMode.Destination, frame))
+		local t = RenderManager.Threads[i]
+		if t.Thread:isRunning() == false then
+			t.Image = id
+			t.Thread:start(id, string.format("%s/%010d.png", RenderMode.Destination, frame))
 			return
 		end
 	end
@@ -276,6 +282,7 @@ function RenderManager.EncodeFrame(id, frame)
 	assert(false, "No free threads")
 end
 
+-- Render mode
 function RenderMode.Start(arg)
 	RenderMode.Destination = arg[1]
 	RenderMode.Duration = assert(tonumber(arg[2]), "Please specify max render duration in seconds")
@@ -302,6 +309,9 @@ function RenderMode.Start(arg)
 	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
+	
+	-- Create canvas
+	RenderMode.Canvas = love.graphics.newCanvas()
 	
 	-- Post-init
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
@@ -369,18 +379,22 @@ end
 
 function RenderMode.Draw(deltaT)
 	if RenderManager.HasFreeThreads() and RenderMode.ElapsedTime < RenderMode.Duration then
+		love.graphics.setCanvas(RenderMode.Canvas)
+		love.graphics.clear()
 		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
+		love.graphics.setCanvas(nil)
 		RenderMode.Frame = RenderMode.Frame + 1
 		
-		local ss = love.graphics.newScreenshot()
+		local ss = RenderMode.Canvas:newImageData()
 		
-		RenderMode.Image = love.graphics.newImage(ss)
 		RenderManager.EncodeFrame(ss, RenderMode.Frame)
 		
 		print("Rendering Frame", RenderMode.Frame)
-	else
-		love.graphics.draw(RenderMode.Image)
 	end
+	
+	love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.draw(RenderMode.Canvas, -LogicalScale.OffX, -LogicalScale.OffY)
+	love.graphics.setBlendMode("alpha")
 end
 
 local function dwordu2string(num)

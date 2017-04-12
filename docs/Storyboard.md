@@ -202,25 +202,6 @@ Returns: Previous play speed factor
 
 > This function throws error if speed_factor is zero or less
 
-Additional Storyboard Functions
-===============================
-
-These functions were declared as global function in DEPLS, thus it also can be used in storyboards too
-
-*************************************************
-
-### `number,number,number HSL(number h, number s, number l)`
-
-Parameters:
-
-* `h`
-
-* `s`
-
-* `l`
-
-Returns: R, G, and B color (3 values)
-
 *************************************************
 
 ### `ShelshaObject LoadTextureBank(string filename)`
@@ -247,6 +228,25 @@ Parameters:
 * `new_style` - Use new-style (SIF v5.0) note (`true`) or use old-style (SIF pre-v5.0) note (`false`)
 
 > This function can only be called inside `Initialize` function.
+
+Additional Storyboard Functions
+===============================
+
+These functions were declared as global function in DEPLS, thus it also can be used in storyboards too
+
+*************************************************
+
+### `number,number,number HSL(number h, number s, number l)`
+
+Parameters:
+
+* `h`
+
+* `s`
+
+* `l`
+
+Returns: R, G, and B color (3 values)
 
 Storyboard Callback Functions
 =============================

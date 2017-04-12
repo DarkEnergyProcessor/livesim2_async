@@ -1,6 +1,6 @@
 -- Note icon and it's circle
 local tween = require("tween")
-local DEPLS = ({...})[1]
+local DEPLS = ...
 local NoteIcon = {}
 
 local Images = DEPLS.Images
