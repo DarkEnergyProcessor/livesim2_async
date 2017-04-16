@@ -656,6 +656,12 @@ function DEPLS.StoryboardFunctions.ForceNewNoteStyle(new_style)
 	DEPLS.ForceNoteStyle = new_style and 2 or 1
 end
 
+--! @brief Check if current storyboard is under rendering mode
+--! @returns In rendering mode (true) or live mode (false)
+function DEPLS.StoryboardFunctions.IsRenderingMode()
+	return not(not(DEPLS.RenderingMode))
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -1082,6 +1088,8 @@ AUTOPLAY = %s
 end
 
 -- LOVE2D mouse/touch pressed
+local TouchTracking = {}
+local isMousePress = false
 function love.mousepressed(x, y, button, touch_id)
 	if touch_id == true then return end
 	if DEPLS.ElapsedTime <= 0 then return end
@@ -1089,12 +1097,18 @@ function love.mousepressed(x, y, button, touch_id)
 	touch_id = touch_id or 0
 	x, y = CalculateTouchPosition(x, y)
 	
+	isMousePress = touch_id == 0 and button == 1
+	
 	-- Calculate idol
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
 		
 		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
+			print("Press", i)
+			TouchTracking[touch_id] = i
 			DEPLS.NoteManager.SetTouch(i, touch_id)
+			
+			break
 		end
 	end
 end
@@ -1104,11 +1118,39 @@ function love.mousereleased(x, y, button, touch_id)
 	if touch_id == true then return end
 	if DEPLS.ElapsedTime <= 0 then return end
 	
+	if isMousePress and touch_id == false and button == 1 then
+		isMousePress = false
+	end
+	
 	touch_id = touch_id or 0
 	x, y = CalculateTouchPosition(x, y)
 	
 	-- Send unset touch message
+	TouchTracking[touch_id] = nil
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
+end
+
+function love.mousemoved(x, y, dx, dy, touch_id)
+	if touch_id == true then return end
+	
+	if isMousePress or touch_id then
+		touch_id = touch_id or 0
+		
+		local lastpos = TouchTracking[touch_id]
+		
+		x, y = CalculateTouchPosition(x, y)
+		
+		for i = 1, 9 do
+			local idolpos = DEPLS.IdolPosition[i]
+			
+			if i ~= lastpos and distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
+				TouchTracking[touch_id] = i
+				DEPLS.NoteManager.SetTouch(i, touch_id, false, lastpos)
+				
+				break
+			end
+		end
+	end
 end
 
 local function update_audio_volume()

@@ -56,7 +56,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous,
 		noteimg = assert(new_style[attribute], "Invalid note attribute")
 	end
 	
-	local cache_name = string.format("new_%08x%d%d%d%d", attribute,
+	local cache_name = string.format("new_%08x%d%d%d%d%d", attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
@@ -111,10 +111,10 @@ function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous,
 			if is_simultaneous then
 				love.graphics.draw(note_icons, note_icons_quad.simultaneous)
 			end
-		elseif is_star then
-			love.graphics.draw(noteimg, is_simultaneous and new_style_quad.star_simultaneous or new_style_quad.star)
 		elseif is_slide then
 			love.graphics.draw(noteimg, is_simultaneous and new_style_quad.slide_simultaneous or new_style_quad.slide)
+		elseif is_star then
+			love.graphics.draw(noteimg, is_simultaneous and new_style_quad.star_simultaneous or new_style_quad.star)
 		else
 			love.graphics.draw(noteimg, new_style_quad.normal)
 			
@@ -134,7 +134,7 @@ end
 function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous, is_star, is_slide)
 	local noteimg
 	local cbf_ext = bit.band(attribute, 15) == 15
-	local cache_name = string.format("old_%08x%d%d%d%d", attribute,
+	local cache_name = string.format("old_%08x%d%d%d%d%d", attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
@@ -174,8 +174,8 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous
 		love.graphics.draw(DEPLS.Images.Note.Token)
 	elseif is_star then
 		love.graphics.draw(DEPLS.Images.Note.Star)
-	elseif is_star then
-		love.graphics.draw(DEPLS.Images.Note.Slide)
+	elseif is_slide then
+		love.graphics.draw(DEPLS.Images.Note.Slide, 0, 0, 0, 2, 2)
 	end
 	
 	if is_simultaneous then
@@ -189,14 +189,9 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous
 	return canvas_composition
 end
 
+local notes_handler = {NoteImageLoader.CreateNoteOldStyle, NoteImageLoader.CreateNoteV5Style}
 function NoteImageLoader.LoadNoteImage(attribute, is_token, is_simultaneous, is_star, is_slide)
-	if DEPLS.ForceNoteStyle == 2 then
-		return NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous, is_star, is_slide)
-	elseif DEPLS.ForceNoteStyle == 1 then
-		return NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous, is_star, is_slide)
-	else
-		assert(false, "Invalid note style. Only 1 (old) or 2 (new) note styles are allowed")
-	end
+	return assert(notes_handler[DEPLS.ForceNoteStyle], "Invalid note style. Only 1 (old) or 2 (new) note styles are allowed")(attribute, is_token, is_simultaneous, is_star, is_slide)
 end
 
 return NoteImageLoader

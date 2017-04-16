@@ -3,7 +3,7 @@
 
 local JSON = require("JSON")
 local Yohane = require("Yohane")
-DEPLS_VERSION = "20170404"
+DEPLS_VERSION = "20170416"
 
 FontManager = require("font_manager")
 LogicalScale = {

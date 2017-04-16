@@ -85,6 +85,18 @@ end
 
 local SingleNoteObject = {}
 local LongNoteObject = {}
+local PreviousSlideNote = nil
+local PredefinedSlideRotation = {
+	math.rad(-90),
+	math.rad(-67.5),
+	math.rad(-45),
+	math.rad(-22.5),
+	0,
+	math.rad(22.5),
+	math.rad(45),
+	math.rad(67.5),
+	math.rad(90)
+}
 
 --! @brief Creates new SingleNoteObject
 --! @param note_data SIF-compilant note data
@@ -120,7 +132,22 @@ local function NewNoteObject(note_data)
 	elseif note_data.effect == 4 then
 		-- Star note
 		noteobj.StarNote = true
+	elseif note_data.effect == 11 then
+		-- Slide note
+		noteobj.SlideNote = true
+		
+		if PreviousSlideNote then
+			noteobj.Rotation =
+				(PreviousSlideNote.Position - note_data.position > 0 and 0 or math.pi) + PredefinedSlideRotation[note_data.position]
+			noteobj.PreviousChain = PreviousSlideNote
+			
+			PreviousSlideNote.NextChain = noteobj
+		end
+		
+		PreviousSlideNote = noteobj			
 	elseif note_data.effect == 3 then
+		PreviousSlideNote = nil
+		
 		-- Long note. Use LongNoteObject metatable
 		noteobj.Audio2 = {
 			Perfect = DEPLS.Sound.PerfectTap:clone(),
@@ -144,6 +171,10 @@ local function NewNoteObject(note_data)
 		
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
+	end
+	
+	if note_data.effect ~= 11 then
+		PreviousSlideNote = nil
 	end
 	
 	-- SingleNoteObject in here
@@ -198,7 +229,6 @@ function SingleNoteObject.Update(this, deltaT)
 		Note.Miss = Note.Miss + 1
 		return
 	end
-	
 end
 
 local setBlendMode = love.graphics.setBlendMode
@@ -207,7 +237,7 @@ function SingleNoteObject.Draw(this)
 	local setColor = love.graphics.setColor
 	
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	if DEPLS.DebugNoteDistance then
 		local dist = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
@@ -596,6 +626,15 @@ local function initnote_pos(a)
 		local obj = Note[a][i]
 		
 		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote)
+		
+		if obj.SlideNote and obj.Rotation == nil then
+			-- Use from next chain to determine position
+			if obj.NextChain then
+				obj.Rotation = (obj.Position - obj.NextChain.Position > 0 and 0 or math.pi) + PredefinedSlideRotation[obj.Position]
+			else
+				obj.Rotation = PredefinedSlideRotation[obj.Position]
+			end
+		end
 	end
 end
 
@@ -680,7 +719,8 @@ end
 --! @param pos The idol position. nil if `release` is true
 --! @param touchid The touch ID
 --! @param release Is this a touch release message?
-function Note.SetTouch(pos, touchid, release)
+--! @param previous The previous position, used for slide notes (or nil)
+function Note.SetTouch(pos, touchid, release, previous)
 	if DEPLS.AutoPlay then return end
 	
 	local ElapsedTime = DEPLS.ElapsedTime
@@ -718,6 +758,10 @@ function Note.SetTouch(pos, touchid, release)
 	end
 	
 	noteobj = Note[pos][1]
+	
+	if not(noteobj.SlideNote) and previous then
+		return
+	end
 	
 	if noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
 		noteobj:SetTouchID(touchid)

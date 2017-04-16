@@ -229,6 +229,14 @@ Parameters:
 
 > This function can only be called inside `Initialize` function.
 
+*************************************************
+
+### `boolean IsRenderingMode()`
+
+Check for current rendering type.
+
+Returns: `true` if currently in rendering mode (offline drawing), `false` if currently in live mode (online drawing).
+
 Additional Storyboard Functions
 ===============================
 

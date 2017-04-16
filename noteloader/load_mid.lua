@@ -29,14 +29,8 @@ end
 
 -- returns table, not JSON-encoded file.
 local function midi2sif(stream)
-	if stream:read(4) ~= "MThd" then
-		error("Not MIDI")
-	end
-	
-	if str2dword_be(stream:read(4)) ~= 6 then
-		error("Header size not 6")
-	end
-	
+	assert(stream:read(4) == "MThd", "Not MIDI")
+	assert(str2dword_be(stream:read(4)) == 6, "Header size not 6")
 	stream:read(2)
 	
 	local mtrk_count = str2dword_be("\0\0"..stream:read(2))
@@ -45,9 +39,7 @@ local function midi2sif(stream)
 	local tempo = 120			-- Default tempo, 120 BPM
 	local event_list = {}		-- Will be analyzed later. For now, just collect all of it
 	
-	if ppqn > 32768 then
-		error("PPQN is negative")
-	end
+	assert(ppqn < 32768, "PPQN is negative")
 	
 	local function insert_event(tick, data)
 		if event_list[tick] then
@@ -58,43 +50,41 @@ local function midi2sif(stream)
 	end
 	
 	for i = 1, mtrk_count do
-		if stream:read(4) ~= "MTrk" then
-			error("Not MIDI Track")
-		end
+		assert(stream:read(4) == "MTrk", "Not MIDI Track")
 		
 		local mtrk_len = str2dword_be(stream:read(4))
 		local ss = stringstream.create(stream:read(mtrk_len))
 		local timing_total = 0
 		
-		if ss:seek("end") ~= mtrk_len then
-			error("Unexpected EOF")
-		end
+		assert(ss:seek("end") == mtrk_len, "Unexpected EOF")
 		ss:seek("set")
 		
 		while ss:seek() < mtrk_len do
 			local timing = read_varint(ss)
 			local event_byte = ss:read(1):byte()
 			local event_type = math.floor(event_byte / 16)
-			local note
+			local note, velocity
 			
 			timing_total = timing_total + timing
 			
 			if event_type == 8 then
 				note = ss:read(1):byte()
-				ss:seek("cur", 1)
+				velocity = ss:read(1):byte()
 				
 				insert_event(timing_total, {
 					note = false,	-- false = off, true = on.
 					pos = note,
+					velocity = velocity,
 					channel = event_byte % 16
 				})
 			elseif event_type == 9 then
 				note = ss:read(1):byte()
-				ss:seek("cur", 1)
+				velocity = ss:read(1):byte()
 				
 				insert_event(timing_total, {
 					note = true,	-- false = off, true = on.
 					pos = note,
+					velocity = velocity,
 					channel = event_byte % 16
 				})
 			elseif event_byte == 255 then
@@ -126,6 +116,7 @@ local function midi2sif(stream)
 				data = b.data,
 				note = b.note,
 				pos = b.pos,
+				vel = b.velocity,
 				channel = b.channel
 			})
 		end
@@ -150,9 +141,7 @@ local function midi2sif(stream)
 	
 	local mid_idx = top_index - bottom_index  + 1
 	
-	if mid_idx > 9 or mid_idx % 2 == 0 then
-		error("Failed to analyze note position. Make sure you only use 9 note keys or odd amount of note keys")
-	end
+	assert(mid_idx <= 9 and mid_idx % 2 == 1, "Failed to analyze note position. Make sure you only use 9 note keys or odd amount of note keys")
 	
 	-- If it's not 9 and it's odd, automatically adjust
 	if mid_idx ~= 9 and midi_idx % 2 == 1 then
@@ -193,7 +182,7 @@ local function midi2sif(stream)
 							timing_sec = v.tick * 60 / ppqn / tempo,
 							notes_attribute = attribute,
 							notes_level = 1,
-							effect = effect,
+							effect = v.vel < 64 and 11 or effect,
 							effect_value = 2,
 							position = position
 						}
