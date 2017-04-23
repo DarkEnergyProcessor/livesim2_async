@@ -37,6 +37,8 @@ local RenderManager = {
 do
 	local c = lsys.getProcessorCount()
 	print("Processors", c)
+	c = c * 2
+	print("Using "..c.." threads")
 	
 	for i = 1, c do
 		RenderManager.Threads[i] = {Thread = love.thread.newThread [[
@@ -385,9 +387,7 @@ function RenderMode.Draw(deltaT)
 		love.graphics.setCanvas(nil)
 		RenderMode.Frame = RenderMode.Frame + 1
 		
-		local ss = RenderMode.Canvas:newImageData()
-		
-		RenderManager.EncodeFrame(ss, RenderMode.Frame)
+		RenderManager.EncodeFrame(RenderMode.Canvas:newImageData(), RenderMode.Frame)
 		
 		print("Rendering Frame", RenderMode.Frame)
 	end
@@ -395,6 +395,7 @@ function RenderMode.Draw(deltaT)
 	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.draw(RenderMode.Canvas, -LogicalScale.OffX, -LogicalScale.OffY)
 	love.graphics.setBlendMode("alpha")
+	RenderMode.DEPLS.DrawDebugInfo()
 end
 
 local function dwordu2string(num)

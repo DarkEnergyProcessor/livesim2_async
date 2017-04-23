@@ -76,7 +76,9 @@ function CBFBeatmap.Load(file)
 	local hold_note_queue = {}
 
 	for line in cbf.beatmap:lines() do
-		table.insert(readed_notes_data, line)
+		if #line > 0 then
+			readed_notes_data[#readed_notes_data + 1] = line
+		end
 	end
 
 	cbf.beatmap:close()
@@ -92,43 +94,48 @@ function CBFBeatmap.Load(file)
 	-- Parse notes
 	for _, line in pairs(readed_notes_data) do
 		local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+);")
-		local num_pos = position_translation[pos]
-		local attri = desired_attribute
-		release_time = tonumber(release_time)
-		hold_time = tonumber(hold_time)
 		
-		if is_customcol == "True" then
-			attri = bit.bor(bit.bor(bit.lshift(tonumber(r) * 255, 23), bit.lshift(tonumber(g) * 255, 14)), bit.bor(bit.lshift(tonumber(b) * 255, 5), 31))
-		end
-		
-		if is_release == "True" then
-			local last = assert(hold_note_queue[num_pos], "unbalanced release note")
+		if time and pos and is_hold and is_release and release_time and hold_time and is_star and r and g and b and is_customcol then
+			local num_pos = position_translation[pos]
+			local attri = desired_attribute
+			release_time = tonumber(release_time)
+			hold_time = tonumber(hold_time)
 			
-			last.effect_value = time - last.timing_sec
-			hold_note_queue[num_pos] = nil
-		elseif is_hold == "True" then
-			local val = {
-				timing_sec = time + 0,
-				notes_attribute = attri,
-				notes_level = 1,
-				effect = 3,
-				effect_value = 0,
-				position = num_pos
-			}
+			if is_customcol == "True" then
+				attri = bit.bor(bit.bor(bit.lshift(tonumber(r) * 255, 23), bit.lshift(tonumber(g) * 255, 14)), bit.bor(bit.lshift(tonumber(b) * 255, 5), 31))
+			end
 			
-			table.insert(notes_data, val)
-			assert(hold_note_queue[num_pos] == nil, "overlapped hold note")
-			
-			hold_note_queue[num_pos] = val
+			if is_release == "True" then
+				local last = assert(hold_note_queue[num_pos], "unbalanced release note")
+				
+				last.effect_value = time - last.timing_sec
+				hold_note_queue[num_pos] = nil
+			elseif is_hold == "True" then
+				local val = {
+					timing_sec = time + 0,
+					notes_attribute = attri,
+					notes_level = 1,
+					effect = 3,
+					effect_value = 0,
+					position = num_pos
+				}
+				
+				table.insert(notes_data, val)
+				assert(hold_note_queue[num_pos] == nil, "overlapped hold note")
+				
+				hold_note_queue[num_pos] = val
+			else
+				table.insert(notes_data, {
+					timing_sec = time + 0,
+					notes_attribute = attri,
+					notes_level = 1,
+					effect = is_star == "True" and 4 or 1,
+					effect_value = 2,
+					position = num_pos
+				})
+			end
 		else
-			table.insert(notes_data, {
-				timing_sec = time + 0,
-				notes_attribute = attri,
-				notes_level = 1,
-				effect = is_star == "True" and 4 or 1,
-				effect_value = 2,
-				position = num_pos
-			})
+			print("Ignored", line)
 		end
 	end
 

@@ -745,6 +745,8 @@ function Note.SetTouch(pos, touchid, release, previous)
 						ComboCounter.CurrentCombo = ComboCounter.CurrentCombo + 1
 					end
 					
+					Note.NoteRemaining = Note.NoteRemaining - 1
+					Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
 					ComboCounter.Replay = true
 				end
 				
@@ -759,11 +761,11 @@ function Note.SetTouch(pos, touchid, release, previous)
 	
 	noteobj = Note[pos][1]
 	
-	if not(noteobj.SlideNote) and previous then
+	if not(noteobj) or (not(noteobj.SlideNote) and previous) then
 		return
 	end
 	
-	if noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
+	if ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
 		noteobj:SetTouchID(touchid)
 		
 		if noteobj.Delete then

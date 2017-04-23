@@ -675,6 +675,36 @@ function DEPLS.StoryboardCallback(name, ...)
 	end
 end
 
+--! @brief Draws debug information
+function DEPLS.DrawDebugInfo()
+	local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
+	local text = string.format([[
+%d FPS
+SAVE_DIR = %s
+NOTE_SPEED = %d ms
+ELAPSED_TIME = %d ms
+SPEED_FACTOR = %.2f%%
+CURRENT_COMBO = %d
+PLAYING_EFFECT = %d
+LIVE_OPACITY = %.2f
+BACKGROUND_BLACKNESS = %.2f
+AUDIO_VOLUME = %.2f
+AUDIO_SAMPLE = %5.2f, %5.2f
+REMAINING_NOTES = %d
+PERFECT = %d GREAT = %d
+GOOD = %d BAD = %d MISS = %d
+AUTOPLAY = %s
+]]		, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
+		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
+		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
+		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
+	love.graphics.setFont(DEPLS.MTLmr3m)
+	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.print(text, 1, 1)
+	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.print(text)
+end
+
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
@@ -1058,32 +1088,7 @@ function DEPLS.Draw(deltaT)
 	end
 	
 	if DEPLS.DebugDisplay then
-		local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
-		local text = string.format([[
-%d FPS
-SAVE_DIR = %s
-NOTE_SPEED = %d ms
-ELAPSED_TIME = %d ms
-SPEED_FACTOR = %.2f%%
-CURRENT_COMBO = %d
-PLAYING_EFFECT = %d
-LIVE_OPACITY = %.2f
-BACKGROUND_BLACKNESS = %.2f
-AUDIO_VOLUME = %.2f
-AUDIO_SAMPLE = %5.2f, %5.2f
-REMAINING_NOTES = %d
-PERFECT = %d GREAT = %d
-GOOD = %d BAD = %d MISS = %d
-AUTOPLAY = %s
-]]			, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
-			, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
-			, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
-			, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
-		love.graphics.setFont(DEPLS.MTLmr3m)
-		setColor(0, 0, 0, 255)
-		love.graphics.print(text, 1, 1)
-		setColor(255, 255, 255, 255)
-		love.graphics.print(text)
+		DEPLS.DrawDebugInfo()
 	end
 end
 
@@ -1104,7 +1109,6 @@ function love.mousepressed(x, y, button, touch_id)
 		local idolpos = DEPLS.IdolPosition[i]
 		
 		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
-			print("Press", i)
 			TouchTracking[touch_id] = i
 			DEPLS.NoteManager.SetTouch(i, touch_id)
 			
