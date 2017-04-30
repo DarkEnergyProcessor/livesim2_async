@@ -23,12 +23,8 @@ end
 
 local function readstring(stream)
 	local len = string2wordu(stream)
-	--[[
-	local lensub = (len % 2) == 0 and -3 or -2
 	
-	return stream:read(len):sub(1, lensub)
-	]]
-	return ({stream:read(len):gsub("%z", "")})[1]
+	return stream:read(len):gsub("%z", "")
 end
 
 -------------------------
@@ -47,6 +43,8 @@ YohaneFlash:draw(x, y)
 YohaneFlash:setMovie(movie_name)
 YohaneFlash:unFreeze()
 YohaneFlash:jumpToLabel(label_name)
+YohaneFlash:setImage(pseudo_image_name, image|nil)
+YohaneFlash:setOpacity([opacity = 255])
 
 previous_fps = YohaneFlash:setFPS(fps|nil)
 PlatformImage = YohaneFlash:getImage(image_name)
@@ -57,6 +55,7 @@ movie_frozen = YohaneFlash:isFrozen()
 function YohaneFlash._internal.parseStream(stream)
 	local flsh = {
 		timeModulate = 0,
+		opacity = 255,
 		strings = {},
 		audios = {},
 		matrixTransf = {},
@@ -191,7 +190,10 @@ function YohaneFlash._internal.parseStream(stream)
 			movie.name = flsh.strings[moviedata[1]]
 			movie.offsetX = math.floor(moviedata[3] / 2147483648) * (-4294967296) + moviedata[3]	-- To signed
 			movie.offsetY = math.floor(moviedata[4] / 2147483648) * (-4294967296) + moviedata[4]	-- To signed
-			movie.imageHandle = Yohane.Platform.ResolveImage(movie.name:sub(2, -6))
+			
+			if movie.name:find("I%%") ~= 1 then
+				movie.imageHandle = Yohane.Platform.ResolveImage(movie.name:sub(2, -6))
+			end
 		elseif moviedata[2] == 0x8FFF then
 			-- Shape
 			movie.type = "shape"
@@ -221,6 +223,7 @@ function YohaneFlash._internal._mt.clone(this)
 	
 	local flsh = {
 		timeModulate = 0,
+		opacity = this.opacity,
 		msPerFrame = this.msPerFrame,
 		strings = Yohane.CopyTable(this.strings),
 		audios = {},
@@ -247,7 +250,10 @@ function YohaneFlash._internal._mt.clone(this)
 			end
 		elseif this.movieData[i].type == "image" then
 			flsh.movieData[i] = Yohane.CopyTable(this.movieData[i], "imageHandle")
-			flsh.movieData[i].imageHandle = Yohane.Platform.CloneImage(this.movieData[i].imageHandle)
+			
+			if this.movieData[i].imageHandle then
+				flsh.movieData[i].imageHandle = Yohane.Platform.CloneImage(this.movieData[i].imageHandle)
+			end
 		else
 			flsh.movieData[i] = Yohane.CopyTable(this.movieData[i])
 		end
@@ -265,7 +271,7 @@ function YohaneFlash._internal._mt.clone(this)
 end
 
 -- Get image object from specificed name
--- The image objecr returned is platform-dependant, example
+-- The image object returned is platform-dependant, example
 -- for LOVE2D platform, it will be LOVE2D Image object.
 function YohaneFlash._internal._mt.getImage(this, name)
 	this = getmetatable(this)
@@ -336,6 +342,24 @@ function YohaneFlash._internal._mt.isFrozen(this)
 	assert(this.currentMovie, "No movie render is set")
 	
 	return this.movieFrozen
+end
+
+function YohaneFlash._internal._mt.setImage(this, pseudo_name, handle)
+	this = getmetatable(this)
+	local name = "I%"..pseudo_name
+	
+	for i = 0, #this.movieData do
+		if this.movieData[i].name == name then
+			this.movieData[i].imageHandle = handle
+			return
+		end
+	end
+	
+	assert(false, "No such pseudo image")
+end
+
+function YohaneFlash._internal._mt.setOpacity(this, opacity)
+	getmetatable(this).opacity = math.max(math.min(opacity or 255, 255), 0)
 end
 
 return YohaneFlash

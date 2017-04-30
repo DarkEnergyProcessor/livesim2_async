@@ -1,11 +1,13 @@
 -- Shelsha, LOVE2D library to load Playground TEXB files
 -- Uses LOVE2D function naming case for library
 local bit = require("bit")
-local ffi = require("ffi")
+local ffi = select(2, pcall(require, "ffi"))
 local lg = require("love.graphics")
 
-local Shelsha = {_internal = {_meta = {}}, _VERSION = "v1.0.0"}
+local Shelsha = {_internal = {_meta = {}}, _VERSION = "1.1.0"}
 local memreadstream = {}
+
+local has_ffi = type(ffi) == "table"
 
 --------------------------------------
 -- LOVE2D version-specific function --
@@ -14,6 +16,62 @@ local decompress_zlib_func
 local make_timg_mesh
 local mesh_flush
 local is_love_010
+local create_memory_block
+local string_memory_block
+
+if has_ffi then
+	-- Use ffi.new
+	function create_memory_block(len, buf)
+		if buf then
+			return ffi.new("uint8_t["..len.."]", buf)
+		else
+			return ffi.new("uint8_t["..len.."]")
+		end
+	end
+	
+	-- Use ffi.string
+	function string_memory_block(buf, len)
+		return ffi.string(buf, len)
+	end
+else
+	local metas = {}
+	
+	metas.__index = function(_, var)
+		return string.byte(_.buffer[var + 1])	-- 0-based indexing
+	end
+	metas.__newindex = function(_, var, val)
+		assert(type(val) == "number")
+		
+		_.buffer[var + 1] = string.char(val % 256)
+	end
+	metas.__add = function(_, val)
+		return setmetatable({buffer = _.buffer, offset = math.min(_.offset + val, len)}, metas)
+	end
+	metas.__sub = function(_, val)
+		return setmetatable({buffer = _.buffer, offset = math.max(_.offset - val, 1)}, metas)
+	end
+	
+	-- Use hacky method. Tables
+	function create_memory_block(len, buf)
+		local t = {}
+		
+		if type(buf) == "string" then
+			for i = 1, len do
+				t[i] = buf:sub(i, i)
+			end
+		else
+			for i = 1, len do
+				t[i] = "\0"
+			end
+		end
+		
+		return setmetatable({offset = 1, buffer = t}, metas)
+	end
+	
+	function string_memory_block(buf, len)
+		return table.concat(buf.buffer, "", buf.offset, buf.offset + len - 1)
+	end
+end
 
 do
 	local maj, min, rev = love.getVersion()
@@ -64,10 +122,13 @@ local function string2dwordu(a)
 	local str = a:read(4)
 	
 	return bit.bor(
-		bit.lshift(str:byte(), 24),
-		bit.lshift(str:sub(2,2):byte(), 16),
-		bit.lshift(str:sub(3,3):byte(), 8),
-		str:sub(4,4):byte()
+		bit.bor(
+			bit.lshift(str:byte(), 24),
+			bit.lshift(str:sub(2,2):byte(), 16)
+		), bit.bor(
+			bit.lshift(str:sub(3,3):byte(), 8),
+			str:sub(4,4):byte()
+		)
 	) % 4294967296
 end
 
@@ -184,77 +245,77 @@ local function rgb_to_rgba(src, len, dest)
 	end
 end
 
-local function rgba_to_rgba(src, len, dest)
-	ffi.copy(dest, src, len * 4)
+local rgba_to_rgba
+if has_ffi then
+	-- If FFI is present, use ffi.copy
+	function rgba_to_rgba(src, len, dest)
+		ffi.copy(dest, src, len * 4)
+	end
+else
+	-- Well, use loops (slow)
+	function rgba_to_rgba(src, len, dest)
+		for i = 0, len * 4 - 1 do
+			dest[i] = src[i]
+		end
+	end
 end
+
 ---------------------------------------
 -- Memory stream code (reading only) --
 ---------------------------------------
 function memreadstream.new(buf)
 	local len = #buf + 1
-	local buffer = ffi.new("uint8_t["..len.."]", buf)
 	local out = {
 		pos = 0,
-		buflen = len,
-		initbuf = buffer,
-		curbuf = buffer
+		buffer = buf
 	}
 	
 	return setmetatable(out, {__index = memreadstream})
 end
 
 function memreadstream.read(this, bytes)
-	local afterpos
-	local newbuf
-	
-	if pos == buflen then return end
-	
-	afterpos = pos + bytes
-	
-	if afterpos > buflen then
-		bytes = bytes - (afterpos - buflen)
+	if num <= 0 then
+		return ""
 	end
 	
-	newbuf = ffi.string(curbuf, bytes)
-	this.curbuf = this.curbuf + bytes
-	this.pos = this.pos + bytes
+	local out = this.buffer:sub(this.pos + 1, this.pos + num)
 	
-	return newbuf
+	if #out == 0 then return nil end
+	
+	this.pos = this.pos + num
+	
+	if this.pos > #this.buffer then
+		pos = #this.buffer
+	end
+	
+	return out
 end
 
 function memreadstream.rewind(this)
-	this.curbuf = this.initbuf
 	this.pos = 0
 end
 
-function memreadstream.seek(this, whence, offset)
+function memreadstream.seek(meta, whence, offset)
 	offset = offset or 0
-	whence = whence or cur
+	whence = whence or "cur"
 	
 	if whence == "set" then
-		assert(offset > 0 and offset <= buflen, "Invalid seek offset")
-		
-		this.curbuf = this.initbuf + offset
-		this.pos = offset
+		meta.pos = offset
 	elseif whence == "cur" then
-		local after = this.pos + offset
-		
-		assert(after > 0 and after <= buflen, "Invalid seek offset")
-		
-		this.curbuf = this.curbuf + offset
-		this.pos = this.pos + offset
+		meta.pos = meta.pos + offset
 	elseif whence == "end" then
-		local after = this.buflen + offset
-		
-		assert(after > 0 and after <= buflen, "Invalid seek offset")
-		
-		this.curbuf = this.curbuf + this.buflen + offset
-		this.pos = this.buflen + offset
+		meta.pos = #meta.buffer + offset
 	else
-		assert(false, "Invalid seek mode")
+		assert(false, "bad argument #1 to 'seek' (invalid option '"..tostring(whence).."')")
 	end
 	
-	return this.pos
+	if meta.pos < 0 then
+		meta.pos = 0
+	elseif meta.pos > #meta.buffer then
+		meta.pos = #meta.buffer
+	end
+	
+	return meta.pos
 end
 
 ------------------------------
@@ -342,13 +403,13 @@ function Shelsha._internal.from_stream(stream)
 	-- Read TEXB bitmap data
 	local bitmap_data_size = texb_size
 	local rgba_image_size = out.width * out.height * 4
-	local image_buffer = ffi.new(string.format("uint8_t[%d]", rgba_image_size))
+	local image_buffer = create_memory_block(rgba_image_size)
 	local bitmap_data
 	
 	if stream.tell then
-		bitmap_data_size = bitmap_data_size - stream:tell()
+		bitmap_data_size = bitmap_data_size - stream:tell() - 4
 	else
-		bitmap_data_size = bitmap_data_size - stream:seek()
+		bitmap_data_size = bitmap_data_size - stream:seek() - 4
 	end
 	
 	if out.isCompressed then
@@ -365,31 +426,43 @@ function Shelsha._internal.from_stream(stream)
 	end
 	
 	-- Conver pixel format
-	Shelsha._internal.pixconv(out, ffi.new("uint8_t[?]", #bitmap_data, bitmap_data), image_buffer)
+	Shelsha._internal.pixconv(out, create_memory_block(#bitmap_data, bitmap_data), image_buffer)
 	
 	-- Create image
 	bitmap_data = nil
 	if not(is_love_010) then
 		out.textureBankImage = love.image.newImageData(out.width, out.height)
 		
-		-- Have to set every pixel, damn it's fucking slow
-		for y = 0, out.height - 1 do
-			for x = 0, out.width - 1 do
-				local index = (y * out.width + x) * 4
-				out.textureBankImage:setPixel(
-					x, y,
-					image_buffer[index],
-					image_buffer[index + 1],
-					image_buffer[index + 2],
-					image_buffer[index + 3]
-				)
+		if has_ffi then
+			-- Fix of setting every pixel: use getPointer and FFI
+			ffi.copy(ffi.cast("uint8_t*", out.textureBankImage:getPointer()), image_buffer, rgba_image_size)
+		else
+			-- But if we don't have FFI, fallback to loops (setting every pixel)
+			local texb = out.textureBankImage
+			
+			for y = 0, out.height - 1 do
+				for x = 0, out.width - 1 do
+					local index = (y * out.width + x) * 4
+					
+					if index < 0 then
+						print(index, x, y, out.width)
+					end
+					
+					texb:setPixel(x, y,
+						image_buffer[index],
+						image_buffer[index + 1],
+						image_buffer[index + 2],
+						image_buffer[index + 3]
+					)
+				end
 			end
 		end
 		
 		out.textureBankImage = lg.newImage(out.textureBankImage)
 	else
+		local buf = string_memory_block(image_buffer, rgba_image_size)
 		out.textureBankImage = lg.newImage(love.image.newImageData(
-			out.width, out.height, ffi.string(image_buffer, rgba_image_size)
+			out.width, out.height, buf
 		))
 	end
 	out.textureBankImage:setWrap("repeat")

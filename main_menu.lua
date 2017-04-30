@@ -1,19 +1,20 @@
 -- Main Menu
+local AquaShine = AquaShine
 local MainMenu = {}
 
-local selection_image = love.graphics.newImage("image/s_button_03.png")
-local selection_image_se = love.graphics.newImage("image/s_button_03se.png")
-local background = love.graphics.newImage("image/liveback_2.png")
-local MTLMr3m = FontManager.GetFont("MTLmr3m.ttf", 30)
-local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 72)
-local TitleIcon = love.graphics.newImage("image/icon_128x128.png")
+local selection_image = AquaShine.LoadImage("image/s_button_03.png")
+local selection_image_se = AquaShine.LoadImage("image/s_button_03se.png")
+local background = AquaShine.LoadImage("image/liveback_2.png")
+local MTLMr3m = AquaShine.LoadFont("MTLmr3m.ttf", 30)
+local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 72)
+local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
 local mouse_data = {false, 0, 0}	-- click?, x click, y click
 
 local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
-	{"Play", function() LoadEntryPoint("select_beatmap.lua") end, nil, 0},
+	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end, nil, 0},
 	{"Edit Units", function() end, nil, 0},
-	{"Settings", function() LoadEntryPoint("setting_view.lua") end, nil, 0},
+	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end, nil, 0},
 	{"Exit", love.event.quit, nil, 0}
 }
 
@@ -33,7 +34,7 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
-local versionText = "DEPLS2 rel ".._G.DEPLS_VERSION.." running "..(jit and jit.version or _VERSION)
+local versionText = "DEPLS2 rel "..DEPLS_VERSION.." running "..(jit and jit.version or _VERSION)
 function MainMenu.Draw(deltaT)
 	-- Draw background
 	draw(background, 0, 0)
@@ -64,9 +65,7 @@ function MainMenu.Draw(deltaT)
 	setColor(255, 255, 255, 255)
 end
 
-function love.mousepressed(x, y, button, touch_id)
-	x, y = CalculateTouchPosition(x, y)
-	
+function MainMenu.MousePressed(x, y, button, touch_id)
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
 		
@@ -80,9 +79,7 @@ function love.mousepressed(x, y, button, touch_id)
 	end
 end
 
-function love.mousemoved(x, y)
-	x, y = CalculateTouchPosition(x, y)
-	
+function MainMenu.MouseMoved(x, y)
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
 		
@@ -98,9 +95,7 @@ function love.mousemoved(x, y)
 	end
 end
 
-function love.mousereleased(x, y)
-	x, y = CalculateTouchPosition(x, y)
-	
+function MainMenu.MouseReleased(x, y)
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
 		

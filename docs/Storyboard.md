@@ -211,11 +211,9 @@ Playground TEXB and parse it's mesh data, so you should check Shelsha documentat
 
 Parameters:
 
-* `filename` - The texture bank filename. The TEXB must be decrypted before used. **DEPLS2 doesn't ship with HonokaMiku decrypter**
+* `filename` - The texture bank filename. The TEXB must be decrypted before used. **DEPLS2 doesn't ship with HonokaMiku universal decrypter**
 
 Returns: `ShelshaObject` or `nil` on failure.
-
-> Due to it's extensive usage of FFI library, this function is not available/exist when running under Lua 5.1, like under LOVE.js
 
 *************************************************
 

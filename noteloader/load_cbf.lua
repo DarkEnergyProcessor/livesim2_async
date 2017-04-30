@@ -1,9 +1,8 @@
 -- Custom Beatmap Festival beatmap loader
 -- Part of DEPLS2
 
+local AquaShine, NoteLoader = ...
 local bit = require("bit")
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
 local CBFBeatmap = {
 	Extension = nil,	-- No extension, that means detect function is necessary
 }
@@ -34,7 +33,7 @@ function CBFBeatmap.Detect(file)
 	local zip = file[1]..".zip"
 	
 	if love.filesystem.isFile(zip) then
-		MountZip(zip, file[1])
+		AquaShine.MountZip(zip, file[1])
 	end
 	
 	return
@@ -189,7 +188,7 @@ function CBFBeatmap.Load(file)
 	-- Result
 	local out = {
 		notes_list = notes_data,
-		song_file = DEPLS.LoadAudio(file[1].."/songFile.wav")
+		song_file = AquaShine.LoadAudio(file[1].."/songFile.wav")
 	}
 	
 	if background[0] then

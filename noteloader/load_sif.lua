@@ -2,8 +2,6 @@
 -- Part of DEPLS2
 -- It's trivial because it's native beatmap format that DEPLS2 uses
 
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
 local JSON = require("JSON")
 
 local SIFBeatmap = {

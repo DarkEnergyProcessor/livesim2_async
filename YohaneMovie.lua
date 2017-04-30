@@ -285,7 +285,7 @@ function YohaneMovie._internal._mt.draw(this, x, y)
 		z.r = z.r * 255
 		z.g = z.g * 255
 		z.b = z.b * 255
-		z.a = z.a * 255
+		z.a = z.a * this.parent.opacity
 		
 		newdc[i] = z
 	end

@@ -3,6 +3,7 @@
 -- Copyright © 2038 Dark Energy Processor
 
 local love = love
+local AquaShine = AquaShine
 local tween = require("tween")
 local EffectPlayer = require("effect_player")
 local List = require("List")
@@ -31,8 +32,8 @@ local DEPLS = {
 	LiveOpacity = 255,	-- Live opacity
 	AutoPlay = false,	-- Autoplay?
 	
-	LiveShowCleared = Yohane.newFlashFromFilename("live_clear.flsh"),
-	FullComboAnim = Yohane.newFlashFromFilename("live_fullcombo.flsh"),
+	LiveShowCleared = Yohane.newFlashFromFilename("flash/live_clear.flsh"),
+	FullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh"),
 	
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
 	Routines = {},			-- Table to store all DEPLS effect routines
@@ -82,9 +83,6 @@ encode(arg[1], "png", name)
 print("Screenshot saved as", name)
 ]]
 
-function love.threaderror(t, msg)
-	assert(false, msg)
-end
 ----------------------
 -- Public functions --
 ----------------------
@@ -123,12 +121,6 @@ end
 -----------------------
 -- Private functions --
 -----------------------
-
---! Function used to replace extension on file
-local function substitute_extension(file, ext_without_dot)
-	return file:sub(1, ((file:find("%.[^%.]*$")) or #file+1)-1).."."..ext_without_dot
-end
-
 --! @brief Function to calculate distance of 2 position.
 --! @code distance(x2 - x1, y2 - y1)
 --! @endcode
@@ -169,8 +161,8 @@ DEPLS.Routines.SpotEffect = love.filesystem.load("livesim/spot_effect.lua")(DEPL
 DEPLS.Routines.CoverPreview = coroutine.wrap(function(cover_data)
 	local deltaT
 	local ElapsedTime = 0
-	local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 40)
-	local ArrFont = FontManager.GetFont("MTLmr3m.ttf", 16)
+	local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 40)
+	local ArrFont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
 	local Imagescale = {
 		400 / cover_data.image:getWidth(),
 		400 / cover_data.image:getHeight()
@@ -359,41 +351,7 @@ end
 --! @param path The audio path
 --! @param noorder Force existing extension?
 --! @returns Audio handle or `nil` plus error message on failure
-function DEPLS.LoadAudio(path, noorder)
-	local _, token_image
-	
-	if not(noorder) then
-		local a = DEPLS.LoadAudio(substitute_extension(path, "wav"), true)
-		
-		if a == nil then
-			a = DEPLS.LoadAudio(substitute_extension(path, "ogg"), true)
-			
-			if a == nil then
-				return DEPLS.LoadAudio(substitute_extension(path, "mp3"), true)
-			end
-		end
-		
-		return a
-	end
-	
-	-- Try save dir
-	do
-		local file = love.filesystem.newFile(path)
-		
-		if file:open("r") then
-			_, token_image = pcall(love.sound.newSoundData, file)
-			
-			if _ then
-				return token_image
-			end
-		end
-	end
-	
-	_, token_image = pcall(love.sound.newSoundData, path)
-	
-	if _ == false then return nil, token_image
-	else return token_image end
-end
+DEPLS.LoadAudio = AquaShine.LoadAudio
 
 do
 	local dummy_image
@@ -721,26 +679,26 @@ function DEPLS.Start(argv)
 	
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
-		NoteEnd = love.graphics.newImage("image/tap_circle/tap_circle-44.png"),
-		Star = love.graphics.newImage("image/tap_circle/ef_315_effect_0004.png"),
-		Simultaneous = love.graphics.newImage("image/tap_circle/ef_315_timing_1.png"),
-		Token = love.graphics.newImage("image/tap_circle/e_icon_01.png"),
-		LongNote = love.graphics.newImage("image/ef_326_000.png"),
-		Slide = love.graphics.newImage("image/tap_circle/ef_315_arrow_1.png")
+		NoteEnd = AquaShine.LoadImage("image/tap_circle/tap_circle-44.png"),
+		Star = AquaShine.LoadImage("image/tap_circle/ef_315_effect_0004.png"),
+		Simultaneous = AquaShine.LoadImage("image/tap_circle/ef_315_timing_1.png"),
+		Token = AquaShine.LoadImage("image/tap_circle/e_icon_01.png"),
+		LongNote = AquaShine.LoadImage("image/ef_326_000.png"),
+		Slide = AquaShine.LoadImage("image/tap_circle/ef_315_arrow_1.png")
 	}
-	DEPLS.Images.Spotlight = love.graphics.newImage("image/popn.png")
+	DEPLS.Images.Spotlight = AquaShine.LoadImage("image/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
 	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS)
 	
 	-- Load configuration
-	local BackgroundID = LoadConfig("BACKGROUND_IMAGE", 11)
-	local Keys = LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
-	local Auto = LoadConfig("AUTOPLAY", 0)
-	DEPLS.LiveDelay = math.max(LoadConfig("LIVESIM_DELAY", 1000), 1000)
+	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
+	local Keys = AquaShine.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
+	local Auto = AquaShine.LoadConfig("AUTOPLAY", 0)
+	DEPLS.LiveDelay = math.max(AquaShine.LoadConfig("LIVESIM_DELAY", 1000), 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
-	DEPLS.NotesSpeed = math.max(LoadConfig("NOTE_SPEED", 800), 400)
-	DEPLS.Stamina = math.min(LoadConfig("STAMINA_DISPLAY", 32) % 100, 99)
-	DEPLS.ScoreBase = LoadConfig("SCORE_ADD_NOTE", 1024)
+	DEPLS.NotesSpeed = math.max(AquaShine.LoadConfig("NOTE_SPEED", 800), 400)
+	DEPLS.Stamina = math.min(AquaShine.LoadConfig("STAMINA_DISPLAY", 32) % 100, 99)
+	DEPLS.ScoreBase = AquaShine.LoadConfig("SCORE_ADD_NOTE", 1024)
 	DEPLS.Keys = {}
 	assert(DEPLS.LiveDelay > 0, "LIVESIM_DELAY must be positive and not zero")
 	assert(DEPLS.ScoreBase > 0, "SCORE_ADD_NOTE must be positive and not zero")
@@ -804,7 +762,7 @@ function DEPLS.Start(argv)
 	
 	-- If note style forcing is not enabled, get from config
 	if not(DEPLS.ForceNoteStyle) then
-		DEPLS.ForceNoteStyle = LoadConfig("NOTE_STYLE", 1)
+		DEPLS.ForceNoteStyle = AquaShine.LoadConfig("NOTE_STYLE", 1)
 	end
 	
 	-- Add to note manager
@@ -858,26 +816,26 @@ function DEPLS.Start(argv)
 	
 	-- Load background if no storyboard present
 	if not(DEPLS.StoryboardHandle) and not(custom_background) then
-		DEPLS.BackgroundImage[0][1] = love.graphics.newImage("image/liveback_"..BackgroundID..".png")
+		DEPLS.BackgroundImage[0][1] = AquaShine.LoadImage("image/liveback_"..BackgroundID..".png")
 		
 		for i = 1, 4 do
-			DEPLS.BackgroundImage[i][1] = love.graphics.newImage(string.format("image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
+			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
 		end
 	end
 	
 	-- Tap circle effect
-	DEPLS.Images.ef_316_000 = love.graphics.newImage("image/ef_316_000.png")
-	DEPLS.Images.ef_316_001 = love.graphics.newImage("image/ef_316_001.png")
+	DEPLS.Images.ef_316_000 = AquaShine.LoadImage("image/ef_316_000.png")
+	DEPLS.Images.ef_316_001 = AquaShine.LoadImage("image/ef_316_001.png")
 	
 	-- Load live header images
-	DEPLS.Images.Header = love.graphics.newImage("image/live_header.png")
-	DEPLS.Images.ScoreGauge = love.graphics.newImage("image/live_gauge_03_02.png")
+	DEPLS.Images.Header = AquaShine.LoadImage("image/live_header.png")
+	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("image/live_gauge_03_02.png")
 	
 	-- Load unit icons
 	noteloader_data.units = noteloader_data.units or {}
 	local IdolImagePath = {}
 	do
-		local idol_img = LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
+		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
 		
 		for w in idol_img:gmatch("[^,]+") do
 			IdolImagePath[#IdolImagePath + 1] = w
@@ -889,7 +847,7 @@ function DEPLS.Start(argv)
 	
 	-- Load stamina image (bar and number)
 	DEPLS.Images.StaminaRelated = {
-		Bar = love.graphics.newImage("image/live_gauge_02_02.png")
+		Bar = AquaShine.LoadImage("image/live_gauge_02_02.png")
 	}
 	do
 		local stamina_display_str = tostring(DEPLS.Stamina)
@@ -903,7 +861,7 @@ function DEPLS.Start(argv)
 			temp_num = tonumber(temp)
 			
 			if DEPLS.Images.StaminaRelated[temp_num] == nil then
-				DEPLS.Images.StaminaRelated[temp_num] = love.graphics.newImage("image/hp_num/live_num_"..temp..".png")
+				DEPLS.Images.StaminaRelated[temp_num] = AquaShine.LoadImage("image/hp_num/live_num_"..temp..".png")
 			end
 			
 			stamina_number_image[i] = DEPLS.Images.StaminaRelated[temp_num]
@@ -913,21 +871,21 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load score eclipse related image
-	DEPLS.Routines.ScoreEclipseF.Img = love.graphics.newImage("image/l_etc_46.png")
-	DEPLS.Routines.ScoreEclipseF.Img2 = love.graphics.newImage("image/l_gauge_17.png")
+	DEPLS.Routines.ScoreEclipseF.Img = AquaShine.LoadImage("image/l_etc_46.png")
+	DEPLS.Routines.ScoreEclipseF.Img2 = AquaShine.LoadImage("image/l_gauge_17.png")
 	
 	-- Load score node number
 	for i = 21, 30 do
-		DEPLS.Images.ScoreNode[i - 21] = love.graphics.newImage("image/score_num/l_num_"..i..".png")
+		DEPLS.Images.ScoreNode[i - 21] = AquaShine.LoadImage("image/score_num/l_num_"..i..".png")
 	end
-	DEPLS.Images.ScoreNode.Plus = love.graphics.newImage("image/score_num/l_num_31.png")
+	DEPLS.Images.ScoreNode.Plus = AquaShine.LoadImage("image/score_num/l_num_31.png")
 	
 	-- Tap accuracy image
-	DEPLS.Images.Perfect = love.graphics.newImage("image/ef_313_004.png")
-	DEPLS.Images.Great = love.graphics.newImage("image/ef_313_003.png")
-	DEPLS.Images.Good = love.graphics.newImage("image/ef_313_002.png")
-	DEPLS.Images.Bad = love.graphics.newImage("image/ef_313_001.png")
-	DEPLS.Images.Miss = love.graphics.newImage("image/ef_313_000.png")
+	DEPLS.Images.Perfect = AquaShine.LoadImage("image/ef_313_004.png")
+	DEPLS.Images.Great = AquaShine.LoadImage("image/ef_313_003.png")
+	DEPLS.Images.Good = AquaShine.LoadImage("image/ef_313_002.png")
+	DEPLS.Images.Bad = AquaShine.LoadImage("image/ef_313_001.png")
+	DEPLS.Images.Miss = AquaShine.LoadImage("image/ef_313_000.png")
 		DEPLS.Routines.PerfectNode.Center = {
 		[DEPLS.Images.Perfect] = {99, 19},
 		[DEPLS.Images.Great] = {73, 17},
@@ -940,11 +898,11 @@ function DEPLS.Start(argv)
 	DEPLS.Routines.PerfectNode.Draw()
 	
 	-- Load NoteIcon image
-	DEPLS.Images.NoteIcon = love.graphics.newImage("image/ef_308_000.png")
-	DEPLS.Images.NoteIconCircle = love.graphics.newImage("image/ef_308_001.png")
+	DEPLS.Images.NoteIcon = AquaShine.LoadImage("image/ef_308_000.png")
+	DEPLS.Images.NoteIconCircle = AquaShine.LoadImage("image/ef_308_001.png")
 	
 	-- Load Font
-	DEPLS.MTLmr3m = FontManager.GetFont("MTLmr3m.ttf", 24)
+	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 end
 
 -- Used internally
@@ -1095,13 +1053,11 @@ end
 -- LOVE2D mouse/touch pressed
 local TouchTracking = {}
 local isMousePress = false
-function love.mousepressed(x, y, button, touch_id)
+function DEPLS.MousePressed(x, y, button, touch_id)
 	if touch_id == true then return end
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	touch_id = touch_id or 0
-	x, y = CalculateTouchPosition(x, y)
-	
 	isMousePress = touch_id == 0 and button == 1
 	
 	-- Calculate idol
@@ -1117,9 +1073,7 @@ function love.mousepressed(x, y, button, touch_id)
 	end
 end
 
--- LOVE2D mouse/touch released
-function love.mousereleased(x, y, button, touch_id)
-	if touch_id == true then return end
+function DEPLS.MouseReleased(x, y, button, touch_id)
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	if isMousePress and touch_id == false and button == 1 then
@@ -1127,22 +1081,17 @@ function love.mousereleased(x, y, button, touch_id)
 	end
 	
 	touch_id = touch_id or 0
-	x, y = CalculateTouchPosition(x, y)
 	
 	-- Send unset touch message
 	TouchTracking[touch_id] = nil
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
 end
 
-function love.mousemoved(x, y, dx, dy, touch_id)
-	if touch_id == true then return end
-	
+function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 	if isMousePress or touch_id then
 		touch_id = touch_id or 0
 		
 		local lastpos = TouchTracking[touch_id]
-		
-		x, y = CalculateTouchPosition(x, y)
 		
 		for i = 1, 9 do
 			local idolpos = DEPLS.IdolPosition[i]
@@ -1163,8 +1112,7 @@ local function update_audio_volume()
 	end
 end
 
--- LOVE2D key press
-function love.keypressed(key, scancode, repeat_bit)
+function DEPLS.KeyPressed(key, scancode, repeat_bit)
 	if key == "f6" then
 		DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
 		update_audio_volume()
@@ -1178,8 +1126,8 @@ function love.keypressed(key, scancode, repeat_bit)
 			end
 			
 			-- Back
-			MountZip()	-- Unmount
-			LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
+			AquaShine.MountZip()	-- Unmount
+			AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then
 				DEPLS.Sound.LiveAudio:stop()
@@ -1216,8 +1164,7 @@ function love.keypressed(key, scancode, repeat_bit)
 	end
 end
 
--- LOVE2D key release
-function love.keyreleased(key)
+function DEPLS.KeyReleased(key)
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	for i = 1, 9 do

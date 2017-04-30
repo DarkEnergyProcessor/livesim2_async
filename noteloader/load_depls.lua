@@ -2,8 +2,7 @@
 -- Inherited from CBF and SIF beatmap format, 2nd most complex beatmap
 -- Part of DEPLS2
 
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
+local AquaShine, NoteLoader = ...
 local JSON = require("JSON")
 local DEPLS2Beatmap = {
 	Extension = nil		-- Detect function is necessary
@@ -19,7 +18,7 @@ function DEPLS2Beatmap.Detect(file)
 	local zip = file[1]..".zip"
 	
 	if love.filesystem.isFile(zip) then
-		MountZip(zip, file[1])
+		AquaShine.MountZip(zip, file[1])
 	end
 	
 	-- Enum loaders
@@ -149,12 +148,12 @@ function DEPLS2Beatmap.Load(file)
 	local out = {
 		notes_list = notes_data,
 		storyboard = storyboard,
-		song_file = DEPLS.LoadAudio(file[1].."/songFile.wav"),
+		song_file = AquaShine.LoadAudio(file[1].."/songFile.wav"),
 		score = scoreinfo,
 		cover = covr
 	}
 	
-	local live_clear = DEPLS.LoadAudio(file[1].."/live_clear.wav")
+	local live_clear = AquaShine.LoadAudio(file[1].."/live_clear.wav")
 	if live_clear then
 		out.live_clear = love.audio.newSource(live_clear)
 	end

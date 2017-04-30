@@ -1,10 +1,6 @@
 -- Lua storyboard handler
 -- Copyright © 2038 Dark Energy Processor
-local Shelsha = nil
-
-if package.loaded.ffi or package.preload.ffi then
-	Shelsha = require("Shelsha")
-end
+local Shelsha = require("Shelsha")
 
 -- The DEPLS handle
 local DEPLS = _G.DEPLS
@@ -112,11 +108,8 @@ local isolated_love = {
 		arc = love.graphics.arc,
 		circle = love.graphics.circle,
 		clear = function(...)
-			if love.graphics.getCanvas() then
-				love.graphics.clear(...)
-			else
-				error("love.graphics.clear on real screen is forbidden!")
-			end
+			assert(love.graphics.getCanvas(), "love.graphics.clear on real screen is not allowed!")
+			love.graphics.clear(...)
 		end,
 		draw = love.graphics.draw,
 		ellipse = love.graphics.ellipse,
@@ -128,6 +121,7 @@ local isolated_love = {
 		rectangle = love.graphics.rectangle,
 		
 		newCanvas = love.graphics.newCanvas,
+		newFont = AquaShine.LoadFont,
 		newImage = RelativeLoadImage,
 		newMesh = love.graphics.newMesh,
 		newParticleSystem = love.graphics.newParticleSystem,
@@ -193,12 +187,14 @@ function LuaStoryboard.LoadString(str, dir)
 		LoadVideo = RelativeLoadVideo,
 		LoadImage = RelativeLoadImage,
 		ReadFile = RelativeReadFile,
-		DrawObject = love.graphics.draw
+		DrawObject = love.graphics.draw,
+		LoadTextureBank = LoadTextureBank,
+		LoadShader = love.graphics.newShader,
+		LoadFont = AquaShine.LoadFont,
+		
+		-- Deprecated. Exists for backward compatibility. Removed anytime soon
+		FontManager = {GetFont = AquaShine.LoadFont}
 	}
-	
-	if Shelsha then
-		env.LoadTextureBank = LoadTextureBank
-	end
 	
 	for n, v in pairs(_G) do
 		env[n] = v

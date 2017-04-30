@@ -2,8 +2,7 @@
 -- Part of DEPLS2
 -- TODO: support for new format https://twitter.com/yuyu0127_/status/823520047582748673
 
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
+local AquaShine, NoteLoader = ...
 
 local SIFSBeatmap = {
 	Extension = "txt"
@@ -94,7 +93,7 @@ function SIFSBeatmap.Load(file)
 	
 	return {
 		notes_list = sif_beatmap_data,
-		song_file = DEPLS.LoadAudio("audio/"..song_file)
+		song_file = AquaShine.LoadAudio("audio/"..song_file)
 	}
 end
 

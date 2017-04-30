@@ -1,5 +1,6 @@
 -- Score bar render
 local DEPLS = ...
+local AquaShine = AquaShine
 local ScoreBar = {}
 
 local ScoreUpdate = DEPLS.Routines.ScoreUpdate
@@ -41,11 +42,11 @@ function ScoreBar.Update(deltaT)
 end
 
 function ScoreBar.Draw()
-	setScissor(LogicalScale.OffX, LogicalScale.OffY, draw_area * LogicalScale.ScaleOverall, 640)
+	AquaShine.SetScissor(0, 0, draw_area, 640)
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
 	draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
 	setColor(255, 255, 255, 255)
-	setScissor()
+	AquaShine.ClearScissor()
 end
 
 return ScoreBar

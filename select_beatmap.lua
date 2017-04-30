@@ -26,21 +26,21 @@ function SelectBeatmap.Start(arg)
 	local noteloader = love.filesystem.load("note_loader.lua")()
 	BeatmapList = noteloader.Enumerate()
 	
-	com_button_14 = love.graphics.newImage("image/com_button_14.png")
-	com_button_14di = love.graphics.newImage("image/com_button_14di.png")
-	com_button_14se = love.graphics.newImage("image/com_button_14se.png")
+	com_button_14 = AquaShine.LoadImage("image/com_button_14.png")
+	com_button_14di = AquaShine.LoadImage("image/com_button_14di.png")
+	com_button_14se = AquaShine.LoadImage("image/com_button_14se.png")
 	
-	com_win_02 = love.graphics.newImage("image/com_win_02.png")
-	s_button_03 = love.graphics.newImage("image/s_button_03.png")
-	s_button_03se = love.graphics.newImage("image/s_button_03se.png")
-	liveback_1 = love.graphics.newImage("image/liveback_1.png")
+	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
+	s_button_03 = AquaShine.LoadImage("image/s_button_03.png")
+	s_button_03se = AquaShine.LoadImage("image/s_button_03se.png")
+	liveback_1 = AquaShine.LoadImage("image/liveback_1.png")
 	
-	BackImage = love.graphics.newImage("image/com_win_02.png")
-	BackButton = love.graphics.newImage("image/com_button_01.png")
-	BackButtonSe = love.graphics.newImage("image/com_button_01se.png")
+	BackImage = AquaShine.LoadImage("image/com_win_02.png")
+	BackButton = AquaShine.LoadImage("image/com_button_01.png")
+	BackButtonSe = AquaShine.LoadImage("image/com_button_01se.png")
 	
-	MTLmr3m = FontManager.GetFont("MTLmr3m.ttf", 14)
-	FontDesc = FontManager.GetFont("MTLmr3m.ttf", 22)
+	MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 14)
+	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	
 	if arg[1] then
 		for i = 1, #BeatmapList do
@@ -125,24 +125,21 @@ function SelectBeatmap.Draw()
 	end
 end
 
-function love.mousepressed(x, y, button)
-	x, y = CalculateTouchPosition(x, y)
+function SelectBeatmap.MousePressed(x, y, button)
 	MouseState.X, MouseState.Y = x, y
 	MouseState.Pressed[button] = true
 end
 
-function love.mousemoved(x, y)
-	x, y = CalculateTouchPosition(x, y)
+function SelectBeatmap.MouseMoved(x, y)
 	MouseState.X, MouseState.Y = x, y
 end
 
-function love.mousereleased(x, y, button)
-	x, y = CalculateTouchPosition(x, y)
+function SelectBeatmap.MouseReleased(x, y, button)
 	MouseState.X, MouseState.Y = x, y
 	MouseState.Pressed[button] = false
 	
 	if x >= 0 and x <= 86 and y >= 0 and y <= 58 then
-		LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint("main_menu.lua")
 		return
 	end
 	
@@ -153,7 +150,7 @@ function love.mousereleased(x, y, button)
 		   y >= 530 and y <= 588
 		then
 			-- Start livesim
-			LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name})
+			AquaShine.LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name})
 			return
 		end
 	end
@@ -183,6 +180,12 @@ function love.mousereleased(x, y, button)
 		else
 			BeatmapSelectedIndex = 0
 		end
+	end
+end
+
+function SelectBeatmap.KeyPressed(key, scancode, repeat_bit)
+	if not(repeat_bit) and key == "escape" then
+		AquaShine.LoadEntryPoint("main_menu.lua")
 	end
 end
 

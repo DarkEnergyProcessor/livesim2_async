@@ -1,9 +1,10 @@
+local AquaShine = AquaShine
 local AboutScreen = {}
 
-local TextFont = FontManager.GetFont("MTLmr3m.ttf", 15)
-local TitleFont = FontManager.GetFont("MTLmr3m.ttf", 60)
-local TitleIcon = love.graphics.newImage("image/icon_128x128.png")
-local Background = love.graphics.newImage("image/liveback_12.png")
+local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
+local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
+local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
+local Background = AquaShine.LoadImage("image/liveback_12.png")
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
 Written By:		AuahDark
@@ -33,8 +34,8 @@ This Live Simulator uses these external libraries:
 	* JSON.lua				 	License
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
-	* Shelsha TEXB Loader	  	License		(Unavailable when running under Lua 5.1)
-	* LuaBitOp					 License		(Used when running under Lua 5.1)
+	* Shelsha TEXB Loader	  	License
+	* LuaBit				  	 License		(Used when running under Lua 5.1)
 
 
 
@@ -45,7 +46,7 @@ function AboutScreen.Start() end
 function AboutScreen.Update() end
 
 function AboutScreen.Draw()
-	local mx, my = CalculateTouchPosition(love.mouse.getPosition())
+	local mx, my = AquaShine.CalculateTouchPosition(love.mouse.getPosition())
 	
 	-- Background
 	love.graphics.setColor(64, 64, 64)
@@ -75,9 +76,9 @@ function AboutScreen.Draw()
 	end
 end
 
-function love.keypressed(key, scancode, repeat_bit)
+function AboutScreen.KeyPressed(key, scancode, repeat_bit)
 	if not(repeat_bit) and key == "escape" then
-		LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint("main_menu.lua")
 	end
 end
 

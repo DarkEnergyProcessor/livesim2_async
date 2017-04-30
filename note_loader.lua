@@ -1,23 +1,21 @@
 -- DEPLS2 Note Loader function
 -- Copyright © 2038 Dark Energy Processor
 
-local DEPLS = _G.DEPLS
+local AquaShine = AquaShine
 local JSON = require("JSON")
 local love = love
 
 local testbeatmap = {{"dwr", "ogg"} , {"1154_mod", "ogg"}}
 local NoteLoader = {}
 
-_G.NoteLoader = NoteLoader
-
 local loaders = {
-	assert(assert(love.filesystem.load("noteloader/load_depls.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_cbf.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_ls2.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_sif.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_sifs.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_llp.lua"))()),
-	assert(assert(love.filesystem.load("noteloader/load_mid.lua"))())
+	assert(assert(love.filesystem.load("noteloader/load_depls.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_cbf.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_ls2.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_sif.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_sifs.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_llp.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_mid.lua"))(AquaShine, NoteLoader))
 }
 NoteLoader.Loaders = loaders
 

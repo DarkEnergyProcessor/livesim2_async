@@ -424,8 +424,6 @@ function love.quit()
 	audio_wav:seek("set", 4)
 	audio_wav:write(dwordu2string(filelen))
 	audio_wav:close()
-	
-	return false
 end
 
 return RenderMode

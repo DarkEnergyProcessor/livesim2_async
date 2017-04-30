@@ -1,8 +1,7 @@
 -- LLPractice beatmap loader
 -- Part of DEPLS2
 
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
+local AquaShine, NoteLoader = ...
 local JSON = require("JSON")
 
 local LLPBeatmap = {
@@ -48,7 +47,7 @@ function LLPBeatmap.Load(file)
 	
 	return {
 		notes_list = sif_map,
-		song_file = DEPLS.LoadAudio("audio/"..llp.audiofile..".wav")
+		song_file = AquaShine.LoadAudio("audio/"..llp.audiofile..".wav")
 	}
 end
 

@@ -1,14 +1,10 @@
 DEPLS2 beatmap file format (draft). Extension: .ls2
-Most things in here is subject to change.
+Most things in here are subject to change.
 
 DEPLS2 beatmap format consist of multiple sections, where each
-section has fourcc and possibly with size depends on the fourcc itself.
+section has FourCC and possibly with size depends on the FourCC itself.
 The section can appear in any order. Like, storyboard section can appear
-before beatmap section.
-
-The parser doesn't expect undefined fourcc and throws error if one is found,
-however one can embed additional data (with section or not) by setting the amount
-of sections in the file header.
+before beatmap section. LS2 parser should expect undefined sections.
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
 	dword - 4 bytes
@@ -20,7 +16,8 @@ File information start:
 
 Header: File header. Always "livesim2" (first 8 bytes)
 	wordu - Amount of sections
-	byteu - Used background ID (or 0 to use from BIMG section below or from config)
+	byteu - * bit 0-3: Used background ID (or 0 to use from BIMG section below or from config)
+			* bit 4-7: Force note style (1 = old note style; 2 = v5 note style; 0 = no enforcing)
 	byte  - Stamina display (or -1 to use from config)
 	wordu - Score for each note tap (or 0 to use from config)
 
@@ -32,19 +29,19 @@ Sections:
 	For Every amount of notes above:
 		dwordu - Timing milliseconds
 		dwordu - Attribute. Some possible values:
-				 * 1-11 - Note image defined in image/tap_circle folder
-				 * bit 0-3 is 1 - CBF extension colored note
-					bit 23-31 - R color (9 bytes, unsigned)
-					bit 14-22 - G color (9 bytes, unsigned)
-					bit 5-13  - B color (9 bytes, unsigned)
+				 * 1-11 - Note images following Sukufesu simulator note colors in order. Ask yuyu for it, lol.
+				 * If bit 0-3 is 1 - CBF extension colored note
+					  bit 23-31 - R color (9 bytes, unsigned)
+					  bit 14-22 - G color (9 bytes, unsigned)
+					  bit 5-13  - B color (9 bytes, unsigned)
 		dwordu - Note effect
 				 * bit 0-3 - Note position. 9 is leftmost, 1 is rightmost
 				 * if bit 31 is 1 - Long note. bit 4-30 is the length in milliseconds
 				 * otherwise (above):
 					* if bit 4 and bit 5 is 0 - Normal note
+					* if bit 4 and bit 5 is 1 - Swing note
 					* if bit 4 is 1 and bit 5 is 0 - Token note
-					* if bit 5 is 1 and bit 4 is 0 - Star note
-					* else - invalid. Halt parsing
+					* if bit 4 is 0 and bit 5 is 1 - Star note
 				 * Note: There's no way to specify if notes is simultaneous, because it's determined at runtime
 	End For
 
@@ -52,26 +49,26 @@ Sections:
 		  in which case, the notes data are merged. This section must appear at least once
 		  if BMPM section doesn't exist.
 	word   - PPQN in MIDI. Zero or negative is not allowed
-	dwordu - BPM which is premultiplied by 1000 to retain BPM precision. Zero is invalid value
+	dwordu - BPM which is premultiplied by 1000 to retain BPM precision. Zero or negative is not a valid value
 	dword  - Amount of notes
 	For Every amount of notes above:
 		* Note: same as BMPM, except timing is in tick, not in milliseconds.
 		* If Attribute is 0xFFFFFFFF, then it's tempo change. Note effect is the new BPM premultipled by 1000
 	End For
 
-3. SCRI - Score info. Optional. Only one can be specificed. If none specificed, it's calculated using master song preset
+3. SCRI - Score info. Optional. Only one can be specificed. If none specificed, it's calculated using master song preset (total_combo * 729 for S score)
 	dword - Score needed for C score
 	dword - Score needed for B score
 	dword - Score needed for A score
 	dword - Score needed for S score
 
 4. SRYL - Lua storyboard. Optional. Only one can be specificed
-	* Note: Lua script mustn't be precompiled! This is to ensure highest forward compatibility
 	string - Lua script data. Optionally zlib compressed
+	* Note: Lua script shoudn't be precompiled! This is to ensure compatibility between Lua 5.1 and LuaJIT
 
 5. UIMG - Custom unit image data. Optional. Can appear multiple times
 	byte   - Image index
-	string - Image data (PNG image only)
+	string - Image data (Only PNG image allowed)
 
 6. UNIT - Custom unit image definition. Optional. Can appear multiple times (max 9)
 	byte - Custom unit image definition data amount
@@ -82,7 +79,7 @@ Sections:
 
 7. BIMG - Custom background image data. Optional. Can appear multiple times
 	byteu  - Background index. 0 is center, 1 is left, 2 is right, 3 is top, 4 is bottom
-	string - Image data (PNG image only)
+	string - Image data (Only PNG image allowed)
 
 8. DATA - Custom data. Optional. Can appear multiple times
 	string - Filename. Path separator must be in forward slash
@@ -94,8 +91,8 @@ Sections:
 
 10. COVR - Cover data. Optional. Only one can be specificed
 	string - Cover title (can be empty, defaults to filename)
-	string - Cover arrangement (can be empty)
-	string - Image data (PNG only)
+	string - Cover arrangement (can be empty, optional)
+	string - Image data (Only PNG image allowed)
 
 11. LCLR - Live Clear Audio SFX. Optional. Only one can be specificed
 	* Note: same as ADIO

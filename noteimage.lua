@@ -5,30 +5,30 @@ local DEPLS = ({...})[1]
 local NoteImageLoader = {}
 
 local old_style = {
-	love.graphics.newImage("image/tap_circle/tap_circle-0.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-4.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-8.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-12.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-16.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-20.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-24.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-28.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-32.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-36.png"),
-	love.graphics.newImage("image/tap_circle/tap_circle-40.png")
+	AquaShine.LoadImage("assets/image/tap_circle/red.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/green.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/cyan.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/blue.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/yellow.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/orange.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/pink.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/purple.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/gray.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/rainbow.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/black.png")
 }
 local new_style = {
-	love.graphics.newImage("image/tap_circle/v5/pink.png"),
-	love.graphics.newImage("image/tap_circle/v5/green.png"),
-	love.graphics.newImage("image/tap_circle/v5/aqua.png"),
-	love.graphics.newImage("image/tap_circle/v5/blue.png"),
-	love.graphics.newImage("image/tap_circle/v5/yellow.png"),
-	love.graphics.newImage("image/tap_circle/v5/orange.png"),
-	love.graphics.newImage("image/tap_circle/v5/red.png"),
-	love.graphics.newImage("image/tap_circle/v5/purple.png"),
-	love.graphics.newImage("image/tap_circle/v5/silver.png"),
-	love.graphics.newImage("image/tap_circle/v5/rainbow.png"),
-	love.graphics.newImage("image/tap_circle/v5/black.png")
+	AquaShine.LoadImage("assets/image/tap_circle/pink_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/green_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/cyan_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/blue_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/yellow_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/orange_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/red_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/purple_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/gray_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/rainbow_v5.png"),
+	AquaShine.LoadImage("assets/image/tap_circle/black_v5.png")
 }
 local new_style_quad = {
 	normal = love.graphics.newQuad(0, 0, 128, 128, 768, 128),
@@ -43,7 +43,7 @@ local note_icons_quad = {
 	star = love.graphics.newQuad(256, 0, 128, 128, 512, 128),
 	star_simultaneous = love.graphics.newQuad(384, 0, 128, 128, 512, 128)
 }
-local note_icons = love.graphics.newImage("image/tap_circle/v5/icons.png")
+local note_icons = AquaShine.LoadImage("image/tap_circle/v5/icons.png")
 local image_cache = {}
 
 function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous, is_star, is_slide)
@@ -126,7 +126,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, is_token, is_simultaneous,
 	
 	love.graphics.pop()
 	
-	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
+	canvas_composition = AquaShine.LoadImage(canvas_composition:newImageData())
 	image_cache[cache_name] = canvas_composition
 	return canvas_composition
 end
@@ -184,7 +184,7 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, is_token, is_simultaneous
 	
 	love.graphics.pop()
 	
-	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
+	canvas_composition = AquaShine.LoadImage(canvas_composition:newImageData())
 	image_cache[cache_name] = canvas_composition
 	return canvas_composition
 end

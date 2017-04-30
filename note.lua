@@ -16,7 +16,7 @@ local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
 local floor = math.floor
-local notes_bomb = Yohane.newFlashFromFilename("live_notes_bomb.flsh")
+local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh")
 notes_bomb:setMovie("ef_317")
 
 local NoteBombEffect = {}

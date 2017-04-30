@@ -1,8 +1,7 @@
 -- MIDI beatmap loader
 -- Part of DEPLS2
 
-local DEPLS = _G.DEPLS
-local NoteLoader = _G.NoteLoader
+local AquaShine, NoteLoader = ...
 local stringstream = require("stringstream")
 
 local MIDIBeatmap = {
@@ -218,7 +217,7 @@ end
 --! @returns table with these data
 --!          - notes_list is the SIF-compilant notes data
 function MIDIBeatmap.Load(file)
-	local f = io.open(file[2]..".mid", "rb")
+	local f = assert(love.filesystem.newFile(file[1]..".mid", "r"))
 	local out = {notes_list = midi2sif(f)}
 	
 	f:close()
