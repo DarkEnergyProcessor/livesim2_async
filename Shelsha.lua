@@ -4,7 +4,7 @@ local bit = require("bit")
 local ffi = select(2, pcall(require, "ffi"))
 local lg = require("love.graphics")
 
-local Shelsha = {_internal = {_meta = {}}, _VERSION = "1.1.0"}
+local Shelsha = {_internal = {_meta = {}}, _VERSION = "1.1.1"}
 local memreadstream = {}
 
 local has_ffi = type(ffi) == "table"
@@ -141,9 +141,8 @@ end
 
 local function readstring(stream)
 	local len = string2wordu(stream)
-	local lensub = (len % 2) == 0 and -3 or -2
 	
-	return stream:read(len):sub(1, lensub)
+	return stream:read(len):gsub("%z", "")
 end
 
 -------------------------------------
@@ -570,10 +569,17 @@ function Shelsha._internal._meta.getBankImageList(this)
 	
 	for i = 1, this.timgCount do
 		-- Clone
+		local timg_tgt = this.timgList[i - 1]
 		
-		timg_list[i - 1] = {unpack(this.timgList[i - 1])}
-		timg_list[i - 1].vertexData = {unpack(timg_list[i - 1].vertexData)}
-		timg_list[i - 1].indexData = {unpack(timg_list[i - 1].indexData)}
+		timg_list[i - 1] = {
+			name = timg_tgt.name,
+			width = timg_tgt.width,
+			height = timg_tgt.height,
+			centerX = timg_tgt.centerX,
+			centerY = timg_tgt.centerY,
+			vertexData = {unpack(timg_tgt.vertexData)},
+			indexData = {unpack(timg_tgt.indexData)},
+		}
 	end
 	
 	return timg_list

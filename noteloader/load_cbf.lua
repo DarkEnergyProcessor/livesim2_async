@@ -63,12 +63,16 @@ function CBFBeatmap.Load(file)
 	end
 	
 	local notes_data = {}
-	local desired_attribute = LoadConfig("LLP_SIFT_DEFATTR", 1)
+	local desired_attribute
 	
-	if cbf.SONG_ATTRIBUTE == "Pure" then
+	if cbf.SONG_ATTRIBUTE == "Smile" then
+		desired_attribute = 1
+	elseif cbf.SONG_ATTRIBUTE == "Pure" then
 		desired_attribute = 2
 	elseif cbf.SONG_ATTRIBUTE == "Cool" then
 		desired_attribute = 3
+	else
+		desired_attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 1)
 	end
 	
 	local readed_notes_data = {}

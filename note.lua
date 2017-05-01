@@ -625,7 +625,7 @@ local function initnote_pos(a)
 	for i = 1, #Note[a] do
 		local obj = Note[a][i]
 		
-		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote)
+		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, a, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote)
 		
 		if obj.SlideNote and obj.Rotation == nil then
 			-- Use from next chain to determine position

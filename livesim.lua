@@ -138,169 +138,27 @@ end
 ------------------------
 
 -- Circletap aftertap effect namespace
-DEPLS.Routines.CircleTapEffect = love.filesystem.load("livesim/circletap_effect.lua")(DEPLS)
+DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS)
 -- Combo counter effect namespace
-DEPLS.Routines.ComboCounter = love.filesystem.load("livesim/combocounter.lua")(DEPLS)
+DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS)
 -- Tap accuracy display routine
-DEPLS.Routines.PerfectNode = love.filesystem.load("livesim/perfectnode.lua")(DEPLS)
+DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/perfectnode.lua"))(DEPLS)
 -- Score flash animation routine
-DEPLS.Routines.ScoreEclipseF = love.filesystem.load("livesim/score_eclipsef.lua")(DEPLS)
+DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS)
 -- Note icon (note spawn pos) animation
-DEPLS.Routines.NoteIcon = love.filesystem.load("livesim/noteicon.lua")(DEPLS)
+DEPLS.Routines.NoteIcon = assert(love.filesystem.load("livesim/noteicon.lua"))(DEPLS)
 -- Score display routine
-DEPLS.Routines.ScoreUpdate = love.filesystem.load("livesim/scoreupdate.lua")(DEPLS)
+DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("livesim/scoreupdate.lua"))(DEPLS)
 -- Score bar routine. Depends on score display
-DEPLS.Routines.ScoreBar = love.filesystem.load("livesim/scorebar.lua")(DEPLS)
+DEPLS.Routines.ScoreBar = assert(love.filesystem.load("livesim/scorebar.lua"))(DEPLS)
 -- Added score, update routine effect
-DEPLS.Routines.ScoreNode = love.filesystem.load("livesim/scorenode_effect.lua")(DEPLS)
+DEPLS.Routines.ScoreNode = assert(love.filesystem.load("livesim/scorenode_effect.lua"))(DEPLS)
 -- Spot effect
-DEPLS.Routines.SpotEffect = love.filesystem.load("livesim/spot_effect.lua")(DEPLS)
-
---! @brief Image cover preview routines. Takes 3167ms to complete. Used as effect player
---! @param cover_data Table which contains image used, cover title, and optionally cover arrangement
-DEPLS.Routines.CoverPreview = coroutine.wrap(function(cover_data)
-	local deltaT
-	local ElapsedTime = 0
-	local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 40)
-	local ArrFont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
-	local Imagescale = {
-		400 / cover_data.image:getWidth(),
-		400 / cover_data.image:getHeight()
-	}
-	local FirstTrans = {imageopacity = 0, textpos = 0, textopacity = 255}
-	local FirstTransTween = tween.new(233, FirstTrans, {imageopacity = 255, textpos = 480})
-	local TextAura = {textpos = 480, opacity = 127}
-	local TextAuraTween = tween.new(667, TextAura, {textpos = 580, opacity = 0})
-	local SecondTransTween = tween.new(333, FirstTrans, {imageopacity = 0, textopacity = 0})
-	
-	local drawtext = love.graphics.print
-	local draw = love.graphics.draw
-	local setFont = love.graphics.setFont
-	local setColor = love.graphics.setColor
-	
-	local TitleWidth = TitleFont:getWidth(cover_data.title)
-	local ArrWidth
-	
-	if cover_data.arrangement then
-		ArrWidth = ArrFont:getWidth(cover_data.arrangement)
-	end
-	
-	while true do
-		local FirstTransComplete
-		local SecondTransComplete
-		local TextAuraComplete
-		
-		while not(deltaT) do
-			deltaT = coroutine.yield()
-		end
-		
-		ElapsedTime = ElapsedTime + deltaT
-		FirstTransComplete = FirstTransTween:update(deltaT)
-		
-		if FirstTransComplete then
-			TextAuraComplete = TextAuraTween:update(deltaT)
-		end
-		
-		if ElapsedTime >= 2833 then
-			SecondTransComplete = SecondTransTween:update(deltaT)
-		end
-		
-		setFont(TitleFont)
-		setColor(0, 0, 0, FirstTrans.textopacity * 0.5)
-		drawtext(cover_data.title, FirstTrans.textpos - 2 - TitleWidth * 0.5, 507)
-		drawtext(cover_data.title, FirstTrans.textpos + 2 - TitleWidth * 0.5, 509)
-		setColor(255, 255, 255, FirstTrans.textopacity)
-		drawtext(cover_data.title, FirstTrans.textpos - TitleWidth * 0.5, 508)
-		
-		if FirstTransComplete and not(TextAuraComplete) then
-			setColor(0, 0, 0, TextAura.opacity * 0.5)
-			drawtext(cover_data.title, TextAura.textpos - 2 - TitleWidth * 0.5, 507)
-			drawtext(cover_data.title, TextAura.textpos + 2 - TitleWidth * 0.5, 509)
-			setColor(255, 255, 255, TextAura.opacity)
-			drawtext(cover_data.title, TextAura.textpos - TitleWidth * 0.5, 508)
-			setColor(255, 255, 255, FirstTrans.textopacity)
-		end
-		
-		if cover_data.arrangement then
-			setFont(ArrFont)
-			setColor(0, 0, 0, FirstTrans.textopacity * 0.5)
-			drawtext(cover_data.arrangement, FirstTrans.textpos - 1 - ArrWidth * 0.5, 553)
-			drawtext(cover_data.arrangement, FirstTrans.textpos + 1 - ArrWidth * 0.5, 555)
-			setColor(255, 255, 255, FirstTrans.textopacity)
-			drawtext(cover_data.arrangement, FirstTrans.textpos - ArrWidth * 0.5, 554)
-			
-			if FirstTransComplete and not(TextAuraComplete) then
-				setColor(0, 0, 0, TextAura.opacity * 0.5)
-				drawtext(cover_data.arrangement, TextAura.textpos - 1 - ArrWidth * 0.5, 553)
-				drawtext(cover_data.arrangement, TextAura.textpos + 1 - ArrWidth * 0.5, 555)
-				setColor(255, 255, 255, TextAura.opacity)
-				drawtext(cover_data.arrangement, TextAura.textpos - ArrWidth * 0.5, 554)
-			end
-		end
-		
-		setColor(255, 255, 255, FirstTrans.imageopacity)
-		draw(cover_data.image, 280, 80, 0, Imagescale[1], Imagescale[2])
-		setColor(255, 255, 255, 255)
-		
-		deltaT = nil
-		if FirstTransComplete and TextAuraComplete and SecondTransComplete then
-			break
-		end
-	end
-	
-	DEPLS.CoverShown = 0
-	while true do coroutine.yield(true) end	-- Stop
-end)
-
+DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua"))(DEPLS)
 -- Live show complete animation routine (incl. FULLCOMBO)
--- Uses Yohane Flash Abstraction
-DEPLS.Routines.LiveClearAnim = coroutine.wrap(function()
-	local deltaT
-	local isFCDetermined = false
-	local isVoicePlayed = false
-	local ElapsedTime = 0
-	
-	while true do
-		while not(deltaT) do
-			deltaT = coroutine.yield()
-		end
-		
-		if not(isFCDetermined) then
-			if
-				DEPLS.NoteManager.Good == 0 and
-				DEPLS.NoteManager.Bad == 0 and
-				DEPLS.NoteManager.Miss == 0
-			then
-				-- Full Combo
-				ElapsedTime = 2500
-			end
-			
-			isFCDetermined = true
-		end
-		
-		if ElapsedTime > 0 then
-			ElapsedTime = ElapsedTime - deltaT
-			DEPLS.FullComboAnim:update(deltaT)
-		else
-			if DEPLS.Sound.LiveClear and not(isVoicePlayed) then
-				DEPLS.Sound.LiveClear:play()
-				isVoicePlayed = true
-			end
-			
-			DEPLS.LiveShowCleared:update(deltaT)
-		end
-		
-		while coroutine.yield() do end
-		
-		if ElapsedTime > 0 then
-			DEPLS.FullComboAnim:draw(480, 320)
-		else
-			DEPLS.LiveShowCleared:draw(480, 320)
-		end
-	end
-	
-	coroutine.yield(true)
-end)
+DEPLS.Routines.LiveClearAnim = assert(love.filesystem.load("livesim/live_clear.lua"))(DEPLS)
+-- Image cover preview routines. Takes 3167ms to complete.
+DEPLS.Routines.CoverPreview = assert(love.filesystem.load("livesim/cover_art.lua"))(DEPLS)
 
 --------------------------------
 -- Another public functions   --
@@ -679,16 +537,13 @@ function DEPLS.Start(argv)
 	
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
-		NoteEnd = AquaShine.LoadImage("image/tap_circle/tap_circle-44.png"),
-		Star = AquaShine.LoadImage("image/tap_circle/ef_315_effect_0004.png"),
-		Simultaneous = AquaShine.LoadImage("image/tap_circle/ef_315_timing_1.png"),
-		Token = AquaShine.LoadImage("image/tap_circle/e_icon_01.png"),
-		LongNote = AquaShine.LoadImage("image/ef_326_000.png"),
-		Slide = AquaShine.LoadImage("image/tap_circle/ef_315_arrow_1.png")
+		NoteEnd = AquaShine.LoadImage("assets/image/tap_circle/end_note.png"),
+		Token = AquaShine.LoadImage("assets/image/tap_circle/e_icon_01.png"),
+		LongNote = AquaShine.LoadImage("assets/image/ef_326_000.png"),
 	}
 	DEPLS.Images.Spotlight = AquaShine.LoadImage("image/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
-	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS)
+	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS, AquaShine)
 	
 	-- Load configuration
 	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
@@ -752,7 +607,7 @@ function DEPLS.Start(argv)
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime - 3167
 		noteloader_data.cover.title = noteloader_data.cover.title or argv[1]
 		
-		DEPLS.Routines.CoverPreview(noteloader_data.cover)
+		DEPLS.Routines.CoverPreview.Initialize(noteloader_data.cover)
 	end
 	
 	-- Initialize storyboard
@@ -781,7 +636,6 @@ function DEPLS.Start(argv)
 	-- Initialize flash animation
 	DEPLS.LiveShowCleared:setMovie("ef_311")
 	DEPLS.FullComboAnim:setMovie("ef_329")
-	DEPLS.Routines.LiveClearAnim()
 	
 	-- Calculate score bar
 	if noteloader_data.score then
@@ -920,6 +774,11 @@ function DEPLS.Update(deltaT)
 	local ElapsedTime = DEPLS.ElapsedTime
 	local Routines = DEPLS.Routines
 	
+	if DEPLS.CoverShown > 0 then
+		DEPLS.Routines.CoverPreview.Update(deltaT)
+		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
+	end
+	
 	if ElapsedTime <= 0 then
 		persistent_bg_opacity = (ElapsedTime + DEPLS.LiveDelay) / DEPLS.LiveDelay * 191
 	end
@@ -949,7 +808,7 @@ function DEPLS.Update(deltaT)
 			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
 			DEPLS.NoteManager.NoteRemaining == 0
 		then
-			Routines.LiveClearAnim(deltaT)
+			Routines.LiveClearAnim.Update(deltaT)
 		end
 	end
 end
@@ -994,8 +853,7 @@ function DEPLS.Draw(deltaT)
 	
 	-- Draw background blackness
 	if DEPLS.CoverShown > 0 then
-		DEPLS.Routines.CoverPreview(deltaT)
-		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
+		DEPLS.Routines.CoverPreview.Draw()
 	else
 		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity / 255)
 		rectangle("fill", -88, -43, 1136, 726)
@@ -1041,7 +899,7 @@ function DEPLS.Draw(deltaT)
 			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
 			DEPLS.NoteManager.NoteRemaining == 0
 		then
-			Routines.LiveClearAnim()
+			Routines.LiveClearAnim.Draw()
 		end
 	end
 	
@@ -1134,7 +992,7 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 			end
 			
 			-- Restart
-			LoadEntryPoint("livesim.lua", DEPLS.Arg)
+			AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
 		elseif key == "f12" then
 			love.thread.newThread(ScreenshotThreadCode):start(love.graphics.newScreenshot())
 		elseif key == "lshift" then

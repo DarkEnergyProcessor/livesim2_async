@@ -98,7 +98,7 @@ end
 function AquaShine.SaveConfig(key, val)
 	local file = assert(love.filesystem.newFile(key:upper()..".txt", "w"))
 	
-	file:write(tostring(default_value))
+	file:write(tostring(val))
 	file:close()
 end
 
@@ -237,9 +237,9 @@ function AquaShine.LoadImageNoCache(path, pngonly)
 			
 			return shelsha_object:getImageMesh(path:sub(1, -5))
 		end
-	else
-		assert(false, string.format("Cannot load image %q", path))
 	end
+	
+	assert(false, img)
 end
 
 --! @brief Load image with caching

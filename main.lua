@@ -29,12 +29,9 @@ AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 --------------------------------
 local Yohane = require("Yohane")
 
-function Yohane.Platform.ResolveImage(path)
-	return AquaShine.LoadImage(path)
-end
-
+Yohane.Platform.ResolveImage = AquaShine.LoadImage
 function Yohane.Platform.ResolveAudio(path)
-	return love.audio.newSource(path .. ".ogg")
+	return love.audio.newSource(AquaShine.LoadAudio(path .. ".wav"))
 end
 
 function Yohane.Platform.CloneImage(image_handle)
