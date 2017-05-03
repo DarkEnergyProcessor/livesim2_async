@@ -340,7 +340,7 @@ end
 function love.mousepressed(x, y, button, istouch)
 	if istouch == true then return end
 	
-	if AquaShine.CurrentEntryPoint.MousePressed then
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MousePressed then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MousePressed(x, y, button, istouch)
 	end
@@ -349,7 +349,7 @@ end
 function love.mousemoved(x, y, dx, dy, istouch)
 	if istouch == true then return end
 	
-	if AquaShine.CurrentEntryPoint.MouseMoved then
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseMoved then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx, dy, istouch)
 	end
@@ -358,7 +358,7 @@ end
 function love.mousereleased(x, y, button, istouch)
 	if istouch == true then return end
 	
-	if AquaShine.CurrentEntryPoint.MouseReleased then
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseReleased then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MouseReleased(x, y, button, istouch)
 	end
@@ -377,13 +377,13 @@ function love.touchmoved(id, x, y, dx, dy)
 end
 
 function love.keypressed(key, scancode, repeat_bit)
-	if AquaShine.CurrentEntryPoint.KeyPressed then
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyPressed then
 		AquaShine.CurrentEntryPoint.KeyPressed(key, scancode, repeat_bit)
 	end
 end
 
 function love.keyreleased(key, scancode)
-	if AquaShine.CurrentEntryPoint.KeyReleased then
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyReleased then
 		AquaShine.CurrentEntryPoint.KeyReleased(key, scancode)
 	end
 end

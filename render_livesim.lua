@@ -52,6 +52,8 @@ f:close()
 ]]}
 	end
 end
+local null_device = jit.os == "Windows" and "nul" or "/dev/null"
+local benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
 
 -- len is the sample length
 local function mono_to_stereo(dest, src, len)
@@ -276,7 +278,13 @@ function RenderManager.EncodeFrame(id, frame)
 		local t = RenderManager.Threads[i]
 		if t.Thread:isRunning() == false then
 			t.Image = id
-			t.Thread:start(id, string.format("%s/%010d.png", RenderMode.Destination, frame))
+			
+			if benchmark_mode then
+				t.Thread:start(id, null_device)
+			else
+				t.Thread:start(id, string.format("%s/%010d.png", RenderMode.Destination, frame))
+			end
+			
 			return
 		end
 	end
@@ -393,7 +401,7 @@ function RenderMode.Draw(deltaT)
 	end
 	
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(RenderMode.Canvas, -LogicalScale.OffX, -LogicalScale.OffY)
+	love.graphics.draw(RenderMode.Canvas, -AquaShine.LogicalScale.OffX, -AquaShine.LogicalScale.OffY)
 	love.graphics.setBlendMode("alpha")
 	RenderMode.DEPLS.DrawDebugInfo()
 end
@@ -412,7 +420,7 @@ function love.quit()
 	until RenderManager.IsIdle()
 	
 	print("Saving audio")
-	local audio_wav = assert(io.open(RenderMode.Destination.."/audio.wav", "wb"))
+	local audio_wav = assert(io.open(benchmark_mode and null_device or RenderMode.Destination.."/audio.wav", "wb"))
 	local current_pos = (AudioMixer.SoundDataBuffer.Position + 1) * 4
 	
 	audio_wav:write("RIFF\0\0\0\0WAVEfmt \16\0\0\0\1\0\2\0\68\172\0\0\16\177\2\0\4\0\16\0data")

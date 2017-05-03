@@ -134,8 +134,8 @@ function Settings.Draw(deltaT)
 	love.graphics.print("Settings", 95, 13)
 	love.graphics.setColor(255, 255, 255, 255)
 	
-	AquaShine.ClearScissor()
 	printSettings()
+	AquaShine.ClearScissor()
 end
 
 function Settings.MousePressed(x, y, button)
@@ -232,11 +232,19 @@ function Settings.MouseReleased(x, y, button)
 	--Other
 end
 
-local set_button_19 = AquaShine.LoadImage("image/set_button_19.png")
+local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
+local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
 function printSettings()
 	--Apply
 	--Button
-	love.graphics.draw(set_button_19, 750, 20)
+	if MouseState[3] and
+		MouseState[1] >= 750 and MouseState[2] >= 20 and
+		MouseState[1] < 894 and MouseState[2] < 78
+	then
+		love.graphics.draw(set_button_19se, 750, 20)
+	else
+		love.graphics.draw(set_button_19, 750, 20)
+	end
 
 	--Autoplay
 	--Label

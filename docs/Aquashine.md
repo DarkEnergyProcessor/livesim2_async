@@ -1,13 +1,22 @@
 AquaShine
 =========
-AquaShine is the base layer which powers DEPLS2. It contains useful utilities
-functions meant to be used for DEPLS2. Because AquaShine is written for DEPLS2,
-is not distributed as standalone Lua script.
+AquaShine is the base layer which powers Live Simulator: 2. It contains useful
+utilities functions meant to be used for Live Simulator: 2. Because AquaShine
+is specially written for Live Simulator: 2, is not distributed as standalone
+LOVE2D library.
 
 However, you can simply take the `AquaShine.lua` and use it in your another
 game. I don't mind about it. Please note that AquaShine itself depends on
-Shelsha library. Well, you can edit the AquaShine code to not load Playground
-texture banks, thus removing dependency to Shelsha library.
+Shelsha library. Well, of course you can edit the AquaShine code to not load
+Playground texture banks, thus removing dependency to Shelsha library.
+
+Origin of the Name
+==================
+So, where AquaShine name came from? Well, the name came from cosplay group in
+Bali, Indonesia. **Opinion Starts** I think the name itself has a deep meaning,
+like keep going and don't give up, or something like that **Opinion Ends**.
+
+[We've got permission from AquaShine cosplay group to use it's name for this library name](https://www.facebook.com/AquaShineBali/posts/1049366371860966)
 
 Features
 ========
@@ -19,12 +28,16 @@ think the resolution is constant (like 800x600, 1366x768, etc.)
 
 * Scissor, which takes letterboxing into account
 
+* Page switching, ZIP mounting management
+
+* Configuration management (and command-line switches)
+
 Architecture
 ============
-AquaShine allows a separate update, draw, and input callbacks in a separate lua
-script. Instead of overwriting `love.update`, `love.draw`, and the others when
-switching sections, AquaShine simply stores the current section and call it's
-update, draw, and it's other callback functions. Let's call it entry point.
+AquaShine allows a separate update, draw, and input callbacks in a separate Lua
+script which is called entry point. Instead of overwriting `love.update`,
+`love.draw`, and the others when switching entry pouint, AquaShine simply
+stores the current entry point and call it's appropriate functions.
 
 A typical entry point Lua script as follows
 
@@ -47,4 +60,4 @@ end
 return MySection
 ```
 
-To specify lists of entry points to AquaShine, please see `main.lua`
+Please see `main.lua` for AquaShine initialization example.

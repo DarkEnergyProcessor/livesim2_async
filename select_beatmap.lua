@@ -13,6 +13,7 @@ local com_button_14se
 local com_win_02
 local s_button_03
 local s_button_03se
+local log_etc_08
 local liveback_1
 
 local BackImage
@@ -21,6 +22,8 @@ local BackButtonSe
 
 local MTLmr3m
 local FontDesc
+
+local IsRandomNotesWasTicked
 
 function SelectBeatmap.Start(arg)
 	local noteloader = love.filesystem.load("note_loader.lua")()
@@ -33,6 +36,8 @@ function SelectBeatmap.Start(arg)
 	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
 	s_button_03 = AquaShine.LoadImage("image/s_button_03.png")
 	s_button_03se = AquaShine.LoadImage("image/s_button_03se.png")
+	log_etc_08 = AquaShine.LoadImage("assets/image/ui/log_etc_08.png")
+	
 	liveback_1 = AquaShine.LoadImage("image/liveback_1.png")
 	
 	BackImage = AquaShine.LoadImage("image/com_win_02.png")
@@ -41,6 +46,8 @@ function SelectBeatmap.Start(arg)
 	
 	MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22)
+	
+	IsRandomNotesWasTicked = arg.Random
 	
 	if arg[1] then
 		for i = 1, #BeatmapList do
@@ -123,6 +130,15 @@ function SelectBeatmap.Draw()
 	else
 		draw(com_button_14di, 760, 530)
 	end
+	
+	-- Render mode/Random notes check
+	setFont(FontDesc)
+	love.graphics.rectangle("fill", 476, 528, 32, 32)
+	drawtext("Random Notes", 526, 533)
+	
+	if IsRandomNotesWasTicked then
+		draw(log_etc_08, 477, 528, 0, 0.842105)
+	end
 end
 
 function SelectBeatmap.MousePressed(x, y, button)
@@ -150,7 +166,13 @@ function SelectBeatmap.MouseReleased(x, y, button)
 		   y >= 530 and y <= 588
 		then
 			-- Start livesim
-			AquaShine.LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name})
+			AquaShine.LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name, Random = IsRandomNotesWasTicked})
+			return
+		elseif
+			x >= 476 and x < 508 and
+			y >= 528 and y < 560
+		then
+			IsRandomNotesWasTicked = not(IsRandomNotesWasTicked)
 			return
 		end
 	end
