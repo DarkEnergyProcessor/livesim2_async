@@ -63,7 +63,8 @@ local new_style_rotation = {
 	math.rad(90)
 }
 local star_icon = AquaShine.LoadImage("assets/image/tap_circle/star.png")
-local image_cache = {}
+local image_cache = _G.NoteImageCache or {}
+_G.NoteImageCache = image_cache
 
 function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultaneous, is_star, is_slide)
 	local noteimg
@@ -105,7 +106,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 			love.graphics.draw(new_style_slide[9], 64, 64, 0, 1, 1, 64, 64)
 			love.graphics.setColor(255, 255, 255)
 		else
-			love.graphics.draw(noteimg, 0, 0, new_style_rotation[idx], 1, 1, 64, 64)
+			love.graphics.draw(noteimg, 64, 64, new_style_rotation[idx], 1, 1, 64, 64)
 			love.graphics.setColor(255, 255, 255)
 			
 			if is_token then
@@ -183,7 +184,7 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 	if is_token then
 		love.graphics.draw(DEPLS.Images.Note.Token)
 	elseif is_star then
-		love.graphics.draw(star_note)
+		love.graphics.draw(star_icon)
 	elseif is_slide then
 		love.graphics.draw(old_style.Slide)
 	end

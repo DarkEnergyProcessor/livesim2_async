@@ -69,19 +69,6 @@ local DEPLS = {
 	},
 	Sound = {}
 }
-local ScreenshotThreadCode = [[
-local lt = require("love.timer")
-local li = require("love.image")
-local arg = {...}
-local encode = love.image.newImageData(1, 1).encode
-local name = string.format("screenshots/screenshot_%s_%d.png",
-	os.date("%Y_%m_%d_%H_%M_%S"),
-	math.floor((lt.getTime() % 1) * 1000)
-)
-
-encode(arg[1], "png", name)
-print("Screenshot saved as", name)
-]]
 
 ----------------------
 -- Public functions --
@@ -993,8 +980,6 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 			
 			-- Restart
 			AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
-		elseif key == "f12" then
-			love.thread.newThread(ScreenshotThreadCode):start(love.graphics.newScreenshot())
 		elseif key == "lshift" then
 			DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 		elseif key == "lctrl" then

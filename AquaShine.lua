@@ -5,6 +5,7 @@
 local ASArg = ...	-- Must contain entry point lists
 local AquaShine = {
 	CurrentEntryPoint = nil,
+	Arguments = ASArg,
 	LogicalScale = {
 		ScreenX = ASArg.Width or 960,
 		ScreenY = ASArg.Height or 640,
@@ -19,6 +20,19 @@ local JSON = require("JSON")
 local Yohane = require("Yohane")
 local Shelsha = require("Shelsha")
 local SkipCall = 0
+
+local ScreenshotThreadCode = [[
+local lt = require("love.timer")
+local li = require("love.image")
+local arg = {...}
+local name = string.format("screenshots/screenshot_%s_%d.png",
+	os.date("%Y_%m_%d_%H_%M_%S"),
+	math.floor((lt.getTime() % 1) * 1000)
+)
+
+require("debug").getregistry().ImageData.encode(arg[1], "png", name)
+print("Screenshot saved as", name)
+]]
 
 ----------------------------------
 -- AquaShine Utilities Function --
@@ -273,46 +287,28 @@ function AquaShine.ClearScissor()
 	love.graphics.setScissor()
 end
 
-------------------------------------
--- AquaShine love.* override code --
-------------------------------------
-function love.run()
-	local dt = 0
-	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
-	
-	if love.math then
-		love.math.setRandomSeed(os.time())
-		math.randomseed(os.time())
-	end
- 
-	love.load(arg)
-	
-	-- We don't want the first frame's dt to include time taken by love.load.
-	if love.timer then love.timer.step() end
- 
-	-- Main loop time.
+------------------------------
+-- Other Internal Functions --
+------------------------------
+function AquaShine.MainLoop()
 	while true do
 		-- Process events.
-		if love.event then
-			love.event.pump()
-			for name, a,b,c,d,e,f in love.event.poll() do
-				if name == "quit" then
-					if love.quit then love.quit() end
-					return a
-				end
-				
-				love.handlers[name](a,b,c,d,e,f)
+		love.event.pump()
+		for name, a,b,c,d,e,f in love.event.poll() do
+			if name == "quit" then
+				if love.quit then love.quit() end
+				return a
 			end
+			
+			love.handlers[name](a,b,c,d,e,f)
 		end
  
 		-- Update dt, as we'll be passing it to update
-		if love.timer then
-			love.timer.step()
-			dt = love.timer.getDelta()
-		end
+		love.timer.step()
+		dt = love.timer.getDelta()
 		
-		if love.graphics and love.graphics.isActive() then
-			love.graphics.clear(0, 0, 0)
+		if love.graphics.isActive() then
+			love.graphics.clear()
 			
 			if AquaShine.CurrentEntryPoint then
 				if SkipCall == 0 then
@@ -331,9 +327,81 @@ function love.run()
 				love.graphics.setFont(font)
 				love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
 			end
+			
 			love.graphics.present()
 		end
 	end
+end
+
+------------------------------------
+-- AquaShine love.* override code --
+------------------------------------
+function love.run()
+	local dt = 0
+	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
+	
+	if love.math then
+		love.math.setRandomSeed(os.time())
+		math.randomseed(os.time())
+	end
+ 
+	love.load(arg)
+	
+	-- We don't want the first frame's dt to include time taken by love.load.
+	love.timer.step()
+ 
+	-- Main loop time.
+	AquaShine.MainLoop()
+end
+
+local function error_printer(msg, layer)
+	print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
+end
+
+-- TODO: Optimize error handler
+function love.errhand(msg)
+	msg = tostring(msg)
+	error_printer(msg, 2)
+ 
+	if not love.window or not love.graphics or not love.event then
+		return
+	end
+ 
+	if not love.graphics.isCreated() or not love.window.isOpen() then
+		local success, status = pcall(love.window.setMode, 800, 600)
+		if not success or not status then
+			return
+		end
+	end
+ 
+	love.audio.stop()
+	love.graphics.reset()
+	
+	local trace = debug.traceback()
+ 
+	love.graphics.clear(love.graphics.getBackgroundColor())
+	love.graphics.origin()
+ 
+	local err = {}
+ 
+	table.insert(err, "AquaShine Error Handler. An error has occured during execution")
+	table.insert(err, "Press ESC to exit, Backspace to reload\n")
+	table.insert(err, msg.."\n\n")
+ 
+	for l in string.gmatch(trace, "(.-)\n") do
+		if not string.match(l, "boot.lua") then
+			l = string.gsub(l, "stack traceback:", "Traceback\n")
+			table.insert(err, l)
+		end
+	end
+ 
+	local p = table.concat(err, "\n")
+ 
+	p = string.gsub(p, "\t", "")
+	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
+	
+	AquaShine.LoadEntryPoint("AquaShineErrorHandler.lua", {p})
+	AquaShine.MainLoop()
 end
 
 -- Inputs
@@ -383,6 +451,10 @@ function love.keypressed(key, scancode, repeat_bit)
 end
 
 function love.keyreleased(key, scancode)
+	if key == "f12" then
+		love.thread.newThread(ScreenshotThreadCode):start(love.graphics.newScreenshot())
+	end
+	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyReleased then
 		AquaShine.CurrentEntryPoint.KeyReleased(key, scancode)
 	end

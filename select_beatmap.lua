@@ -71,7 +71,6 @@ local setColor = love.graphics.setColor
 
 function SelectBeatmap.Draw()
 	-- Grid: 4x10 beatmap list. Starts at 48x100px
-	
 	draw(liveback_1)
 	setFont(FontDesc)
 	draw(BackImage, -98, 0)

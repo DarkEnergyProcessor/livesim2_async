@@ -13,7 +13,7 @@ local mouse_data = {false, 0, 0}	-- click?, x click, y click
 local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
 	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end, nil, 0},
-	{"Edit Units", function() end, nil, 0},
+	{"Edit Units", function() --[[AquaShine.LoadEntryPoint("unit_selection.lua")]] end, nil, 0},
 	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end, nil, 0},
 	{"Exit", love.event.quit, nil, 0}
 }
