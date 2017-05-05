@@ -1,5 +1,5 @@
--- Aquashine base initializer & utilities function
--- Part of DEPLS2
+-- Aquashine loader. Base layer of Live Simulator: 2
+-- Part of Live Simulator: 2
 -- Copyright © 2038 Dark Energy Processor
 
 local ASArg = ...	-- Must contain entry point lists

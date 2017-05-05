@@ -7,11 +7,16 @@ local UnitSelect = {CurrentPage = 0}
 local MouseState = {0, 0, false}	-- x, y, is click?
 
 local Font
+local background_5
 local com_etc_117
 local com_win_02
+local com_button_14, com_button_14di, com_button_14se
 local com_button_01, com_button_01se
 local com_button_12, com_button_12se
 local com_button_13, com_button_13se
+
+local CurrentHoverCardIdx
+local CurrentSelectedCardIdx = 0
 
 function UnitSelect.Start(arg)
 	UnitSelect.Options = arg
@@ -30,11 +35,19 @@ function UnitSelect.Start(arg)
 			if temp.Image:getWidth() == 128 and temp.Image:getHeight() == 128 then
 				UnitSelect.UnitList[#UnitSelect.UnitList + 1] = temp
 			end
+			
+			if temp.Filename == arg[1] then
+				CurrentSelectedCardIdx = #UnitSelect.UnitList
+			end
 		end
 	end
 	
+	background_5 = AquaShine.LoadImage("assets/image/background/liveback_5.png")
 	com_etc_117 = AquaShine.LoadImage("assets/image/ui/com_etc_117.png")
 	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
+	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
+	com_button_14di = AquaShine.LoadImage("assets/image/ui/com_button_14di.png")
+	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
 	com_button_01 = AquaShine.LoadImage("image/com_button_01.png")
 	com_button_01se = AquaShine.LoadImage("image/com_button_01se.png")
 	com_button_12 = AquaShine.LoadImage("assets/image/ui/com_button_12.png")
@@ -43,18 +56,20 @@ function UnitSelect.Start(arg)
 	com_button_13se = AquaShine.LoadImage("assets/image/ui/com_button_13se.png")
 	
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
+	love.graphics.setFont(Font)
 end
 
 function UnitSelect.Update(deltaT)
 end
 
-local CurrentHoverCardIdx
 function UnitSelect.Draw()
 	AquaShine.SetScissor(0, 0, 960, 640)
 	love.graphics.setColor(255, 255, 255)
+	love.graphics.draw(background_5)
 	love.graphics.draw(com_win_02, -98, 0)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Unit Select", 95, 13)
+	love.graphics.print(string.format("Page %d", UnitSelect.CurrentPage + 1), 34, 576)
 	love.graphics.setColor(255, 255, 255)
 	AquaShine.ClearScissor()
 	
@@ -70,45 +85,70 @@ function UnitSelect.Draw()
 		
 		if
 			MouseState[1] >= 0 and MouseState[1] < 32 and
-			MouseState[2] >= 298 and MouseState[2] < 354
+			MouseState[2] >= 288 and MouseState[2] < 344
 		then
-			love.graphics.draw(com_button_12se, -8, 298)
+			love.graphics.draw(com_button_12se, -8, 288)
 		else
-			love.graphics.draw(com_button_12, -8, 298)
+			love.graphics.draw(com_button_12, -8, 288)
 		end
 		
 		if
 			MouseState[1] >= 928 and MouseState[1] < 960 and
-			MouseState[2] >= 298 and MouseState[2] < 354
+			MouseState[2] >= 288 and MouseState[2] < 344
 		then
-			love.graphics.draw(com_button_13se, 920, 298)
+			love.graphics.draw(com_button_13se, 920, 288)
 		else
-			love.graphics.draw(com_button_13, 920, 298)
+			love.graphics.draw(com_button_13, 920, 288)
+		end
+		
+		if CurrentSelectedCardIdx > 0 then
+			if
+				MouseState[1] >= 772 and MouseState[1] < 916 and
+				MouseState[2] >= 576 and MouseState[2] < 634 and CurrentSelectedCardIdx > 0
+			then
+				love.graphics.draw(com_button_14se, 772, 576)
+			else
+				love.graphics.draw(com_button_14, 772, 576)
+			end
+		else
+			love.graphics.draw(com_button_14di, 772, 576)
 		end
 	else
 		love.graphics.draw(com_button_01)
-		love.graphics.draw(com_button_12, -8, 298)
-		love.graphics.draw(com_button_13, 920, 298)
+		love.graphics.draw(com_button_12, -8, 288)
+		love.graphics.draw(com_button_13, 920, 288)
+		
+		if CurrentSelectedCardIdx > 0 then
+			love.graphics.draw(com_button_14, 772, 576)
+		else
+			love.graphics.draw(com_button_14di, 772, 576)
+		end
 	end
 	
-	love.graphics.rectangle("fill", 32, 70, 896, 512)
+	love.graphics.rectangle("fill", 32, 60, 896, 512)
 	
-	for i = 1 + UnitSelect.CurrentPage * 28, 28 do
+	for i = 1 + UnitSelect.CurrentPage * 28, (UnitSelect.CurrentPage + 1) * 28 do
 		if UnitSelect.UnitList[i] then
 			-- Order, goes down
-			local j = i - 1
+			local j = (i - UnitSelect.CurrentPage * 28 - 1)
+			local x =  math.floor(j * 0.25) * 128 + 32
+			local y = (j % 4) * 128 + 60
 			
-			love.graphics.draw(UnitSelect.UnitList[i].Image, math.floor(j * 0.25) * 128 + 32, (j % 4) * 128 + 70)
+			love.graphics.draw(UnitSelect.UnitList[i].Image, x, y)
+			
+			if CurrentSelectedCardIdx == i then
+				love.graphics.draw(com_etc_117, x, y)
+			end
 		end
 	end
 	
 	if CurrentHoverCardIdx and UnitSelect.UnitList[CurrentHoverCardIdx + 1] then
 		local a = UnitSelect.UnitList[CurrentHoverCardIdx + 1]
+		local j = (CurrentHoverCardIdx - UnitSelect.CurrentPage * 28)
 		local txtlen = Font:getWidth(a.Filename)
 		
-		love.graphics.setFont(Font)
 		love.graphics.setColor(0, 0, 0)
-		love.graphics.rectangle("line", math.floor(CurrentHoverCardIdx * 0.25) * 128 + 32, (CurrentHoverCardIdx % 4) * 128 + 70, 128, 128)
+		love.graphics.rectangle("line", math.floor(j * 0.25) * 128 + 32, (j % 4) * 128 + 60, 128, 128)
 		love.graphics.setColor(255, 56, 122)
 		love.graphics.rectangle("fill", MouseState[1] + 8, MouseState[2] + 8, txtlen + 10, 26)
 		love.graphics.setColor(0, 0, 0)
@@ -129,10 +169,10 @@ end
 function UnitSelect.MouseMoved(x, y)
 	MouseState[1], MouseState[2] = x, y
 	
-	if x >= 32 and y >= 70 and
-	   y < 896 and y < 582
+	if x >= 32 and y >= 60 and
+	   x < 928 and y < 572
 	then
-		CurrentHoverCardIdx = (math.floor((x - 32) / 128) * 4 + math.floor((y - 70) / 128) % 4)
+		CurrentHoverCardIdx = (math.floor((x - 32) / 128) * 4 + math.floor((y - 60) / 128) % 4) + UnitSelect.CurrentPage * 28
 		
 		if CurrentHoverCardIdx >= (UnitSelect.CurrentPage + 1) * 28 then
 			CurrentHoverCardIdx = nil
@@ -148,10 +188,24 @@ function UnitSelect.MouseReleased(x, y, button)
 	MouseState[1], MouseState[2] = x, y
 	MouseState[3] = false
 	
-	if x >= 0 and x <= 86 and y >= 0 and y <= 58 then
+	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		-- Exit unit editor
 		-- TODO: Save changes
 		AquaShine.LoadEntryPoint("main_menu.lua")
+		return
+	elseif x >= 0 and x < 32 and y >= 288 and y < 344 then
+		-- Previous
+		UnitSelect.CurrentPage = math.max(UnitSelect.CurrentPage - 1, 0)
+	elseif x >= 928 and x < 960 and y >= 288 and y < 344 then
+		-- Next
+		UnitSelect.CurrentPage = math.min(math.floor(math.max(#UnitSelect.UnitList - 1, 0) / 28), UnitSelect.CurrentPage + 1)
+	elseif x >= 32 and y >= 60 and x < 928 and y < 572 then
+		-- Select
+		CurrentSelectedCardIdx = (math.floor((x - 32) / 128) * 4 + math.floor((y - 60) / 128) % 4) + UnitSelect.CurrentPage * 28 + 1
+	elseif  x >= 772 and x < 916 and y >= 576 and y < 634 and CurrentSelectedCardIdx > 0 then
+		print("Unit selected", CurrentSelectedCardIdx)
+	else
+		CurrentSelectedCardIdx = 0
 	end
 end
 

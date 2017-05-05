@@ -1,5 +1,5 @@
 -- LLPractice beatmap loader
--- Part of DEPLS2
+-- Part of Live Simulator: 2
 
 local AquaShine, NoteLoader = ...
 local JSON = require("JSON")

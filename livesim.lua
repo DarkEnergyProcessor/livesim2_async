@@ -657,10 +657,10 @@ function DEPLS.Start(argv)
 	
 	-- Load background if no storyboard present
 	if not(DEPLS.StoryboardHandle) and not(custom_background) then
-		DEPLS.BackgroundImage[0][1] = AquaShine.LoadImage("image/liveback_"..BackgroundID..".png")
+		DEPLS.BackgroundImage[0][1] = AquaShine.LoadImage("assets/image/background/liveback_"..BackgroundID..".png")
 		
 		for i = 1, 4 do
-			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
+			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("assets/image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
 		end
 	end
 	
@@ -676,9 +676,9 @@ function DEPLS.Start(argv)
 	noteloader_data.units = noteloader_data.units or {}
 	local IdolImagePath = {}
 	do
-		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png,a.png")
+		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
 		
-		for w in idol_img:gmatch("[^,]+") do
+		for w in idol_img:gmatch("[^\t]+") do
 			IdolImagePath[#IdolImagePath + 1] = w
 		end
 	end

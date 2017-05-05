@@ -1,4 +1,6 @@
 -- livesim2 beatmap file
+-- Part of Live Simulator: 2
+
 local ls2 = {
 	_VERSION = "1.0",
 	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat",

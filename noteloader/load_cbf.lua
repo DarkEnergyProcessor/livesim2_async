@@ -1,5 +1,5 @@
 -- Custom Beatmap Festival beatmap loader
--- Part of DEPLS2
+-- Part of Live Simulator: 2
 
 local AquaShine, NoteLoader = ...
 local bit = require("bit")

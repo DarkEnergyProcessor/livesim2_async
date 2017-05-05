@@ -29,16 +29,16 @@ function SelectBeatmap.Start(arg)
 	local noteloader = love.filesystem.load("note_loader.lua")()
 	BeatmapList = noteloader.Enumerate()
 	
-	com_button_14 = AquaShine.LoadImage("image/com_button_14.png")
-	com_button_14di = AquaShine.LoadImage("image/com_button_14di.png")
-	com_button_14se = AquaShine.LoadImage("image/com_button_14se.png")
+	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
+	com_button_14di = AquaShine.LoadImage("assets/image/ui/com_button_14di.png")
+	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
 	
 	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
 	s_button_03 = AquaShine.LoadImage("image/s_button_03.png")
 	s_button_03se = AquaShine.LoadImage("image/s_button_03se.png")
 	log_etc_08 = AquaShine.LoadImage("assets/image/ui/log_etc_08.png")
 	
-	liveback_1 = AquaShine.LoadImage("image/liveback_1.png")
+	liveback_1 = AquaShine.LoadImage("assets/image/background/liveback_1.png")
 	
 	BackImage = AquaShine.LoadImage("image/com_win_02.png")
 	BackButton = AquaShine.LoadImage("image/com_button_01.png")

@@ -43,7 +43,7 @@ local SettingsList = {
 		after = AquaShine.LoadConfig("NOTE_SPEED", 800)
 	}
 }
-Settings.Background = AquaShine.LoadImage("image/liveback_"..SettingsList.BACKGROUND_IMAGE.after..".png")
+Settings.Background = AquaShine.LoadImage("assets/image/background/liveback_"..SettingsList.BACKGROUND_IMAGE.after..".png")
 
 local MouseState = {0, 0, false}	-- x, y, is click?
 local DescContentX = 464 + 20
@@ -51,6 +51,9 @@ local DescContentY = 236 + 20
 
 local plus = AquaShine.LoadImage("image/com_etc_204.png")
 local minus = AquaShine.LoadImage("image/com_etc_205.png")
+
+local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
+local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
 
 local ConfigList = {
 	{
@@ -217,7 +220,7 @@ function Settings.MouseReleased(x, y, button)
 			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after - 1
 		end
 		print("Image = "..SettingsList.BACKGROUND_IMAGE.after)
-		Settings.Background = AquaShine.LoadImage(string.format("image/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
+		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
 	end
 
 	-- Add 100 as note speed
@@ -226,14 +229,12 @@ function Settings.MouseReleased(x, y, button)
 			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after + 1
 		end
 		print("Image = "..SettingsList.BACKGROUND_IMAGE.after)
-		Settings.Background = AquaShine.LoadImage(string.format("image/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
+		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
 	end
 
 	--Other
 end
 
-local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
-local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
 function printSettings()
 	--Apply
 	--Button

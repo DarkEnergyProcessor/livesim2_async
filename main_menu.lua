@@ -4,16 +4,18 @@ local MainMenu = {}
 
 local selection_image = AquaShine.LoadImage("image/s_button_03.png")
 local selection_image_se = AquaShine.LoadImage("image/s_button_03se.png")
-local background = AquaShine.LoadImage("image/liveback_2.png")
-local MTLMr3m = AquaShine.LoadFont("MTLmr3m.ttf", 30)
-local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 72)
+local background = AquaShine.LoadImage("assets/image/background/liveback_2.png")
 local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
 local mouse_data = {false, 0, 0}	-- click?, x click, y click
+
+local MTLMr3m = AquaShine.LoadFont("MTLmr3m.ttf", 30)
+local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 72)
+local ReleaseFont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
 
 local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
 	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end, nil, 0},
-	{"Edit Units", function() --[[AquaShine.LoadEntryPoint("unit_selection.lua")]] end, nil, 0},
+	{"Change Units", function() AquaShine.LoadEntryPoint("unit_editor.lua") end, nil, 0},
 	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end, nil, 0},
 	{"Exit", love.event.quit, nil, 0}
 }
@@ -23,8 +25,6 @@ function MainMenu.Start()
 	for i = 1, #menu_select do
 		menu_select[i][3] = 120 + i * 80
 	end
-	
-	love.graphics.setFont(MTLMr3m)
 end
 
 function MainMenu.Update(deltaT)
@@ -34,10 +34,11 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
-local versionText = "DEPLS2 rel "..DEPLS_VERSION.." running "..(jit and jit.version or _VERSION)
+local versionText = "livesim2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader"
 function MainMenu.Draw(deltaT)
 	-- Draw background
 	draw(background, 0, 0)
+	setFont(MTLMr3m)
 	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
@@ -57,12 +58,14 @@ function MainMenu.Draw(deltaT)
 	setColor(0, 0, 0, 127)
 	drawtext("Live Simulator: 2", 282, 80)
 	drawtext("Live Simulator: 2", 279, 77)
-	setColor(255, 255, 255, 255)
+	setColor(255, 255, 255)
 	drawtext("Live Simulator: 2", 280, 78)
-	setColor(64, 64, 255, 255)
-	setFont(MTLMr3m)
-	drawtext(versionText, 3, 608)
-	setColor(255, 255, 255, 255)
+	setFont(ReleaseFont)
+	setColor(0, 0, 0)
+	drawtext(versionText, 3, 607)
+	setColor(255, 255, 255)
+	drawtext(versionText, 2, 606)
+	setColor(255, 255, 255)
 end
 
 function MainMenu.MousePressed(x, y, button, touch_id)

@@ -1,7 +1,6 @@
--- DEPLS2 ls2 beatmap loader
--- Part of DEPLS2
+-- Live Simulator: 2 beatmap loader
+-- Part of Live Simulator: 2
 
-local bit = require("bit")
 local ls2 = require("ls2")
 
 local LS2Beatmap = {

@@ -1,13 +1,13 @@
--- DEPLS2 bootstrap code with AquaShine
--- Info for AquaShine
--- AquaShine is a entry point handler/loader specially written for DEPLS2.
--- Since AquaShine is special for DEPLS2, it's not available as standalone Lua script.
+-- Live Simulator: 2 bootstrap code with AquaShine
+-- AquaShine is a entry point handler/loader specially written for Live Simulator: 2.
+-- Since AquaShine is special for Live Simulator: 2, it's not available as standalone Lua script.
+-- Please see docs/AquaShine.md for more information.
 
-DEPLS_VERSION = "20170501"
+DEPLS_VERSION = "20170505"
 
--------------------------
--- AquaShine bootstrap --
--------------------------
+----------------------
+-- AquaShine loader --
+----------------------
 AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 	Entries = {
 		livesim = {1, "livesim.lua"},
@@ -19,8 +19,7 @@ AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 		render = {3, "render_livesim.lua"},
 		
 		-- For debugging purpose
-		unit_select = {0, "unit_selection.lua"},
-		errhand = {1, "AquaShineErrorHandler.lua"},
+		unit_select = {0, "unit_selection.lua"}
 	},
 	DefaultEntry = "main_menu",
 	Width = 960,	-- Letterboxing
@@ -79,6 +78,7 @@ Yohane.Init(love.filesystem.load)
 ----------------------------
 -- Force Create Directory --
 ----------------------------
-love.filesystem.createDirectory("audio")
-love.filesystem.createDirectory("beatmap")
-love.filesystem.createDirectory("screenshots")
+assert(love.filesystem.createDirectory("audio"), "Failed to create directory")
+assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory")
+assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory")
+assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory")
