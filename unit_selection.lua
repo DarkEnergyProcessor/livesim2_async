@@ -190,8 +190,7 @@ function UnitSelect.MouseReleased(x, y, button)
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		-- Exit unit editor
-		-- TODO: Save changes
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint("unit_editor.lua")
 		return
 	elseif x >= 0 and x < 32 and y >= 288 and y < 344 then
 		-- Previous
@@ -202,8 +201,12 @@ function UnitSelect.MouseReleased(x, y, button)
 	elseif x >= 32 and y >= 60 and x < 928 and y < 572 then
 		-- Select
 		CurrentSelectedCardIdx = (math.floor((x - 32) / 128) * 4 + math.floor((y - 60) / 128) % 4) + UnitSelect.CurrentPage * 28 + 1
+		
+		if not(UnitSelect.UnitList[CurrentSelectedCardIdx]) then
+			CurrentSelectedCardIdx = 0
+		end
 	elseif  x >= 772 and x < 916 and y >= 576 and y < 634 and CurrentSelectedCardIdx > 0 then
-		print("Unit selected", CurrentSelectedCardIdx)
+		AquaShine.LoadEntryPoint("unit_editor.lua", {UnitSelect.UnitList[CurrentSelectedCardIdx]})
 	else
 		CurrentSelectedCardIdx = 0
 	end

@@ -41,12 +41,19 @@ function UnitEditor.Start(arg)
 		UnitEditor.State = {Changed = {}}
 		
 		for w in units:gmatch("[^\t]+") do
-			UnitEditor.State[i] = load_image(w)
+			local temp = {}
+			temp.Image = load_image(w)
+			temp.Filename = w
 			
+			UnitEditor.State[i] = temp
 			i = i - 1
 		end
 		
 		_G.SavedUnitEditorState = UnitEditor.State
+	end
+	
+	if type(arg[1]) == "table" then
+		UnitEditor.State.Changed[UnitEditor.State.LastSelIdx] = arg[1]
 	end
 end
 
@@ -70,9 +77,9 @@ function UnitEditor.Draw()
 		local a = IdolPosition[i]
 		
 		if UnitEditor.State.Changed[i] then
-			love.graphics.draw(UnitEditor.State.Changed[i], IdolPosition[i][1], IdolPosition[i][2])
+			love.graphics.draw(UnitEditor.State.Changed[i].Image, IdolPosition[i][1], IdolPosition[i][2])
 		else
-			love.graphics.draw(UnitEditor.State[i], IdolPosition[i][1], IdolPosition[i][2])
+			love.graphics.draw(UnitEditor.State[i].Image, IdolPosition[i][1], IdolPosition[i][2])
 		end
 			
 		if distance(MouseState[1] - a[1] - 64, MouseState[2] - a[2] - 64) <= 64 then
@@ -84,6 +91,12 @@ function UnitEditor.Draw()
 	
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Change Units", 95, 13)
+	love.graphics.print("Click unit icon to change.", 337, 160)
+	love.graphics.print("Please note that some storyboard", 304, 182)
+	love.graphics.print("can override unit icon shown in here", 282, 204)
+	
+	-- TODO: Draw OK button @ 756x556
+	-- TODO: Draw Cancel button @ 60x556
 end
 
 function UnitEditor.MousePressed(x, y, button)
@@ -102,6 +115,17 @@ function UnitEditor.MouseReleased(x, y, button)
 	
 	MouseState[1], MouseState[2] = x, y
 	MouseState[3] = false
+	
+	for i = 1, 9 do
+		local a = IdolPosition[i]
+		
+		if distance(x - a[1] - 64, y - a[2] - 64) <= 64 then
+			UnitEditor.State.LastSelIdx = i
+			AquaShine.LoadEntryPoint("unit_selection.lua", {(UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename})
+			
+			return
+		end
+	end
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		-- Discard changes
