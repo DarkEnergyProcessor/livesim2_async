@@ -4,7 +4,7 @@ local AboutScreen = {}
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
 local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
-local Background = AquaShine.LoadImage("image/liveback_12.png")
+local Background = AquaShine.LoadImage("assets/image/background/liveback_12.png")
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
 Written By:		AuahDark

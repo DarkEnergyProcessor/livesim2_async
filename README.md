@@ -1,10 +1,9 @@
 Live Simulator: 2
 =================
 
-Live Simulator: 2 (previously named DEPLS, pronounced **Deep Less**) is a Love Live! School Idol Festival Live Show
-Simulator written in Lua meant to be run under LOVE2D framework.
+Live Simulator: 2 (`DEPLS2`) is a Love Live! School Idol Festival Live Show Simulator written in Lua.
 
-You need LOVE2D v0.10.1 or above to run this live simulator.
+LOVE2D v0.10.1 or later is required to run this live simulator.
 
 How to run
 ==========
@@ -24,6 +23,8 @@ Beatmap name and audio name must match, but the extension doesn't need to, and w
 
 Save directory can be seen if `lovec` is invoked (in Windows) or running `love` from terminal (Ubuntu and Mac OS X)
 
+Alternatively for Windows, simply download executable from Releases tab above.
+
 Status
 ======
 
@@ -31,6 +32,25 @@ You can play with keyboard or just view beatmap, although installing beatmaps is
 
 At the moment, only desktop operating system are supported (Windows, Mac OS X, and Ubuntu).
 Running it under Android is possible, but the audio delay is unacceptable, and will refuse to run under iOS
+
+Components
+==========
+
+Live Simulator: 2 uses these external libraries to run:
+
+* [Yohane Playground Flash Abstraction](https://github.com/MikuAuahDark/Yohane)
+
+* [Shelsha Playground Texture Bank Loader](https://github.com/MikuAuahDark/Shelsha)
+
+* [LuaBit](http://luaforge.net/projects/bit/) (when running under Lua 5.1)
+
+* [tween.lua](https://github.com/kikito/tween.lua) (for most animations)
+
+* [JSON.lua](http://regex.info/blog/lua/json) (to load SIF and LLP beatmap)
+
+Components special for Live Simulator: 2:
+
+* AquaShine Loader (base/core component that runs Live Simulator: 2). Please see `docs/AquaShine.md` for more information about this component.
 
 Controls
 ========

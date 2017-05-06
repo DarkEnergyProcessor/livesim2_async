@@ -146,6 +146,8 @@ DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua
 DEPLS.Routines.LiveClearAnim = assert(love.filesystem.load("livesim/live_clear.lua"))(DEPLS)
 -- Image cover preview routines. Takes 3167ms to complete.
 DEPLS.Routines.CoverPreview = assert(love.filesystem.load("livesim/cover_art.lua"))(DEPLS)
+-- Skill popups management
+DEPLS.Routines.SkillPopups = assert(love.filesystem.load("livesim/skill_popups.lua"))(DEPLS, AquaShine)
 
 --------------------------------
 -- Another public functions   --
@@ -464,6 +466,8 @@ end
 function DEPLS.StoryboardFunctions.IsRenderingMode()
 	return not(not(DEPLS.RenderingMode))
 end
+
+DEPLS.StoryboardFunctions.SkillPopup = DEPLS.Routines.SkillPopups.Spawn
 
 -----------------------------
 -- The Live simuator logic --
@@ -787,6 +791,7 @@ function DEPLS.Update(deltaT)
 		Routines.ScoreEclipseF.Update(deltaT)
 		Routines.ScoreUpdate.Update(deltaT)
 		Routines.ScoreBar.Update(deltaT)
+		Routines.SkillPopups.Update(deltaT)
 		Routines.PerfectNode.Update(deltaT)
 		
 		EffectPlayer.Update(deltaT)
@@ -857,6 +862,9 @@ function DEPLS.Draw(deltaT)
 		for i = 1, #Images.StaminaRelated.DrawTarget do
 			love.graphics.draw(Images.StaminaRelated.DrawTarget[i], 290 + 16 * i, 66)
 		end
+		
+		-- Draw cut-in
+		Routines.SkillPopups.Draw()
 		
 		-- Draw idol unit
 		local IdolData = DEPLS.IdolImageData

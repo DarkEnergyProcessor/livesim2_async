@@ -15,6 +15,8 @@ local Font
 local dummy_image
 local com_win_02
 local com_button_01, com_button_01se
+local com_button_14, com_button_14se
+local com_button_15, com_button_15se
 
 local function load_image(w)
 	local x, r = pcall(love.graphics.newImage, "unit_icon/"..w)
@@ -26,6 +28,17 @@ local function distance(a, b)
 	return math.sqrt(a ^ 2 + b ^ 2)
 end
 
+local function applyChanges()
+	local filelist = {}
+	
+	for i = 9, 1, -1 do
+		filelist[#filelist + 1] = (UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename
+	end
+	
+	AquaShine.SaveConfig("IDOL_IMAGE", table.concat(filelist, "\t"))
+	print("Units saved")
+end
+
 function UnitEditor.Start(arg)
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	love.graphics.setFont(Font)
@@ -34,6 +47,10 @@ function UnitEditor.Start(arg)
 	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
 	com_button_01 = AquaShine.LoadImage("image/com_button_01.png")
 	com_button_01se = AquaShine.LoadImage("image/com_button_01se.png")
+	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
+	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
+	com_button_15 = AquaShine.LoadImage("assets/image/ui/com_button_15.png")
+	com_button_15se = AquaShine.LoadImage("assets/image/ui/com_button_15se.png")
 	
 	if not(UnitEditor.State) then
 		local i = 9
@@ -76,11 +93,7 @@ function UnitEditor.Draw()
 	for i = 1, 9 do
 		local a = IdolPosition[i]
 		
-		if UnitEditor.State.Changed[i] then
-			love.graphics.draw(UnitEditor.State.Changed[i].Image, IdolPosition[i][1], IdolPosition[i][2])
-		else
-			love.graphics.draw(UnitEditor.State[i].Image, IdolPosition[i][1], IdolPosition[i][2])
-		end
+		love.graphics.draw((UnitEditor.State.Changed[i] or UnitEditor.State[i]).Image, IdolPosition[i][1], IdolPosition[i][2])
 			
 		if distance(MouseState[1] - a[1] - 64, MouseState[2] - a[2] - 64) <= 64 then
 			love.graphics.setColor(255, 255, 255, 96)
@@ -89,14 +102,34 @@ function UnitEditor.Draw()
 		end
 	end
 	
+	if MouseState[3] then
+		local x, y = MouseState[1], MouseState[2]
+		
+		if x >= 60 and x < 204 and y >= 556 and y < 614 then
+			love.graphics.draw(com_button_15se, 60, 556)
+		else
+			love.graphics.draw(com_button_15, 60, 556)
+		end
+		
+		if x >= 756 and x < 900 and y >= 556 and y < 614 then
+			love.graphics.draw(com_button_14se, 756, 556)
+		else
+			love.graphics.draw(com_button_14, 756, 556)
+		end
+	else
+		love.graphics.draw(com_button_15, 60, 556)
+		love.graphics.draw(com_button_14, 756, 556)
+	end
+	
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Change Units", 95, 13)
 	love.graphics.print("Click unit icon to change.", 337, 160)
-	love.graphics.print("Please note that some storyboard", 304, 182)
+	love.graphics.print("Please note that some beatmap", 320.5, 182)
 	love.graphics.print("can override unit icon shown in here", 282, 204)
-	
-	-- TODO: Draw OK button @ 756x556
-	-- TODO: Draw Cancel button @ 60x556
+	love.graphics.print("Press OK to apply changes,", 337, 276)
+	love.graphics.print("Cancel to discard any changes", 320.5, 298)
+	love.graphics.print("Back to discard any changes and back to", 265.5, 320)
+	love.graphics.print("Live Simulator: 2 main menu", 331.5, 342)
 end
 
 function UnitEditor.MousePressed(x, y, button)
@@ -128,11 +161,18 @@ function UnitEditor.MouseReleased(x, y, button)
 	end
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
-		-- Discard changes
+		-- Discard changes and back
 		_G.SavedUnitEditorState = nil
 		AquaShine.LoadEntryPoint("main_menu.lua")
 		
 		return
+	elseif x >= 60 and x < 204 and y >= 556 and y < 614 then
+		-- Cancel. Discard changes
+		for i = 1, 9 do
+			UnitEditor.State.Changed[i] = nil
+		end
+	elseif x >= 756 and x < 900 and y >= 556 and y < 614 then
+		applyChanges()
 	end
 end
 

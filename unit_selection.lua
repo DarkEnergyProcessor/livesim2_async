@@ -34,11 +34,13 @@ function UnitSelect.Start(arg)
 			
 			if temp.Image:getWidth() == 128 and temp.Image:getHeight() == 128 then
 				UnitSelect.UnitList[#UnitSelect.UnitList + 1] = temp
+				
+				if temp.Filename == arg[1] then
+					CurrentSelectedCardIdx = #UnitSelect.UnitList
+					UnitSelect.CurrentPage = math.floor(CurrentSelectedCardIdx / 28)
+				end
 			end
 			
-			if temp.Filename == arg[1] then
-				CurrentSelectedCardIdx = #UnitSelect.UnitList
-			end
 		end
 	end
 	
