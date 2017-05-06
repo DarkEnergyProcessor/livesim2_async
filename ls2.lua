@@ -170,7 +170,7 @@ local function process_BMPT(stream)
 				elseif is_star and not(is_token) then
 					effect_new = 4
 				elseif is_star and is_token then
-					assert(false, "Invalid note effect bits")
+					effect_new = 11
 				end
 			end
 			

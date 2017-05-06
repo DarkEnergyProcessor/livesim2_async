@@ -50,7 +50,8 @@ function SkillPopups.IdolEffect.Create(unit_pos, image)
 	local info = {Opacity = 255, Scale = 0.2}
 	
 	out.Status = info
-	out.Tween = tween.new(700, info, {Opacity = 0, Scale = 4})
+	out.Tween = tween.new(700, info, {Opacity = 0}, "inCubic")
+	out.Tween2 = tween.new(700, info, {Scale = 4})
 	out.Image = image
 	out.X, out.Y = unpack(DEPLS.IdolPosition[unit_pos])
 	out.X, out.Y = out.X + 64, out.Y + 64
@@ -59,7 +60,7 @@ function SkillPopups.IdolEffect.Create(unit_pos, image)
 end
 
 function SkillPopups.IdolEffect.Update(out, deltaT)
-	return out.Tween:update(deltaT)
+	return out.Tween:update(deltaT) or out.Tween2:update(deltaT)
 end
 
 function SkillPopups.IdolEffect.Draw(out)

@@ -1,5 +1,4 @@
---! @file livesim.lua
--- DEPLS, playable version
+-- Live Simulator: 2, enhanced version of DEPLS!
 -- Copyright © 2038 Dark Energy Processor
 
 local love = love
@@ -125,29 +124,31 @@ end
 ------------------------
 
 -- Circletap aftertap effect namespace
-DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS)
+DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS, AquaShine)
 -- Combo counter effect namespace
-DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS)
+DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS, AquaShine)
 -- Tap accuracy display routine
-DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/perfectnode.lua"))(DEPLS)
+DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/perfectnode.lua"))(DEPLS, AquaShine)
 -- Score flash animation routine
-DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS)
+DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS, AquaShine)
 -- Note icon (note spawn pos) animation
-DEPLS.Routines.NoteIcon = assert(love.filesystem.load("livesim/noteicon.lua"))(DEPLS)
+DEPLS.Routines.NoteIcon = assert(love.filesystem.load("livesim/noteicon.lua"))(DEPLS, AquaShine)
 -- Score display routine
-DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("livesim/scoreupdate.lua"))(DEPLS)
+DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("livesim/scoreupdate.lua"))(DEPLS, AquaShine)
 -- Score bar routine. Depends on score display
-DEPLS.Routines.ScoreBar = assert(love.filesystem.load("livesim/scorebar.lua"))(DEPLS)
+DEPLS.Routines.ScoreBar = assert(love.filesystem.load("livesim/scorebar.lua"))(DEPLS, AquaShine)
 -- Added score, update routine effect
-DEPLS.Routines.ScoreNode = assert(love.filesystem.load("livesim/scorenode_effect.lua"))(DEPLS)
+DEPLS.Routines.ScoreNode = assert(love.filesystem.load("livesim/scorenode_effect.lua"))(DEPLS, AquaShine)
 -- Spot effect
-DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua"))(DEPLS)
+DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua"))(DEPLS, AquaShine)
 -- Live show complete animation routine (incl. FULLCOMBO)
-DEPLS.Routines.LiveClearAnim = assert(love.filesystem.load("livesim/live_clear.lua"))(DEPLS)
+DEPLS.Routines.LiveClearAnim = assert(love.filesystem.load("livesim/live_clear.lua"))(DEPLS, AquaShine)
 -- Image cover preview routines. Takes 3167ms to complete.
-DEPLS.Routines.CoverPreview = assert(love.filesystem.load("livesim/cover_art.lua"))(DEPLS)
+DEPLS.Routines.CoverPreview = assert(love.filesystem.load("livesim/cover_art.lua"))(DEPLS, AquaShine)
 -- Skill popups management
 DEPLS.Routines.SkillPopups = assert(love.filesystem.load("livesim/skill_popups.lua"))(DEPLS, AquaShine)
+-- Starry background (combo cheer)
+DEPLS.Routines.ComboCheer = assert(love.filesystem.load("livesim/combo_cheer.lua"))(DEPLS, AquaShine)
 
 --------------------------------
 -- Another public functions   --
@@ -469,6 +470,11 @@ end
 
 DEPLS.StoryboardFunctions.SkillPopup = DEPLS.Routines.SkillPopups.Spawn
 
+--! @brief Allow combo cheer/star effects in the background
+function DEPLS.StoryboardFunctions.AllowComboCheer()
+	DEPLS.ComboCheerForced = true
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -785,6 +791,11 @@ function DEPLS.Update(deltaT)
 		-- Update note
 		DEPLS.NoteManager.Update(deltaT)
 		
+		-- Update combo cheer if no storyboard or storyboard allows it
+		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
+			Routines.ComboCheer.Update(deltaT)
+		end
+		
 		-- Update routines
 		Routines.ComboCounter.Update(deltaT)
 		Routines.NoteIcon.Update(deltaT)
@@ -853,6 +864,11 @@ function DEPLS.Draw(deltaT)
 	end
 		
 	if AllowedDraw then
+		-- Draw combo cheer at first
+		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
+			Routines.ComboCheer.Draw()
+		end
+		
 		-- Draw header
 		setColor(255, 255, 255, DEPLS.LiveOpacity)
 		draw(Images.Header, 0, 0)
@@ -860,7 +876,7 @@ function DEPLS.Draw(deltaT)
 		
 		draw(Images.StaminaRelated.Bar, 14, 60)
 		for i = 1, #Images.StaminaRelated.DrawTarget do
-			love.graphics.draw(Images.StaminaRelated.DrawTarget[i], 290 + 16 * i, 66)
+			draw(Images.StaminaRelated.DrawTarget[i], 290 + 16 * i, 66)
 		end
 		
 		-- Draw cut-in

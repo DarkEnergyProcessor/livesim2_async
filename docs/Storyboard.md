@@ -235,24 +235,36 @@ Check for current rendering type.
 
 Returns: `true` if currently in rendering mode (offline drawing), `false` if currently in live mode (online drawing).
 
-Additional Storyboard Functions
-===============================
-
-These functions were declared as global function in DEPLS, thus it also can be used in storyboards too
-
 *************************************************
 
-### `number,number,number HSL(number h, number s, number l)`
+### `void SkillPopup(unit_pos, name, title[, navi[, rarity[, audio[, force]]]])`
+
+Shows skill cut-in
 
 Parameters:
 
-* `h`
+* `unit_pos` - The unit position which one that triggers the skill
 
-* `s`
+* `name` - The unit position effect color name
 
-* `l`
+* `title` - Cut-in skill name
 
-Returns: R, G, and B color (3 values)
+* `navi` - Transparent image of the cut-in
+
+* `rarity` - Unit rarity. This determines the direction
+
+* `audio` - Unit skill activation audio
+
+* `force` - Always shows even if there's one in progress?
+
+*************************************************
+
+### `void AllowComboCheer()`
+
+Allows star effects (combo cheer) to be drawn in the background. By default, beatmap with storyboard won't have combo cheer
+drawn by default.
+
+> This function can only be called inside `Initialize` function.
 
 Storyboard Callback Functions
 =============================
