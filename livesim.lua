@@ -149,6 +149,8 @@ DEPLS.Routines.CoverPreview = assert(love.filesystem.load("livesim/cover_art.lua
 DEPLS.Routines.SkillPopups = assert(love.filesystem.load("livesim/skill_popups.lua"))(DEPLS, AquaShine)
 -- Starry background (combo cheer)
 DEPLS.Routines.ComboCheer = assert(love.filesystem.load("livesim/combo_cheer.lua"))(DEPLS, AquaShine)
+-- Result screen
+DEPLS.Routines.ResultScreen = assert(love.filesystem.load("livesim/reward.lua"))(DEPLS, AquaShine)
 
 --------------------------------
 -- Another public functions   --
@@ -954,6 +956,17 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	-- Send unset touch message
 	TouchTracking[touch_id] = nil
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
+	
+	if DEPLS.Routines.ResultScreen.CanExit then
+		if DEPLS.Sound.LiveAudio then
+			DEPLS.Sound.LiveAudio:stop()
+		end
+		
+		-- Unmount
+		AquaShine.MountZip()
+		-- Back
+		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
+	end
 end
 
 function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
@@ -994,8 +1007,9 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 				DEPLS.Sound.LiveAudio:stop()
 			end
 			
+			-- Unmount
+			AquaShine.MountZip()
 			-- Back
-			AquaShine.MountZip()	-- Unmount
 			AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then
