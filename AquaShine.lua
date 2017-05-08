@@ -189,6 +189,33 @@ function AquaShine.LoadAudio(path, noorder)
 	if _ == false then return nil, token_image
 	else return token_image end
 end
+
+--! @brief Creates new image with specificed position from specificed lists of layers
+--! @param w Resulted generated image width
+--! @param h Resulted generated image height
+--! @param layers Lists of love.graphics.* calls in format {love.graphics.*, ...}
+--! @param imagedata Returns ImageData instead of Image object?
+--! @returns New Image/ImageData object
+function AquaShine.ComposeImage(w, h, layers, imagedata)
+	local canvas = love.graphics.newCanvas(w, h)
+	
+	love.graphics.push("all")
+	love.graphics.setCanvas(canvas)
+	
+	for i = 1, #layers do
+		table.remove(layers[i], 1)(unpack(layers[i]))
+	end
+	
+	love.graphics.pop()
+	
+	local id = canvas:newImageData()
+	
+	if imagedata then
+		return id
+	else
+		return love.graphics.newImage(id)
+	end
+end
 ----------------------------
 -- AquaShine Font Caching --
 ----------------------------

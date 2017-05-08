@@ -12,7 +12,7 @@ local IdolPosition = {	-- Idol position. 9 is leftmost
 
 local Font
 
-local dummy_image
+local dummy_image = AquaShine.LoadImage("image/dummy.png")
 local com_win_02
 local com_button_01, com_button_01se
 local com_button_14, com_button_14se
@@ -43,7 +43,6 @@ function UnitEditor.Start(arg)
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	love.graphics.setFont(Font)
 	
-	dummy_image = AquaShine.LoadImage("image/dummy.png")
 	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
 	com_button_01 = AquaShine.LoadImage("image/com_button_01.png")
 	com_button_01se = AquaShine.LoadImage("image/com_button_01se.png")

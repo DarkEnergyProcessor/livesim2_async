@@ -46,6 +46,7 @@ end
 function ResultScreen.Draw()
 	if not(combo) then return end
 	
+	love.graphics.setFont(Font)
 	love.graphics.setColor(0, 0, 0, Status.Opacity * 0.75)
 	love.graphics.rectangle("fill", -88, -43, 1136, 726)
 	love.graphics.setColor(255, 255, 255, Status.Opacity)

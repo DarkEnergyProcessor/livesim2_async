@@ -18,6 +18,184 @@ local position_translation = {
 	R4 = 1
 }
 
+local CompositionCache = {}
+local UnitIconCache = {
+	HONOKA_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_4.png"),
+	HONOKA_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game_3.png"),
+	KOTORI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_3.png"),
+	KOTORI_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game_2.png"),
+	MAKI_CIRCUS = AquaShine.LoadImage("assets/image/cbf/02_circus_unidolized_game.png"),
+	MAKI_CIRCUS_IDOL = AquaShine.LoadImage("assets/image/cbf/02_circus_idolized_game.png"),
+	HANAMARU_SWIMSUIT = AquaShine.LoadImage("assets/image/cbf/01_Swimsuit_Unidolized_game.png"),
+	HANAMARU_SWIMSUIT_IDOL = AquaShine.LoadImage("assets/image/cbf/01_Swimsuit_Idolized_game.png"),
+	HANAMARU_INITIAL = AquaShine.LoadImage("assets/image/cbf/01_Initial_Unidolized_game.png"),
+	HANAMARU_INITIAL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_Initial_Idolized_game.png"),
+	ELI_THIEF = AquaShine.LoadImage("assets/image/cbf/02_thief_unidolized_game.png"),
+	ELI_THIEF_IDOL = AquaShine.LoadImage("assets/image/cbf/02_thief_idolized_game.png"),
+	-- TODO: Complete it
+}
+local IconCache = {
+	None = {
+		UR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleUREmpty.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURSmile_empty.png")
+		},
+		["UR (Old)"] = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURCustom_Old.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURSmile_empty.png")
+		},
+		SR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSR_Custom.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4circleSR_Custom_fore.png")
+		},
+		R = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleR_Custom.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4circleR_Custom_fore.png")
+		},
+	},
+	Smile = {
+		UR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURSmile.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURSmile.png")
+		},
+		["UR (Old)"] = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURSmile_Old.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURSmile.png")
+		},
+		SSR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSSRSmile.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRSmileIdolized.png")
+		},
+		SR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSRSmile.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRSmileIdolized.png")
+		},
+	},
+	Pure = {
+		UR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURPure.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURPure.png")
+		},
+		["UR (Old)"] = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURPure_Old.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURPure.png")
+		},
+		SSR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSSRPure.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRPureIdolized.png")
+		},
+		SR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSRPure.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRPureIdolized.png")
+		},
+	},
+	Cool = {
+		UR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURCool.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURCool.png")
+		},
+		["UR (Old)"] = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleURCool_Old.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreURCool.png")
+		},
+		SSR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSSRCool.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRCoolIdolized.png")
+		},
+		SR = {
+			AquaShine.LoadImage("assets/image/cbf/star4circleSRCool.png"),
+			AquaShine.LoadImage("assets/image/cbf/star4foreSRCoolIdolized.png")
+		},
+	},
+}
+local function ComposeUnitImage(color_type, rarity, chara_name, r, g, b)
+	-- chara_name can be nil
+	-- r, g, b are in float
+	if chara_name and #chara_name == 0 then chara_name = nil end
+	
+	local cl = {}
+	local da
+	local img
+	
+	if color_type == "Custom" then
+		da = IconCache.None
+		img = assert(da[rarity], "Invalid rarity")
+		
+		cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
+		cl[#cl + 1] = {love.graphics.draw, img[2]}
+		
+		if chara_name and UnitIconCache[chara_name] then
+			cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
+			cl[#cl + 1] = {love.graphics.draw, UnitIconCache[chara_name]}
+			cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
+		end
+		
+		cl[#cl + 1] = {love.graphics.draw, img[1]}
+	else
+		da = assert(IconCache[color_type], "Invalid attribute")
+		img = assert(da[rarity], "Invalid rarity")
+		
+		cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
+		cl[#cl + 1] = {love.graphics.draw, img[2]}
+		
+		if chara_name and UnitIconCache[chara_name] then
+			cl[#cl + 1] = {love.graphics.draw, UnitIconCache[chara_name]}
+		end
+		
+		cl[#cl + 1] = {love.graphics.draw, img[1]}
+	end
+	
+	return AquaShine.ComposeImage(128, 128, cl)
+end
+
+-- Look at "Cards" folder for custom cards
+local function LoadUnitStrategy1(file)
+	if love.filesystem.isDirectory(file[1].."/Cards") then
+		setmetatable(UnitIconCache, {
+			__index = function(_, var)
+				local name = file[1].."/Cards/"..var..".png"
+				
+				if love.filesystem.isFile(name) then
+					local x = love.graphics.newImage(name)
+					
+					UnitIconCache[var] = x
+					return x
+				end
+				
+				return nil
+			end
+		})
+		
+		return true
+	end
+	
+	return false
+end
+
+-- Look at "Custom Cards" folder and read list.txt
+local function LoadUnitStrategy2(file)
+	local listname = file[1].."/Custom Cards/list.txt"
+	if
+		love.filesystem.isDirectory(file[1].."/Custom Cards") and
+		love.filesystem.isFile(listname)
+	then
+		for line in love.filesystem.lines(listname) do
+			if #line > 0 then
+				local idx, name = line:match("(%d+)/([^;]+)")
+				local _, img = pcall(love.graphics.newImage, file[1].."/Custom Cards/"..idx..".png")
+				
+				if _ then
+					UnitIconCache[name] = img
+				end
+			end
+		end
+		
+		return true
+	end
+	
+	return false
+end
+
 --! @brief Check if specificed beatmap is CBF beatmap
 --! @param file Table contains:
 --!        - path relative to DEPLS save dir
@@ -138,7 +316,7 @@ function CBFBeatmap.Load(file)
 				})
 			end
 		else
-			print("Ignored", line)
+			io.write("Ignored", line, "\n")
 		end
 	end
 
@@ -172,10 +350,55 @@ function CBFBeatmap.Load(file)
 		end
 	end
 	
-	-- Get units
-	local units_ext = {"png", "txt"}
+	-- Load units
 	local units = {}
 	local has_custom_units = false
+	local charposname = file[1].."/characterPositions.txt"
+	
+	if love.filesystem.isFile(charposname) then
+		-- Initialize units image
+		if not(LoadUnitStrategy1(file) or LoadUnitStrategy2(file)) then
+			-- If loading from "Cards" folder and "Custom Cards" folder fails,
+			-- Load in current beatmap directory instead
+			setmetatable(UnitIconCache, {
+				__index = function(_, var)
+					local name = file[1].."/"..var..".png"
+					
+					if love.filesystem.isFile(name) then
+						local x = love.graphics.newImage(name)
+						
+						UnitIconCache[var] = x
+						return x
+					end
+					
+					return nil
+				end
+			})
+		end
+		
+		local i = 0
+		for line in love.filesystem.lines(charposname) do
+			if #line > 0 then
+				i = i + 1
+				
+				local cache_name = line:sub(line:find("/") + 1)
+				
+				if CompositionCache[cache_name] then
+					units[i] = CompositionCache[cache_name]
+					has_custom_units = true
+				else
+					local attr, rar, cname, r, g, b, cust_char = line:match("[^/]+/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/([False|True]+);")
+					local a = ComposeUnitImage(attr, rar, cust_char == "True" and cname, r, g, b)
+					
+					units[i] = a
+					CompositionCache[cache_name] = a
+					has_custom_units = true
+				end
+			end
+		end
+	end
+	--[[
+	local units_ext = {"png", "txt"}
 	
 	for i = 1, 9 do
 		for j = 1, 2 do
@@ -188,6 +411,7 @@ function CBFBeatmap.Load(file)
 			end
 		end
 	end
+	]]
 	
 	-- Result
 	local out = {
