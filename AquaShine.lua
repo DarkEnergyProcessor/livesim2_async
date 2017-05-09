@@ -16,10 +16,7 @@ local AquaShine = {
 }
 
 local love = require("love")
-local JSON = require("JSON")
-local Yohane = require("Yohane")
 local Shelsha = require("Shelsha")
-local SkipCall = 0
 
 local ScreenshotThreadCode = [[
 local lt = require("love.timer")
@@ -135,15 +132,15 @@ function AquaShine.LoadConfig(key, defval)
 	return tonumber(data) or data
 end
 
+local TemporaryEntryPoint
 --! @brief Loads entry point
 --! @param name The entry point Lua script file
 --! @param arg Additional argument to be passed
 function AquaShine.LoadEntryPoint(name, arg)
 	local scriptdata = assert(love.filesystem.load(name))()
 	scriptdata.Start(arg or {})
-	AquaShine.CurrentEntryPoint = scriptdata
-	
-	SkipCall = 1
+	--AquaShine.CurrentEntryPoint = scriptdata
+	TemporaryEntryPoint = scriptdata
 end
 
 --! Function used to replace extension on file
@@ -319,6 +316,12 @@ end
 ------------------------------
 function AquaShine.MainLoop()
 	while true do
+		-- Switch entry point
+		if TemporaryEntryPoint then
+			AquaShine.CurrentEntryPoint = TemporaryEntryPoint
+			TemporaryEntryPoint = nil
+		end
+		
 		-- Process events.
 		love.event.pump()
 		for name, a,b,c,d,e,f in love.event.poll() do
@@ -338,18 +341,14 @@ function AquaShine.MainLoop()
 			love.graphics.clear()
 			
 			if AquaShine.CurrentEntryPoint then
-				if SkipCall == 0 then
-					dt = dt * 1000
-					AquaShine.CurrentEntryPoint.Update(dt)
-					love.graphics.push()
-					
-					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-					AquaShine.CurrentEntryPoint.Draw(dt)
-					love.graphics.pop()
-				else
-					SkipCall = SkipCall - 1
-				end
+				dt = dt * 1000
+				AquaShine.CurrentEntryPoint.Update(dt)
+				love.graphics.push()
+				
+				love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+				love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+				AquaShine.CurrentEntryPoint.Draw(dt)
+				love.graphics.pop()
 			else
 				love.graphics.setFont(font)
 				love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)

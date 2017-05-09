@@ -145,8 +145,21 @@ local function NewNoteObject(note_data)
 		end
 		
 		PreviousSlideNote = noteobj			
-	elseif note_data.effect == 3 then
-		PreviousSlideNote = nil
+	elseif note_data.effect == 3 or note_data.effect == 13 then
+		-- Long note (necessarily with swing)
+		if note_data.effect == 13 then
+			noteobj.SlideNote = true
+			
+			if PreviousSlideNote then
+				noteobj.Rotation =
+					(PreviousSlideNote.Position - note_data.position > 0 and 0 or math.pi) + PredefinedSlideRotation[note_data.position]
+				noteobj.PreviousChain = PreviousSlideNote
+				
+				PreviousSlideNote.NextChain = noteobj
+			end
+		else
+			PreviousSlideNote = nil
+		end
 		
 		-- Long note. Use LongNoteObject metatable
 		noteobj.Audio2 = {
@@ -387,7 +400,8 @@ function LongNoteObject.Update(this, deltaT)
 					0, 								-- accuracy (miss)
 					notedistance,					-- distance
 					this.Attribute,					-- attribute
-					this.SimulNoteImage				-- is_simul
+					this.SimulNote,					-- is_simul
+					this.SlideNote					-- is_slide
 				)
 				return
 			end
@@ -434,7 +448,7 @@ function LongNoteObject.Draw(this)
 	
 	setBlendMode("alpha")
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
+	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	-- Draw simultaneous note bar if it is
 	if this.SimulNoteImage then
@@ -491,7 +505,8 @@ function LongNoteObject.SetTouchID(this, touchid)
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			this.SimulNoteImage				-- is_simul
+			this.SimulNote,					-- is_simul
+			this.SlideNote					-- is_slide
 		)
 		
 		return
@@ -539,7 +554,8 @@ function LongNoteObject.SetTouchID(this, touchid)
 			this.ScoreMultipler, 			-- accuracy
 			notedistance,					-- distance
 			this.Attribute,					-- attribute
-			this.SimulNote					-- is_simul
+			this.SimulNote,					-- is_simul
+			this.SlideNote					-- is_slide
 		)
 	end
 end
@@ -610,7 +626,8 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 		this.ScoreMultipler2, 			-- accuracy
 		notedistance,					-- distance
 		this.Attribute,					-- attribute
-		this.SimulNote					-- is_simul
+		this.SimulNote,					-- is_simul
+		this.SlideNote					-- is_slide
 	)
 end
 

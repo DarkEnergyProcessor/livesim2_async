@@ -7,12 +7,11 @@ local CurrentPage = 0
 local BeatmapSelectedIndex = 0
 local MouseState = {X = 0, Y = 0, Pressed = {}}
 
-local com_button_14
-local com_button_14di
-local com_button_14se
+local com_button_14, com_button_14di, com_button_14se
 local com_win_02
-local s_button_03
-local s_button_03se
+local s_button_03, s_button_03se
+local com_button_12, com_button_12se
+local com_button_13, com_button_13se
 local log_etc_08
 local liveback_1
 
@@ -37,6 +36,10 @@ function SelectBeatmap.Start(arg)
 	s_button_03 = AquaShine.LoadImage("image/s_button_03.png")
 	s_button_03se = AquaShine.LoadImage("image/s_button_03se.png")
 	log_etc_08 = AquaShine.LoadImage("assets/image/ui/log_etc_08.png")
+	com_button_12 = AquaShine.LoadImage("assets/image/ui/com_button_12.png")
+	com_button_12se = AquaShine.LoadImage("assets/image/ui/com_button_12se.png")
+	com_button_13 = AquaShine.LoadImage("assets/image/ui/com_button_13.png")
+	com_button_13se = AquaShine.LoadImage("assets/image/ui/com_button_13se.png")
 	
 	liveback_1 = AquaShine.LoadImage("assets/image/background/liveback_1.png")
 	
@@ -76,17 +79,45 @@ function SelectBeatmap.Draw()
 	draw(BackImage, -98, 0)
 	setColor(0, 0, 0)
 	drawtext("Select Beatmap", 95, 13)
+	drawtext(string.format("Page %d", CurrentPage + 1), 52, 500)
 	setColor(255, 255, 255)
 	setFont(MTLmr3m)
 	
+	--[[
 	if
 		MouseState.Pressed[1] and
-		MouseState.X >= 0 and MouseState.X <= 86 and
-		MouseState.Y >= 0 and MouseState.Y <= 58
-	then
-		draw(BackButtonSe)
+	]]
+	if MouseState.Pressed[1] then
+		if
+			MouseState.X >= 0 and MouseState.X <= 86 and
+			MouseState.Y >= 0 and MouseState.Y <= 58
+		then
+			draw(BackButtonSe)
+		else
+			draw(BackButton)
+		end
+		
+		if
+			MouseState.X >= 0 and MouseState.X < 48 and
+			MouseState.Y >= 272 and MouseState.Y < 328
+		then
+			draw(com_button_12se, 0, 272)
+		else
+			draw(com_button_12, 0, 272)
+		end
+		
+		if
+			MouseState.X >= 912 and MouseState.X < 960 and
+			MouseState.Y >= 272 and MouseState.Y < 328
+		then
+			draw(com_button_13se, 912, 272)
+		else
+			draw(com_button_13, 912, 272)
+		end
 	else
 		draw(BackButton)
+		draw(com_button_12, 0, 272)
+		draw(com_button_13, 912, 272)
 	end
 	
 	for i = CurrentPage * 40 + 1, (CurrentPage + 1) * 40 do
@@ -166,13 +197,21 @@ function SelectBeatmap.MouseReleased(x, y, button)
 		then
 			-- Start livesim
 			AquaShine.LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name, Random = IsRandomNotesWasTicked})
+			
 			return
 		elseif
 			x >= 476 and x < 508 and
 			y >= 528 and y < 560
 		then
+			-- Random note check
 			IsRandomNotesWasTicked = not(IsRandomNotesWasTicked)
 			return
+		elseif x >= 0 and x < 48 and y >= 272 and y < 328 then
+			-- Prev
+			CurrentPage = math.max(CurrentPage - 1, 0)
+		elseif x >= 912 and x < 960 and y >= 272 and y < 328 then
+			-- Next
+			CurrentPage = math.min(math.floor(math.max(#BeatmapList - 1, 0) / 40), CurrentPage + 1)
 		end
 	end
 	

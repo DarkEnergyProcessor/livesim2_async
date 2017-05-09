@@ -317,3 +317,5 @@ Parameters:
 * `attribute` - Note attribute. 1, 2, 3 are Smile, Pure, and Cool respectively. The others depends on beatmap type.
 
 * `is_simul` - Is the note is a simultaneous note? (start holding only)
+
+* `is_slide` - Is the note is a slide note?

@@ -583,6 +583,13 @@ function DEPLS.Start(argv)
 	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
 	DEPLS.Sound.LiveClear = noteloader_data.live_clear
 	
+	-- Normalize song volume
+	-- Enabled on LuaJIT by default, disabled on Lua 5.1 by default
+	if noteloader_data.song_file and ((jit and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg")) then
+		require("volume_normalizer")(noteloader_data.song_file)
+	end
+	
+	-- Load background
 	if type(noteloader_data.background) == "number" then
 		BackgroundID = noteloader_data.background
 	elseif type(noteloader_data.background) == "table" then

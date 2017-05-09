@@ -32,7 +32,31 @@ local UnitIconCache = {
 	HANAMARU_INITIAL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_Initial_Idolized_game.png"),
 	ELI_THIEF = AquaShine.LoadImage("assets/image/cbf/02_thief_unidolized_game.png"),
 	ELI_THIEF_IDOL = AquaShine.LoadImage("assets/image/cbf/02_thief_idolized_game.png"),
-	-- TODO: Complete it
+	RIN_ARABIAN = AquaShine.LoadImage("assets/image/cbf/01_arabianSet_unidolized_game.png"),
+	RIN_ARABIAN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_arabianSet_idolized_game.png"),
+	NOZOMI_IDOLSET = AquaShine.LoadImage("assets/image/cbf/01_idolCostumeSet_unidolized_game.png"),
+	NOZOMI_IDOLSET_IDOL = AquaShine.LoadImage("assets/image/cbf/01_idolCostumeSet_idolized_game.png"),
+	NICO_DEVIL = AquaShine.LoadImage("assets/image/cbf/01_devil_unidolized_game.png"),
+	NICO_DEVIL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_devil_idolized_game.png"),
+	UMI_DEVIL = AquaShine.LoadImage("assets/image/cbf/01_devil_unidolized_game_2.png"),
+	HANAYO_TAISHOROMAN = AquaShine.LoadImage("assets/image/cbf/01_taishoRoman_unidolized_game.png"),
+	HANAYO_TAISHOROMAN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_taishoRoman_idolized_game.png"),
+	ELI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game.png"),
+	KANAN_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game.png"),
+	KANAN_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game.png"),
+	YOSHIKO_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game_2.png"),
+	YOSHIKO_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game_3.png"),
+	YOU_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game_3.png"),
+	YOU_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game_2.png"),
+	MAKI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_2.png"),
+	MAKI_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game.png"),
+	RUBY_GOTHIC = AquaShine.LoadImage("assets/image/cbf/01_gothic_unidolized_game.png"),
+	RUBY_GOTHIC_IDOL = AquaShine.LoadImage("assets/image/cbf/01_gothic_idolized_game.png"),
+	YOSHIKO_HALLOWEEN = AquaShine.LoadImage("assets/image/cbf/01_halloween_unidolized_game.png"),
+	YOSHIKO_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game_2.png"),
+	MARI_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game.png"),
+	RIKO_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game_3.png"),
+	HANAMARU_YUKATA = AquaShine.LoadImage("assets/image/cbf/02_yukata_unidolized_game.png")
 }
 local IconCache = {
 	None = {
@@ -181,11 +205,11 @@ local function LoadUnitStrategy2(file)
 	then
 		for line in love.filesystem.lines(listname) do
 			if #line > 0 then
-				local idx, name = line:match("(%d+)/([^;]+)")
+				local idx = line:match("([^/]+)/[^;]+")
 				local _, img = pcall(love.graphics.newImage, file[1].."/Custom Cards/"..idx..".png")
 				
 				if _ then
-					UnitIconCache[name] = img
+					UnitIconCache[idx] = img
 				end
 			end
 		end
@@ -283,7 +307,10 @@ function CBFBeatmap.Load(file)
 			hold_time = tonumber(hold_time)
 			
 			if is_customcol == "True" then
-				attri = bit.bor(bit.bor(bit.lshift(tonumber(r) * 255, 23), bit.lshift(tonumber(g) * 255, 14)), bit.bor(bit.lshift(tonumber(b) * 255, 5), 31))
+				attri = bit.bor(
+					bit.bor(bit.lshift(math.floor(tonumber(r) * 255), 23), bit.lshift(math.floor(tonumber(g) * 255), 14)),
+					bit.bor(bit.lshift(math.floor(tonumber(b) * 255), 5), 31)
+				)
 			end
 			
 			if is_release == "True" then
@@ -387,8 +414,8 @@ function CBFBeatmap.Load(file)
 					units[i] = CompositionCache[cache_name]
 					has_custom_units = true
 				else
-					local attr, rar, cname, r, g, b, cust_char = line:match("[^/]+/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/([False|True]+);")
-					local a = ComposeUnitImage(attr, rar, cust_char == "True" and cname, r, g, b)
+					local attr, rar, cname, r, g, b = line:match("[^/]+/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
+					local a = ComposeUnitImage(attr, rar, cname, r, g, b)
 					
 					units[i] = a
 					CompositionCache[cache_name] = a
