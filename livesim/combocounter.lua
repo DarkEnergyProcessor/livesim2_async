@@ -33,9 +33,12 @@ local function get_combo_num_idx(combo)
 	elseif combo < 1000 then
 		-- 600-999
 		return 8
-	else
-		-- >= 1000
+	elseif combo < 2000 then
+		-- 1000-1999
 		return 9
+	else
+		-- >= 2000
+		return 10
 	end
 end
 

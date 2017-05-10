@@ -158,7 +158,6 @@ function DEPLS2Beatmap.Load(file)
 		out.live_clear = love.audio.newSource(live_clear)
 	end
 	
-	
 	if background_id then
 		out.background = background_id
 	elseif background[0] then

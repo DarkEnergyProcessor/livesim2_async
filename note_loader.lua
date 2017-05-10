@@ -7,6 +7,7 @@ local love = love
 
 local testbeatmap = {{"dwr", "ogg"} , {"1154_mod", "ogg"}}
 local NoteLoader = {}
+local SaveDirectory = love.filesystem.getSaveDirectory()
 
 local loaders = {
 	assert(assert(love.filesystem.load("noteloader/load_depls.lua"))(AquaShine, NoteLoader)),
@@ -68,26 +69,23 @@ end
 --!          - cover - Beatmap cover image information or nil
 --!          - scoretap
 --!          - staminadisp
+--!          - live_clear
 --! @warning This function causes lua error if the beatmap is not found
 function NoteLoader.NoteLoader(path)
 	if path:find("::") == 1 then
 		-- Test beatmap
 		local id = tonumber(path:match("::(%d+)"))
-		local bm = testbeatmap[id]
+		local bm = assert(testbeatmap[id], "Invalid test beatmap ID")
 		
-		if bm then
-			return {
-				notes_list = JSON:decode(love.filesystem.newFileData("test/"..bm[1]..".json"):getString()),
-				song_file = love.sound.newSoundData("test/"..bm[1].."."..bm[2])
-			}
-		else
-			assert(false, "Invalid test beatmap ID")
-		end
+		return {
+			notes_list = JSON:decode(love.filesystem.read("test/"..bm[1]..".json")),
+			song_file = love.sound.newSoundData("test/"..bm[1].."."..bm[2])
+		}
 	end
 	
-	local path = {
+	path = {
 		"beatmap/"..path,
-		love.filesystem.getSaveDirectory().."/beatmap/"..path
+		SaveDirectory.."/beatmap/"..path
 	}
 	
 	for i = 1, #loaders do
@@ -126,7 +124,6 @@ local beatmap_names = {
 function NoteLoader.Enumerate()
 	local files = love.filesystem.getDirectoryItems("beatmap/")
 	local beatmap_list = {}
-	local save_dir = love.filesystem.getSaveDirectory()
 	
 	for n, v in ipairs(files) do
 		local found = false
@@ -143,7 +140,7 @@ function NoteLoader.Enumerate()
 			local btype
 			local path = {
 				"beatmap/"..name,
-				save_dir.."/beatmap/"..name
+				SaveDirectory.."/beatmap/"..name
 			}
 			
 			for i = 1, #loaders do
@@ -159,7 +156,7 @@ function NoteLoader.Enumerate()
 						btype = beatmap_names[i]
 					end
 				else
-					error("Invalid beatmap loader "..i)
+					assert(false, "Invalid beatmap loader "..i)
 				end
 				
 				if btype then break end
@@ -175,6 +172,30 @@ function NoteLoader.Enumerate()
 	end
 	
 	return beatmap_list
+end
+
+function NoteLoader.DetectSpecific(file, with_detect_only)
+	local path = {}
+	path[1] = file
+	path[2] = SaveDirectory.."/"..file
+	
+	for i = 1, #loaders do
+		local loader = loaders[i]
+		
+		if not(with_detect_only) and loader.Extension then
+			if love.filesystem.isFile(path[1].."."..loader.Extension) then
+				return true
+			end
+		elseif loader.Extension == nil and loader.Detect then
+			if loader.Detect(path) then
+				return true
+			end
+		else
+			assert(false, "Invalid beatmap loader #"..i)
+		end
+	end
+	
+	return false
 end
 
 return NoteLoader

@@ -4,7 +4,7 @@ local bit = require("bit")
 local ffi = select(2, pcall(require, "ffi"))
 local lg = require("love.graphics")
 
-local Shelsha = {_internal = {_meta = {}}, _VERSION = "1.1.1"}
+local Shelsha = {_internal = {_meta = {}}, _VERSION = "1.1.2"}
 local memreadstream = {}
 
 local has_ffi = type(ffi) == "table"
@@ -218,14 +218,13 @@ local function rgba4444_to_rgba(src, len, dest)
 	for i = 0, len - 1 do
 		local j = i * 4
 		local k = i * 2
-		local pixel = bit.bor(bit.rshift(src[k], 8), src[k + 1])
-		local shift
+		local pixel = bit.bor(bit.lshift(src[k + 1], 8), src[k])
 		
-		shift = bit.rshift(bit.band(pixel, 0xF000), 8)
+		local shift = bit.rshift(bit.band(pixel, 0xF000), 8)
 		dest[j] = bit.bor(shift, bit.rshift(shift, 4))
 		shift = bit.rshift(bit.band(pixel, 0xF00), 4)
 		dest[j + 1] = bit.bor(shift, bit.rshift(shift, 4))
-		shift = bit.lshift(bit.band(pixel, 0xF0), 4)
+		shift = bit.band(pixel, 0xF0)
 		dest[j + 2] = bit.bor(shift, bit.rshift(shift, 4))
 		shift = bit.band(pixel, 0xF)
 		dest[j + 3] = bit.bor(shift, bit.lshift(shift, 4))

@@ -8,11 +8,11 @@ local LogicalScale = LogicalScale
 local setScissor = love.graphics.setScissor
 local setColor = love.graphics.setColor
 local draw = love.graphics.draw
-local no_score = AquaShine.LoadImage("image/live_gauge_03_03.png")
-local c_score = AquaShine.LoadImage("image/live_gauge_03_04.png")
-local b_score = AquaShine.LoadImage("image/live_gauge_03_05.png")
-local a_score = AquaShine.LoadImage("image/live_gauge_03_06.png")
-local s_score = AquaShine.LoadImage("image/live_gauge_03_07.png")
+local no_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_03.png")
+local c_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_04.png")
+local b_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_05.png")
+local a_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_06.png")
+local s_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_07.png")
 local draw_area = 960
 local used_score = nil
 

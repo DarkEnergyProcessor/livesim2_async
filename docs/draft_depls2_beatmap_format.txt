@@ -31,12 +31,13 @@ Sections:
 		dwordu - Attribute. Some possible values:
 				 * 1-11 - Note images following Sukufesu simulator note colors in order. Ask yuyu for it, lol.
 				 * If bit 0-3 is 1 - CBF extension colored note
-					  bit 23-31 - R color (9 bytes, unsigned)
-					  bit 14-22 - G color (9 bytes, unsigned)
-					  bit 5-13  - B color (9 bytes, unsigned)
+					  bit 23-31 - R color (9 bits, unsigned)
+					  bit 14-22 - G color (9 bits, unsigned)
+					  bit 5-13  - B color (9 bits, unsigned)
 		dwordu - Note effect
 				 * bit 0-3 - Note position. 9 is leftmost, 1 is rightmost
-				 * if bit 31 is 1 - Long note. bit 4-30 is the length in milliseconds
+				 * if bit 31 is 1 - Long note. bit 4-29 is the length in milliseconds
+					* if bit 30 is 1 - Swing & long note
 				 * otherwise (above):
 					* if bit 4 and bit 5 is 0 - Normal note
 					* if bit 4 and bit 5 is 1 - Swing note

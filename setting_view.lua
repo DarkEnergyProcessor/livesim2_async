@@ -16,13 +16,13 @@ local Settings = {
 		STAMINA_DISPLAY = 32
 	},
 	CurrentConfig = {},	-- Current configuration
-	BackImage = AquaShine.LoadImage("image/com_win_02.png"),
-	BackButton = AquaShine.LoadImage("image/com_button_01.png"),
-	BackButtonSe = AquaShine.LoadImage("image/com_button_01se.png"),
+	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
+	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
+	BackButtonSe = AquaShine.LoadImage("assets/image/ui/com_button_01se.png"),
 	
 	FontConfig = AquaShine.LoadFont("MTLmr3m.ttf", 30),
 	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22),
-	DescImage = AquaShine.LoadImage("image/com_win_42.png"),
+	DescImage = AquaShine.LoadImage("assets/image/ui/com_win_42.png"),
 }
 
 local SettingsList = {
@@ -49,8 +49,8 @@ local MouseState = {0, 0, false}	-- x, y, is click?
 local DescContentX = 464 + 20
 local DescContentY = 236 + 20
 
-local plus = AquaShine.LoadImage("image/com_etc_204.png")
-local minus = AquaShine.LoadImage("image/com_etc_205.png")
+local plus = AquaShine.LoadImage("assets/image/ui/com_etc_204.png")
+local minus = AquaShine.LoadImage("assets/image/ui/com_etc_205.png")
 
 local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
 local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
@@ -77,10 +77,10 @@ local ConfigList = {
 		end,
 		
 		-- Your additional properties below
-		OnButton = AquaShine.LoadImage("image/set_button_14.png"),
-		OnButtonSe = AquaShine.LoadImage("image/set_button_14se.png"),
-		OffButton = AquaShine.LoadImage("image/set_button_15.png"),
-		OffButtonSe = AquaShine.LoadImage("image/set_button_15se.png"),
+		OnButton = AquaShine.LoadImage("assets/image/ui/set_button_14.png"),
+		OnButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_14se.png"),
+		OffButton = AquaShine.LoadImage("assets/image/ui/set_button_15.png"),
+		OffButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_15se.png"),
 	}
 }
 
@@ -348,4 +348,5 @@ function changeSettings()
 		print("Changed: NOTE_SPEED")
 	end
 end
-return Settings
+
+return Settings, "Settings"

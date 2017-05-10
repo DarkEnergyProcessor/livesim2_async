@@ -3,7 +3,7 @@
 -- Since AquaShine is special for Live Simulator: 2, it's not available as standalone Lua script.
 -- Please see docs/AquaShine.md for more information.
 
-DEPLS_VERSION = "1.0.0-pre2"
+DEPLS_VERSION = "1.0.0-pre3"
 
 ----------------------
 -- AquaShine loader --
@@ -79,3 +79,4 @@ assert(love.filesystem.createDirectory("audio"), "Failed to create directory")
 assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory")
 assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory")
 assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory")
+assert(love.filesystem.createDirectory("temp"), "Failed to create directory")

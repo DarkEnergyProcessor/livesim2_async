@@ -12,7 +12,7 @@ local IdolPosition = {	-- Idol position. 9 is leftmost
 
 local Font
 
-local dummy_image = AquaShine.LoadImage("image/dummy.png")
+local dummy_image = AquaShine.LoadImage("assets/image/dummy.png")
 local com_win_02
 local com_button_01, com_button_01se
 local com_button_14, com_button_14se
@@ -41,11 +41,10 @@ end
 
 function UnitEditor.Start(arg)
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
-	love.graphics.setFont(Font)
 	
-	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
-	com_button_01 = AquaShine.LoadImage("image/com_button_01.png")
-	com_button_01se = AquaShine.LoadImage("image/com_button_01se.png")
+	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
+	com_button_01 = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
+	com_button_01se = AquaShine.LoadImage("assets/image/ui/com_button_01se.png")
 	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
 	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
 	com_button_15 = AquaShine.LoadImage("assets/image/ui/com_button_15.png")
@@ -76,9 +75,11 @@ end
 function UnitEditor.Update() end
 
 function UnitEditor.Draw()
-	love.graphics.clear(242, 59, 76)
+	love.graphics.setColor(242, 59, 76)
+	love.graphics.rectangle("fill", -88, -43, 1136, 726)
 	love.graphics.setColor(255, 255, 255)
 	love.graphics.draw(com_win_02, -98, 0)
+	love.graphics.setFont(Font)
 	
 	if MouseState[3] and
 		MouseState[1] >= 0 and MouseState[1] < 86 and
@@ -175,4 +176,4 @@ function UnitEditor.MouseReleased(x, y, button)
 	end
 end
 
-return UnitEditor
+return UnitEditor, "Change Unit Icon"

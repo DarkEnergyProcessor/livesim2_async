@@ -8,7 +8,7 @@ local ComboCheer = {}
 local FlashFile = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh", "ef_350")
 
 -- Combo range: 100-200, 200-300, 300+
-local Steps = {"cut_01_loop", "cut_02_loop", "cut_03_loop"}
+local Steps = {"cut_01_loop_end", "cut_02_loop_end", "cut_03_loop_end"}
 local CurrentStep = 1
 
 function ComboCheer.Update(deltaT)

@@ -2,10 +2,10 @@
 local AquaShine = AquaShine
 local MainMenu = {}
 
-local selection_image = AquaShine.LoadImage("image/s_button_03.png")
-local selection_image_se = AquaShine.LoadImage("image/s_button_03se.png")
+local selection_image = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
+local selection_image_se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
 local background = AquaShine.LoadImage("assets/image/background/liveback_2.png")
-local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
+local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
 local mouse_data = {false, 0, 0}	-- click?, x click, y click
 
 local MTLMr3m = AquaShine.LoadFont("MTLmr3m.ttf", 30)
@@ -34,7 +34,7 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
-local versionText = "livesim2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader"
+local versionText = "livesim2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader\nSave Directory: "..love.filesystem.getSaveDirectory()
 function MainMenu.Draw(deltaT)
 	-- Draw background
 	draw(background, 0, 0)
@@ -62,9 +62,9 @@ function MainMenu.Draw(deltaT)
 	drawtext("Live Simulator: 2", 280, 78)
 	setFont(ReleaseFont)
 	setColor(0, 0, 0)
-	drawtext(versionText, 3, 607)
+	drawtext(versionText, 3, 591)
 	setColor(255, 255, 255)
-	drawtext(versionText, 2, 606)
+	drawtext(versionText, 2, 590)
 	setColor(255, 255, 255)
 end
 
@@ -116,4 +116,4 @@ function MainMenu.MouseReleased(x, y)
 	end
 end
 
-return MainMenu
+return MainMenu, "Main Menu"

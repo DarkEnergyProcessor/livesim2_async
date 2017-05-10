@@ -15,6 +15,7 @@ local com_button_01, com_button_01se
 local com_button_12, com_button_12se
 local com_button_13, com_button_13se
 
+local NewUnitsInstalled = false
 local CurrentHoverCardIdx
 local CurrentSelectedCardIdx = 0
 
@@ -46,12 +47,12 @@ function UnitSelect.Start(arg)
 	
 	background_5 = AquaShine.LoadImage("assets/image/background/liveback_5.png")
 	com_etc_117 = AquaShine.LoadImage("assets/image/ui/com_etc_117.png")
-	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
+	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
 	com_button_14di = AquaShine.LoadImage("assets/image/ui/com_button_14di.png")
 	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
-	com_button_01 = AquaShine.LoadImage("image/com_button_01.png")
-	com_button_01se = AquaShine.LoadImage("image/com_button_01se.png")
+	com_button_01 = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
+	com_button_01se = AquaShine.LoadImage("assets/image/ui/com_button_01se.png")
 	com_button_12 = AquaShine.LoadImage("assets/image/ui/com_button_12.png")
 	com_button_12se = AquaShine.LoadImage("assets/image/ui/com_button_12se.png")
 	com_button_13 = AquaShine.LoadImage("assets/image/ui/com_button_13.png")
@@ -62,6 +63,15 @@ function UnitSelect.Start(arg)
 end
 
 function UnitSelect.Update(deltaT)
+	if NewUnitsInstalled then
+		local SelIdx
+		
+		if CurrentSelectedCardIdx > 0 then
+			SelIdx = assert(UnitSelect.UnitList[CurrentSelectedCardIdx]).Filename
+		end
+		
+		AquaShine.LoadEntryPoint("unit_selection.lua", {SelIdx})
+	end
 end
 
 function UnitSelect.Draw()
@@ -214,4 +224,25 @@ function UnitSelect.MouseReleased(x, y, button)
 	end
 end
 
-return UnitSelect
+function UnitSelect.FileDropped(file)
+	local filename = file:getFilename()
+	
+	if filename:sub(-4) == ".png" then
+		local file_dest = "unit_icon/"..AquaShine.Basename(filename)
+			
+		if not(love.filesystem.isFile(file_dest)) then
+			local img = love.image.newImageData(file)
+			
+			if img:getWidth() == 128 and img:getHeight() == 128 then
+				assert(file:open("r"))
+				
+				love.filesystem.write(file_dest, file:read())
+				file:close()
+				
+				NewUnitsInstalled = true
+			end
+		end
+	end
+end
+
+return UnitSelect, "Unit Icon Selection"

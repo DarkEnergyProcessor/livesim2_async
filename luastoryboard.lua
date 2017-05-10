@@ -3,7 +3,8 @@
 local Shelsha = require("Shelsha")
 
 -- The DEPLS handle
-local DEPLS = _G.DEPLS
+local DEPLS = DEPLS		-- TODO: Should be avoided if possible
+local AquaShine = AquaShine
 
 -- The Lua storyboard
 local LuaStoryboard = {}
@@ -108,7 +109,7 @@ local isolated_love = {
 		arc = love.graphics.arc,
 		circle = love.graphics.circle,
 		clear = function(...)
-			assert(love.graphics.getCanvas(), "love.graphics.clear on real screen is not allowed!")
+			assert(love.graphics.getCanvas() ~= AquaShine.MainCanvas, "love.graphics.clear on real screen is not allowed!")
 			love.graphics.clear(...)
 		end,
 		draw = love.graphics.draw,
@@ -131,7 +132,9 @@ local isolated_love = {
 		newVideo = RelativeLoadVideo,
 		
 		setBlendMode = love.graphics.setBlendMode,
-		setCanvas = love.graphics.setCanvas,
+		setCanvas = function(canvas)
+			love.graphics.setCanvas(canvas or AquaShine.MainCanvas)
+		end,
 		setColor = love.graphics.setColor,
 		setColorMask = love.graphics.setColorMask,
 		setLineStyle = love.graphics.setLineStyle,
@@ -204,9 +207,8 @@ function LuaStoryboard.LoadString(str, dir)
 		env[n] = v
 	end
 	
-	-- Disable some functions
+	-- Remove some dayas
 	env._G = env
-	env.DEPLS = nil
 	env.io = nil
 	env.os = nil
 	env.debug = nil
@@ -216,17 +218,17 @@ function LuaStoryboard.LoadString(str, dir)
 	env.love = isolated_love
 	env.file_get_contents = nil
 	env.arg = nil
+	env.AquaShine = nil
+	env.NoteImageCache = nil
+	env.dt = nil
+	env.gcinfo = nil
+	env.module = nil
+	env.jit = nil
+	env.collectgarbage = nil
+	env.getfenv = nil
 	env.require = function(libname)
 		return (assert(allowed_libs[libname], "require is limited in storyboard lua script"))
 	end
-	
-	-- DEPLS-specific function
-	env.LogicalScale = nil
-	env.CalculateTouchPosition = nil
-	env.LoadConfig = nil
-	env.LoadEntryPoint = nil
-	env.MountZip = nil
-	env.NoteLoader = nil
 	
 	setfenv(lua, env)
 	

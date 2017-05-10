@@ -6,17 +6,7 @@ local bit = require("bit")
 local CBFBeatmap = {
 	Extension = nil,	-- No extension, that means detect function is necessary
 }
-local position_translation = {
-	L4 = 9,
-	L3 = 8,
-	L2 = 7,
-	L1 = 6,
-	C = 5,
-	R1 = 4,
-	R2 = 3,
-	R3 = 2,
-	R4 = 1
-}
+local position_translation = {L4 = 9, L3 = 8, L2 = 7, L1 = 6, C = 5, R1 = 4, R2 = 3, R3 = 2, R4 = 1}
 
 local CompositionCache = {}
 local UnitIconCache = {
@@ -424,21 +414,6 @@ function CBFBeatmap.Load(file)
 			end
 		end
 	end
-	--[[
-	local units_ext = {"png", "txt"}
-	
-	for i = 1, 9 do
-		for j = 1, 2 do
-			local fn = file[1].."/unit_pos_"..i.."."..units_ext[j]
-			
-			if love.filesystem.isFile(fn) then
-				units[i] = NoteLoader.UnitLoader(fn)
-				has_custom_units = true
-				break
-			end
-		end
-	end
-	]]
 	
 	-- Result
 	local out = {
@@ -462,10 +437,11 @@ function CBFBeatmap.Load(file)
 		
 		if love.filesystem.isFile(file[1].."/cover."..cover_ext[i]) then
 			-- Has cover image
-			local cover = {image = love.graphics.newImage(love.filesystem.newFileData(fn))}
-			cover.title = cbf.SONG_NAME
+			local cover = {image = love.graphics.newImage(fn)}
 			
+			cover.title = cbf.SONG_NAME
 			out.cover = cover
+			
 			break
 		end
 	end

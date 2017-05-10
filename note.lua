@@ -2,12 +2,12 @@
 -- DEPLS2 Note management routines
 -- Copyright © 2038 Dark Energy Processor
 
-local DEPLS = _G.DEPLS
+local DEPLS = ...
 local List = require("List")
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
 local Yohane = require("Yohane")
-local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0, NoteRemaining = 0, HighestCombo = 0}
+local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0, NoteRemaining = 0, HighestCombo = 0, TotalNotes = 0}
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
 local AddScore = DEPLS.AddScore
@@ -635,6 +635,7 @@ end
 --! @param note_data SIF-compilant note data
 function Note.Add(note_data)
 	Note.NoteRemaining = Note.NoteRemaining + 1
+	Note.TotalNotes = Note.TotalNotes + 1
 	table.insert(Note[note_data.position], NewNoteObject(note_data))
 end
 

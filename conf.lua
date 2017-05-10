@@ -8,7 +8,7 @@ function love.conf(t)
 	t.gammacorrect = false               -- Enable gamma-correct rendering, when supported by the system (boolean)
 	                                     
 	t.window.title = "Live Simulator: 2" -- The window title (string)
-	t.window.icon = "image/icon.png"     -- Filepath to an image to use as the window's icon (string)
+	t.window.icon = "assets/image/icon/icon.png"-- Filepath to an image to use as the window's icon (string)
 	t.window.width = 960                 -- The window width (number)
 	t.window.height = 640                -- The window height (number)
 	t.window.borderless = false          -- Remove all border visuals from the window (boolean)

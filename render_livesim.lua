@@ -307,7 +307,6 @@ function RenderMode.Start(arg)
 			flgs.fullscreen = false
 		end
 		
-		love.window.setTitle("Live Simulator: 2 (Rendering Mode)")
 		love.window.setMode(w, h, flgs)
 		local x = math.random()
 	end
@@ -434,4 +433,4 @@ function love.quit()
 	audio_wav:close()
 end
 
-return RenderMode
+return RenderMode, "Offline Rendering Mode"

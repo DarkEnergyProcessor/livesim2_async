@@ -6,6 +6,7 @@ local BeatmapList = {}
 local CurrentPage = 0
 local BeatmapSelectedIndex = 0
 local MouseState = {X = 0, Y = 0, Pressed = {}}
+local NoteLoader
 
 local com_button_14, com_button_14di, com_button_14se
 local com_win_02
@@ -23,6 +24,9 @@ local MTLmr3m
 local FontDesc
 
 local IsRandomNotesWasTicked
+local HasBeatmapInstalled = false
+local CaseInsensitivePath = love.system.getOS() == "Windows"
+local RandomMountPoint = string.format("temp/%09d", math.random(1, 999999999))
 
 function SelectBeatmap.Start(arg)
 	local noteloader = love.filesystem.load("note_loader.lua")()
@@ -32,9 +36,9 @@ function SelectBeatmap.Start(arg)
 	com_button_14di = AquaShine.LoadImage("assets/image/ui/com_button_14di.png")
 	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
 	
-	com_win_02 = AquaShine.LoadImage("image/com_win_02.png")
-	s_button_03 = AquaShine.LoadImage("image/s_button_03.png")
-	s_button_03se = AquaShine.LoadImage("image/s_button_03se.png")
+	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
+	s_button_03 = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
+	s_button_03se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
 	log_etc_08 = AquaShine.LoadImage("assets/image/ui/log_etc_08.png")
 	com_button_12 = AquaShine.LoadImage("assets/image/ui/com_button_12.png")
 	com_button_12se = AquaShine.LoadImage("assets/image/ui/com_button_12se.png")
@@ -43,9 +47,9 @@ function SelectBeatmap.Start(arg)
 	
 	liveback_1 = AquaShine.LoadImage("assets/image/background/liveback_1.png")
 	
-	BackImage = AquaShine.LoadImage("image/com_win_02.png")
-	BackButton = AquaShine.LoadImage("image/com_button_01.png")
-	BackButtonSe = AquaShine.LoadImage("image/com_button_01se.png")
+	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
+	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
+	BackButtonSe = AquaShine.LoadImage("assets/image/ui/com_button_01se.png")
 	
 	MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22)
@@ -65,6 +69,15 @@ function SelectBeatmap.Start(arg)
 end
 
 function SelectBeatmap.Update()
+	if HasBeatmapInstalled then
+		local SelBeatmap
+		
+		if BeatmapSelectedIndex > 0 then
+			SelBeatmap = BeatmapList[BeatmapSelectedIndex].name
+		end
+		
+		AquaShine.LoadEntryPoint("select_beatmap.lua", {SelBeatmap})
+	end
 end
 
 local draw = love.graphics.draw
@@ -249,4 +262,106 @@ function SelectBeatmap.KeyPressed(key, scancode, repeat_bit)
 	end
 end
 
-return SelectBeatmap
+-- Beatmap insertion function
+local function RemoveExtension(file)
+	local _ = file:reverse()
+	return _:sub((_:find("%.") or 0) + 1):reverse()
+end
+
+local function BeatmapExists(path)
+	local _ = path:reverse()
+	local beatmap_name = _:sub((_:find("%.") or 0) + 1, (_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
+	
+	if CaseInsensitivePath then
+		beatmap_name = beatmap_name:lower()
+	end
+	
+	for i = 1, #BeatmapList do
+		local name = BeatmapList[i].name
+		
+		if CaseInsensitivePath then
+			name = name:lower()
+		end
+		
+		if beatmap_name == name then
+			io.write("Beatmap with name \"", name, "\" already exist\n")
+			
+			return true
+		end
+	end
+	
+	return false
+end
+
+-- Both source and dest should not have trailing slash
+local function CopyDirRecursive(source, dest)
+	local list = love.filesystem.getDirectoryItems(source)
+	
+	for i = 1, #list do
+		local filename = source.."/"..list[i]
+		
+		if love.filesystem.isFile(filename) then
+			love.filesystem.write(dest.."/"..list[i], love.filesystem.read(filename))
+		elseif love.filesystem.isDirectory(filename) then
+			-- Create directory
+			local dest_filename = dest.."/"..list[i]
+			
+			assert(love.filesystem.createDirectory(dest_filename), "Failed to create directory")
+			CopyDirRecursive(filename, dest_filename)
+		end
+	end
+end
+
+function SelectBeatmap.FileDropped(file)
+	local filename = file:getFilename()
+	
+	if not(NoteLoader) then
+		NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
+	end
+	
+	if not(BeatmapExists(filename)) then
+		local beatmap_filename = AquaShine.Basename(filename)
+		local dest_file = "temp/"..beatmap_filename
+		assert(file:open("r"))
+		
+		-- Copy to temp folder
+		love.filesystem.write(dest_file, file:read())
+		
+		if NoteLoader.DetectSpecific("temp/"..RemoveExtension(beatmap_filename)) then
+			-- Move it
+			love.filesystem.write("beatmap/"..beatmap_filename, love.filesystem.read(dest_file))
+			
+			HasBeatmapInstalled = true
+		else
+			io.write(beatmap_filename, " is not a valid beatmap\n")
+		end
+		
+		love.filesystem.remove(dest_file)
+	end
+end
+
+function SelectBeatmap.DirectoryDropped(dir)
+	if not(NoteLoader) then
+		NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
+	end
+	
+	if not(BeatmapExists(dir)) then
+		assert(love.filesystem.mount(dir, RandomMountPoint), "Cannot mount directory")
+		
+		if NoteLoader.DetectSpecific(RandomMountPoint) then
+			-- Copy recursive
+			local beatmap_dest = "beatmap/"..AquaShine.Basename(dir)
+			
+			love.filesystem.createDirectory(beatmap_dest)
+			CopyDirRecursive(RandomMountPoint, beatmap_dest)
+			
+			HasBeatmapInstalled = true
+		else
+			io.write(beatmap_filename, " is not a valid beatmap\n")
+		end
+		
+		love.filesystem.unmount(dir)
+	end
+end
+
+return SelectBeatmap, "Beatmap Selection"

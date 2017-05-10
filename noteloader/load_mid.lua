@@ -169,6 +169,7 @@ local function midi2sif(stream)
 			local position = v.pos - bottom_index + 1
 			local attribute = math.floor(v.channel / 4)
 			local effect = v.channel % 4 + 1
+			local is_swing = v.vel < 64
 			
 			if attribute > 0 then
 				if v.note then
@@ -181,7 +182,7 @@ local function midi2sif(stream)
 							timing_sec = v.tick * 60 / ppqn / tempo,
 							notes_attribute = attribute,
 							notes_level = 1,
-							effect = v.vel < 64 and 11 or effect,
+							effect = is_swing and 11 or effect,
 							effect_value = 2,
 							position = position
 						}
@@ -195,7 +196,7 @@ local function midi2sif(stream)
 						timing_sec = queue[1] * 60 / ppqn / tempo,
 						notes_attribute = attribute,
 						notes_level = 1,
-						effect = 3,
+						effect = is_swing and 13 or 3,
 						effect_value = (v.tick - queue[1]) * 60 / ppqn / tempo,
 						position = position
 					}

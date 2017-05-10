@@ -137,10 +137,16 @@ local TemporaryEntryPoint
 --! @param name The entry point Lua script file
 --! @param arg Additional argument to be passed
 function AquaShine.LoadEntryPoint(name, arg)
-	local scriptdata = assert(love.filesystem.load(name))()
+	local scriptdata, title = assert(love.filesystem.load(name))()
 	scriptdata.Start(arg or {})
 	--AquaShine.CurrentEntryPoint = scriptdata
 	TemporaryEntryPoint = scriptdata
+	
+	if title then
+		love.window.setTitle(AquaShine.WindowName .. " - "..title)
+	else
+		love.window.setTitle(AquaShine.WindowName)
+	end
 end
 
 --! Function used to replace extension on file
@@ -166,19 +172,6 @@ function AquaShine.LoadAudio(path, noorder)
 		end
 		
 		return a
-	end
-	
-	-- Try save dir
-	do
-		local file = love.filesystem.newFile(path)
-		
-		if file:open("r") then
-			_, token_image = pcall(love.sound.newSoundData, file)
-			
-			if _ then
-				return token_image
-			end
-		end
 	end
 	
 	_, token_image = pcall(love.sound.newSoundData, path)
@@ -212,6 +205,12 @@ function AquaShine.ComposeImage(w, h, layers, imagedata)
 	else
 		return love.graphics.newImage(id)
 	end
+end
+
+-- Stripes the directory and returns only the filename
+function AquaShine.Basename(file)
+	local _ = file:reverse()
+	return _:sub(1, (_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
 end
 ----------------------------
 -- AquaShine Font Caching --
@@ -315,6 +314,26 @@ end
 -- Other Internal Functions --
 ------------------------------
 function AquaShine.MainLoop()
+	local dt
+	local RenderToCanvasFunc = function()
+		love.graphics.clear()
+		
+		if AquaShine.CurrentEntryPoint then
+			dt = dt * 1000
+			AquaShine.CurrentEntryPoint.Update(dt)
+			love.graphics.push()
+			
+			love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+			love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+			AquaShine.CurrentEntryPoint.Draw(dt)
+			love.graphics.pop()
+			love.graphics.setColor(255, 255, 255)
+		else
+			love.graphics.setFont(font)
+			love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
+		end
+	end
+	
 	while true do
 		-- Switch entry point
 		if TemporaryEntryPoint then
@@ -339,21 +358,8 @@ function AquaShine.MainLoop()
 		
 		if love.graphics.isActive() then
 			love.graphics.clear()
-			
-			if AquaShine.CurrentEntryPoint then
-				dt = dt * 1000
-				AquaShine.CurrentEntryPoint.Update(dt)
-				love.graphics.push()
-				
-				love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-				love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-				AquaShine.CurrentEntryPoint.Draw(dt)
-				love.graphics.pop()
-			else
-				love.graphics.setFont(font)
-				love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
-			end
-			
+			AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
+			love.graphics.draw(AquaShine.MainCanvas)
 			love.graphics.present()
 		end
 	end
@@ -478,11 +484,24 @@ end
 
 function love.keyreleased(key, scancode)
 	if key == "f12" then
-		love.thread.newThread(ScreenshotThreadCode):start(love.graphics.newScreenshot())
+		love.thread.newThread(ScreenshotThreadCode):start(AquaShine.MainCanvas:newImageData())
 	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyReleased then
 		AquaShine.CurrentEntryPoint.KeyReleased(key, scancode)
+	end
+end
+
+-- File/folder drag-drop support
+function love.filedropped(file)
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.FileDropped then
+		AquaShine.CurrentEntryPoint.FileDropped(file)
+	end
+end
+
+function love.directorydropped(dir)
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.DirectoryDropped then
+		AquaShine.CurrentEntryPoint.DirectoryDropped(dir)
 	end
 end
 
@@ -498,6 +517,8 @@ function love.resize(w, h)
 	AquaShine.LogicalScale.ScaleOverall = math.min(AquaShine.LogicalScale.ScreenX / lx, AquaShine.LogicalScale.ScreenY / ly)
 	AquaShine.LogicalScale.OffX = (AquaShine.LogicalScale.ScreenX - AquaShine.LogicalScale.ScaleOverall * lx) / 2
 	AquaShine.LogicalScale.OffY = (AquaShine.LogicalScale.ScreenY - AquaShine.LogicalScale.ScaleOverall * ly) / 2
+	
+	AquaShine.MainCanvas = love.graphics.newCanvas()
 end
 
 -- When running low memory
@@ -553,6 +574,7 @@ function love.load(arg)
 		end
 	end
 	
+	AquaShine.WindowName = love.window.getTitle()
 	love.resize(wx, wy)
 	
 	-- Load entry point
@@ -560,10 +582,8 @@ function love.load(arg)
 		local entry = table.remove(arg, 1)
 		
 		AquaShine.LoadEntryPoint(ASArg.Entries[entry][2], arg)
-		SkipCall = 0
 	elseif ASArg.DefaultEntry then
 		AquaShine.LoadEntryPoint(ASArg.Entries[ASArg.DefaultEntry][2], arg)
-		SkipCall = 0
 	end
 end
 

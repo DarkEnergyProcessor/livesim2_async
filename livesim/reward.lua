@@ -6,7 +6,6 @@ local DEPLS, AquaShine = ...
 local tween = require("tween")
 local ResultScreen = {}
 
-
 --UI Stuff
 local Font = AquaShine.LoadFont("MTLmr3m.ttf", 36)
 
@@ -58,7 +57,7 @@ function ResultScreen.Draw()
 	love.graphics.draw(goodLogo, 440, 420, 0, 0.75, 0.75)
 	love.graphics.draw(badLogo, 580, 420, 0, 0.75, 0.75)
 	love.graphics.draw(missLogo, 700, 420, 0, 0.75, 0.75)
-	love.graphics.draw(liveClearLogo, 480, 25, 0, 0.75, 0.75, 250, 0)
+	love.graphics.draw(liveClearLogo, 480, 5, 0, 0.75, 0.75, 250, 0)
 
 	love.graphics.setColor(0, 0, 0, Status.Opacity)
 	love.graphics.print(combo.Perfect, 150, 460)
@@ -69,18 +68,6 @@ function ResultScreen.Draw()
 	love.graphics.print(DEPLS.Routines.ScoreUpdate.CurrentScore, 300, 550)
 	love.graphics.print(combo.MaxCombo, 700, 550)
 	love.graphics.setColor(255, 255, 255)
-	
-	--[[
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("5000", 150, 460)
-	love.graphics.print("3000", 300, 460)
-	love.graphics.print("2000", 440, 460)
-	love.graphics.print("1000", 580, 460)
-	love.graphics.print("0000", 700, 460)
-	love.graphics.print("1234567890", 300, 550)
-	love.graphics.print("1234", 700, 550)
-	love.graphics.setColor(255, 255, 255)
-	]]
 end
 
 return ResultScreen

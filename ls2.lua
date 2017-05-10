@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 
 local ls2 = {
-	_VERSION = "1.0",
+	_VERSION = "1.1",
 	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat",
 	_AUTHOR  = "AuahDark",
 	encoder = {}
@@ -80,8 +80,8 @@ local function process_BMPM(stream)
 		
 		if bit.rshift(note_effect, 31) == 1 then
 			-- Long note
-			effect_new_val = bit.band(note_effect, 0x7FFFFFF0) / 16000
-			effect_new = 3
+			effect_new_val = bit.band(note_effect, 0x3FFFFFF0) / 16000
+			effect_new = bit.band(note_effect, 0x40000000) > 0 and 13 or 3
 		else
 			local is_token = bit.band(note_effect, 16) == 16
 			local is_star = bit.band(note_effect, 32) == 32
@@ -148,8 +148,8 @@ local function process_BMPT(stream)
 			-- Note data
 			if bit.rshift(note_effect, 31) == 1 then
 				-- Long note
-				effect_new_val = bit.band(note_effect, 0x7FFFFFF0)
-				effect_new = 3
+				effect_new_val = bit.band(note_effect, 0x3FFFFFF0) / 16000
+				effect_new = bit.band(note_effect, 0x40000000) > 0 and 13 or 3
 				additional_event = {
 					tick = event.tick + effect_new_val,
 					notes_attribute = attribute,
@@ -390,8 +390,11 @@ function ls2.parsestream(stream, path)
 		elseif section == "COVR" then
 			assert(output.cover == nil, "Only one COVR can exist")
 			output.cover = process_COVR(stream)
+		elseif section == "LCLR" then
+			assert(output.live_clear == nil, "Only one LCLR can exist")
+			output.live_clear = process_ADIO(stream)
 		else
-			assert(false, string.format("Invalid section %s", section))
+			io.write("Invalid section ", section, "\n")
 		end
 	end
 	
@@ -451,7 +454,11 @@ end
 --! @param path DEPLS2 beatmap folder directory or nil if it's not in DEPLS2 beatmap folder
 --! @returns See NoteLoader.NoteLoader
 function ls2.parsefile(file, path)
-	local f = assert(io.open(file, "rb"))
+	local f
+	
+	if type(file) == "string" then
+		f = assert(io.open(file, "rb"))
+	end
 	
 	return ls2.parsestream(f)
 end

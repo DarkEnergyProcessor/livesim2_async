@@ -69,41 +69,6 @@ local DEPLS = {
 	Sound = {}
 }
 
-----------------------
--- Public functions --
-----------------------
-
---! @brief Get all file contents
---! @param path The file path
---! @returns The file contents as string or `nil` and error message on fail
-function file_get_contents(path)
-	local f, x = io.open(path)
-	
-	if not(f) then return nil, x end
-	
-	local r = f:read("*a")
-	
-	f:close()
-	return r
-end
-
---! Source: https://love2d.org/forums/viewtopic.php?t=2126
-function HSL(h, s, l)
-	if s == 0 then return l,l,l end
-	h, s, l = h/256*6, s/255, l/255
-	local c = (1-math.abs(2*l-1))*s
-	local x = (1-math.abs(h%2-1))*c
-	local m,r,g,b = (l-.5*c), 0,0,0
-	if h < 1     then r,g,b = c,x,0
-	elseif h < 2 then r,g,b = x,c,0
-	elseif h < 3 then r,g,b = 0,c,x
-	elseif h < 4 then r,g,b = 0,x,c
-	elseif h < 5 then r,g,b = x,0,c
-	else              r,g,b = c,0,x
-	end
-   return math.ceil((r+m)*256),math.ceil((g+m)*256),math.ceil((b+m)*256)
-end
-
 -----------------------
 -- Private functions --
 -----------------------
@@ -216,18 +181,12 @@ do
 		end
 		
 		if dummy_image == nil then
-			dummy_image = love.graphics.newImage("image/dummy.png")
+			dummy_image = AquaShine.LoadImage("assets/image/dummy.png")
 		end
 		
 		if path == nil then return dummy_image end
 		
-		local filedata = love.filesystem.newFileData("unit_icon/"..path)
-		
-		if not(filedata) then
-			return dummy_image
-		end
-		
-		local _, img = pcall(love.graphics.newImage, filedata)
+		local _, img = pcall(love.graphics.newImage, "unit_icon/"..path)
 		
 		if _ == false then
 			return dummy_image
@@ -477,6 +436,23 @@ function DEPLS.StoryboardFunctions.AllowComboCheer()
 	DEPLS.ComboCheerForced = true
 end
 
+--! Source: https://love2d.org/forums/viewtopic.php?t=2126
+function DEPLS.StoryboardFunctions.HSL(h, s, l)
+	if s == 0 then return l,l,l end
+	h, s, l = h/256*6, s/255, l/255
+	local c = (1-math.abs(2*l-1))*s
+	local x = (1-math.abs(h%2-1))*c
+	local m,r,g,b = (l-.5*c), 0,0,0
+	if h < 1     then r,g,b = c,x,0
+	elseif h < 2 then r,g,b = x,c,0
+	elseif h < 3 then r,g,b = 0,c,x
+	elseif h < 4 then r,g,b = 0,x,c
+	elseif h < 5 then r,g,b = x,0,c
+	else              r,g,b = c,0,x
+	end
+   return math.ceil((r+m)*256),math.ceil((g+m)*256),math.ceil((b+m)*256)
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -524,7 +500,7 @@ end
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
 	DEPLS.Arg = argv
-	_G.DEPLS = DEPLS
+	_G.DEPLS = DEPLS	-- TODO: Should be avoided
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
@@ -540,14 +516,14 @@ function DEPLS.Start(argv)
 		Token = AquaShine.LoadImage("assets/image/tap_circle/e_icon_01.png"),
 		LongNote = AquaShine.LoadImage("assets/image/ef_326_000.png"),
 	}
-	DEPLS.Images.Spotlight = AquaShine.LoadImage("image/popn.png")
+	DEPLS.Images.Spotlight = AquaShine.LoadImage("assets/image/live/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
 	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS, AquaShine)
 	
 	-- Load configuration
 	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
 	local Keys = AquaShine.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
-	local Auto = AquaShine.LoadConfig("AUTOPLAY", 0)
+	local Auto = assert(tonumber(AquaShine.LoadConfig("AUTOPLAY", 0)))
 	DEPLS.LiveDelay = math.max(AquaShine.LoadConfig("LIVESIM_DELAY", 1000), 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
 	DEPLS.NotesSpeed = math.max(AquaShine.LoadConfig("NOTE_SPEED", 800), 400)
@@ -571,8 +547,8 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load modules
-	DEPLS.NoteManager = love.filesystem.load("note.lua")()
-	DEPLS.NoteLoader = love.filesystem.load("note_loader.lua")()
+	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS)
+	DEPLS.NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
 	
 	-- Load beatmap
 	local notes_list
@@ -684,12 +660,12 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Tap circle effect
-	DEPLS.Images.ef_316_000 = AquaShine.LoadImage("image/ef_316_000.png")
-	DEPLS.Images.ef_316_001 = AquaShine.LoadImage("image/ef_316_001.png")
+	DEPLS.Images.ef_316_000 = AquaShine.LoadImage("assets/image/live/ef_316_000.png")
+	DEPLS.Images.ef_316_001 = AquaShine.LoadImage("assets/image/live/ef_316_001.png")
 	
 	-- Load live header images
-	DEPLS.Images.Header = AquaShine.LoadImage("image/live_header.png")
-	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("image/live_gauge_03_02.png")
+	DEPLS.Images.Header = AquaShine.LoadImage("assets/image/live/live_header.png")
+	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
 	
 	-- Load unit icons
 	noteloader_data.units = noteloader_data.units or {}
@@ -707,7 +683,7 @@ function DEPLS.Start(argv)
 	
 	-- Load stamina image (bar and number)
 	DEPLS.Images.StaminaRelated = {
-		Bar = AquaShine.LoadImage("image/live_gauge_02_02.png")
+		Bar = AquaShine.LoadImage("assets/image/live/live_gauge_02_02.png")
 	}
 	do
 		local stamina_display_str = tostring(DEPLS.Stamina)
@@ -721,7 +697,7 @@ function DEPLS.Start(argv)
 			temp_num = tonumber(temp)
 			
 			if DEPLS.Images.StaminaRelated[temp_num] == nil then
-				DEPLS.Images.StaminaRelated[temp_num] = AquaShine.LoadImage("image/hp_num/live_num_"..temp..".png")
+				DEPLS.Images.StaminaRelated[temp_num] = AquaShine.LoadImage("assets/image/live/hp_num/live_num_"..temp..".png")
 			end
 			
 			stamina_number_image[i] = DEPLS.Images.StaminaRelated[temp_num]
@@ -731,21 +707,21 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load score eclipse related image
-	DEPLS.Routines.ScoreEclipseF.Img = AquaShine.LoadImage("image/l_etc_46.png")
-	DEPLS.Routines.ScoreEclipseF.Img2 = AquaShine.LoadImage("image/l_gauge_17.png")
+	DEPLS.Routines.ScoreEclipseF.Img = AquaShine.LoadImage("assets/image/live/l_etc_46.png")
+	DEPLS.Routines.ScoreEclipseF.Img2 = AquaShine.LoadImage("assets/image/live/l_gauge_17.png")
 	
 	-- Load score node number
 	for i = 21, 30 do
-		DEPLS.Images.ScoreNode[i - 21] = AquaShine.LoadImage("image/score_num/l_num_"..i..".png")
+		DEPLS.Images.ScoreNode[i - 21] = AquaShine.LoadImage("assets/image/live/score_num/l_num_"..i..".png")
 	end
-	DEPLS.Images.ScoreNode.Plus = AquaShine.LoadImage("image/score_num/l_num_31.png")
+	DEPLS.Images.ScoreNode.Plus = AquaShine.LoadImage("assets/image/live/score_num/l_num_31.png")
 	
 	-- Tap accuracy image
-	DEPLS.Images.Perfect = AquaShine.LoadImage("image/ef_313_004.png")
-	DEPLS.Images.Great = AquaShine.LoadImage("image/ef_313_003.png")
-	DEPLS.Images.Good = AquaShine.LoadImage("image/ef_313_002.png")
-	DEPLS.Images.Bad = AquaShine.LoadImage("image/ef_313_001.png")
-	DEPLS.Images.Miss = AquaShine.LoadImage("image/ef_313_000.png")
+	DEPLS.Images.Perfect = AquaShine.LoadImage("assets/image/live/ef_313_004.png")
+	DEPLS.Images.Great = AquaShine.LoadImage("assets/image/live/ef_313_003.png")
+	DEPLS.Images.Good = AquaShine.LoadImage("assets/image/live/ef_313_002.png")
+	DEPLS.Images.Bad = AquaShine.LoadImage("assets/image/live/ef_313_001.png")
+	DEPLS.Images.Miss = AquaShine.LoadImage("assets/image/live/ef_313_000.png")
 		DEPLS.Routines.PerfectNode.Center = {
 		[DEPLS.Images.Perfect] = {99, 19},
 		[DEPLS.Images.Great] = {73, 17},
@@ -758,8 +734,8 @@ function DEPLS.Start(argv)
 	DEPLS.Routines.PerfectNode.Draw()
 	
 	-- Load NoteIcon image
-	DEPLS.Images.NoteIcon = AquaShine.LoadImage("image/ef_308_000.png")
-	DEPLS.Images.NoteIconCircle = AquaShine.LoadImage("image/ef_308_001.png")
+	DEPLS.Images.NoteIcon = AquaShine.LoadImage("assets/image/live/ef_308_000.png")
+	DEPLS.Images.NoteIconCircle = AquaShine.LoadImage("assets/image/live/ef_308_001.png")
 	
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
@@ -1066,4 +1042,4 @@ end
 DEPLS.Distance = distance
 DEPLS.AngleFrom = angle_from
 
-return DEPLS
+return DEPLS, "Playing"
