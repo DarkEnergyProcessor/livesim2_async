@@ -315,6 +315,7 @@ end
 ------------------------------
 function AquaShine.MainLoop()
 	local dt
+	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	local RenderToCanvasFunc = function()
 		love.graphics.clear()
 		
@@ -370,7 +371,6 @@ end
 ------------------------------------
 function love.run()
 	local dt = 0
-	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	
 	if love.math then
 		love.math.setRandomSeed(os.time())

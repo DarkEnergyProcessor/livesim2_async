@@ -554,7 +554,6 @@ function DEPLS.Start(argv)
 	local notes_list
 	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[1])
 	local custom_background = false
-	notes_list = noteloader_data.notes_list
 	DEPLS.StoryboardHandle = noteloader_data.storyboard and noteloader_data.storyboard.Storyboard
 	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
 	DEPLS.Sound.LiveClear = noteloader_data.live_clear
@@ -564,6 +563,20 @@ function DEPLS.Start(argv)
 	if noteloader_data.song_file and ((jit and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg")) then
 		require("volume_normalizer")(noteloader_data.song_file)
 	end
+	
+	-- Randomize note
+	if AquaShine.GetCommandLineConfig("random") then
+		local msg
+		notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(noteloader_data.notes_list)
+		
+		if not(notes_list) then
+			print("Can't be randomized", msg)
+		else
+			noteloader_data.notes_list = notes_list
+		end
+	end
+	
+	notes_list = noteloader_data.notes_list
 	
 	-- Load background
 	if type(noteloader_data.background) == "number" then
