@@ -560,12 +560,13 @@ function DEPLS.Start(argv)
 	
 	-- Normalize song volume
 	-- Enabled on LuaJIT by default, disabled on Lua 5.1 by default
-	if noteloader_data.song_file and ((jit and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg")) then
+	if noteloader_data.song_file and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
 		require("volume_normalizer")(noteloader_data.song_file)
 	end
 	
 	-- Randomize note
-	if AquaShine.GetCommandLineConfig("random") then
+	print(argv.Random)
+	if argv.Random or AquaShine.GetCommandLineConfig("random") then
 		local msg
 		notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(noteloader_data.notes_list)
 		
@@ -961,7 +962,7 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 		-- Unmount
 		AquaShine.MountZip()
 		-- Back
-		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
+		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
 	end
 end
 
@@ -1006,7 +1007,7 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 			-- Unmount
 			AquaShine.MountZip()
 			-- Back
-			AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1]})
+			AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
 		elseif key == "backspace" then
 			if DEPLS.Sound.LiveAudio then
 				DEPLS.Sound.LiveAudio:stop()

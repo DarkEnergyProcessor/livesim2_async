@@ -23,6 +23,7 @@ local BackButtonSe
 local MTLmr3m
 local FontDesc
 
+local IsRandomForced = AquaShine.GetCommandLineConfig("random")
 local IsRandomNotesWasTicked
 local HasBeatmapInstalled = false
 local CaseInsensitivePath = love.system.getOS() == "Windows"
@@ -87,6 +88,7 @@ local setColor = love.graphics.setColor
 
 function SelectBeatmap.Draw()
 	-- Grid: 4x10 beatmap list. Starts at 48x100px
+	setColor(255, 255, 255)
 	draw(liveback_1)
 	setFont(FontDesc)
 	draw(BackImage, -98, 0)
@@ -96,10 +98,6 @@ function SelectBeatmap.Draw()
 	setColor(255, 255, 255)
 	setFont(MTLmr3m)
 	
-	--[[
-	if
-		MouseState.Pressed[1] and
-	]]
 	if MouseState.Pressed[1] then
 		if
 			MouseState.X >= 0 and MouseState.X <= 86 and
@@ -177,9 +175,12 @@ function SelectBeatmap.Draw()
 	-- Render mode/Random notes check
 	setFont(FontDesc)
 	love.graphics.rectangle("fill", 476, 528, 32, 32)
-	drawtext("Random Notes", 526, 533)
+	drawtext("Random (experimental)", 526, 533)
 	
 	if IsRandomNotesWasTicked then
+		draw(log_etc_08, 477, 528, 0, 0.842105)
+	elseif IsRandomForced then
+		setColor(0, 0, 0, 127)
 		draw(log_etc_08, 477, 528, 0, 0.842105)
 	end
 end
@@ -212,7 +213,7 @@ function SelectBeatmap.MouseReleased(x, y, button)
 			AquaShine.LoadEntryPoint("livesim.lua", {BeatmapList[BeatmapSelectedIndex].name, Random = IsRandomNotesWasTicked})
 			
 			return
-		elseif
+		elseif not(IsRandomForced) and
 			x >= 476 and x < 508 and
 			y >= 528 and y < 560
 		then

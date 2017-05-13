@@ -11,13 +11,14 @@ local mouse_data = {false, 0, 0}	-- click?, x click, y click
 local MTLMr3m = AquaShine.LoadFont("MTLmr3m.ttf", 30)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 72)
 local ReleaseFont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
+local MouseState = {X = 0, Y = 0, Pressed = false}
 
 local menu_select = {
 	-- Name, Func, Y pos, Mouse state (0 = none, 1 = highlight, 2 = selected)
-	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end, nil, 0},
-	{"Change Units", function() AquaShine.LoadEntryPoint("unit_editor.lua") end, nil, 0},
-	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end, nil, 0},
-	{"Exit", love.event.quit, nil, 0}
+	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end, nil},
+	{"Change Units", function() AquaShine.LoadEntryPoint("unit_editor.lua") end, nil},
+	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end, nil},
+	{"Exit", love.event.quit, nil}
 }
 
 function MainMenu.Start()
@@ -43,7 +44,10 @@ function MainMenu.Draw(deltaT)
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
 		
-		if mobj[4] == 2 then
+		if
+			MouseState.Pressed and
+			MouseState.X >= 16 and MouseState.Y >= mobj[3] and
+			MouseState.X < 448 and MouseState.Y < mobj[3] + 80 then
 			-- Draw selected
 			draw(selection_image_se, 16, mobj[3])
 		else
@@ -69,48 +73,21 @@ function MainMenu.Draw(deltaT)
 end
 
 function MainMenu.MousePressed(x, y, button, touch_id)
-	for i = 1, #menu_select do
-		local mobj = menu_select[i]
-		
-		if x >= 16 and x <= 448 and y >= mobj[3] and y <= mobj[3] + 80 then
-			if mobj[4] == 1 then
-				mobj[4] = 2
-			end
-			
-			break
-		end
-	end
+	MouseState.X, MouseState.Y, MouseState.Pressed = x, y, true
 end
 
 function MainMenu.MouseMoved(x, y)
-	for i = 1, #menu_select do
-		local mobj = menu_select[i]
-		
-		if x >= 16 and x <= 448 and y >= mobj[3] and y <= mobj[3] + 80 then
-			if mobj[4] == 0 then
-				mobj[4] = 1
-			end
-			
-			break
-		else
-			mobj[4] = 0
-		end
-	end
+	MouseState.X, MouseState.Y = x, y
 end
 
 function MainMenu.MouseReleased(x, y)
+	MouseState.X, MouseState.Y, MouseState.Pressed = x, y, false
+	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
 		
-		if mobj[4] == 2 then
+		if x >= 16 and y >= mobj[3] and x < 448 and y < mobj[3] + 80 then
 			mobj[2]()
-			
-			if x >= 16 and x <= 448 and y >= mobj[3] and y <= mobj[3] + 80 then
-				mobj[4] = 1
-			else
-				mobj[4] = 0
-			end
-			
 			break
 		end
 	end

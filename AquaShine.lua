@@ -207,10 +207,15 @@ function AquaShine.ComposeImage(w, h, layers, imagedata)
 	end
 end
 
--- Stripes the directory and returns only the filename
+--! @brief Stripes the directory and returns only the filename
 function AquaShine.Basename(file)
 	local _ = file:reverse()
 	return _:sub(1, (_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
+end
+
+--! @brief Determines if runs under slow system
+function AquaShine.IsSlowSystem()
+	return not(jit) or AquaShine.OperatingSystem == "Android" or AquaShine.OperatingSystem == "iOS"
 end
 ----------------------------
 -- AquaShine Font Caching --
@@ -575,6 +580,7 @@ function love.load(arg)
 	end
 	
 	AquaShine.WindowName = love.window.getTitle()
+	AquaShine.OperatingSystem = love.system.getOS()
 	love.resize(wx, wy)
 	
 	-- Load entry point
