@@ -42,9 +42,6 @@ end
 
 local function Randomizer(beatmap)
 	local last_timing_sec
-	print("Random test")
-	print(beatmap[1], beatmap[1].position)
-	print(beatmap[2], beatmap[2].position)
 	
 	-- First, do long traverse of all beatmap
 	local bmlen = #beatmap

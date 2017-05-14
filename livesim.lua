@@ -559,13 +559,12 @@ function DEPLS.Start(argv)
 	DEPLS.Sound.LiveClear = noteloader_data.live_clear
 	
 	-- Normalize song volume
-	-- Enabled on LuaJIT by default, disabled on Lua 5.1 by default
+	-- Enabled on fast system by default
 	if noteloader_data.song_file and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
 		require("volume_normalizer")(noteloader_data.song_file)
 	end
 	
 	-- Randomize note
-	print(argv.Random)
 	if argv.Random or AquaShine.GetCommandLineConfig("random") then
 		local msg
 		notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(noteloader_data.notes_list)

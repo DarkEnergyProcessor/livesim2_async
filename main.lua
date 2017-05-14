@@ -17,6 +17,7 @@ AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 		unit_editor = {0, "unit_editor.lua"},
 		about = {0, "about_screen.lua"},
 		render = {3, "render_livesim.lua"},
+		noteloader = {1, "invoke_noteloader.lua"},
 	},
 	DefaultEntry = "main_menu",
 	Width = 960,	-- Letterboxing
