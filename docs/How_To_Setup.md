@@ -10,7 +10,7 @@ Before you proceed, make sure your device comply these requirements
 
 * At least 256MB of free RAM. \*
 
-* OpenGL 2.1 (or OpenGLES 2 for mobile devices) capable graphics card
+* OpenGL 2.1 (OpenGLES 2 for mobile devices) capable graphics card
 
 * Windows: Windows Vista or above (sorry Windows XP users)
 
@@ -29,13 +29,13 @@ Getting LOVE2D and run Live Simulator: 2
 
 If your device comply with requirements above, then proceed. livesim2 requires LOVE2D v0.10.1 (or later) game framework. Below are steps to get LOVE2D installed.
 
-###Windows
+### Windows
 
-####Method A
+#### Method A
 
 1. Simply download from releases tab above, extract, and run `livesim2.exe`
 
-####Method B
+#### Method B
 
 1. Clone this repository with git or download it as zip. Make sure you extract the zip.
 
@@ -47,7 +47,7 @@ If your device comply with requirements above, then proceed. livesim2 requires L
 
 > `lovec` is available in LOVE2D v0.10.2 and later. It's not hard to create one for older version if you have VS command prompt. To create `lovec`, run `copy love.exe lovec.exe && editbin /SUBSYSTEM:CONSOLE lovec.exe` in VS command prompt.
 
-###Ubuntu
+### Ubuntu
 
 1. Clone this repository with git or download it as zip. Make sure you extract the zip.
 
@@ -57,19 +57,19 @@ If your device comply with requirements above, then proceed. livesim2 requires L
 
 4. Type `love <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu
 
-###Mac OS X
+### Mac OS X
 
 *TODO: Add Mac OS X instructions*
 
-###Android
+### Android
 
 1. Clone this repository or download zip. Push all files to somewhere in your phone (extract it first if you download it as ZIP).
 
 2. Download LOVE2D APK from [LOVE2D](https://love2d.org/) website, or from Play Store.
 
-3. Find livesim2 `main.lua` in your phone, and open it with LOVE2D
+3. Find Live Simulator: 2 `main.lua` in your phone, and open it with LOVE2D
 
-4. If it works, you'll see livesim2 main menu.
+4. If it works, you'll see Live Simulator: 2 main menu.
 
 Determining R/W directory
 -------------------------
@@ -79,13 +79,13 @@ You should see the R/W directory in main menu when starting Live Simulator: 2. I
 Adding beatmaps
 ---------------
 
-livesim2 supports these beatmap formats:
+Live Simulator: 2 supports these beatmap formats:
 
 * DEPLS beatmap folder. It inherits from CBF format. Beatmap file can be LS2 beatmap, SIF beatmap, CBF, MIDI, or LLP. Additionaly with storyboard support. Can be in ZIP.
 
-* LS2 beatmap file. This is new livesim2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file format structure is available.
+* LS2 beatmap file. This is new Live Simulator: 2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file format structure is available.
 
-* Raw SIF beatmap, with or without score information. This is beatmap format internally used by livesim2, without any modification. The extension is `.json`.
+* Raw SIF beatmap, with or without score information. This is beatmap format internally used by Live Simulator: 2, without any modification. The extension is `.json`.
 
 * yuyu live simulator beatmap, the one with `.txt` extension (not `.ssp` one). **TODO: support for the new beatmap format**
 
@@ -106,6 +106,8 @@ Live Simulator: 2 supports these audio formats
 Live Simulator: 2 also uses that order to load audio files. So if you have `beatmap.ogg` and `beatmap.wav`, `beatmap.wav` will be loaded because it has higher priority.
 
 Add the beatmap file/folder to `<livesim2 R/W directory>/beatmap` and the optionally the audio in `<livesim2 R/W directory>/audio` (for mobile devices/desktop), or simply drag-and-drop the beatmap file/folder to Live Simulator: 2 window while in "Select Beatmap" menu (for desktop). The audio name must same with the beatmap name.
+
+**Note for iOS**: It's currently impossible to add beatmaps without jailbreak.
 
 Example Beatmap
 ---------------

@@ -8,33 +8,16 @@ LOVE2D v0.10.1 or later is required to run this live simulator.
 How to run
 ==========
 
-Start LOVE2D with this command-line
-
-    love <current directory> livesim <beatmap_name>
-
-There are 2 example beatmap which you can specify in `beatmap_name` argument.
-
-* `::1` - Daydream Warrior beatmap made by yuyu
-
-* `::2` - MOMENT RING beatmap made by yuyu (including fancy colored notes)
-
-Put your beatmap in `<DEPLS Save Directory>/beatmap` folder and the audio in `<DEPLS Save Directory>/audio`.
-Beatmap name and audio name must match, but the extension doesn't need to, and will try to load WAV or OGG, in order.
-
-Save directory can be seen if `lovec` is invoked (in Windows) or running `love` from terminal (Ubuntu and Mac OS X)
-
-Alternatively for Windows, simply download executable from Releases tab above.
-
-Status
-======
-
-You can play with keyboard or just view beatmap, although installing beatmaps is bit tricky.
-
-At the moment, only desktop operating system are supported (Windows, Mac OS X, and Ubuntu).
-Running it under Android is possible, but the audio delay is unacceptable, and will refuse to run under iOS
+Please see `docs/How_To_Setup.md`
 
 Components
 ==========
+
+Live Simulator: 2 uses these special components:
+
+* AquaShine Loader (base/core component that runs Live Simulator: 2). Please see `docs/AquaShine.md` for more information about this component.
+
+* NoteLoader, internal component responsible of loading beatmaps from variety of different formats.
 
 Live Simulator: 2 uses these external libraries to run:
 
@@ -47,10 +30,6 @@ Live Simulator: 2 uses these external libraries to run:
 * [tween.lua](https://github.com/kikito/tween.lua) (for most animations)
 
 * [JSON.lua](http://regex.info/blog/lua/json) (to load SIF and LLP beatmap)
-
-Components special for Live Simulator: 2:
-
-* AquaShine Loader (base/core component that runs Live Simulator: 2). Please see `docs/AquaShine.md` for more information about this component.
 
 Controls
 ========
