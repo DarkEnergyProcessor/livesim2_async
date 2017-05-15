@@ -315,6 +315,7 @@ function RenderMode.Start(arg)
 	RenderMode.DEPLS = love.filesystem.load("livesim.lua")()
 	RenderMode.DEPLS.RenderingMode = true
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
+	RenderMode.DEPLS.AutoPlay = true
 	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData

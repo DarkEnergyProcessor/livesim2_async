@@ -9,7 +9,6 @@ local ResultScreen = {}
 --UI Stuff
 local Font = AquaShine.LoadFont("MTLmr3m.ttf", 36)
 
-local background = AquaShine.LoadImage("assets/image/live/l_win_23.png")
 local comboWin = AquaShine.LoadImage("assets/image/live/l_win_07.png")
 local scoreLogo = AquaShine.LoadImage("assets/image/live/l_etc_09.png")
 local comboLogo = AquaShine.LoadImage("assets/image/live/l_etc_08.png")

@@ -862,7 +862,7 @@ function DEPLS.Draw(deltaT)
 	end
 		
 	if AllowedDraw then
-		-- Draw combo cheer at first
+		-- Draw combo cheer
 		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
 			Routines.ComboCheer.Draw()
 		end

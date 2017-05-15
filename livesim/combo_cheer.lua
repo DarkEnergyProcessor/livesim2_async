@@ -41,7 +41,7 @@ end
 
 function ComboCheer.Draw()
 	if DEPLS.Routines.ComboCounter.CurrentCombo >= 100 then
-		FlashFile:setOpacity(DEPLS.LiveOpacity)
+		FlashFile:setOpacity(DEPLS.LiveOpacity * 2)
 		FlashFile:draw()
 	end
 end

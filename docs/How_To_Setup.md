@@ -1,16 +1,16 @@
-#How To Setup
+How To Start
+============
 
-This page will guide you step-by-step how to run DEPLS2 for the first time. The key of getting DEPLS2 run is not hard, but not easy either.
-
-##System Requirements
+System Requirements
+-------------------
 
 Before you proceed, make sure your device comply these requirements
 
-* At least 1.3GHz dual core. More complex storyboard system requires more power and RAM
+* At least 1GHz dual core. \*
 
-* At least 256MB of free RAM.
+* At least 256MB of free RAM. \*
 
-* OpenGL 2.1 (or OpenGLES 2 for Android) capable graphics card
+* OpenGL 2.1 (or OpenGLES 2 for mobile devices) capable graphics card
 
 * Windows: Windows Vista or above (sorry Windows XP users)
 
@@ -20,13 +20,22 @@ Before you proceed, make sure your device comply these requirements
 
 * Android: Android v2.3 or above.
 
-* **iOS: Not tested!**
+* iOS: iOS 9. Live Simulator: 2 only tested under iOS 9 atm.
 
-##Getting LOVE2D and run DEPLS
+\* More complex storyboard system requires more power and RAM
 
-If your device comply with requirements above, then proceed. DEPLS2 requires LOVE2D v0.10.1 (or later) game framework. Below are steps to get LOVE2D installed.
+Getting LOVE2D and run Live Simulator: 2
+----------------------------------------
+
+If your device comply with requirements above, then proceed. livesim2 requires LOVE2D v0.10.1 (or later) game framework. Below are steps to get LOVE2D installed.
 
 ###Windows
+
+####Method A
+
+1. Simply download from releases tab above, extract, and run `livesim2.exe`
+
+####Method B
 
 1. Clone this repository with git or download it as zip. Make sure you extract the zip.
 
@@ -34,7 +43,7 @@ If your device comply with requirements above, then proceed. DEPLS2 requires LOV
 
 3. Extract it somewhere and open command prompt in location where you extracted LOVE2D.
 
-4. Now, type `lovec <DEPLS2 folder>`. If it works correctly, you'll see DEPLS2 main menu.
+4. Now, type `lovec <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu.
 
 > `lovec` is available in LOVE2D v0.10.2 and later. It's not hard to create one for older version if you have VS command prompt. To create `lovec`, run `copy love.exe lovec.exe && editbin /SUBSYSTEM:CONSOLE lovec.exe` in VS command prompt.
 
@@ -46,7 +55,7 @@ If your device comply with requirements above, then proceed. DEPLS2 requires LOV
 
 3. Type `sudo apt-get update` and `sudo apt-get install love`.
 
-4. Type `love <DEPLS2 folder>`. If it works correctly, you'll see DEPLS2 main menu
+4. Type `love <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu
 
 ###Mac OS X
 
@@ -54,29 +63,29 @@ If your device comply with requirements above, then proceed. DEPLS2 requires LOV
 
 ###Android
 
-1. Clone this repository or download zip. Push all files to somewhere in your phone in `DEPLS-DEPLS2` folder if you download it as ZIP, or simply push all files to your phone except `.git` folder (might be hidden).
+1. Clone this repository or download zip. Push all files to somewhere in your phone (extract it first if you download it as ZIP).
 
 2. Download LOVE2D APK from [LOVE2D](https://love2d.org/) website, or from Play Store.
 
-3. Find DEPLS2 `main.lua` in your phone, and open it with LOVE2D
+3. Find livesim2 `main.lua` in your phone, and open it with LOVE2D
 
-4. If it works, you'll see DEPLS2 main menu.
+4. If it works, you'll see livesim2 main menu.
 
-##Determining DEPLS R/W directory
+Determining R/W directory
+-------------------------
 
-It's necessary so that you can add beatmaps. If you're under Windows, Ubuntu, or Mac OS X, look at the terminal output (in Windows, use `lovec` instead of `love`). It will write `R/W Directory: <DEPLS2 R/W directory>`. Example in Windows: `R/W Directory: C:/Users/User/AppData/Roaming/LOVE/DEPLS`.
+You should see the R/W directory in main menu when starting Live Simulator: 2. If you didn't see that folder, open a new issue specifying your device because it's **guaranteed** to be created, otherwise error will be thrown.
 
-If you're under Android, most of the time it's in `/sdcard/Android/data/org.love2d.android/files/save/DEPLS`. If you didn't see that folder, open a new issue specifying your device. It is because if you run it for the first time, DEPLS will create it's own R/W directory, and **guaranteed** to be created.
+Adding beatmaps
+---------------
 
-##Adding beatmaps
-
-DEPLS2 supports these beatmap formats:
+livesim2 supports these beatmap formats:
 
 * DEPLS beatmap folder. It inherits from CBF format. Beatmap file can be LS2 beatmap, SIF beatmap, CBF, MIDI, or LLP. Additionaly with storyboard support. Can be in ZIP.
 
-* LS2 beatmap file. This is new DEPLS2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file structure is available.
+* LS2 beatmap file. This is new livesim2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file format structure is available.
 
-* Raw SIF beatmap, with or without score information. This is beatmap format internally used by DEPLS, without any modification. The extension is `.json`.
+* Raw SIF beatmap, with or without score information. This is beatmap format internally used by livesim2, without any modification. The extension is `.json`.
 
 * yuyu live simulator beatmap, the one with `.txt` extension (not `.ssp` one). **TODO: support for the new beatmap format**
 
@@ -84,11 +93,9 @@ DEPLS2 supports these beatmap formats:
 
 * Specialized MIDI file. The extension is `.mid`
 
-* LLPractice beatmap. The extension is `.llp` (make sure to rename it to prevent confusion)
+* LLPractice beatmap. The extension is `.llp`. **Make sure to rename the extension to prevent confusion**
 
-* ~~SIFTrain beatmap. The extension is `.rs`.~~ **Currently disabled due to processing bug**. There's problem in SIFTrain beatmap which causes JSON parse error. This is SIFTrain fault, since DEPLS2 uses JSON library which comply with JSON standards. To fix it, open the beatmap with text editor and add double quote to the value in the `music_file`.
-
-DEPLS supports these audio formats
+Live Simulator: 2 supports these audio formats
 
 * Raw PCM in WAV container
 
@@ -96,37 +103,18 @@ DEPLS supports these audio formats
 
 * MPEG Audio Layer 3/MP3
 
-DEPLS also uses that order to load audio files. So if you have `beatmap.ogg` and `beatmap.wav`, `beatmap.wav` will be loaded because it has higher priority.
+Live Simulator: 2 also uses that order to load audio files. So if you have `beatmap.ogg` and `beatmap.wav`, `beatmap.wav` will be loaded because it has higher priority.
 
-Add the beatmap file/folder in `<DEPLS2 R/W directory>/beatmap` and the optionally the audio in `<DEPLS2 R/W directory>/audio`. The audio name must same with the beatmap name, or explictly specify the used audio in the command-line (discussed later).
+Add the beatmap file/folder to `<livesim2 R/W directory>/beatmap` and the optionally the audio in `<livesim2 R/W directory>/audio` (for mobile devices/desktop), or simply drag-and-drop the beatmap file/folder to Live Simulator: 2 window while in "Select Beatmap" menu (for desktop). The audio name must same with the beatmap name.
 
-##Starting beatmap
+Example Beatmap
+---------------
 
-Note: Beatmap name and audio file is relative to `<DEPLS2 R/W dir>/beatmap/` and `<DEPLS2 R/W dir>/audio/` folder respectively. Specifying audio file argument is optional, and DEPLS will try to load audio in beatmap folder (if it's DEPLS/CBF beatmap folder) or in audio folder with the audio filename same as the beatmap name (and will try to load WAV or OGG audio).
+To run example beatmap, command-line must be used to start Live Simulator: 2. Invoking example beatmap under mobile device is impossible. The beatmap name must be start with two colons then followed by the example beatmap ID. So it will be:
 
-###Android
+    love <livesim2 folder> livesim ::<id>
 
-In Android, write file named `command_line.txt` in DEPLS2 R/W directory with this contents
-
-	livesim
-    <beatmap name without extension>
-    <used audio with extension (optional)>
-
-Then start DEPLS like the way described above.
-
-###Desktop (Windows, Ubuntu, Mac OS X)
-
-Start LOVE2D with this command-line arguments
-
-    love <DEPLS2 folder> livesim <beatmap name without extension> [audio filename with extension]
-
-Note: in windows, use `lovec` instead of `love` to keep the terminal waits for love to exits.
-
-##Example Beatmap
-
-To run example beatmap, the beatmap name must be start with two colons then followed by the example beatmap ID. So it will be
-
-    love <DEPLS2 folder> livesim ::<id>
+Note: `love <livesim2 folder>` can be replaced to `livesim2` for fused executable from releases tab (Windows only)
 
 Here is example beatmap IDs:
 

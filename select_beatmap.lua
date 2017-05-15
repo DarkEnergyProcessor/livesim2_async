@@ -315,6 +315,15 @@ end
 
 function SelectBeatmap.FileDropped(file)
 	local filename = file:getFilename()
+	local ext = filename:sub(-4)
+	
+	if ext == ".wav" or ext == ".ogg" or ext == ".mp3" then
+		assert(file:open("r"))
+		love.filesystem.write("audio/"..AquaShine.Basename(filename), file:read())
+		file:close()
+		
+		return
+	end
 	
 	if not(NoteLoader) then
 		NoteLoader = assert(love.filesystem.load("note_loader.lua"))()

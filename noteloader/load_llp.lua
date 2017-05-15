@@ -18,7 +18,7 @@ local LLPBeatmap = {
 --!          - song_file is the song file handle (Source object) or nil
 --! @note Modify `LLP_SIFT_DEFATTR` config to change default attribute
 function LLPBeatmap.Load(file)
-	local llp = JSON:decode(love.filesystem.newFileData(file[1]..".llp"):getString())
+	local llp = JSON:decode(love.filesystem.read(file[1]..".llp"))
 	local attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 1)	-- Smile is default
 	local sif_map = {}
 	

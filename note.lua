@@ -208,7 +208,7 @@ function SingleNoteObject.Update(this, deltaT)
 	
 	this.FirstCircle[1] = this.NoteposDiff[1] * (ElapsedTime / NotesSpeed) + 480
 	this.FirstCircle[2] = this.NoteposDiff[2] * (ElapsedTime / NotesSpeed) + 160
-	this.CircleScale = ElapsedTime / DEPLS.NotesSpeed
+	this.CircleScale = math.min(ElapsedTime / DEPLS.NotesSpeed, 1)
 	
 	-- If it's not pressed, and it's beyond miss range, make it miss
 	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
@@ -370,7 +370,7 @@ function LongNoteObject.Update(this, deltaT)
 		-- The note isn't in tapping state
 		this.FirstCircle[1] = this.NoteposDiff[1] * ElapsedTime / NotesSpeed + 480
 		this.FirstCircle[2] = this.NoteposDiff[2] * ElapsedTime / NotesSpeed + 160
-		this.CircleScale = ElapsedTime / NotesSpeed
+		this.CircleScale = math.min(ElapsedTime / NotesSpeed, 1)
 	else
 		this.FirstCircle[1] = this.CenterIdol[1]
 		this.FirstCircle[2] = this.CenterIdol[2]
@@ -414,7 +414,7 @@ function LongNoteObject.Update(this, deltaT)
 		
 		this.SecondCircle[1] = this.NoteposDiff[1] * EndNoteElapsedTime / NotesSpeed + 480
 		this.SecondCircle[2] = this.NoteposDiff[2] * EndNoteElapsedTime / NotesSpeed + 160
-		this.EndCircleScale = EndNoteElapsedTime / NotesSpeed
+		this.EndCircleScale = math.min(EndNoteElapsedTime / NotesSpeed, 1)
 	end
 	
 	-- First position
@@ -437,7 +437,6 @@ end
 --! @param this NoteObject
 function LongNoteObject.Draw(this)
 	local NoteImage
-	local graphics = love.graphics
 	local setColor = love.graphics.setColor
 	local draw = love.graphics.draw
 	
@@ -462,7 +461,7 @@ function LongNoteObject.Draw(this)
 	end
 	
 	if DEPLS.DebugNoteDistance then
-		local printf = graphics.print
+		local printf = love.graphics.print
 		local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 		
 		setColor(0, 0, 0, 255)

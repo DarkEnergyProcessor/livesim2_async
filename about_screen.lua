@@ -3,7 +3,7 @@ local AboutScreen = {}
 
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
-local TitleIcon = AquaShine.LoadImage("image/icon_128x128.png")
+local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
 local Background = AquaShine.LoadImage("assets/image/background/liveback_12.png")
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
@@ -39,8 +39,8 @@ This Live Simulator uses these external libraries:
 
 
 
-Repository:			https://github.com/MikuAuahDark/DEPLS
-DEPLS2 Version:		]].._G.DEPLS_VERSION
+Repository:					https://github.com/MikuAuahDark/livesim2
+Live Simulator: 2 Version:	 ]].._G.DEPLS_VERSION
 
 function AboutScreen.Start() end
 function AboutScreen.Update() end

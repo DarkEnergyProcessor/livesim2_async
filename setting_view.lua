@@ -158,8 +158,6 @@ function Settings.MouseReleased(x, y, button)
 	MouseState[1], MouseState[2] = x, y
 	MouseState[3] = false
 	
-	print("DEBUG: X:"..x.." Y:"..y)
-
 	if x >= 0 and x <= 86 and y >= 0 and y <= 58 then
 		-- Exit settings
 		AquaShine.LoadEntryPoint("main_menu.lua")
@@ -168,14 +166,12 @@ function Settings.MouseReleased(x, y, button)
 	-- Apply changes
 	if (x >= 752 and x <= 890) and (y >= 20 and y <= 85) then
 		changeSettings()
-		print("Settings changed!")
 	end
 	-- Set automode as ON
 	if (x >= 215 and x <= 270) and (y >= 70 and y <= 130) then
 		SettingsList.AUTOMODE.after = 1
 		love.graphics.draw(ConfigList[1].OnButton, 185, 60)
 		love.graphics.draw(ConfigList[1].OffButtonSe, 275, 61)
-		print("Before: "..SettingsList.AUTOMODE.after.."Automode = 1")
 	end
 
 	-- Set automode as OFF
@@ -183,19 +179,16 @@ function Settings.MouseReleased(x, y, button)
 		SettingsList.AUTOMODE.after = 0
 		love.graphics.draw(ConfigList[1].OnButtonSe, 185, 61)
 		love.graphics.draw(ConfigList[1].OffButton, 275, 60)
-		print("Automode = 0")
 	end
 
 	-- Set 5.0 as ON
 	if (x >= 215 and x <= 270) and (y >= 310 and y <= 375) then
 		SettingsList.NOTE_STYLE.after = 2
-		print("5.0 Mode = ON")
 	end
 
 	-- Set 5.0 as OFF
 	if (x >= 300 and x <= 355) and (y >= 310 and y <= 375) then
 		SettingsList.NOTE_STYLE.after = 1
-		print("5.0 Mode = OFF")
 	end
 
 	-- Remove 100 as note speed
@@ -203,7 +196,6 @@ function Settings.MouseReleased(x, y, button)
 		if SettingsList.NOTE_SPEED.after > 400 then
 			SettingsList.NOTE_SPEED.after = SettingsList.NOTE_SPEED.after - 100
 		end
-		print("Speed = "..SettingsList.NOTE_SPEED.after)
 	end
 
 	-- Add 100 as note speed
@@ -211,7 +203,6 @@ function Settings.MouseReleased(x, y, button)
 		if SettingsList.NOTE_SPEED.after < 4500 then
 			SettingsList.NOTE_SPEED.after = SettingsList.NOTE_SPEED.after + 100
 		end
-		print("Speed = "..SettingsList.NOTE_SPEED.after)
 	end
 
 	-- Remove 100 as note speed
@@ -219,7 +210,7 @@ function Settings.MouseReleased(x, y, button)
 		if SettingsList.BACKGROUND_IMAGE.after > 1 then
 			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after - 1
 		end
-		print("Image = "..SettingsList.BACKGROUND_IMAGE.after)
+		
 		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
 	end
 
@@ -228,7 +219,7 @@ function Settings.MouseReleased(x, y, button)
 		if SettingsList.BACKGROUND_IMAGE.after < 12 then
 			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after + 1
 		end
-		print("Image = "..SettingsList.BACKGROUND_IMAGE.after)
+		
 		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
 	end
 
@@ -253,7 +244,7 @@ function printSettings()
 	--Text
 	love.graphics.setFont(Settings.FontDesc)
 	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Autoplay", 95, 93)
+	love.graphics.print("Autoplay", 5, 93)
 	love.graphics.setColor(255, 255, 255, 255)
 	--Button
 	setAutomodeButtons()
@@ -264,7 +255,7 @@ function printSettings()
 	--Text
 	love.graphics.setFont(Settings.FontDesc)
 	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Background ID", 95, 173)
+	love.graphics.print("Background ID", 5, 173)
 	love.graphics.setColor(255, 255, 255, 255)
 	--Speed indicator
 	love.graphics.setColor(0, 0, 0, 255)
@@ -280,7 +271,7 @@ function printSettings()
 	--Text
 	love.graphics.setFont(Settings.FontDesc)
 	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Notes Speed", 95, 253)
+	love.graphics.print("Notes Speed", 5, 253)
 	love.graphics.setColor(255, 255, 255, 255)
 	--Speed indicator
 	love.graphics.setColor(0, 0, 0, 255)
@@ -297,7 +288,7 @@ function printSettings()
 	--Text
 	love.graphics.setFont(Settings.FontDesc)
 	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("5.0 Notes", 95, 333)
+	love.graphics.print("5.0 Notes", 5, 333)
 	love.graphics.setColor(255, 255, 255, 255)
 	--Button
 	setNotesButtons()
@@ -327,25 +318,18 @@ function changeSettings()
 	if not(SettingsList.AUTOMODE.before == SettingsList.AUTOMODE.after) then
 		AquaShine.SaveConfig("AUTOPLAY", SettingsList.AUTOMODE.after)
 		SettingsList.AUTOMODE.before = SettingsList.AUTOMODE.after
-		
-		print("Changed: AUTOPLAY")
 	end
 	if not(SettingsList.BACKGROUND_IMAGE.before == SettingsList.BACKGROUND_IMAGE.after) then
 		AquaShine.SaveConfig("BACKGROUND_IMAGE", SettingsList.BACKGROUND_IMAGE.after)
 		SettingsList.BACKGROUND_IMAGE.before = SettingsList.BACKGROUND_IMAGE.after
-		
-		print("Changed: BACKGROUND_IMAGE")
 	end
 	if not(SettingsList.NOTE_STYLE.before == SettingsList.NOTE_STYLE.after) then
 		AquaShine.SaveConfig("NOTE_STYLE", SettingsList.NOTE_STYLE.after)
 		SettingsList.NOTE_STYLE.before = SettingsList.NOTE_STYLE.after
-		print("Changed: NOTE_STYLE")
 	end
 	if not(SettingsList.NOTE_SPEED.before == SettingsList.NOTE_SPEED.after) then
 		AquaShine.SaveConfig("NOTE_SPEED", SettingsList.NOTE_SPEED.after)
 		SettingsList.NOTE_SPEED.before = SettingsList.NOTE_SPEED.after
-		
-		print("Changed: NOTE_SPEED")
 	end
 end
 

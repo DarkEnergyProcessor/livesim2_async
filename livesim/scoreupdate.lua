@@ -10,7 +10,7 @@ local score_digit_len = 0
 local xpos
 
 for i = 0, 9 do
-	score_images[i] = love.graphics.newImage("assets/image/live/score_num/l_num_0"..i..".png")
+	score_images[i] = AquaShine.LoadImage("assets/image/live/score_num/l_num_0"..i..".png")
 end
 
 function ScoreUpdate.Update(deltaT)

@@ -35,7 +35,7 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
-local versionText = "livesim2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader\nSave Directory: "..love.filesystem.getSaveDirectory()
+local versionText = "Live Simulator: 2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader\nR/W Directory: "..love.filesystem.getSaveDirectory()
 function MainMenu.Draw(deltaT)
 	-- Draw background
 	draw(background, 0, 0)
@@ -82,6 +82,11 @@ end
 
 function MainMenu.MouseReleased(x, y)
 	MouseState.X, MouseState.Y, MouseState.Pressed = x, y, false
+	
+	if x >= 0 and y >= 589 and x < 332 and y < 624 then
+		AquaShine.LoadEntryPoint("about_screen.lua")
+		return
+	end
 	
 	for i = 1, #menu_select do
 		local mobj = menu_select[i]
