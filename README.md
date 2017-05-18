@@ -1,3 +1,5 @@
+# This is transition code from [`rel 20170416`](https://github.com/MikuAuahDark/livesim2/commit/9701b5fc5df9d7feb926787becfe82f3e4cb62b4) to `v1.0.0`. This code only provided for learning purpose. Further development uses [`master`](https://github.com/MikuAuahDark/livesim2/tree/master) branch.
+
 Live Simulator: 2
 =================
 
