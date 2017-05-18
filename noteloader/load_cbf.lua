@@ -393,10 +393,10 @@ function CBFBeatmap.Load(file)
 			})
 		end
 		
-		local i = 0
+		local i = 10
 		for line in love.filesystem.lines(charposname) do
 			if #line > 0 then
-				i = i + 1
+				i = i - 1
 				
 				local cache_name = line:sub(line:find("/") + 1)
 				
@@ -440,6 +440,7 @@ function CBFBeatmap.Load(file)
 			local cover = {image = love.graphics.newImage(fn)}
 			
 			cover.title = cbf.SONG_NAME
+			cover.arrangement = cbf.COVER_COMMENT or ""
 			out.cover = cover
 			
 			break

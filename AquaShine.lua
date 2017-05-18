@@ -498,6 +498,7 @@ function love.keyreleased(key, scancode)
 end
 
 -- File/folder drag-drop support
+-- Broken in Ubuntu 14.04 atm
 function love.filedropped(file)
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.FileDropped then
 		AquaShine.CurrentEntryPoint.FileDropped(file)
