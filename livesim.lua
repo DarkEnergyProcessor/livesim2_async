@@ -50,6 +50,7 @@ local DEPLS = {
 	NoteAccuracy = {{16, nil}, {40, nil}, {64, nil}, {112, nil}, {128, nil}},	-- Note accuracy
 	NoteManager = nil,
 	NoteLoader = nil,
+	NoteRandomized = false,
 	Stamina = 32,
 	NotesSpeed = 800,
 	NotesSpeedAlterDisabled = false,
@@ -572,6 +573,7 @@ function DEPLS.Start(argv)
 		if not(notes_list) then
 			print("Can't be randomized", msg)
 		else
+			DEPLS.NoteRandomized = true
 			noteloader_data.notes_list = notes_list
 		end
 	end

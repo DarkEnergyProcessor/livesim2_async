@@ -6,11 +6,10 @@ local function CopyBeatmap(b)
 	
 	a.timing_sec = b.timing_sec
 	a.notes_attribute = b.notes_attribute
+	a.notes_level = b.notes_level
 	a.effect = b.effect
 	a.effect_value = b.effect_value
 	a.position = b.position
-	a.secondchain = b.secondchain
-	a.lnchain = b.lnchain
 	
 	return a
 end
@@ -54,6 +53,26 @@ local function Randomizer(beatmap)
 			return nil, "Contain swing long notes"
 		end
 		
+		if bm.effect == 3 then
+			-- Find overlapped LN >= 3
+			local overlapped_count = 0
+			local end_time = bm.timing_sec + bm.effect_value
+			
+			for j = i + 1, #beatmap do
+				local anbm = beatmap[j]
+				
+				if anbm.timing_sec >= end_time then
+					break
+				elseif anbm.effect == 3 and anbm.timing_sec < end_time and anbm.timing_sec + anbm.effect_value >= end_time then
+					overlapped_count = overlapped_count + 1
+				end
+			end
+			
+			if overlapped_count > 1 then
+				return nil, "More than 2 simultaneous long note"
+			end
+		end
+		
 		if bm.timing_sec == last_timing_sec then
 			local simul_count = 0
 			
@@ -70,16 +89,6 @@ local function Randomizer(beatmap)
 			end
 		end
 		
-		if bm.effect == 3 then
-			local tempbm = {}
-			
-			tempbm.timing_sec = bm.timing_sec + bm.effect_value
-			tempbm.position = bm.position
-			tempbm.lnchain = bm
-			
-			beatmap[#beatmap + 1] = tempbm
-		end
-		
 		last_timing_sec = bm.timing_sec
 	end
 	
@@ -87,101 +96,85 @@ local function Randomizer(beatmap)
 	
 	-- Second, Randomize it
 	local new_beatmap = {}
-	local longnote_list = {}
+	local buffer_200ms = {}
 	
-	for i = 1, #beatmap do
+	for i = 1, bmlen do
 		local bm = beatmap[i]
 		
-		if not(bm.processed) then
+		if not(new_beatmap[i]) then
 			local nb = CopyBeatmap(bm)
 			
-			if nb.notes_attribute then
-				if nb.effect == 3 then
-					local newpos
-					local last_ln = longnote_list[#longnote_list]
+			if nb.effect == 3 then
+				local end_time = nb.timing_sec + nb.effect_value
+				local newpos
+				
+				repeat
+					newpos = math.random(1, 9)
+				until newpos ~= 5
+				
+				for j = i + 1, #beatmap do
+					local abm = beatmap[j]
 					
-					if last_ln and last_ln.timing_sec + last_ln.effect_value >= nb.timing_sec then
-						if last_ln.position > 5 then
-							-- Left
-							newpos = math.random(1, 4)
-						else
-							-- Right
-							newpos = math.random(6, 9)
-						end
-					else
-						repeat
-							newpos = math.random(1, 9)
-						until newpos ~= 5
+					if (abm.timing_sec >= end_time and abm.effect == 3) or abm.timing_sec > end_time then
+						break
 					end
 					
-					longnote_list[#longnote_list + 1] = nb
-					nb.position = newpos
-					bm.secondchain = nb
-				else
-					local temp = beatmap[i + 1]
+					local tgtbm = CopyBeatmap(abm)
 					
-					if temp and temp.timing_sec == nb.timing_sec and temp.notes_attribute then
-						-- Simultaneous note
-						local tgtbm = CopyBeatmap(temp)
-						
-						if math.random(1, 2) == 1 then
-							-- First one is left
-							nb.position = math.random(1, 4)
-							tgtbm.position = math.random(6, 9)
-						else
-							-- First one is right
-							nb.position = math.random(6, 9)
-							tgtbm.position = math.random(1, 4)
-						end
-						
-						temp.processed = true
-						new_beatmap[i + 1] = tgtbm
+					if newpos > 5 then
+						-- Left
+						tgtbm.position = math.random(1, 4)
 					else
-						-- Scan single notes in next 200ms range
-						local j = i + 1
-						local pos = math.random(1, 9)
-						local forbidden_pos = {pos}
-						
-						nb.position = pos
-						
-						while true do
-							local tgtbm = CopyBeatmap(beatmap[j])
-							
-							if
-								not(tgtbm) or
-								tgtbm.effect == 3 or
-								tgtbm.timing_sec - nb.timing_sec > 0.2 or
-								(beatmap[j + 1] and beatmap[j + 1].timing_sec == tgtbm.timing_sec)
-							then
-								break
-							end
-							
-							local pos = PickPosWhichIsNot(forbidden_pos)
-							forbidden_pos[#forbidden_pos + 1] = pos
-							
-							tgtbm.position = pos
-							bm.processed = true
-							
-							new_beatmap[j] = tgtbm
-							j = j + 1
-						end
+						-- Right
+						tgtbm.position = math.random(6, 9)
 					end
+					
+					new_beatmap[j] = tgtbm
 				end
+				
+				nb.position = newpos
+				
+				-- Clear 200ms note buffer
+				repeat until not(table.remove(buffer_200ms))
 			else
-				nb.position = nb.lnchain.secondchain.position
+				local temp = beatmap[i + 1]
+				
+				if temp and temp.timing_sec == nb.timing_sec and temp.notes_attribute then
+					-- Simultaneous note
+					local tgtbm = CopyBeatmap(temp)
+					
+					if math.random(1, 2) == 1 then
+						-- First one is left
+						nb.position = math.random(1, 4)
+						tgtbm.position = math.random(6, 9)
+					else
+						-- First one is right
+						nb.position = math.random(6, 9)
+						tgtbm.position = math.random(1, 4)
+					end
+					
+					new_beatmap[i + 1] = tgtbm
+					
+					-- Clear 200ms note buffer
+					repeat until not(table.remove(buffer_200ms))
+				else
+					local forbidden_pos = {}
+					
+					for j = #buffer_200ms, 1, -1 do
+						if nb.timing_sec - buffer_200ms[j].timing_sec <= 0.2 then
+							forbidden_pos[#forbidden_pos + 1] = buffer_200ms[j].position
+						else
+							table.remove(buffer_200ms, j)
+						end
+					end
+					
+					nb.position = PickPosWhichIsNot(forbidden_pos)
+					table.insert(buffer_200ms, nb)
+				end
 			end
 			
 			-- Insert
 			new_beatmap[i] = nb
-		end
-	end
-	
-	-- Third, remove any temporary placeholder beatmap
-	for i = #new_beatmap, 1, -1 do
-		new_beatmap[i].secondchain = nil
-		
-		if not(new_beatmap[i].notes_attribute) then
-			table.remove(new_beatmap, i)
 		end
 	end
 	
@@ -195,5 +188,11 @@ return function(beatmap)
 		a[i] = CopyBeatmap(beatmap[i])
 	end
 	
-	return Randomizer(a)
+	local _, b, c = pcall(Randomizer, a)
+	
+	if _ == false then
+		return nil, b
+	else
+		return b, c
+	end
 end

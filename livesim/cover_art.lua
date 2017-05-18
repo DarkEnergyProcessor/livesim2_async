@@ -24,6 +24,7 @@ local setColor = love.graphics.setColor
 
 local TitleWidth
 local ArrWidth
+local RandomFrame
 
 function CoverArt.Initialize(cover_data)
 	CoverArt.CoverData = cover_data
@@ -35,6 +36,10 @@ function CoverArt.Initialize(cover_data)
 	
 	if cover_data.arrangement then
 		ArrWidth = ArrFont:getWidth(cover_data.arrangement)
+	end
+	
+	if DEPLS.NoteRandomized then
+		RandomFrame = AquaShine.LoadImage("assets/image/live/l_win_32.png")
 	end
 end
 
@@ -87,6 +92,9 @@ function CoverArt.Draw()
 	
 	setColor(255, 255, 255, FirstTrans.imageopacity)
 	draw(CoverArt.CoverData.image, 280, 80, 0, Imagescale[1], Imagescale[2])
+	if RandomFrame then
+		draw(RandomFrame, 280, 80, 0, 400 / 272)
+	end
 	setColor(255, 255, 255, 255)
 end
 

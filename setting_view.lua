@@ -46,8 +46,6 @@ local SettingsList = {
 Settings.Background = AquaShine.LoadImage("assets/image/background/liveback_"..SettingsList.BACKGROUND_IMAGE.after..".png")
 
 local MouseState = {0, 0, false}	-- x, y, is click?
-local DescContentX = 464 + 20
-local DescContentY = 236 + 20
 
 local plus = AquaShine.LoadImage("assets/image/ui/com_etc_204.png")
 local minus = AquaShine.LoadImage("assets/image/ui/com_etc_205.png")
@@ -55,34 +53,10 @@ local minus = AquaShine.LoadImage("assets/image/ui/com_etc_205.png")
 local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
 local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
 
-local ConfigList = {
-	{
-		-- The configuration name
-		Name = "Autoplay",
-		-- Function to be called if it's shown
-		Show = function(this, deltaT)
-			
-		end,
-		-- Function to be called if "Default Setting" is clicked
-		SetDefault = function(this)
-		end,
-		-- Function to be called if "Apply Setting" is clicked
-		Set = function(this)
-		end,
-		-- Function to be called on left click
-		Click = function(this, x, y)
-		end,
-		-- Function to be called on left click release
-		ClickRelease = function(this, x, y)
-		end,
-		
-		-- Your additional properties below
-		OnButton = AquaShine.LoadImage("assets/image/ui/set_button_14.png"),
-		OnButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_14se.png"),
-		OffButton = AquaShine.LoadImage("assets/image/ui/set_button_15.png"),
-		OffButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_15se.png"),
-	}
-}
+local OnButton = AquaShine.LoadImage("assets/image/ui/set_button_14.png")
+local OnButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_14se.png")
+local OffButton = AquaShine.LoadImage("assets/image/ui/set_button_15.png")
+local OffButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_15se.png")
 
 -- Usual configuration settings
 function Settings.Start()
@@ -123,12 +97,10 @@ function Settings.Draw(deltaT)
 		MouseState[2] >= 55 and MouseState[2] <= 65
 	then
 		-- Draw se
-		--love.graphics.draw(ConfigList[1].OnButtonSe)
-		love.graphics.draw(ConfigList[1].OnButtonSe, 185, 60)
+		love.graphics.draw(OnButtonSe, 185, 60)
 	else
 		-- Draw normal
-		--love.graphics.draw(ConfigList[1].OnButton)
-		love.graphics.draw(ConfigList[1].OnButton, 185, 60)
+		love.graphics.draw(OnButton, 185, 60)
 	end
 
 	-- Draw label
@@ -170,15 +142,15 @@ function Settings.MouseReleased(x, y, button)
 	-- Set automode as ON
 	if (x >= 215 and x <= 270) and (y >= 70 and y <= 130) then
 		SettingsList.AUTOMODE.after = 1
-		love.graphics.draw(ConfigList[1].OnButton, 185, 60)
-		love.graphics.draw(ConfigList[1].OffButtonSe, 275, 61)
+		love.graphics.draw(OnButton, 185, 60)
+		love.graphics.draw(OffButtonSe, 275, 61)
 	end
 
 	-- Set automode as OFF
 	if (x >= 300 and x <= 355) and (y >= 65 and y <= 130) then
 		SettingsList.AUTOMODE.after = 0
-		love.graphics.draw(ConfigList[1].OnButtonSe, 185, 61)
-		love.graphics.draw(ConfigList[1].OffButton, 275, 60)
+		love.graphics.draw(OnButtonSe, 185, 61)
+		love.graphics.draw(OffButton, 275, 60)
 	end
 
 	-- Set 5.0 as ON
@@ -296,21 +268,21 @@ end
 
 function setAutomodeButtons()
 	if SettingsList.AUTOMODE.after == 0 then
-		love.graphics.draw(ConfigList[1].OnButton, 185, 60)
-		love.graphics.draw(ConfigList[1].OffButtonSe, 275, 61)
+		love.graphics.draw(OnButton, 185, 60)
+		love.graphics.draw(OffButtonSe, 275, 61)
 	else
-		love.graphics.draw(ConfigList[1].OnButtonSe, 185, 61)
-		love.graphics.draw(ConfigList[1].OffButton, 275, 60)
+		love.graphics.draw(OnButtonSe, 185, 61)
+		love.graphics.draw(OffButton, 275, 60)
 	end
 end
 
 function setNotesButtons()
 	if SettingsList.NOTE_STYLE.after == 1 then
-		love.graphics.draw(ConfigList[1].OnButton, 185, 300)
-		love.graphics.draw(ConfigList[1].OffButtonSe, 275, 301)
+		love.graphics.draw(OnButton, 185, 300)
+		love.graphics.draw(OffButtonSe, 275, 301)
 	else
-		love.graphics.draw(ConfigList[1].OnButtonSe, 185, 301)
-		love.graphics.draw(ConfigList[1].OffButton, 275, 300)
+		love.graphics.draw(OnButtonSe, 185, 301)
+		love.graphics.draw(OffButton, 275, 300)
 	end
 end
 
