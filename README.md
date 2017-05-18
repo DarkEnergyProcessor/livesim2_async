@@ -1,4 +1,4 @@
-#This one has been superseded by [DEPLS2](https://github.com/MikuAuahDark/DEPLS/tree/master). This one is only provided for learning purpose and should not be used/migrate to DEPLS2.
+# This one has been superseded by [Live Simulator: 2](https://github.com/MikuAuahDark/DEPLS/tree/master). This one is only provided for learning purpose and should not be used. Well, you should learn from Live Simulator: 2 codebase anyway.
 
 **********************************
 
