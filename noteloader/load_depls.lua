@@ -5,6 +5,7 @@
 local AquaShine, NoteLoader = ...
 local JSON = require("JSON")
 local DEPLS2Beatmap = {
+	Name = "DEPLS Beatmap Folder",
 	Extension = nil		-- Detect function is necessary
 }
 

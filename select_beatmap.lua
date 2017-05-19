@@ -144,8 +144,8 @@ function SelectBeatmap.Draw()
 				draw(s_button_03se, xpos, ypos, 0, 0.5, 0.5)
 				setColor(255, 255, 255, 255)
 				setFont(FontDesc)
-				drawtext("Type: ", 118, 536)
-				drawtext(beatmap_info.type, 174, 536)
+				drawtext("Type: ", 52, 536)
+				drawtext(beatmap_info.type, 108, 536)
 				setFont(MTLmr3m)
 			elseif MouseState.X >= xpos and MouseState.X < xpos + 216 and
 			   MouseState.Y >= ypos and MouseState.Y < ypos + 40 then
@@ -257,8 +257,8 @@ function SelectBeatmap.MouseReleased(x, y, button)
 	end
 end
 
-function SelectBeatmap.KeyPressed(key, scancode, repeat_bit)
-	if not(repeat_bit) and key == "escape" then
+function SelectBeatmap.KeyReleased(key, scancode)
+	if key == "escape" then
 		AquaShine.LoadEntryPoint("main_menu.lua")
 	end
 end

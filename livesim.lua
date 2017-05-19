@@ -614,7 +614,7 @@ function DEPLS.Start(argv)
 	
 	-- If note style forcing is not enabled, get from config
 	if not(DEPLS.ForceNoteStyle) then
-		DEPLS.ForceNoteStyle = AquaShine.LoadConfig("NOTE_STYLE", 1)
+		DEPLS.ForceNoteStyle = noteloader_data.note_style or AquaShine.LoadConfig("NOTE_STYLE", 1)
 	end
 	
 	-- Add to note manager
@@ -996,60 +996,51 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 	if key == "f6" then
 		DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
 		update_audio_volume()
-	elseif scancode == "f5" then
+	elseif key == "f5" then
 		DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
 		update_audio_volume()
-	elseif repeat_bit == false then
-		if key == "escape" then
-			if DEPLS.Sound.LiveAudio then
-				DEPLS.Sound.LiveAudio:stop()
-			end
-			
-			-- Unmount
-			AquaShine.MountZip()
-			-- Back
-			AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
-		elseif key == "backspace" then
-			if DEPLS.Sound.LiveAudio then
-				DEPLS.Sound.LiveAudio:stop()
-			end
-			
-			-- Restart
-			AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
-		elseif key == "lshift" then
-			DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
-		elseif key == "lctrl" then
-			DEPLS.AutoPlay = not(DEPLS.AutoPlay)
-		elseif key == "lalt" then
-			DEPLS.DebugNoteDistance = not(DEPLS.DebugNoteDistance)
-		elseif key == "pageup" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed < 4 then
-			-- Increase play speed
-			DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 2)
-		elseif key == "pagedown" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed > 0.0625 then
-			-- Decrease play speed
-			DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 0.5)
-		elseif key == "up" then
-			DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed + 100)
-		elseif key == "down" and DEPLS.NotesSpeed > 400 then
-			DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed - 100)
-		elseif DEPLS.ElapsedTime >= 0 then
-			for i = 1, 9 do
-				if key == DEPLS.Keys[i] then
-					DEPLS.NoteManager.SetTouch(i, key)
-					break
-				end
-			end
-		end
 	end
 end
 
 function DEPLS.KeyReleased(key)
-	if DEPLS.ElapsedTime <= 0 then return end
-	
-	for i = 1, 9 do
-		if key == DEPLS.Keys[i] then
-			DEPLS.NoteManager.SetTouch(nil, key, true)
-			break
+	if key == "escape" then
+		if DEPLS.Sound.LiveAudio then
+			DEPLS.Sound.LiveAudio:stop()
+		end
+		
+		-- Unmount
+		AquaShine.MountZip()
+		-- Back
+		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
+	elseif key == "backspace" then
+		if DEPLS.Sound.LiveAudio then
+			DEPLS.Sound.LiveAudio:stop()
+		end
+		
+		-- Restart
+		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
+	elseif key == "lshift" then
+		DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
+	elseif key == "lctrl" then
+		DEPLS.AutoPlay = not(DEPLS.AutoPlay)
+	elseif key == "lalt" then
+		DEPLS.DebugNoteDistance = not(DEPLS.DebugNoteDistance)
+	elseif key == "pageup" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed < 4 then
+		-- Increase play speed
+		DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 2)
+	elseif key == "pagedown" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed > 0.0625 then
+		-- Decrease play speed
+		DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 0.5)
+	elseif key == "up" then
+		DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed + 100)
+	elseif key == "down" and DEPLS.NotesSpeed > 400 then
+		DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed - 100)
+	elseif DEPLS.ElapsedTime >= 0 then
+		for i = 1, 9 do
+			if key == DEPLS.Keys[i] then
+				DEPLS.NoteManager.SetTouch(nil, key, true)
+				break
+			end
 		end
 	end
 end

@@ -5,6 +5,7 @@ local AquaShine, NoteLoader = ...
 local stringstream = require("stringstream")
 
 local MIDIBeatmap = {
+	Name = "MIDI Beatmap",
 	Extension = "mid"
 }
 

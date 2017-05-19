@@ -5,7 +5,7 @@ local AquaShine = AquaShine
 local JSON = require("JSON")
 local love = love
 
-local testbeatmap = {{"dwr", "ogg"} , {"1154_mod", "ogg"}}
+local testbeatmap = {"Mon_LS2" , "oneway_LS2"}
 local NoteLoader = {}
 local SaveDirectory = love.filesystem.getSaveDirectory()
 
@@ -74,13 +74,13 @@ end
 function NoteLoader.NoteLoader(path)
 	if path:find("::") == 1 then
 		-- Test beatmap
+		local ls2_loader = loaders[3]
 		local id = tonumber(path:match("::(%d+)"))
-		local bm = assert(testbeatmap[id], "Invalid test beatmap ID")
+		local bmname = assert(testbeatmap[id], "Invalid test beatmap ID")
+		local bmt = {}
+		bmt[1] = "test/"..bmname
 		
-		return {
-			notes_list = JSON:decode(love.filesystem.read("test/"..bm[1]..".json")),
-			song_file = love.sound.newSoundData("test/"..bm[1].."."..bm[2])
-		}
+		return ls2_loader.Load(bmt)
 	end
 	
 	path = {
@@ -149,11 +149,11 @@ function NoteLoader.Enumerate()
 				-- Detect it
 				if loader.Extension then
 					if love.filesystem.isFile(path[1].."."..loader.Extension) then
-						btype = beatmap_names[i]
+						btype = loaders[i].Name
 					end
 				elseif loader.Extension == nil and loader.Detect then
 					if loader.Detect(path) then
-						btype = beatmap_names[i]
+						btype = loaders[i].Name
 					end
 				else
 					assert(false, "Invalid beatmap loader "..i)

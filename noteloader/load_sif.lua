@@ -5,6 +5,7 @@
 local JSON = require("JSON")
 
 local SIFBeatmap = {
+	Name = "SIF Beatmap",
 	Extension = "json"
 }
 

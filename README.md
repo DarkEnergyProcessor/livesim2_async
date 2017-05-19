@@ -64,7 +64,7 @@ Supported Beatmaps
 Screenshots
 ===========
 
-Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8) (added to example beatmap soon)
+Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8) (example beatmap code `::2`)
 
 Note circle Pre-5.0
 
@@ -82,7 +82,7 @@ This live simulator also uses many assets from Love Live! School Idol Festival g
 Special Thanks
 ==============
 
-* [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images and example beatmaps.
+* [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images.
 
 License
 =======

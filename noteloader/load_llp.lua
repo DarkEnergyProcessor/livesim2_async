@@ -5,6 +5,7 @@ local AquaShine, NoteLoader = ...
 local JSON = require("JSON")
 
 local LLPBeatmap = {
+	Name = "LLPractice Beatmap",
 	Extension = "llp"	-- Since extension exist, Detect function is unnecessary
 }
 

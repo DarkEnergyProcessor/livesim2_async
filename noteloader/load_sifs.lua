@@ -5,6 +5,7 @@
 local AquaShine, NoteLoader = ...
 
 local SIFSBeatmap = {
+	Name = "Sukufesu Simulator Beatmap",
 	Extension = "txt"
 }
 

@@ -91,7 +91,7 @@ local function process_BMPM(stream)
 			elseif is_star and not(is_token) then
 				effect_new = 4
 			elseif is_star and is_token then
-				assert(false, "Invalid note effect bits")
+				effect_new = 11
 			end
 		end
 		
@@ -255,7 +255,7 @@ local function process_SRYL(stream, path)
 		storyboard = a and b or storyboard
 	end
 	
-	luastoryboard.Load = function() luastoryboard.LoadString(storyboard.Storyboard, path) end
+	luastoryboard.Load = function() luastoryboard.Storyboard.LoadString(storyboard, path) end
 	return luastoryboard
 end
 
@@ -266,12 +266,7 @@ local function process_UIMG(stream)
 	
 	return
 		stream:read(1):byte(),
-		love.graphics.newImage(
-			love.filesystem.newFileData(
-				readstring(stream),
-				table.concat({randstring(8), ".png"})
-			)
-		)
+		love.graphics.newImage(love.filesystem.newFileData(readstring(stream), randstring(8).. ".png"))
 end
 
 local function process_UNIT(stream)
@@ -294,7 +289,7 @@ local function process_DATA(stream)
 	
 	return
 		filename,
-		love.graphics.newFileData(readstring(stream), filename)
+		love.filesystem.newFileData(readstring(stream), filename)
 end
 
 --! @brief Returns audio from ADIO section
@@ -345,6 +340,7 @@ function ls2.parsestream(stream, path)
 	local additional_data = {}
 	local section_amount
 	local backgroundid
+	local force_ns
 	local staminadisp
 	local scoretap
 	
@@ -352,6 +348,8 @@ function ls2.parsestream(stream, path)
 	
 	section_amount = string2wordu(stream:read(2))
 	backgroundid = stream:read(1):byte()
+	force_ns = math.floor(backgroundid / 16)
+	backgroundid = backgroundid % 16
 	staminadisp = stream:read(1):byte()
 	scoretap = string2wordu(stream:read(2))
 	
@@ -373,9 +371,11 @@ function ls2.parsestream(stream, path)
 			
 			uimg_data[a] = b
 		elseif section == "UNIT" then
-			local a, b = process_UNIT(stream)
+			local list = process_UNIT(stream)
 			
-			unit_data[a] = b
+			for i = 1, #list do
+				unit_data[list[i][1]] = list[i][2]
+			end
 		elseif section == "BIMG" then
 			local a, b = process_BIMG(stream)
 			
@@ -421,6 +421,10 @@ function ls2.parsestream(stream, path)
 		output.background = backgroundid
 	end
 	
+	if force_ns > 0 then
+		output.note_style = force_ns
+	end
+	
 	-- Unit data checking
 	local new_unit_data = {}
 	local has_unit_data = false
@@ -433,7 +437,7 @@ function ls2.parsestream(stream, path)
 	end
 	
 	if has_unit_data then
-		output.unit_image = new_unit_data
+		output.units = new_unit_data
 	end
 	
 	-- Score tap check

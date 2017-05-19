@@ -4,6 +4,7 @@
 local ls2 = require("ls2")
 
 local LS2Beatmap = {
+	Name = "Live Simulator: 2 Binary Beatmap",
 	Extension = "ls2"
 }
 

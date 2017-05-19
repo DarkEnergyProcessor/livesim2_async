@@ -4,6 +4,7 @@
 local AquaShine, NoteLoader = ...
 local bit = require("bit")
 local CBFBeatmap = {
+	Name = "Custom Beatmap Festival",
 	Extension = nil,	-- No extension, that means detect function is necessary
 }
 local position_translation = {L4 = 9, L3 = 8, L2 = 7, L1 = 6, C = 5, R1 = 4, R2 = 3, R3 = 2, R4 = 1}

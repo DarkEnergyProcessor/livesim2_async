@@ -22,7 +22,7 @@ Before you proceed, make sure your device comply these requirements
 
 * iOS: iOS 9. Live Simulator: 2 only tested under iOS 9 atm.
 
-\* More complex storyboard system requires more power and RAM
+\* More complex storyboard system requires more CPU, GPU, and RAM
 
 Getting LOVE2D and run Live Simulator: 2
 ----------------------------------------
@@ -120,8 +120,8 @@ Note: `love <livesim2 folder>` can be replaced to `livesim2` for fused executabl
 
 Here is example beatmap IDs:
 
-1. [Daydream Warrior beatmap](https://www.youtube.com/watch?v=PpZqNjv0HUw)
+1. [Weisser Schnee beatmap by me](https://www.youtube.com/watch?v=szN0faby5HM). Uses swing notes, storyboard (with shader), custom units, and note style enforcing.
 
-2. [MOMENT RING beatmap](https://www.youtube.com/watch?v=u76q9x7lOzA)
+2. [Thrilling･One Way by me](https://www.youtube.com/watch?v=xfWGjFo5dy8). Uses storyboard (with shader), FFT, and custom units.
 
 As times goes on, I might add more example beatmaps.
