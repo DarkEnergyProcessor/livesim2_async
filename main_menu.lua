@@ -98,4 +98,10 @@ function MainMenu.MouseReleased(x, y)
 	end
 end
 
+function MainMenu.KeyReleased(key, scancode)
+	if key == "escape" then
+		love.event.quit()
+	end
+end
+
 return MainMenu, "Main Menu"

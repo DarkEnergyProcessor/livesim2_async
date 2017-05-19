@@ -374,37 +374,49 @@ function CBFBeatmap.Load(file)
 	
 	if love.filesystem.isFile(charposname) then
 		-- Initialize units image
-		if not(LoadUnitStrategy1(file) or LoadUnitStrategy2(file)) then
-			-- If loading from "Cards" folder and "Custom Cards" folder fails,
-			-- Load in current beatmap directory instead
-			setmetatable(UnitIconCache, {
-				__index = function(_, var)
-					local name = file[1].."/"..var..".png"
-					
-					if love.filesystem.isFile(name) then
-						local x = love.graphics.newImage(name)
-						
-						UnitIconCache[var] = x
-						return x
-					end
-					
-					return nil
-				end
-			})
+		if not(LoadUnitStrategy1(file)) then
+			LoadUnitStrategy2(file)
 		end
 		
-		local i = 10
+		-- If loading from "Cards" folder and "Custom Cards" folder fails,
+		-- Load in current beatmap directory instead or in unit_icon folder
+		local index_name = getmetatable(UnitIconCache).__index
+		setmetatable(UnitIconCache, {
+			__index = function(_, var)
+				if index_name then
+					local ret = index_name(_, var)
+					
+					if ret then
+						return ret
+					end
+				end
+				
+				local name = file[1].."/"..var..".png"
+				local name2 = "unit_icon/"..var..".png"
+				local x = nil
+				
+				if love.filesystem.isFile(name) then
+					x = love.graphics.newImage(name)
+				elseif love.filesystem.isFile(name2) then
+					x = love.graphics.newImage(name2)
+				end
+				
+				UnitIconCache[var] = x
+				return x
+			end
+		})
+		
+		
 		for line in love.filesystem.lines(charposname) do
 			if #line > 0 then
-				i = i - 1
-				
 				local cache_name = line:sub(line:find("/") + 1)
+				local pos, attr, rar, cname, r, g, b = line:match("([^/]+)/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
+				local i = assert(position_translation[pos])
 				
 				if CompositionCache[cache_name] then
 					units[i] = CompositionCache[cache_name]
 					has_custom_units = true
 				else
-					local attr, rar, cname, r, g, b = line:match("[^/]+/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
 					local a = ComposeUnitImage(attr, rar, cname, r, g, b)
 					
 					units[i] = a

@@ -33,10 +33,10 @@ local function applyChanges()
 	
 	for i = 9, 1, -1 do
 		filelist[#filelist + 1] = (UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename
+		UnitEditor.State[i] = UnitEditor.State.Changed[i] or UnitEditor.State[i]
 	end
 	
 	AquaShine.SaveConfig("IDOL_IMAGE", table.concat(filelist, "\t"))
-	print("Units saved")
 end
 
 function UnitEditor.Start(arg)
