@@ -502,6 +502,7 @@ end
 function DEPLS.Start(argv)
 	DEPLS.Arg = argv
 	_G.DEPLS = DEPLS	-- TODO: Should be avoided
+	AquaShine.DisableSleep()
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
@@ -933,7 +934,7 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
 		
-		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
+		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 80 then
 			TouchTracking[touch_id] = i
 			DEPLS.NoteManager.SetTouch(i, touch_id)
 			

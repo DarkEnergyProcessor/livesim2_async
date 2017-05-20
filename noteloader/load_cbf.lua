@@ -381,7 +381,9 @@ function CBFBeatmap.Load(file)
 		
 		-- If loading from "Cards" folder and "Custom Cards" folder fails,
 		-- Load in current beatmap directory instead or in unit_icon folder
-		local index_name = getmetatable(UnitIconCache).__index
+		local index_name = getmetatable(UnitIconCache)
+		if index_name then index_name = index_name.__index end
+		
 		setmetatable(UnitIconCache, {
 			__index = function(_, var)
 				if index_name then

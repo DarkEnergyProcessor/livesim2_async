@@ -35,7 +35,7 @@ local draw = love.graphics.draw
 local drawtext = love.graphics.print
 local setColor = love.graphics.setColor
 local setFont = love.graphics.setFont
-local versionText = "Live Simulator: 2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nPowered by AquaShine loader\nR/W Directory: "..love.filesystem.getSaveDirectory()
+local versionText = "Live Simulator: 2 version "..DEPLS_VERSION.." using "..(jit and jit.version or _VERSION).." for Lua interpreter\nUses AquaShine loader & LOVE2D game framework\nR/W Directory: "..love.filesystem.getSaveDirectory()
 function MainMenu.Draw(deltaT)
 	-- Draw background
 	draw(background, 0, 0)

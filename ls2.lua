@@ -392,7 +392,7 @@ function ls2.parsestream(stream, path)
 			output.cover = process_COVR(stream)
 		elseif section == "LCLR" then
 			assert(output.live_clear == nil, "Only one LCLR can exist")
-			output.live_clear = process_ADIO(stream)
+			output.live_clear = love.audio.newSource(process_ADIO(stream))
 		else
 			io.write("Invalid section ", section, "\n")
 		end

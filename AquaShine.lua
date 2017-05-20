@@ -147,6 +147,8 @@ function AquaShine.LoadEntryPoint(name, arg)
 	else
 		love.window.setTitle(AquaShine.WindowName)
 	end
+	
+	love.window.setDisplaySleepEnabled(true)
 end
 
 --! Function used to replace extension on file
@@ -217,6 +219,13 @@ end
 function AquaShine.IsSlowSystem()
 	return not(jit) or AquaShine.OperatingSystem == "Android" or AquaShine.OperatingSystem == "iOS"
 end
+
+--! @brief Disable screen sleep
+--! @note Should be called only in Start function
+function AquaShine.DisableSleep()
+	love.window.setDisplaySleepEnabled(false)
+end
+
 ----------------------------
 -- AquaShine Font Caching --
 ----------------------------

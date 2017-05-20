@@ -76,8 +76,8 @@ function AboutScreen.Draw()
 	end
 end
 
-function AboutScreen.KeyPressed(key, scancode, repeat_bit)
-	if not(repeat_bit) and key == "escape" then
+function AboutScreen.KeyReleased(key, scancode)
+	if key == "escape" then
 		AquaShine.LoadEntryPoint("main_menu.lua")
 	end
 end
