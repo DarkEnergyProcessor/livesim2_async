@@ -63,13 +63,7 @@ If your device comply with requirements above, then proceed. livesim2 requires L
 
 ### Android
 
-1. Clone this repository or download zip. Push all files to somewhere in your phone (extract it first if you download it as ZIP).
-
-2. Download LOVE2D APK from [LOVE2D](https://love2d.org/) website, or from Play Store.
-
-3. Find Live Simulator: 2 `main.lua` in your phone, and open it with LOVE2D
-
-4. If it works, you'll see Live Simulator: 2 main menu.
+1. Simply download the APK from releases tab above and install it into your phone/tablet.
 
 Determining R/W directory
 -------------------------
