@@ -359,7 +359,7 @@ function YohaneFlash._internal._mt.setImage(this, pseudo_name, handle)
 end
 
 function YohaneFlash._internal._mt.setOpacity(this, opacity)
-	getmetatable(this).opacity = opacity or 255
+	getmetatable(this).opacity = math.max(math.min(opacity or 255, 255), 0)
 end
 
 return YohaneFlash

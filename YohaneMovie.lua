@@ -67,18 +67,18 @@ function YohaneMovie._internal._mt.findFrame(this, frame)
 		while i < this.data.endInstruction do
 			local inst = instTab[i]
 			
-			if inst == 0 then		-- SHOW_FRAME
+			if inst == 0 then					-- SHOW_FRAME
 				i = i + 4
 				uiFrame = uiFrame + 1
 				
 				if uiFrame == frame then
 					return i
 				end
-			elseif inst == 1 then	-- PLACE_OBJECT
+			elseif inst == 1 then				-- PLACE_OBJECT
 				i = i + 5
-			elseif inst == 2 or inst == 3 then -- REMOVE_OBJECT or PLAY_SOUND
+			elseif inst == 2 or inst == 3 then	-- REMOVE_OBJECT or PLAY_SOUND
 				i = i + 2
-			elseif inst == 4 then	-- PLACE_OBJECT_CLIP
+			elseif inst == 4 then				-- PLACE_OBJECT_CLIP
 				i = i + 6
 			else
 				assert(false, "Invalid instruction")
@@ -87,6 +87,75 @@ function YohaneMovie._internal._mt.findFrame(this, frame)
 	end
 	
 	return this.data.startInstruction + 4
+end
+
+-- Affine transformation
+local function mat3id()
+	return {
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1,
+		Type = 0
+	}
+end
+
+local function mat3af(tm)
+	return {
+		tm[1], tm[3], tm[5],
+		tm[2], tm[4], tm[6],
+		0, 0, 1,
+		Type = tm.Type
+	}
+end
+
+-- Color transformation, 5x5 matrix
+local function mat5rgba(r, g, b, a)
+	return {
+		r, 0, 0, 0, 0,
+		0, g, 0, 0, 0,
+		0, 0, b, 0, 0,
+		0, 0, 0, a, 0,
+		0, 0, 0, 0, 1
+	}
+end
+
+function mat3mul(m1, m2)
+	local mc = {
+		nil, nil, nil,
+		nil, nil, nil,
+		nil, nil, nil
+	}
+	
+	for i = 0, 8 do
+		local x = math.floor(i / 3) * 3
+		mc[i + 1] = m1[x + 1] * m2[(i % 3) + 1] +
+					m1[x + 2] * m2[(i % 3) + 4] +
+					m1[x + 3] * m2[(i % 3) + 7]
+	end
+	
+	return mc
+end
+
+local function mat5mul(m1, m2)
+	local mc = {
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil
+	}	-- Is this optimization?
+	
+	for i = 0, 24 do
+		local x = math.floor(i / 5) * 5
+		
+		mc[i + 1] = m1[x + 1] * m2[(i % 5) + 1] +
+					m1[x + 2] * m2[(i % 5) + 6] +
+					m1[x + 3] * m2[(i % 5) + 11] +
+					m1[x + 4] * m2[(i % 5) + 16] +
+					m1[x + 5] * m2[(i % 5) + 21]
+	end
+	
+	return mc
 end
 
 -- Heavy calculation starts here :v
@@ -141,21 +210,19 @@ function YohaneMovie._internal._mt:stepFrame()
 						local b = movieObjMovie.drawCalls[a]
 						local dc = {image = b.image}
 						
-						-- Translate is done at first
-						dc.x = b.x * v.matrix.scaleX + v.matrix.translateX
-						dc.y = b.y * v.matrix.scaleY + v.matrix.translateY
+						-- Matrix multiply
+						dc.matrix = mat3mul(v.matrix, b.matrix)
 						
-						-- Scale and rotation
-						dc.rotation = b.rotation + v.matrix.rotation
-						dc.scaleX = b.scaleX * v.matrix.scaleX
-						dc.scaleY = b.scaleY * v.matrix.scaleY
+						-- Color transformation
+						local out = mat5mul(
+							mat5rgba(v.color.r, v.color.g, v.color.b, v.color.a),
+							mat5rgba(b.r, b.g, b.b, b.a)
+						)
 						
-						-- Color blending
-						-- Drawcall color is bg, layer color is fg
-						dc.r = (v.color.r * v.color.a + b.r * b.a * (1 - v.color.a)) / (v.color.a + b.a * (1 - v.color.a))
-						dc.g = (v.color.g * v.color.a + b.g * b.a * (1 - v.color.a)) / (v.color.a + b.a * (1 - v.color.a))
-						dc.b = (v.color.b * v.color.a + b.b * b.a * (1 - v.color.a)) / (v.color.a + b.a * (1 - v.color.a))
-						dc.a = v.color.a * b.a * (1 - v.color.a)
+						dc.r = out[1]
+						dc.g = out[7]
+						dc.b = out[13]
+						dc.a = out[19]
 						
 						this.drawCalls[#this.drawCalls + 1] = dc
 					end
@@ -163,13 +230,10 @@ function YohaneMovie._internal._mt:stepFrame()
 					-- Simple image. It has offsets
 					local dc = {image = movieObj.imageHandle}
 					
-					--print(movieObj.offsetX)
-					dc.x = movieObj.offsetX * v.matrix.scaleX + v.matrix.translateX
-					dc.y = movieObj.offsetY * v.matrix.scaleY + v.matrix.translateY
-					
-					dc.rotation = v.matrix.rotation
-					dc.scaleX = v.matrix.scaleX
-					dc.scaleY = v.matrix.scaleY
+					dc.matrix = mat3mul(
+						v.matrix,
+						{1, 0, movieObj.offsetX, 0, 1, movieObj.offsetY, 0, 0, 1}
+					)
 					
 					dc.r = v.color.r
 					dc.g = v.color.g
@@ -211,28 +275,12 @@ function YohaneMovie._internal._mt:stepFrame()
 				local tm = assert(this.parent.matrixTransf[matrixIdx], "Invalid matrix")
 				
 				if tm.Type == 0 then
-					-- MATRIX_ID
-					layerdata.matrix = Yohane.CopyTable(DefaultMatrix)
-				elseif tm.Type == 1 then
-					-- MATRIX_T
-					layerdata.matrix.translateX = tm[5]
-					layerdata.matrix.translateY = tm[6]
-				elseif tm.Type == 2 then
-					-- MATRIX_TS
-					layerdata.matrix.scaleX = tm[1]
-					layerdata.matrix.scaleY = tm[4]
-					layerdata.matrix.rotation = 0
-					layerdata.matrix.translateX = tm[5]
-					layerdata.matrix.translateY = tm[6]
-				elseif tm.Type == 3 then
-					-- MATRIX_TG
-					layerdata.matrix.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[3] * tm[3])
-					layerdata.matrix.scaleY = math_sign(tm[4]) * math.sqrt(tm[2] * tm[2] + tm[4] * tm[4])
-					layerdata.matrix.rotation = math.atan2(tm[3], tm[4])
-					layerdata.matrix.translateX = tm[5]
-					layerdata.matrix.translateY = tm[6]
+					-- Identity
+					layerdata.matrix = mat3id()
 				elseif tm.Type == 4 then
 					assert(false, "MATRIX_COL specificed for Matrix Index")
+				else
+					layerdata.matrix = mat3af(tm)
 				end
 			end
 			
@@ -278,14 +326,23 @@ function YohaneMovie._internal._mt.draw(this, x, y)
 	this = getmetatable(this)
 	
 	for i = 1, #this.drawCalls do
-		local z = Yohane.CopyTable(this.drawCalls[i])
+		--local z = Yohane.CopyTable(this.drawCalls[i])
+		local a = this.drawCalls[i]
+		local tm = a.matrix
+		local z = {}
 		
-		z.x = z.x + x
-		z.y = z.y + y
-		z.r = z.r * 255
-		z.g = z.g * 255
-		z.b = z.b * 255
-		z.a = z.a * this.parent.opacity
+		z.image = a.image
+		
+		z.x = tm[3] + x
+		z.y = tm[6] + y
+		z.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[2] * tm[2])
+		z.scaleY = math_sign(tm[5]) * math.sqrt(tm[4] * tm[4] + tm[5] * tm[5])
+		z.rotation = math.atan2(tm[2], tm[5])
+		
+		z.r = a.r * 255
+		z.g = a.g * 255
+		z.b = a.b * 255
+		z.a = a.a * this.parent.opacity
 		
 		newdc[i] = z
 	end
@@ -309,18 +366,19 @@ function YohaneMovie._internal._mt.jumpLabel(this, label)
 		while i < this.data.endInstruction do
 			local inst = instTab[i]
 			
-			if inst == 0 then		-- SHOW_FRAME
+			if inst == 0 then					-- SHOW_FRAME
 				local lbl = instTab[i + 1]
-				i = i + 4
 				
 				if lbl ~= 65535 and strTab[lbl] == label then
 					return i
 				end
-			elseif inst == 1 then	-- PLACE_OBJECT
+				
+				i = i + 4
+			elseif inst == 1 then				-- PLACE_OBJECT
 				i = i + 5
-			elseif inst == 2 or inst == 3 then -- REMOVE_OBJECT or PLAY_SOUND
+			elseif inst == 2 or inst == 3 then	-- REMOVE_OBJECT or PLAY_SOUND
 				i = i + 2
-			elseif inst == 4 then	-- PLACE_OBJECT_CLIP
+			elseif inst == 4 then				-- PLACE_OBJECT_CLIP
 				i = i + 6
 			else
 				assert(false, "Invalid instruction")
