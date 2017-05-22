@@ -592,7 +592,7 @@ function love.load(arg)
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.OperatingSystem = love.system.getOS()
 	
-	love.filesystem.load("AquaShineFileDialog.lua")(AquaShine)
+	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	love.resize(wx, wy)
 	
 	-- Load entry point

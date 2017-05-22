@@ -128,10 +128,11 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		return nil
 	end
 elseif os.execute("which zenity") == 0 then
+	print("Uses linux zenity")
 	function AquaShine.FileSelection(title, directory, filter, multiple)
 		local cmdbuild = {}
 		
-		cmdbuild[#cmdbuild + 1] = "zenity"
+		cmdbuild[#cmdbuild + 1] = "zenity --file-selection"
 		
 		if title then
 			cmdbuild[#cmdbuild + 1] = string.format("--title=%q", title)
@@ -150,12 +151,16 @@ elseif os.execute("which zenity") == 0 then
 			cmdbuild[#cmdbuild + 1] = ")"
 		end
 		
-		local cmd = io.popen(table.concat(cmdbuild), "rb")
+		local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
 		local list = cmd:read("*a")
 		cmd:close()
 		
 		if #list == 0 then
-			return nil
+			if multiple then
+				return {}
+			else
+				return nil
+			end
 		end
 		
 		if multiple then
