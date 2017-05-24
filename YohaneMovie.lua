@@ -13,6 +13,75 @@ local function math_sign(x)
 	return x > 0 and 1 or (x < 0 and -1 or 0)
 end
 
+-- Affine transformation
+local function mat3id()
+	return {
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1,
+		Type = 0
+	}
+end
+
+local function mat3af(tm)
+	return {
+		tm[1], tm[3], tm[5],
+		tm[2], tm[4], tm[6],
+		0, 0, 1,
+		Type = tm.Type
+	}
+end
+
+-- Color transformation, 5x5 matrix
+local function mat5rgba(r, g, b, a)
+	return {
+		r, 0, 0, 0, 0,
+		0, g, 0, 0, 0,
+		0, 0, b, 0, 0,
+		0, 0, 0, a, 0,
+		0, 0, 0, 0, 1
+	}
+end
+
+local function mat3mul(m1, m2)
+	local mc = {
+		nil, nil, nil,
+		nil, nil, nil,
+		nil, nil, nil
+	}
+	
+	for i = 0, 8 do
+		local x = math.floor(i / 3) * 3
+		mc[i + 1] = m1[x + 1] * m2[(i % 3) + 1] +
+					m1[x + 2] * m2[(i % 3) + 4] +
+					m1[x + 3] * m2[(i % 3) + 7]
+	end
+	
+	return mc
+end
+
+local function mat5mul(m1, m2)
+	local mc = {
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil
+	}	-- Is this optimization?
+	
+	for i = 0, 24 do
+		local x = math.floor(i / 5) * 5
+		
+		mc[i + 1] = m1[x + 1] * m2[(i % 5) + 1] +
+					m1[x + 2] * m2[(i % 5) + 6] +
+					m1[x + 3] * m2[(i % 5) + 11] +
+					m1[x + 4] * m2[(i % 5) + 16] +
+					m1[x + 5] * m2[(i % 5) + 21]
+	end
+	
+	return mc
+end
+
 ------------------------------
 -- Yohane Movie Calculation --
 ------------------------------
@@ -68,7 +137,6 @@ function YohaneMovie._internal._mt.findFrame(this, frame)
 			local inst = instTab[i]
 			
 			if inst == 0 then					-- SHOW_FRAME
-				i = i + 4
 				uiFrame = uiFrame + 1
 				
 				if uiFrame == frame then
@@ -87,75 +155,6 @@ function YohaneMovie._internal._mt.findFrame(this, frame)
 	end
 	
 	return this.data.startInstruction + 4
-end
-
--- Affine transformation
-local function mat3id()
-	return {
-		1, 0, 0,
-		0, 1, 0,
-		0, 0, 1,
-		Type = 0
-	}
-end
-
-local function mat3af(tm)
-	return {
-		tm[1], tm[3], tm[5],
-		tm[2], tm[4], tm[6],
-		0, 0, 1,
-		Type = tm.Type
-	}
-end
-
--- Color transformation, 5x5 matrix
-local function mat5rgba(r, g, b, a)
-	return {
-		r, 0, 0, 0, 0,
-		0, g, 0, 0, 0,
-		0, 0, b, 0, 0,
-		0, 0, 0, a, 0,
-		0, 0, 0, 0, 1
-	}
-end
-
-function mat3mul(m1, m2)
-	local mc = {
-		nil, nil, nil,
-		nil, nil, nil,
-		nil, nil, nil
-	}
-	
-	for i = 0, 8 do
-		local x = math.floor(i / 3) * 3
-		mc[i + 1] = m1[x + 1] * m2[(i % 3) + 1] +
-					m1[x + 2] * m2[(i % 3) + 4] +
-					m1[x + 3] * m2[(i % 3) + 7]
-	end
-	
-	return mc
-end
-
-local function mat5mul(m1, m2)
-	local mc = {
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil
-	}	-- Is this optimization?
-	
-	for i = 0, 24 do
-		local x = math.floor(i / 5) * 5
-		
-		mc[i + 1] = m1[x + 1] * m2[(i % 5) + 1] +
-					m1[x + 2] * m2[(i % 5) + 6] +
-					m1[x + 3] * m2[(i % 5) + 11] +
-					m1[x + 4] * m2[(i % 5) + 16] +
-					m1[x + 5] * m2[(i % 5) + 21]
-	end
-	
-	return mc
 end
 
 -- Heavy calculation starts here :v
@@ -257,7 +256,7 @@ function YohaneMovie._internal._mt:stepFrame()
 			-- Get layer matrix and such
 			if not(this.layers[layer]) then
 				this.layers[layer] = {
-					matrix = Yohane.CopyTable(DefaultMatrix),
+					matrix = mat3id(),
 					color = Yohane.CopyTable(DefaultColor)
 				}
 			end
@@ -278,8 +277,10 @@ function YohaneMovie._internal._mt:stepFrame()
 					-- Identity
 					layerdata.matrix = mat3id()
 				elseif tm.Type == 4 then
+					-- Invalid
 					assert(false, "MATRIX_COL specificed for Matrix Index")
 				else
+					-- MATRIX_TS, MATRIX_TG
 					layerdata.matrix = mat3af(tm)
 				end
 			end
@@ -337,7 +338,7 @@ function YohaneMovie._internal._mt.draw(this, x, y)
 		z.y = tm[6] + y
 		z.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[2] * tm[2])
 		z.scaleY = math_sign(tm[5]) * math.sqrt(tm[4] * tm[4] + tm[5] * tm[5])
-		z.rotation = math.atan2(tm[2], tm[5])
+		z.rotation = math.atan2(tm[2] / z.scaleX, tm[5] / z.scaleY)
 		
 		z.r = a.r * 255
 		z.g = a.g * 255

@@ -177,7 +177,7 @@ local function midi2sif(stream)
 					if effect == 3 then
 						-- Add to longnote queue
 						assert(longnote_queue[position] == nil, "another note in pos "..position.." is in queue")
-						longnote_queue[position] = {v.tick, attribute, effect, position}
+						longnote_queue[position] = {v.tick, attribute, effect, position, is_swing}
 					else
 						sif_beatmap[#sif_beatmap + 1] = {
 							timing_sec = v.tick * 60 / ppqn / tempo,
@@ -197,7 +197,7 @@ local function midi2sif(stream)
 						timing_sec = queue[1] * 60 / ppqn / tempo,
 						notes_attribute = attribute,
 						notes_level = 1,
-						effect = is_swing and 13 or 3,
+						effect = queue[5] and 13 or 3,
 						effect_value = (v.tick - queue[1]) * 60 / ppqn / tempo,
 						position = position
 					}

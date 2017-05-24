@@ -3,6 +3,16 @@
 
 local AquaShine = ...
 
+--! @fn AquaShine.FileSelection(title, directory, filter, multiple)
+--! @brief Shows file selection dialog
+--! @param title The dialog window title (string, or nil)
+--! @param directory File selection starting directory (string, or nil)
+--! @param filter Only shows file with specificed extension (string, or nil). Example "*.lua" only shows Lua files
+--! @param multiple Allows selection of multiple files (boolean, or nil)
+--! @returns For single file selection, the full path is returned (or nil if user cancel it).
+--!          For multiple file selection, list of selected files is returned as table (can be empty)
+--! @note This function only available if the system supports it.
+--!       Example: This function is unavailable when running under Windows without FFI or under Android
 if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 	-- Use native OpenFileName for Windows with FFI
 	local ffi = require("ffi")
@@ -107,6 +117,10 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 				local dir = UTF16ToUTF8(ofn.lpstrFile):sub(1, -2):gsub("\\", "/")
 				local ptr = ofn.lpstrFile + #dir + 1
 				
+				if dir:sub(-1) == "/" then
+					dir = dir:sub(1, -2)
+				end
+				
 				while ptr[0] ~= 0 do
 					local name = UTF16ToUTF8(ptr)
 					
@@ -128,7 +142,7 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		return nil
 	end
 elseif os.execute("which zenity") == 0 then
-	print("Uses linux zenity")
+	print("Uses linux zenity")	-- For unknown reason this line must be exists
 	function AquaShine.FileSelection(title, directory, filter, multiple)
 		local cmdbuild = {}
 		

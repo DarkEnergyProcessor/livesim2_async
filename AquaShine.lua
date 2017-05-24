@@ -352,6 +352,10 @@ function AquaShine.MainLoop()
 	while true do
 		-- Switch entry point
 		if TemporaryEntryPoint then
+			if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
+				AquaShine.CurrentEntryPoint.Exit()
+			end
+			
 			AquaShine.CurrentEntryPoint = TemporaryEntryPoint
 			TemporaryEntryPoint = nil
 		end

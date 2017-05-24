@@ -930,16 +930,21 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 	touch_id = touch_id or 0
 	isMousePress = touch_id == 0 and button == 1
 	
-	-- Calculate idol
+	-- Calculate idol position
+	local LowestIdx
+	local LowestDist = 127
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
+		local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
 		
-		if distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 80 then
-			TouchTracking[touch_id] = i
-			DEPLS.NoteManager.SetTouch(i, touch_id)
-			
-			break
+		if dist < 85 and dist < LowestDist then
+			LowestIdx = i
+			LowestDist = dist
 		end
+	end
+	
+	if LowestIdx then
+		DEPLS.NoteManager.SetTouch(LowestIdx, touch_id)
 	end
 end
 
@@ -957,12 +962,6 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
 	
 	if DEPLS.Routines.ResultScreen.CanExit then
-		if DEPLS.Sound.LiveAudio then
-			DEPLS.Sound.LiveAudio:stop()
-		end
-		
-		-- Unmount
-		AquaShine.MountZip()
 		-- Back
 		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
 	end
@@ -973,16 +972,24 @@ function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 		touch_id = touch_id or 0
 		
 		local lastpos = TouchTracking[touch_id]
+		local LowestIdx
+		local LowestDist = 127
 		
 		for i = 1, 9 do
-			local idolpos = DEPLS.IdolPosition[i]
-			
-			if i ~= lastpos and distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64)) <= 77 then
-				TouchTracking[touch_id] = i
-				DEPLS.NoteManager.SetTouch(i, touch_id, false, lastpos)
+			if i ~= lastpos then
+				local idolpos = DEPLS.IdolPosition[i]
+				local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
 				
-				break
+				if dist < 85 and dist < LowestDist then
+					LowestIdx = i
+					LowestDist = dist
+				end
 			end
+		end
+		
+		if LowestIdx then
+			TouchTracking[touch_id] = LowestIdx
+			DEPLS.NoteManager.SetTouch(LowestIdx, touch_id, false, lastpos)
 		end
 	end
 end
@@ -1005,19 +1012,9 @@ end
 
 function DEPLS.KeyReleased(key)
 	if key == "escape" then
-		if DEPLS.Sound.LiveAudio then
-			DEPLS.Sound.LiveAudio:stop()
-		end
-		
-		-- Unmount
-		AquaShine.MountZip()
 		-- Back
 		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
 	elseif key == "backspace" then
-		if DEPLS.Sound.LiveAudio then
-			DEPLS.Sound.LiveAudio:stop()
-		end
-		
 		-- Restart
 		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
 	elseif key == "lshift" then
@@ -1044,6 +1041,15 @@ function DEPLS.KeyReleased(key)
 			end
 		end
 	end
+end
+
+function DEPLS.Exit()
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:stop()
+	end
+	
+	-- Unmount
+	AquaShine.MountZip()
 end
 
 DEPLS.Distance = distance

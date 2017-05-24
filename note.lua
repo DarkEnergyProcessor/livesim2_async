@@ -7,7 +7,9 @@ local List = require("List")
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
 local Yohane = require("Yohane")
+local tween = require("tween")
 local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0, NoteRemaining = 0, HighestCombo = 0, TotalNotes = 0}
+
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
 local AddScore = DEPLS.AddScore
@@ -16,8 +18,32 @@ local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
 local floor = math.floor
-local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh")
-notes_bomb:setMovie("ef_317")
+local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh", "ef_317")
+local hold_effect = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
+
+-- Precomputed tables
+local PredefinedSlideRotation = {
+	-math.pi / 2,
+	-3 * math.pi / 8,
+	-math.pi / 4,
+	-math.pi / 8,
+	0,
+	math.pi / 8,
+	math.pi / 4,
+	3 * math.pi / 8,
+	math.pi / 2
+}
+local PredefinedLNEffectRotation = {
+	-math.pi,
+	-6 * math.pi / 8,
+	-3 * math.pi / 4,
+	-5 * math.pi / 8,
+	-math.pi / 2,
+	-3 * math.pi / 8,
+	-math.pi / 4,
+	-math.pi / 8,
+	0
+}
 
 local NoteBombEffect = {}
 NoteBombEffect._common_meta = {__index = NoteBombEffect}
@@ -61,6 +87,10 @@ local function internal_simulnote_check(timing_sec, i)
 	end
 end
 
+local function sine_interpolation(t, b, c, d)
+	return c * math.floor(math.sin(t / d * math.pi) * 100000) / 100000 + b
+end
+
 --! @brief Check if there's another note with same timing
 --! @param timing_sec The note timing to check
 --! @param multiply1000 Is the `timing_sec` is in seconds?
@@ -86,17 +116,6 @@ end
 local SingleNoteObject = {}
 local LongNoteObject = {}
 local PreviousSlideNote = nil
-local PredefinedSlideRotation = {
-	math.rad(-90),
-	math.rad(-67.5),
-	math.rad(-45),
-	math.rad(-22.5),
-	0,
-	math.rad(22.5),
-	math.rad(45),
-	math.rad(67.5),
-	math.rad(90)
-}
 
 --! @brief Creates new SingleNoteObject
 --! @param note_data SIF-compilant note data
@@ -181,6 +200,10 @@ local function NewNoteObject(note_data)
 		noteobj.Vert[4] = {-1, -1, 0, 0.0625}
 		
 		noteobj.LongNoteMesh:setTexture(DEPLS.Images.Note.LongNote)
+		noteobj.LNEffectRotation = PredefinedLNEffectRotation[note_data.position]
+		noteobj.LNEffect = hold_effect:clone()
+		noteobj.LNTrail = 0
+		noteobj.LNTrailTween = tween.new(500, noteobj, {LNTrail = 1}, sine_interpolation)
 		
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
@@ -431,6 +454,14 @@ function LongNoteObject.Update(this, deltaT)
 	this.Vert[2][2] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
 	
 	this.LongNoteMesh:setVertices(this.Vert)
+	
+	if this.TouchID then
+		this.LNEffect:update(deltaT)
+		
+		if this.LNTrailTween:update(deltaT) then
+			this.LNTrailTween:reset()
+		end
+	end
 end
 
 --! @brief LongNoteObject draw routine
@@ -442,7 +473,7 @@ function LongNoteObject.Draw(this)
 	
 	-- Draw note trail
 	setBlendMode("add")
-	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity)
+	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
 	draw(this.LongNoteMesh)
 	
 	setBlendMode("alpha")
@@ -458,6 +489,15 @@ function LongNoteObject.Draw(this)
 	-- Draw end note trail if it is
 	if draw_endcircle then
 		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
+	end
+	
+	if this.TouchID then
+		love.graphics.push()
+		love.graphics.translate(this.FirstCircle[1], this.FirstCircle[2])
+		love.graphics.rotate(this.LNEffectRotation)
+		this.LNEffect:setOpacity(DEPLS.LiveOpacity)
+		this.LNEffect:draw()
+		love.graphics.pop()
 	end
 	
 	if DEPLS.DebugNoteDistance then
