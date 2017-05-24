@@ -142,6 +142,8 @@ function YohaneMovie._internal._mt.findFrame(this, frame)
 				if uiFrame == frame then
 					return i
 				end
+				
+				i = i + 4
 			elseif inst == 1 then				-- PLACE_OBJECT
 				i = i + 5
 			elseif inst == 2 or inst == 3 then	-- REMOVE_OBJECT or PLAY_SOUND

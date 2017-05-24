@@ -63,10 +63,8 @@ local new_style_rotation = {
 	math.rad(90)
 }
 local star_icon = AquaShine.LoadImage("assets/image/tap_circle/star.png")
-local image_cache = _G.NoteImageCache or {}
-_G.NoteImageCache = image_cache
 
-function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultaneous, is_star, is_slide)
+function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultaneous, is_star, is_slide, rot)
 	local noteimg
 	local cbf_ext = bit.band(attribute, 15) == 15
 	
@@ -78,16 +76,17 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 	
 	if is_slide then idx = 0 end	-- Cache optimization
 	
-	local cache_name = string.format("new%d_%08x%d%d%d%d%d", idx, attribute,
+	local cache_name = string.format("new%d_%08x%d%d%d%d%d%.2f", idx, attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
 		is_star and 1 or 0,
-		is_slide and 1 or 0
+		is_slide and 1 or 0,
+		rot or 0
 	)
 	
-	if image_cache[cache_name] then
-		return image_cache[cache_name]
+	if AquaShine.CacheTable[cache_name] then
+		return AquaShine.CacheTable[cache_name]
 	end
 	
 	local canvas_composition = love.graphics.newCanvas(128, 128)
@@ -105,6 +104,10 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 		if is_slide then
 			love.graphics.draw(new_style_slide[9], 64, 64, 0, 1, 1, 64, 64)
 			love.graphics.setColor(255, 255, 255)
+			
+			if is_simultaneous then
+				love.graphics.draw(new_style.Simultaneous, 64, 64, -rot, 1, 1, 64, 64)
+			end
 		else
 			love.graphics.draw(noteimg, 64, 64, new_style_rotation[idx], 1, 1, 64, 64)
 			love.graphics.setColor(255, 255, 255)
@@ -122,6 +125,10 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 	else
 		if is_slide then
 			love.graphics.draw(new_style_slide[attribute], 64, 64, 0, 1, 1, 64, 64)
+			
+			if is_simultaneous then
+				love.graphics.draw(new_style.Simultaneous, 64, 64, -rot, 1, 1, 64, 64)
+			end
 		else
 			love.graphics.draw(noteimg, 64, 64, new_style_rotation[idx], 1, 1, 64, 64)
 			
@@ -140,19 +147,22 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 	love.graphics.pop()
 	
 	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
-	image_cache[cache_name] = canvas_composition
+	AquaShine.CacheTable[cache_name] = canvas_composition
 	return canvas_composition
 end
 
-function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simultaneous, is_star, is_slide)
+function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simultaneous, is_star, is_slide, rot)
+	rot = rot or 0
+	
 	local noteimg
 	local cbf_ext = bit.band(attribute, 15) == 15
-	local cache_name = string.format("old_%08x%d%d%d%d%d", attribute,
+	local cache_name = string.format("old_%08x%d%d%d%d%d%.2f", attribute,
 		cbf_ext and 1 or 0,
 		is_token and 1 or 0,
 		is_simultaneous and 1 or 0,
 		is_star and 1 or 0,
-		is_slide and 1 or 0
+		is_slide and 1 or 0,
+		rot
 	)
 	
 	if cbf_ext then
@@ -161,8 +171,8 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 		noteimg = assert(old_style[attribute], "Invalid note attribute")
 	end
 	
-	if image_cache[cache_name] then
-		return image_cache[cache_name]
+	if AquaShine.CacheTable[cache_name] then
+		return AquaShine.CacheTable[cache_name]
 	end
 	
 	local canvas_composition = love.graphics.newCanvas(128, 128)
@@ -178,7 +188,7 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 		)
 	end
 	
-	love.graphics.draw(noteimg, 64, 64, 0, 1, 1, 64, 64)
+	love.graphics.draw(noteimg, 64, 64, -rot, 1, 1, 64, 64)
 	love.graphics.setColor(255, 255, 255)
 	
 	if is_token then
@@ -190,19 +200,21 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 	end
 	
 	if is_simultaneous then
-		love.graphics.draw(old_style.Simultaneous)
+		love.graphics.draw(old_style.Simultaneous, 64, 64, -rot, 1, 1, 64, 64)
 	end
 	
 	love.graphics.pop()
 	
 	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
-	image_cache[cache_name] = canvas_composition
+	AquaShine.CacheTable[cache_name] = canvas_composition
 	return canvas_composition
 end
 
 local notes_handler = {NoteImageLoader.CreateNoteOldStyle, NoteImageLoader.CreateNoteV5Style}
-function NoteImageLoader.LoadNoteImage(attribute, idx, is_token, is_simultaneous, is_star, is_slide)
-	return assert(notes_handler[DEPLS.ForceNoteStyle], "Invalid note style. Only 1 (old) or 2 (new) note styles are allowed")(attribute, idx, is_token, is_simultaneous, is_star, is_slide)
+function NoteImageLoader.LoadNoteImage(attribute, idx, is_token, is_simultaneous, is_star, is_slide, rot)
+	local nstyle = AquaShine.GetCommandLineConfig("notestyle") or DEPLS.ForceNoteStyle
+	
+	return assert(notes_handler[nstyle], "Invalid note style. Only 1 (old) or 2 (new) note styles are allowed")(attribute, idx, is_token, is_simultaneous, is_star, is_slide, rot)
 end
 
 return NoteImageLoader

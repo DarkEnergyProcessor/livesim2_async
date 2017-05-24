@@ -13,6 +13,9 @@ local AquaShine = {
 		OffY = 0,
 		ScaleOverall = 1
 	},
+	
+	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
+	CacheTable = {}
 }
 
 local love = require("love")
@@ -21,13 +24,13 @@ local Shelsha = require("Shelsha")
 local ScreenshotThreadCode = [[
 local lt = require("love.timer")
 local li = require("love.image")
-local arg = {...}
+local arg = ...
 local name = string.format("screenshots/screenshot_%s_%d.png",
 	os.date("%Y_%m_%d_%H_%M_%S"),
 	math.floor((lt.getTime() % 1) * 1000)
 )
 
-require("debug").getregistry().ImageData.encode(arg[1], "png", name)
+require("debug").getregistry().ImageData.encode(arg, "png", name)
 print("Screenshot saved as", name)
 ]]
 
@@ -541,7 +544,7 @@ function love.resize(w, h)
 end
 
 -- When running low memory
-local cache_list = {FontList, LoadedShelshaObject, LoadedImage}
+local cache_list = {FontList, LoadedShelshaObject, LoadedImage, AquaShine.CacheTable}
 function love.lowmemory()
 	-- Remove all caches
 	for i = 1, #cache_list do

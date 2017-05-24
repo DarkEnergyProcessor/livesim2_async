@@ -22,11 +22,12 @@ local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh", "ef
 local hold_effect = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
 
 -- Precomputed tables
+local FullRot = 2 * math.pi
 local PredefinedSlideRotation = {
-	-math.pi / 2,
-	-3 * math.pi / 8,
-	-math.pi / 4,
-	-math.pi / 8,
+	(-math.pi / 2) % FullRot,
+	(-3 * math.pi / 8) % FullRot,
+	(-math.pi / 4) % FullRot,
+	(-math.pi / 8) % FullRot,
 	0,
 	math.pi / 8,
 	math.pi / 4,
@@ -115,7 +116,7 @@ end
 
 local SingleNoteObject = {}
 local LongNoteObject = {}
-local PreviousSlideNote = nil
+local SlideNoteList = {}
 
 --! @brief Creates new SingleNoteObject
 --! @param note_data SIF-compilant note data
@@ -153,31 +154,22 @@ local function NewNoteObject(note_data)
 		noteobj.StarNote = true
 	elseif note_data.effect == 11 then
 		-- Slide note
+		local newnotedata = Yohane.CopyTable(note_data)
+		
 		noteobj.SlideNote = true
-		
-		if PreviousSlideNote then
-			noteobj.Rotation =
-				(PreviousSlideNote.Position - note_data.position > 0 and 0 or math.pi) + PredefinedSlideRotation[note_data.position]
-			noteobj.PreviousChain = PreviousSlideNote
-			
-			PreviousSlideNote.NextChain = noteobj
-		end
-		
-		PreviousSlideNote = noteobj			
+		SlideNoteList[#SlideNoteList + 1] = newnotedata
+		newnotedata.noteobj = noteobj
+		newnotedata.index = Note.TotalNotes
 	elseif note_data.effect == 3 or note_data.effect == 13 then
 		-- Long note (necessarily with swing)
 		if note_data.effect == 13 then
-			noteobj.SlideNote = true
+			local newnotedata = Yohane.CopyTable(note_data)
 			
-			if PreviousSlideNote then
-				noteobj.Rotation =
-					(PreviousSlideNote.Position - note_data.position > 0 and 0 or math.pi) + PredefinedSlideRotation[note_data.position]
-				noteobj.PreviousChain = PreviousSlideNote
-				
-				PreviousSlideNote.NextChain = noteobj
-			end
-		else
-			PreviousSlideNote = nil
+			noteobj.SlideNote = true
+			noteobj.SlideNote = true
+			SlideNoteList[#SlideNoteList + 1] = newnotedata
+			newnotedata.noteobj = noteobj
+			newnotedata.index = Note.TotalNotes
 		end
 		
 		-- Long note. Use LongNoteObject metatable
@@ -285,10 +277,6 @@ function SingleNoteObject.Draw(this)
 	else
 		setColor(255, 255, 255)
 	end
-end
-
-local function coroutine_wrapper(func)
-	return coroutine.wrap(func)
 end
 
 function SingleNoteObject.SetTouchID(this, touchid)
@@ -524,7 +512,7 @@ end
 
 --! @brief LongNoteObject on hold note
 --! @param this NoteObject
---! @param touchid Unique touch identified which needs to be same on release
+--! @param touchid Unique touch identification which needs to be same on release
 function LongNoteObject.SetTouchID(this, touchid)
 	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 	
@@ -682,21 +670,55 @@ local function initnote_pos(a)
 	for i = 1, #Note[a] do
 		local obj = Note[a][i]
 		
-		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, a, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote)
-		
-		if obj.SlideNote and obj.Rotation == nil then
-			-- Use from next chain to determine position
-			if obj.NextChain then
-				obj.Rotation = (obj.Position - obj.NextChain.Position > 0 and 0 or math.pi) + PredefinedSlideRotation[obj.Position]
-			else
-				obj.Rotation = PredefinedSlideRotation[obj.Position]
-			end
-		end
+		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, a, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote, obj.Rotation)
 	end
 end
 
 --! @brief Loads image for notes
 function Note.InitializeImage()
+	-- Scan swing notes
+	for i = 1, #SlideNoteList do
+		local swing = SlideNoteList[i]
+		
+		if swing.noteobj.Rotation == nil then
+			local last_pos_2 = swing.position
+			local last_timing = swing.timing_sec
+			local last_pos = swing.position
+			local last_obj = swing.noteobj
+			local last_index = swing.index
+			
+			if swing.effect == 13 then
+				last_timing = last_timing + swing.effect_value
+			end
+			
+			for j = i + 1, #SlideNoteList do
+				local chainswing = SlideNoteList[j]
+				
+				if
+					chainswing.noteobj.Rotation == nil and
+					chainswing.timing_sec > last_timing and
+					math.abs(chainswing.index - last_index) < 3 and
+					math.abs(chainswing.position - last_pos) == 1
+				then
+					last_obj.Rotation = (last_pos - chainswing.position > 0 and 0 or math.pi) + PredefinedSlideRotation[last_pos]
+					
+					last_pos_2 = last_pos
+					last_timing = chainswing.timing_sec
+					last_pos = chainswing.position
+					last_obj = chainswing.noteobj
+					last_index = chainswing.index
+					
+					if chainswing.effect == 13 then
+						last_timing = last_timing + chainswing.effect_value
+					end
+				end
+			end
+			
+			last_obj.Rotation = (last_pos_2 - last_pos > 0 and 0 or math.pi) + PredefinedSlideRotation[last_pos]
+		end
+	end
+	
+	-- Load images
 	for i = 1, 9 do
 		initnote_pos(i)
 	end
