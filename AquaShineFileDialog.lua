@@ -141,8 +141,7 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		if multiple then return {} end
 		return nil
 	end
-elseif os.execute("which zenity") == 0 then
-	print("Uses linux zenity")	-- For unknown reason this line must be exists
+elseif os.execute("which zenity") <= 0 then
 	function AquaShine.FileSelection(title, directory, filter, multiple)
 		local cmdbuild = {}
 		
@@ -189,7 +188,7 @@ elseif os.execute("which zenity") == 0 then
 			return list
 		end
 	end
-elseif os.execute("which kdialog") == 0 then
+elseif os.execute("which kdialog") <= 0 then
 	-- TODO
 	--function AquaShine.FileSelection(title, directory, filter, multiple)
 end
