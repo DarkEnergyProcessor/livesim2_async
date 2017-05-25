@@ -6,7 +6,7 @@ local JSON = require("JSON")
 
 local LLPBeatmap = {
 	Name = "LLPractice Beatmap",
-	Extension = "llp"	-- Since extension exist, Detect function is unnecessary
+	Extension = "llp"	-- Please rename the extension from .json to .llp to prevent confusion of SIF beatmap
 }
 
 --! @brief Loads LLPractice beatmap
@@ -20,11 +20,11 @@ local LLPBeatmap = {
 --! @note Modify `LLP_SIFT_DEFATTR` config to change default attribute
 function LLPBeatmap.Load(file)
 	local llp = JSON:decode(love.filesystem.read(file[1]..".llp"))
-	local attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 1)	-- Smile is default
+	local attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 10)	-- Rainbow is default attribute
 	local sif_map = {}
 	
-	for n, v in pairs(llp.lane) do
-		for a, b in pairs(v) do
+	for n, v in ipairs(llp.lane) do
+		for a, b in ipairs(v) do
 			local new_effect = 1
 			local new_effect_val = 2
 			

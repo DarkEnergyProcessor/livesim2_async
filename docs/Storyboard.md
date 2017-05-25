@@ -211,7 +211,7 @@ Playground TEXB and parse it's mesh data, so you should check Shelsha documentat
 
 Parameters:
 
-* `filename` - The texture bank filename. The TEXB must be decrypted before used. **DEPLS2 doesn't ship with HonokaMiku universal decrypter**
+* `filename` - The texture bank filename. The TEXB must be decrypted before used. **Live Simulator: 2 doesn't decrypt the files**
 
 Returns: `ShelshaObject` or `nil` on failure.
 

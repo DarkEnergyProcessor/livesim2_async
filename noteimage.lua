@@ -1,5 +1,5 @@
 -- Note image handling.
--- Part of DEPLS2
+-- Part of Live Simulator: 2
 
 local love = love
 local bit = require("bit")

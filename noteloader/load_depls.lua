@@ -39,7 +39,7 @@ function DEPLS2Beatmap.Detect(file)
 	return false
 end
 
---! @brief Loads DEPLS2 beatmap
+--! @brief Loads DEPLS beatmap
 --! @param file Table contains:
 --!        - path relative to DEPLS save dir
 --!        - absolute path
@@ -47,7 +47,7 @@ end
 --! @returns table with these data
 --!          - notes_list is the SIF-compilant notes data
 --!          - song_file is the song file handle (Source object) or nil
---!          - storyboard is the DEPLS2 beatmap storyboard object handle or nil if no storyboard is present
+--!          - storyboard is the DEPLS beatmap storyboard object handle or nil if no storyboard is present
 --!          - background is beatmap-specific background ID or handle list (extended backgrounds) (jpg supported) or nil
 --!          - units is custom units image list or nil
 function DEPLS2Beatmap.Load(file)

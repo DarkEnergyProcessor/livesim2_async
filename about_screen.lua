@@ -42,10 +42,7 @@ This Live Simulator uses these external libraries:
 Repository:					https://github.com/MikuAuahDark/livesim2
 Live Simulator: 2 Version:	 ]].._G.DEPLS_VERSION
 
-function AboutScreen.Start()
-	local x = AquaShine.FileSelection("AquaShine Loader", "/", "*.txt *.lua", true)
-	table.foreach(x, print)
-end
+function AboutScreen.Start() end
 function AboutScreen.Update() end
 
 function AboutScreen.Draw()
@@ -85,4 +82,10 @@ function AboutScreen.KeyReleased(key, scancode)
 	end
 end
 
-return AboutScreen
+function AboutScreen.MouseReleased(x, y)
+	if x >= 250 and y >= 598 and x < 578 and y < 630 then
+		love.system.openURL("https://github.com/MikuAuahDark/livesim2")
+	end
+end
+
+return AboutScreen, "About"

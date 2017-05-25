@@ -334,7 +334,7 @@ function CBFBeatmap.Load(file)
 				})
 			end
 		else
-			io.write("Ignored", line, "\n")
+			io.write("[CBF Beatmap] Ignored", line, "\n")
 		end
 	end
 

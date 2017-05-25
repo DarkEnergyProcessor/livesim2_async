@@ -3,7 +3,7 @@
 -- Since AquaShine is special for Live Simulator: 2, it's not available as standalone Lua script.
 -- Please see docs/AquaShine.md for more information.
 
-DEPLS_VERSION = "1.0.2"
+DEPLS_VERSION = "1.1.0-test1"
 
 ----------------------
 -- AquaShine loader --

@@ -1,4 +1,4 @@
--- DEPLS2 Render mode. Render frame by frame, and render audio to WAV
+-- Live Simulator: 2 Render mode. Render frame by frame, and render audio to WAV
 -- It's your turn to encode the image frames to videos and mix the audio
 -- Only supported in Desktop environment, unless you have a beast phone.
 

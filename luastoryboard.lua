@@ -2,7 +2,6 @@
 -- Copyright © 2038 Dark Energy Processor
 local Shelsha = require("Shelsha")
 
--- The DEPLS handle
 local DEPLS = DEPLS		-- TODO: Should be avoided if possible
 local AquaShine = AquaShine
 

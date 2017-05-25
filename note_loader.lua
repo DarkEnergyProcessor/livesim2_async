@@ -1,5 +1,5 @@
--- DEPLS2 Note Loader function
--- Copyright © 2038 Dark Energy Processor
+-- Live Simulator: 2 NoteLoader
+-- Part of Live Simulator: 2
 
 local AquaShine = AquaShine
 local JSON = require("JSON")
@@ -15,6 +15,7 @@ local loaders = {
 	assert(assert(love.filesystem.load("noteloader/load_ls2.lua"))(AquaShine, NoteLoader)),
 	assert(assert(love.filesystem.load("noteloader/load_sif.lua"))(AquaShine, NoteLoader)),
 	assert(assert(love.filesystem.load("noteloader/load_sifs.lua"))(AquaShine, NoteLoader)),
+	assert(assert(love.filesystem.load("noteloader/load_sift.lua"))(AquaShine, NoteLoader)),
 	assert(assert(love.filesystem.load("noteloader/load_llp.lua"))(AquaShine, NoteLoader)),
 	assert(assert(love.filesystem.load("noteloader/load_mid.lua"))(AquaShine, NoteLoader))
 }

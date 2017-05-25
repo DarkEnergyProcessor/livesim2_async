@@ -329,7 +329,7 @@ end
 
 --! @brief Parse LS2 beatmap from specificed stream
 --! @param stream The file stream
---! @param path DEPLS2 beatmap folder directory or nil if not in DEPLS2 beatmap folder
+--! @param path DEPLS beatmap folder directory or nil if not in DEPLS beatmap folder
 --! @returns See NoteLoader.NoteLoader()
 function ls2.parsestream(stream, path)
 	local output = {notes_list = {}}
@@ -455,7 +455,7 @@ end
 
 --! @brief Parse LS2 beatmap file from filename
 --! @param file The filename
---! @param path DEPLS2 beatmap folder directory or nil if it's not in DEPLS2 beatmap folder
+--! @param path DEPLS beatmap folder directory or nil if it's not in DEPLS beatmap folder
 --! @returns See NoteLoader.NoteLoader
 function ls2.parsefile(file, path)
 	local f

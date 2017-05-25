@@ -26,7 +26,7 @@ local FontDesc
 local IsRandomForced = AquaShine.GetCommandLineConfig("random")
 local IsRandomNotesWasTicked
 local HasBeatmapInstalled = false
-local CaseInsensitivePath = love.system.getOS() == "Windows"
+local CaseInsensitivePath = AquaShine.OperatingSystem == "Windows"
 local RandomMountPoint = string.format("temp/%09d", math.random(1, 999999999))
 
 function SelectBeatmap.Start(arg)
@@ -131,6 +131,16 @@ function SelectBeatmap.Draw()
 		draw(com_button_13, 912, 272)
 	end
 	
+	-- Install beatmaps button
+	if AquaShine.FileSelection then
+		draw(s_button_03, 696, 18, 0, 0.5, 0.5)
+		drawtext("Install Beatmaps", 704, 26)
+	end
+	
+	-- Open beatmap directory
+	draw(s_button_03, 480, 18, 0, 0.5, 0.5)
+	drawtext("Open Beatmap Folder", 488, 26)
+	
 	for i = CurrentPage * 40 + 1, (CurrentPage + 1) * 40 do
 		local beatmap_info = BeatmapList[i]
 		
@@ -147,13 +157,14 @@ function SelectBeatmap.Draw()
 				drawtext("Type: ", 52, 536)
 				drawtext(beatmap_info.type, 108, 536)
 				setFont(MTLmr3m)
-			elseif MouseState.X >= xpos and MouseState.X < xpos + 216 and
-			   MouseState.Y >= ypos and MouseState.Y < ypos + 40 then
+			elseif
+				MouseState.X >= xpos and MouseState.X < xpos + 216 and
+				MouseState.Y >= ypos and MouseState.Y < ypos + 40
+			then
 				draw(s_button_03se, xpos, ypos, 0, 0.5, 0.5)
 			else
 				draw(s_button_03, xpos, ypos, 0, 0.5, 0.5)
 			end
-			
 			
 			drawtext(beatmap_info.name, xpos + 8, ypos + 8)
 		end
@@ -201,6 +212,34 @@ function SelectBeatmap.MouseReleased(x, y, button)
 	if x >= 0 and x <= 86 and y >= 0 and y <= 58 then
 		AquaShine.LoadEntryPoint("main_menu.lua")
 		return
+	elseif AquaShine.FileSelection and x >= 696 and y >= 18 and x < 912 and y < 58 then
+		-- File selection
+		local randomdest = string.format("temp/temp_store_%08X", math.random(0, 4294967295))
+		local files = AquaShine.FileSelection("Select beatmaps to install", nil, "*.zip *.json *.ls2 *.llp *.rs *.mid *.txt *.wav *.ogg *.mp3", true)
+		
+		if #files > 0 then
+			assert(love.filesystem.createDirectory(randomdest))
+			
+			for i = 1, #files do
+				local filename = files[i]
+				local newpath = randomdest.."/"..AquaShine.Basename(filename)
+				local f = assert(io.open(filename, "rb"))
+				
+				love.filesystem.write(newpath, f:read("*a"))
+				f:close()
+				
+				f = love.filesystem.newFile(newpath)
+				
+				SelectBeatmap.FileDropped(f)
+				f:close()
+				
+				love.filesystem.remove(newpath)
+			end
+			
+			love.filesystem.remove(randomdest)
+		end
+	elseif x >= 480 and y >= 18 and x < 696 and y < 58 then
+		love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
 	end
 	
 	do

@@ -355,7 +355,7 @@ function DEPLS.StoryboardFunctions.GetCurrentAudioSampleRate()
 	return v * 0.5
 end
 
---! @brief Loads DEPLS2 image file
+--! @brief Loads Live Simulator: 2 image file
 --! @param path The image path
 --! @returns Image handle or nil on failure
 function DEPLS.StoryboardFunctions.LoadDEPLS2Image(path)
@@ -506,11 +506,23 @@ function DEPLS.Start(argv)
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
+	--[[
 	DEPLS.Sound.PerfectTap = love.audio.newSource("sound/SE_306.ogg", "static")
 	DEPLS.Sound.GreatTap = love.audio.newSource("sound/SE_307.ogg", "static")
 	DEPLS.Sound.GoodTap = love.audio.newSource("sound/SE_308.ogg", "static")
 	DEPLS.Sound.BadTap = love.audio.newSource("sound/SE_309.ogg", "static")
 	DEPLS.Sound.StarExplode = love.audio.newSource("sound/SE_326.ogg", "static")
+	]]
+	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData("sound/SE_306.ogg", love.audio.newSource, "sound/SE_306.ogg", "static")
+	DEPLS.Sound.PerfectTap:setVolume(0.64)
+	DEPLS.Sound.GreatTap = AquaShine.GetCachedData("sound/SE_307.ogg", love.audio.newSource, "sound/SE_307.ogg", "static")
+	DEPLS.Sound.GreatTap:setVolume(0.64)
+	DEPLS.Sound.GoodTap = AquaShine.GetCachedData("sound/SE_308.ogg", love.audio.newSource, "sound/SE_308.ogg", "static")
+	DEPLS.Sound.GoodTap:setVolume(0.64)
+	DEPLS.Sound.BadTap = AquaShine.GetCachedData("sound/SE_309.ogg", love.audio.newSource, "sound/SE_309.ogg", "static")
+	DEPLS.Sound.BadTap:setVolume(0.64)
+	DEPLS.Sound.StarExplode = AquaShine.GetCachedData("sound/SE_326.ogg", love.audio.newSource, "sound/SE_326.ogg", "static")
+	DEPLS.Sound.StarExplode:setVolume(0.64)
 	
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
@@ -787,6 +799,12 @@ function DEPLS.Update(deltaT)
 			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
 			DEPLS.Sound.LiveAudio:play()
 			audioplaying = true
+		end
+		
+		-- Sync check
+		if not(DEPLS.RenderingMode) and math.abs(DEPLS.Sound.LiveAudio:tell() * 1000 - ElapsedTime) > 33 then
+			-- Desynced. Synchronize song
+			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
 		end
 		
 		-- Update note

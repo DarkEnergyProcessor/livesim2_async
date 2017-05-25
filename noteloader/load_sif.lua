@@ -18,7 +18,7 @@ local SIFBeatmap = {
 --!          - notes_list is the SIF-compilant notes data
 --!          - score is the score information (C, B, A, S score in table) (captured ver only)
 function SIFBeatmap.Load(file)
-	local sif = JSON:decode(love.filesystem.newFileData(file[1]..".json"):getString())
+	local sif = JSON:decode(love.filesystem.read(file[1]..".json"))
 	
 	if sif.response_data then
 		sif = sif.response_data

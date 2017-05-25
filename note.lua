@@ -1,6 +1,6 @@
 --! @file note.lua
--- DEPLS2 Note management routines
--- Copyright © 2038 Dark Energy Processor
+-- Live Simulator: 2 Note management routines
+-- Part of Live Simulator: 2
 
 local DEPLS = ...
 local List = require("List")
@@ -36,7 +36,7 @@ local PredefinedSlideRotation = {
 }
 local PredefinedLNEffectRotation = {
 	-math.pi,
-	-6 * math.pi / 8,
+	-7 * math.pi / 8,
 	-3 * math.pi / 4,
 	-5 * math.pi / 8,
 	-math.pi / 2,

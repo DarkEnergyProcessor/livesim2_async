@@ -229,6 +229,22 @@ function AquaShine.DisableSleep()
 	love.window.setDisplaySleepEnabled(false)
 end
 
+--! @brief Gets cached data from cache table, or execute function to load and store in cache
+--! @param name The cache name
+--! @param onfailfunc Function to execute when cache is not found. The return value of the function
+--!                   then stored in cache table and returned
+--! @param ... additional data passed to `onfailfunc`
+function AquaShine.GetCachedData(name, onfailfunc, ...)
+	local val = AquaShine.CacheTable[name]
+	
+	if val == nil then
+		val = onfailfunc(...)
+		AquaShine.CacheTable[name] = val
+	end
+	
+	return val
+end
+
 ----------------------------
 -- AquaShine Font Caching --
 ----------------------------
