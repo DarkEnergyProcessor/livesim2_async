@@ -189,6 +189,38 @@ elseif os.execute("which zenity") <= 0 then
 		end
 	end
 elseif os.execute("which kdialog") <= 0 then
-	-- TODO
-	--function AquaShine.FileSelection(title, directory, filter, multiple)
+	function AquaShine.FileSelection(title, directory, filter, multiple)
+		-- title and multiple is not supported unfortunately
+		local cmdbuild = {}
+		
+		cmdbuild[#cmdbuild + 1] = "kdialog --getopenfilename"
+		
+		if directory then
+			cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
+		else
+			cmdbuild[#cmdbuild + 1] = ":livesim2select"
+		end
+		
+		if filter then
+			cmdbuild[#cmdbuild + 1] = string.format("'%s|Specific Files (%s)'", filter, filter)
+		end
+		
+		local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
+		local list = cmd:read("*a")
+		cmd:close()
+		
+		if #list > 0 then
+			if multiple then
+				return {list}
+			else
+				return list
+			end
+		else
+			if multiple then
+				return {}
+			else
+				return nil
+			end
+		end
+	end
 end

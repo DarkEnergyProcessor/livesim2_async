@@ -20,27 +20,22 @@ local function RelativeReadFile(path)
 	end
 	
 	if BeatmapDir then
-		local x = love.filesystem.newFileData(BeatmapDir..path)
-		
-		if not(x) then return nil end
-		
-		return x:getString()
+		return love.filesystem.read(BeatmapDir..path), nil
 	end
 	
 	return nil
 end
 
-local function RelativeLoadVideo(path, loadaudio)
-	if AdditionalData[path] then
-		return love.graphics.newVideo(AdditionalData[path], loadaudio)
-	end
-	
+local VideoList = {}
+local function RelativeLoadVideo(path)
 	if BeatmapDir then
-		local x = love.filesystem.newFile(BeatmapDir..path, "r")
+		local _, x = pcall(love.graphics.newVideo, BeatmapDir..path, false)
 		
-		if not(x) then return nil end
-		
-		return love.graphics.newVideo(love.video.newVideoStream(x), loadaudio)
+		if _ then
+			VideoList[#VideoList + 1] = x
+			
+			return x
+		end
 	end
 	
 	return nil
@@ -52,11 +47,8 @@ local function RelativeLoadImage(path)
 	end
 	
 	if BeatmapDir then
-		local x = love.filesystem.newFileData(BeatmapDir..path)
-		
-		if not(x) then return nil end
-		
-		return love.graphics.newImage(x)
+		local _, x = pcall(love.graphics.newImage, BeatmapDir..path)
+		if _ then return x end
 	end
 	
 	return nil
@@ -280,6 +272,13 @@ end
 
 function LuaStoryboard.SetAdditionalFiles(datas)
 	AdditionalData = assert(type(datas) == "table" and datas, "bad argument #1 to 'SetAdditionalFiles' (table expected)")
+end
+
+function LuaStoryboard.Cleanup()
+	for i = 1, #VideoList do
+		VideoList[i]:pause()
+		VideoList[i] = nil
+	end
 end
 
 -- Callback functions

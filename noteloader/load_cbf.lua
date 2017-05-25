@@ -462,6 +462,13 @@ function CBFBeatmap.Load(file)
 		end
 	end
 	
+	-- Get live clear SFX
+	local live_clear_sound = AquaShine.LoadAudio(file[1].."/liveShowClearSFX.wav")
+	
+	if live_clear_sound then
+		out.live_clear = love.audio.newSource(live_clear_sound)
+	end
+	
 	return out
 end
 

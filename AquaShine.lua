@@ -15,7 +15,9 @@ local AquaShine = {
 	},
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
-	CacheTable = {}
+	CacheTable = {},
+	-- Preload entry point
+	PreloadedEntryPoint = {}
 }
 
 local love = require("love")
@@ -140,9 +142,15 @@ local TemporaryEntryPoint
 --! @param name The entry point Lua script file
 --! @param arg Additional argument to be passed
 function AquaShine.LoadEntryPoint(name, arg)
-	local scriptdata, title = assert(love.filesystem.load(name))()
+	local scriptdata, title
+	
+	if AquaShine.PreloadedEntryPoint[name] then
+		scriptdata, title = AquaShine.PreloadedEntryPoint[name]()
+	else
+		scriptdata, title = assert(love.filesystem.load(name))()
+	end
+	
 	scriptdata.Start(arg or {})
-	--AquaShine.CurrentEntryPoint = scriptdata
 	TemporaryEntryPoint = scriptdata
 	
 	if title then
@@ -218,7 +226,7 @@ function AquaShine.Basename(file)
 	return _:sub(1, (_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
 end
 
---! @brief Determines if runs under slow system
+--! @brief Determines if runs under slow system (mobile devices)
 function AquaShine.IsSlowSystem()
 	return not(jit) or AquaShine.OperatingSystem == "Android" or AquaShine.OperatingSystem == "iOS"
 end
@@ -243,6 +251,12 @@ function AquaShine.GetCachedData(name, onfailfunc, ...)
 	end
 	
 	return val
+end
+
+--! @brief Check if current platform is desktop
+--! @returns true if current platform is desktop platform, false oherwise
+function AquaShine.IsDesktopSystem()
+	return AquaShine.OperatingSystem == "Windows" or AquaShine.OperatingSystem == "Linux" or AquaShine.OperatingSystem == "OS X"
 end
 
 ----------------------------
@@ -617,6 +631,16 @@ function love.load(arg)
 	
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	love.resize(wx, wy)
+	
+	-- JIT is disabled in Android. Enable it
+	if AquaShine.OperatingSystem == "Android" then
+		jit.on()
+	end
+	
+	-- Preload entry points
+	for n, v in pairs(ASArg.Entries) do
+		AquaShine.PreloadedEntryPoint[v[2]] = assert(love.filesystem.load(v[2]))
+	end
 	
 	-- Load entry point
 	if arg[1] and ASArg.Entries[arg[1]] and #arg > ASArg.Entries[arg[1]][1] then

@@ -404,6 +404,8 @@ end
 --! @returns Previous play speed factor
 --! @warning This function throws error if speed_factor is zero
 function DEPLS.StoryboardFunctions.SetPlaySpeed(speed_factor)
+	assert(not(DEPLS.RenderingMode), "SetPlaySpeed can't be used in rendering mode")
+	
 	if speed_factor then
 		assert(speed_factor > 0, "speed_factor can't be zero")
 	end
@@ -1064,6 +1066,11 @@ end
 function DEPLS.Exit()
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:stop()
+	end
+	
+	-- Cleanup storyboard
+	if DEPLS.StoryboardHandle then
+		DEPLS.StoryboardHandle.Cleanup()
 	end
 	
 	-- Unmount
