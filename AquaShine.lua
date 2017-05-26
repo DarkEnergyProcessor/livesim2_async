@@ -327,17 +327,24 @@ function AquaShine.LoadImageNoCache(path, pngonly)
 end
 
 --! @brief Load image with caching
---! @param path The image path
+--! @param ... Paths of images to be loaded
 --! @returns Drawable object
-function AquaShine.LoadImage(path)
-	local img = LoadedImage[path]
+function AquaShine.LoadImage(...)
+	local out = {...}
 	
-	if not(img) then
-		img = AquaShine.LoadImageNoCache(path)
-		LoadedImage[path] = img
+	for i = 1, #out do
+		local path = out[i]
+		local img = LoadedImage[path]
+		
+		if not(img) then
+			img = AquaShine.LoadImageNoCache(path)
+			LoadedImage[path] = img
+		end
+		
+		out[i] = img
 	end
 	
-	return img
+	return unpack(out)
 end
 
 ----------------------------------------------
@@ -635,6 +642,10 @@ function love.load(arg)
 	-- JIT is disabled in Android. Enable it
 	if AquaShine.OperatingSystem == "Android" then
 		jit.on()
+	end
+	
+	if jit and AquaShine.GetCommandLineConfig("interpreter") then
+		jit.off()
 	end
 	
 	-- Preload entry points

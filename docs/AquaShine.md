@@ -57,7 +57,11 @@ function MySection.Draw(deltaT)
 	-- Drawing code
 end
 
+function MySection.Exit()
+	-- Cleanup here
+end
+
 return MySection, "Window title name"
 ```
 
-Please see `main.lua` for AquaShine initialization example.
+Please see `main.lua` for example how to initialize AquaShine.

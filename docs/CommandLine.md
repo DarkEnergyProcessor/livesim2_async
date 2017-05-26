@@ -20,7 +20,7 @@ This entry point will play the beatmap name specificed in `[entry point argument
 
 ### main_menu
 
-Live Simulator: 2 main menu. This is the default entry point if none specificed in command-line.
+Live Simulator: 2 main menu. This is the default entry point if none specificed in command-line or if the entry point is rejected (not enough arguments, invalid entry point, ...)
 
 ### settings
 
@@ -36,7 +36,7 @@ Shows the default unit formation image. Equivalent of clicking "Change Units" in
 
 ### about
 
-Shows the program license, external libraries, and more. It's more like "Credits" screen. Hover your mouse to "License" text to see license for particular component. (Note that **AquaShine** is not listed, because it's core component & specially written for Live Simulator: 2)
+Shows the program license, external libraries, and more. It's more like "Credits" screen. Hover your mouse to "License" text to see license for particular component. (Note that **AquaShine** and **NoteLoader** were not listed, because it's a specially written for Live Simulator: 2)
 
 ### render
 
@@ -75,7 +75,7 @@ Note2: Although you see some debug information while in rendering mode, it won't
 
 ### noteloader
 
-Invokes Live Simulator: 2 note loader, internal component which responsibility to load beatmaps, then dump the SIF-compilant beatmap to `stdout`. This will actually beatmap converter and might come handy in the future.
+Invokes Live Simulator: 2 note loader, internal component which responsibility to load beatmaps, then dump the SIF-compilant beatmap to `stdout`. This is actually a beatmap converter and might come handy in the future.
 
 Arguments: Beatmap name, beatmap to convert it's notes data to SIF-compilant beatmap.
 
@@ -86,7 +86,7 @@ Command-line switches can be placed anywhere after `love livesim` (or `livesim2`
 
 * `/width=<w>` and `/height=<h>` sets the window width and height to specificed size
 
-* `/fullscreen` makes the Live Simulator: 2 runs in fullscreen
+* `/fullscreen` runs Live Simulator: 2 in fullscreen
 
 * `/norg` disable volume normalizing
 
@@ -94,8 +94,10 @@ Command-line switches can be placed anywhere after `love livesim` (or `livesim2`
 
 * `/benchmark` only tests the performance of the render mode (does not write any file)
 
-* `/forcerg` forces volume normalizing \*
-
 * `/random` equivalent of always ticking the *Random* options in beatmap selection screen \*
+
+* `/notestyle=<1|2>` overrides note style setting (storyboard, setting). 1 for old note style, 2 for SIF-v5 note style
+
+* `/interpreter` forces LuaJIT to interpret bytecode instead of compiling it to machine code. Decreases frame stutter in some cases. Does nothing when using Lua 5.1 \*
 
 \* - For debugging purpose.

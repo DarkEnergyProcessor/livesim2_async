@@ -133,13 +133,13 @@ function SelectBeatmap.Draw()
 	
 	-- Install beatmaps button
 	if AquaShine.FileSelection then
-		draw(s_button_03, 696, 18, 0, 0.5, 0.5)
-		drawtext("Install Beatmaps", 704, 26)
+		draw(s_button_03, 480, 18, 0, 0.5, 0.5)
+		drawtext("Add Beatmap(s)", 488, 26)
 	end
 	
 	-- Open beatmap directory
-	draw(s_button_03, 480, 18, 0, 0.5, 0.5)
-	drawtext("Open Beatmap Folder", 488, 26)
+	draw(s_button_03, 696, 18, 0, 0.5, 0.5)
+	drawtext("Open Beatmap Folder", 704, 26)
 	
 	for i = CurrentPage * 40 + 1, (CurrentPage + 1) * 40 do
 		local beatmap_info = BeatmapList[i]
@@ -213,9 +213,12 @@ function SelectBeatmap.MouseReleased(x, y, button)
 		AquaShine.LoadEntryPoint("main_menu.lua")
 		return
 	elseif AquaShine.FileSelection and x >= 696 and y >= 18 and x < 912 and y < 58 then
+		-- Open beatmap folder
+		love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
+	elseif x >= 480 and y >= 18 and x < 696 and y < 58 then
 		-- File selection
 		local randomdest = string.format("temp/temp_store_%08X", math.random(0, 4294967295))
-		local files = AquaShine.FileSelection("Select beatmaps to install", nil, "*.zip *.json *.ls2 *.llp *.rs *.mid *.txt *.wav *.ogg *.mp3", true)
+		local files = AquaShine.FileSelection("Select Beatmaps to Add", nil, "*.zip *.json *.ls2 *.llp *.rs *.mid *.txt *.wav *.ogg *.mp3", true)
 		
 		if #files > 0 then
 			assert(love.filesystem.createDirectory(randomdest))
@@ -238,8 +241,6 @@ function SelectBeatmap.MouseReleased(x, y, button)
 			
 			love.filesystem.remove(randomdest)
 		end
-	elseif x >= 480 and y >= 18 and x < 696 and y < 58 then
-		love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
 	end
 	
 	do

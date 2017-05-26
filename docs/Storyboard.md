@@ -186,7 +186,7 @@ Parameters:
 
 Returns: Previous notes speed
 
-> This function throws error if notes_speed is less than 400ms
+> This function throws error if `notes_speed` is less than 400ms
 
 *************************************************
 
@@ -200,13 +200,15 @@ Parameters:
 
 Returns: Previous play speed factor
 
-> This function throws error if speed_factor is zero or less
+> This function throws error if `speed_factor` is zero or less
+
+> This function is disabled in rendering mode. Calls to this function in rendering mode will always result in error
 
 *************************************************
 
 ### `ShelshaObject LoadTextureBank(string filename)`
 
-Load Playground texture bank (TEXB). Uses [Shelsha](https://github.com/MikuAuahDark/Shelsha) LOVE library to load
+Load Playground texture bank (TEXB). Uses [Shelsha](https://github.com/MikuAuahDark/Shelsha) LOVE2D library to load
 Playground TEXB and parse it's mesh data, so you should check Shelsha documentation for function reference.
 
 Parameters:
