@@ -188,7 +188,7 @@ function Settings.MouseReleased(x, y, button)
 
 	-- Add 100 as note speed
 	if (x >= 395 and x <= 420) and (y >= 170 and y <= 190) then
-		if SettingsList.BACKGROUND_IMAGE.after < 12 then
+		if SettingsList.BACKGROUND_IMAGE.after < 15 then
 			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after + 1
 		end
 		

@@ -16,8 +16,11 @@ local AquaShine = {
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
 	CacheTable = {},
-	-- Preload entry point
-	PreloadedEntryPoint = {}
+	-- Preload entry points
+	PreloadedEntryPoint = {},
+	-- Allow entry points to be preloaded?
+	-- Disabling entry preloading allows code that changed to be reflected without restarting
+	AllowEntryPointPreload = false,
 }
 
 local love = require("love")
@@ -291,6 +294,7 @@ end
 --------------------------------------
 local LoadedShelshaObject = {}
 local LoadedImage = {}
+local ConstImageFlags
 
 --! @brief Load image without caching
 --! @param path The image path
@@ -298,11 +302,19 @@ local LoadedImage = {}
 --! @returns Drawable object
 --! @note The ShelshaObject texture bank will ALWAYS BE CACHED!.
 function AquaShine.LoadImageNoCache(path, pngonly)
+	if not(ConstImageFlags) then
+		ConstImageFlags = {}
+		ConstImageFlags.mipmaps = AquaShine.IsDesktopSystem()
+	end
+	
 	assert(path:sub(-4) == ".png", "Only PNG image is supported")
-	local _, img = pcall(love.graphics.newImage, path)
+	local _, img = pcall(love.graphics.newImage, path, ConstImageFlags)
 	
 	if _ then
 		-- .png image loaded
+		img:setFilter("linear", "linear", 16)
+		img:setMipmapFilter("linear", 16)
+		
 		return img
 	elseif not(pngonly) then
 		-- Try .png.imag
@@ -598,6 +610,7 @@ function love.load(arg)
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.ParseCommandLineConfig(arg)
+	love.filesystem.setIdentity(love.filesystem.getIdentity(), false)
 	
 	-- Flags check
 	do
@@ -649,8 +662,10 @@ function love.load(arg)
 	end
 	
 	-- Preload entry points
-	for n, v in pairs(ASArg.Entries) do
-		AquaShine.PreloadedEntryPoint[v[2]] = assert(love.filesystem.load(v[2]))
+	if AquaShine.AllowEntryPointPreload then
+		for n, v in pairs(ASArg.Entries) do
+			AquaShine.PreloadedEntryPoint[v[2]] = assert(love.filesystem.load(v[2]))
+		end
 	end
 	
 	-- Load entry point

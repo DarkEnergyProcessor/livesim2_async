@@ -53,7 +53,7 @@ function SkillPopups.IdolEffect.Create(unit_pos, image)
 	out.Tween = tween.new(700, info, {Opacity = 0}, "inCubic")
 	out.Tween2 = tween.new(700, info, {Scale = 4})
 	out.Image = image
-	out.X, out.Y = unpack(DEPLS.IdolPosition[unit_pos])
+	out.X, out.Y = DEPLS.IdolPosition[unit_pos][1], DEPLS.IdolPosition[unit_pos][2]
 	out.X, out.Y = out.X + 64, out.Y + 64
 	
 	return setmetatable(out, SkillPopups.IdolEffect)

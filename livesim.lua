@@ -909,7 +909,7 @@ function DEPLS.Draw(deltaT)
 		
 		for i = 1, 9 do
 			setColor(255, 255, 255, DEPLS.LiveOpacity * IdolData[i][2] / 255)
-			draw(IdolData[i][1], unpack(IdolPos[i]))
+			draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 		end
 		
 		-- Update note
