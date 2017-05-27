@@ -798,15 +798,9 @@ function DEPLS.Update(deltaT)
 	if ElapsedTime > 0 then
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
 			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
-			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
 			DEPLS.Sound.LiveAudio:play()
-			audioplaying = true
-		end
-		
-		-- Sync check
-		if not(DEPLS.RenderingMode) and math.abs(DEPLS.Sound.LiveAudio:tell() * 1000 - ElapsedTime) > 33 then
-			-- Desynced. Synchronize song
 			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
+			audioplaying = true
 		end
 		
 		-- Update note
@@ -890,6 +884,9 @@ function DEPLS.Draw(deltaT)
 			Routines.ComboCheer.Draw()
 		end
 		
+		-- Draw cut-in
+		Routines.SkillPopups.Draw()
+		
 		-- Draw header
 		setColor(255, 255, 255, DEPLS.LiveOpacity)
 		draw(Images.Header, 0, 0)
@@ -899,9 +896,6 @@ function DEPLS.Draw(deltaT)
 		for i = 1, #Images.StaminaRelated.DrawTarget do
 			draw(Images.StaminaRelated.DrawTarget[i], 290 + 16 * i, 66)
 		end
-		
-		-- Draw cut-in
-		Routines.SkillPopups.Draw()
 		
 		-- Draw idol unit
 		local IdolData = DEPLS.IdolImageData
@@ -957,7 +951,7 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 		local idolpos = DEPLS.IdolPosition[i]
 		local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
 		
-		if dist < 85 and dist < LowestDist then
+		if dist < 80 and dist < LowestDist then
 			LowestIdx = i
 			LowestDist = dist
 		end
@@ -1000,7 +994,7 @@ function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 				local idolpos = DEPLS.IdolPosition[i]
 				local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
 				
-				if dist < 85 and dist < LowestDist then
+				if dist < 80 and dist < LowestDist then
 					LowestIdx = i
 					LowestDist = dist
 				end

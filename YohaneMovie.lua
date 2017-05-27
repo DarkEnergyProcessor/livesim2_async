@@ -5,9 +5,6 @@
 local Yohane = ({...})[1]
 local YohaneMovie = {_internal = {_mt = {}}}
 
-local DefaultMatrix = {scaleX = 1, scaleY = 1, rotation = 0, translateX = 0, translateY = 0}
-local DefaultColor = {r = 1, g = 1, b = 1, a = 1}
-
 -- math.sign function
 local function math_sign(x)
 	return x > 0 and 1 or (x < 0 and -1 or 0)
@@ -18,8 +15,7 @@ local function mat3id()
 	return {
 		1, 0, 0,
 		0, 1, 0,
-		0, 0, 1,
-		Type = 0
+		0, 0, 1
 	}
 end
 
@@ -29,17 +25,6 @@ local function mat3af(tm)
 		tm[2], tm[4], tm[6],
 		0, 0, 1,
 		Type = tm.Type
-	}
-end
-
--- Color transformation, 5x5 matrix
-local function mat5rgba(r, g, b, a)
-	return {
-		r, 0, 0, 0, 0,
-		0, g, 0, 0, 0,
-		0, 0, b, 0, 0,
-		0, 0, 0, a, 0,
-		0, 0, 0, 0, 1
 	}
 end
 
@@ -55,28 +40,6 @@ local function mat3mul(m1, m2)
 		mc[i + 1] = m1[x + 1] * m2[(i % 3) + 1] +
 					m1[x + 2] * m2[(i % 3) + 4] +
 					m1[x + 3] * m2[(i % 3) + 7]
-	end
-	
-	return mc
-end
-
-local function mat5mul(m1, m2)
-	local mc = {
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil
-	}	-- Is this optimization?
-	
-	for i = 0, 24 do
-		local x = math.floor(i / 5) * 5
-		
-		mc[i + 1] = m1[x + 1] * m2[(i % 5) + 1] +
-					m1[x + 2] * m2[(i % 5) + 6] +
-					m1[x + 3] * m2[(i % 5) + 11] +
-					m1[x + 4] * m2[(i % 5) + 16] +
-					m1[x + 5] * m2[(i % 5) + 21]
 	end
 	
 	return mc
@@ -102,6 +65,7 @@ function YohaneMovie.newMovie(moviedata, parentflash)
 		instruction = moviedata.startInstruction + 4,
 		currentFrame = 1,
 		layers = {},
+		highestLayer = 0,
 		drawCalls = {},
 		parent = parentflash,
 		data = moviedata,	-- Beware, recursive table
@@ -195,53 +159,52 @@ function YohaneMovie._internal._mt:stepFrame()
 			end
 			
 			local updatedMovies = {}
-			for n, v in pairs(this.layers) do
-				local movieObj = assert(this.parent.movieData[v.movieID], "Unknown movie was specificed")
+			for n = 1, this.highestLayer do
+				local v = this.layers[n]
 				
-				if movieObj.type == "flash" then
-					if not(updatedMovies[movieObj]) then
-						-- Frame step it if it's not already
-						movieObj.data:stepFrame()
-						updatedMovies[movieObj] = true
-					end
+				if v then
+					local movieObj = assert(this.parent.movieData[v.movieID], "Unknown movie was specificed")
 					
-					-- Then get it's draw calls
-					local movieObjMovie = getmetatable(movieObj.data)
-					for a = 1, #movieObjMovie.drawCalls do
-						local b = movieObjMovie.drawCalls[a]
-						local dc = {image = b.image}
+					if movieObj.type == "flash" then
+						if not(updatedMovies[movieObj]) then
+							-- Frame step it if it's not already
+							movieObj.data:stepFrame()
+							updatedMovies[movieObj] = true
+						end
 						
-						-- Matrix multiply
-						dc.matrix = mat3mul(v.matrix, b.matrix)
+						-- Then get it's draw calls
+						local movieObjMovie = getmetatable(movieObj.data)
+						for a = 1, #movieObjMovie.drawCalls do
+							local b = movieObjMovie.drawCalls[a]
+							local dc = {image = b.image}
+							
+							-- Matrix multiply
+							dc.matrix = mat3mul(v.matrix, b.matrix)
+							
+							-- Color transformation
+							dc.r = v.color.r * b.r
+							dc.g = v.color.g * b.g
+							dc.b = v.color.b * b.b
+							dc.a = v.color.a * b.a
+							
+							this.drawCalls[#this.drawCalls + 1] = dc
+						end
+					elseif movieObj.type == "image" then
+						-- Simple image. It has offsets
+						local dc = {image = movieObj.imageHandle}
 						
-						-- Color transformation
-						local out = mat5mul(
-							mat5rgba(v.color.r, v.color.g, v.color.b, v.color.a),
-							mat5rgba(b.r, b.g, b.b, b.a)
+						dc.matrix = mat3mul(
+							v.matrix,
+							{1, 0, movieObj.offsetX, 0, 1, movieObj.offsetY, 0, 0, 1}
 						)
 						
-						dc.r = out[1]
-						dc.g = out[7]
-						dc.b = out[13]
-						dc.a = out[19]
+						dc.r = v.color.r
+						dc.g = v.color.g
+						dc.b = v.color.b
+						dc.a = v.color.a
 						
 						this.drawCalls[#this.drawCalls + 1] = dc
 					end
-				elseif movieObj.type == "image" then
-					-- Simple image. It has offsets
-					local dc = {image = movieObj.imageHandle}
-					
-					dc.matrix = mat3mul(
-						v.matrix,
-						{1, 0, movieObj.offsetX, 0, 1, movieObj.offsetY, 0, 0, 1}
-					)
-					
-					dc.r = v.color.r
-					dc.g = v.color.g
-					dc.b = v.color.b
-					dc.a = v.color.a
-					
-					this.drawCalls[#this.drawCalls + 1] = dc
 				end
 			end
 		elseif instr == 1 or instr == 4 then
@@ -259,7 +222,7 @@ function YohaneMovie._internal._mt:stepFrame()
 			if not(this.layers[layer]) then
 				this.layers[layer] = {
 					matrix = mat3id(),
-					color = Yohane.CopyTable(DefaultColor)
+					color = {r = 1, g = 1, b = 1, a = 1}
 				}
 			end
 			
@@ -270,6 +233,8 @@ function YohaneMovie._internal._mt:stepFrame()
 			else
 				layerdata.movieID = movieID
 			end
+			
+			this.highestLayer = math.max(this.highestLayer, layer)
 			
 			if matrixIdx ~= 65535 then
 				-- Set matrix data
@@ -307,7 +272,21 @@ function YohaneMovie._internal._mt:stepFrame()
 			end
 		elseif instr == 2 then
 			-- REMOVE_OBJECT
-			this.layers[self:getNextInstruction()] = nil
+			local layer = self:getNextInstruction()
+			this.layers[layer] = nil
+			
+			if layer == this.highestLayer then
+				local newhighest = 0
+				
+				for i = layer, 1, -1 do
+					if this.layers[i] then
+						newhighest = i
+						break
+					end
+				end
+				
+				this.highestLayer = newhighest
+			end
 		elseif instr == 3 then
 			-- PLAY_SOUND
 			local soundID = self:getNextInstruction() + 1
@@ -329,7 +308,6 @@ function YohaneMovie._internal._mt.draw(this, x, y)
 	this = getmetatable(this)
 	
 	for i = 1, #this.drawCalls do
-		--local z = Yohane.CopyTable(this.drawCalls[i])
 		local a = this.drawCalls[i]
 		local tm = a.matrix
 		local z = {}
