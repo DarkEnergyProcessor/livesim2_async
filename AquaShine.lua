@@ -237,7 +237,8 @@ end
 --! @brief Disable screen sleep
 --! @note Should be called only in Start function
 function AquaShine.DisableSleep()
-	love.window.setDisplaySleepEnabled(false)
+	-- tail call
+	return love.window.setDisplaySleepEnabled(false)
 end
 
 --! @brief Gets cached data from cache table, or execute function to load and store in cache
@@ -294,7 +295,6 @@ end
 --------------------------------------
 local LoadedShelshaObject = {}
 local LoadedImage = {}
-local ConstImageFlags
 
 --! @brief Load image without caching
 --! @param path The image path
@@ -302,19 +302,11 @@ local ConstImageFlags
 --! @returns Drawable object
 --! @note The ShelshaObject texture bank will ALWAYS BE CACHED!.
 function AquaShine.LoadImageNoCache(path, pngonly)
-	if not(ConstImageFlags) then
-		ConstImageFlags = {}
-		ConstImageFlags.mipmaps = AquaShine.IsDesktopSystem()
-	end
-	
 	assert(path:sub(-4) == ".png", "Only PNG image is supported")
 	local _, img = pcall(love.graphics.newImage, path, ConstImageFlags)
 	
 	if _ then
 		-- .png image loaded
-		img:setFilter("linear", "linear", 16)
-		img:setMipmapFilter("linear", 16)
-		
 		return img
 	elseif not(pngonly) then
 		-- Try .png.imag
@@ -652,9 +644,9 @@ function love.load(arg)
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	love.resize(wx, wy)
 	
-	-- JIT is disabled in Android. Enable it
+	-- JIT is disabled in Android for performance reasons.
 	if AquaShine.OperatingSystem == "Android" then
-		jit.on()
+		jit.off()
 	end
 	
 	if jit and AquaShine.GetCommandLineConfig("interpreter") then

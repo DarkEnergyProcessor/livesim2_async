@@ -3,6 +3,8 @@
 
 local AquaShine = ...
 
+if not(AquaShine.IsDesktopSystem()) then return end
+
 --! @fn AquaShine.FileSelection(title, directory, filter, multiple)
 --! @brief Shows file selection dialog
 --! @param title The dialog window title (string, or nil)

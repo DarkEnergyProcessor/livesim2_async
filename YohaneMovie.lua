@@ -108,7 +108,7 @@ function YohaneMovie.newMovie(moviedata, parentflash)
 		__index = YohaneMovie._internal._mt
 	}
 	
-	return setmetatable({}, mvdata)
+	return (setmetatable({}, mvdata))
 end
 
 -- Get next instruction
