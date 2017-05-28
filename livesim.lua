@@ -937,6 +937,17 @@ end
 -- LOVE2D mouse/touch pressed
 local TouchTracking = {}
 local isMousePress = false
+local EllipseRot = {
+	math.pi,
+	7 * math.pi / 8,
+	3 * math.pi / 4,
+	5 * math.pi / 8,
+	math.pi / 2,
+	3 * math.pi / 8,
+	math.pi / 4,
+	math.pi / 8,
+	0,
+}
 function DEPLS.MousePressed(x, y, button, touch_id)
 	if touch_id == true then return end
 	if DEPLS.ElapsedTime <= 0 then return end
@@ -949,16 +960,38 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 	local LowestDist = 127
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
-		local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
+		local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 192
+		local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 144
 		
-		if dist < 80 and dist < LowestDist then
-			LowestIdx = i
-			LowestDist = dist
+		if xp * xp + yp * yp <= 1 then
+			DEPLS.NoteManager.SetTouch(i, touch_id)
+			break
 		end
 	end
-	
-	if LowestIdx then
-		DEPLS.NoteManager.SetTouch(LowestIdx, touch_id)
+end
+
+function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
+	if isMousePress or touch_id then
+		touch_id = touch_id or 0
+		
+		local lastpos = TouchTracking[touch_id]
+		local LowestIdx
+		local LowestDist = 127
+		
+		for i = 1, 9 do
+			if i ~= lastpos then
+				local idolpos = DEPLS.IdolPosition[i]
+				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 192
+				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 144
+				
+				if xp * xp + yp * yp <= 1 then
+					TouchTracking[touch_id] = i
+					DEPLS.NoteManager.SetTouch(i, touch_id, false, lastpos)
+					
+					break
+				end
+			end
+		end
 	end
 end
 
@@ -978,33 +1011,6 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	if DEPLS.Routines.ResultScreen.CanExit then
 		-- Back
 		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
-	end
-end
-
-function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
-	if isMousePress or touch_id then
-		touch_id = touch_id or 0
-		
-		local lastpos = TouchTracking[touch_id]
-		local LowestIdx
-		local LowestDist = 127
-		
-		for i = 1, 9 do
-			if i ~= lastpos then
-				local idolpos = DEPLS.IdolPosition[i]
-				local dist = distance(x - (idolpos[1] + 64), y - (idolpos[2] + 64))
-				
-				if dist < 80 and dist < LowestDist then
-					LowestIdx = i
-					LowestDist = dist
-				end
-			end
-		end
-		
-		if LowestIdx then
-			TouchTracking[touch_id] = LowestIdx
-			DEPLS.NoteManager.SetTouch(LowestIdx, touch_id, false, lastpos)
-		end
 	end
 end
 

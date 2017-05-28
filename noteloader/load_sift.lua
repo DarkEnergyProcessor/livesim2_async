@@ -58,6 +58,13 @@ function SIFTrain.Load(file)
 	
 	if sift.music_file then
 		out.song_file = AquaShine.LoadAudio("audio/"..sift.music_file)
+	else
+		local bn = AquaShine.Basename(file[1])
+		local a, b = bn:match("(.)_(%d+)")
+		
+		if a and b then
+			out.song_file = AquaShine.LoadAudio("audio/"..a.."_"..b..".wav")
+		end
 	end
 	
 	-- SIFTrain doesn't store attribute information, like LLPractice beatmap

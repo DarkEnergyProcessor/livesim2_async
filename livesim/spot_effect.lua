@@ -25,7 +25,7 @@ function SpotEffect.Create(pos, r, g, b)
 		out.infotween = tween.new(500, out.infodata, temp)
 	end
 	
-	return setmetatable(out, _cm)
+	return (setmetatable(out, _cm))
 end
 
 function SpotEffect.Update(this, deltaT)
