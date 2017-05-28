@@ -182,7 +182,7 @@ elseif os.execute("which zenity") <= 0 then
 			local filelist = {}
 			
 			for w in list:gmatch("[^|]+") do
-				filelist[#filelist + 1] = w
+				filelist[#filelist + 1] = w:gsub("[\r\n|\r|\n]+", "")
 			end
 			
 			return filelist
@@ -212,6 +212,8 @@ elseif os.execute("which kdialog") <= 0 then
 		cmd:close()
 		
 		if #list > 0 then
+			list = list:gsub("[\r\n|\r|\n]+", "")
+
 			if multiple then
 				return {list}
 			else

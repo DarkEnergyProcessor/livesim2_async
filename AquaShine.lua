@@ -20,7 +20,7 @@ local AquaShine = {
 	PreloadedEntryPoint = {},
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	AllowEntryPointPreload = false,
+	AllowEntryPointPreload = true,
 }
 
 local love = require("love")
@@ -92,10 +92,11 @@ function AquaShine.ParseCommandLineConfig(argv)
 		table.remove(argv, 1)
 	end
 	
+	local pattern = AquaShine.OperatingSystem == "Windows" and "[/|%-](%w+)=?(.*)" or "%-(%w+)=?(.*)"
 	local arglen = #arg
 	
 	for i = arglen, 1, -1 do
-		local k, v = arg[i]:match("/(%w+)=?(.*)")
+		local k, v = arg[i]:match(pattern)
 		
 		if k and v then
 			config_list[k:lower()] = #v == 0 and true or tonumber(v) or v
@@ -375,6 +376,7 @@ function AquaShine.MainLoop()
 	local dt
 	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	local RenderToCanvasFunc = function()
+		local a
 		love.graphics.clear()
 		
 		if AquaShine.CurrentEntryPoint then
@@ -601,6 +603,7 @@ end
 function love.load(arg)
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
+	AquaShine.OperatingSystem = love.system.getOS()
 	AquaShine.ParseCommandLineConfig(arg)
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), false)
 	
@@ -639,7 +642,6 @@ function love.load(arg)
 	end
 	
 	AquaShine.WindowName = love.window.getTitle()
-	AquaShine.OperatingSystem = love.system.getOS()
 	
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	love.resize(wx, wy)

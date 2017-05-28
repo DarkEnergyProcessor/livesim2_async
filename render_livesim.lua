@@ -12,7 +12,8 @@ local reg = debug.getregistry()
 local RenderMode = {
 	DeltaTime = 50 / 3,
 	ElapsedTime = 0,
-	Frame = 0
+	Frame = 0,
+	EncodeType = "png"
 }
 local AudioMixer = {
 	NewSource = love.audio.newSource,
@@ -20,6 +21,7 @@ local AudioMixer = {
 	SourceMetatable = reg.Source,
 	
 	SourceList = {},
+	SourcePlaying = {},
 	SoundDataBuffer = {
 		Position = 0
 	}
@@ -37,23 +39,23 @@ local RenderManager = {
 do
 	local c = lsys.getProcessorCount()
 	print("Processors", c)
-	c = c * 2
+	c = c + 2
 	print("Using "..c.." threads")
 	
 	for i = 1, c do
 		RenderManager.Threads[i] = {Thread = love.thread.newThread [[
-local id, out = ...	-- [1] = ImageData, [2] = output name
+local id, out, ext = ...	-- [1] = ImageData, [2] = output name, [3] = encode type
 local li = require("love.image")
 local encode = getmetatable(li.newImageData(1, 1)).encode
 
 local f = assert(io.open(out, "wb"))
-f:write(encode(id, "png"):getString())
+f:write(encode(id, ext):getString())
 f:close()
 ]]}
 	end
 end
-local null_device = jit.os == "Windows" and "nul" or "/dev/null"
-local benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
+local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
+local benchmark_mode
 
 -- len is the sample length
 local function mono_to_stereo(dest, src, len)
@@ -142,6 +144,8 @@ function love.audio.newSource(tgt)
 	
 	sourcetbl.SoundData = sounddata
 	sourcetbl.MaxSamples = sounddata:getSampleCount()
+	sourcetbl.Pointer = ffi.cast("int16_t*", sounddata:getPointer())
+	sourcetbl.Volume = 0.8
 	
 	local sourcedata = AudioMixer.NewSource(sounddata)
 	
@@ -155,6 +159,7 @@ function AudioMixer.SourceMetatable.play(audio)
 	
 	print("Source play", audio)
 	sourcetbl.Playing = true
+	AudioMixer.SourcePlaying[#AudioMixer.SourcePlaying + 1] = sourcetbl
 end
 
 -- Override Source:isPlaying
@@ -171,6 +176,8 @@ function AudioMixer.SourceMetatable.clone(audio)
 	sourcetbl2.MaxSamples = sourcetbl.MaxSamples
 	sourcetbl2.SoundData = sourcetbl.SoundData
 	sourcetbl2.Position = sourcetbl.Position
+	sourcetbl2.Pointer = sourcetbl.Pointer
+	sourcetbl2.Volume = sourcetbl.Volume
 	
 	local sourceobj = AudioMixer.NewSource(sourcetbl.SoundData)
 	AudioMixer.SourceList[sourceobj] = sourcetbl2
@@ -192,11 +199,13 @@ end
 function AudioMixer.SourceMetatable.tell(audio, timeunit)
 	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
 	
-	if timeunit == "samples" then
-		return sourcetbl.Position
-	else
-		return sourcetbl.Position / 44100
-	end
+	return sourcetbl.Position / (timeunit == "samples" and 1 or 44100)
+end
+
+function AudioMixer.SourceMetatable.setVolume(audio, vol)
+	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
+	
+	sourcetbl.Volume = vol
 end
 
 -- Override love.graphics.newVideo
@@ -274,15 +283,19 @@ function RenderManager.IsIdle()
 end
 
 function RenderManager.EncodeFrame(id, frame)
+	if not(RenderMode.EncodePattern) then
+		RenderMode.EncodePattern = "%s/%010d."..RenderMode.EncodeType
+	end
+	
 	for i = 1, #RenderManager.Threads do
 		local t = RenderManager.Threads[i]
 		if t.Thread:isRunning() == false then
 			t.Image = id
 			
 			if benchmark_mode then
-				t.Thread:start(id, null_device)
+				t.Thread:start(id, null_device, RenderMode.EncodeType)
 			else
-				t.Thread:start(id, string.format("%s/%010d.png", RenderMode.Destination, frame))
+				t.Thread:start(id, string.format(RenderMode.EncodePattern, RenderMode.Destination, frame), RenderMode.EncodeType)
 			end
 			
 			return
@@ -302,6 +315,7 @@ function RenderMode.Start(arg)
 		local w, h, flgs = love.window.getMode()
 		
 		flgs.resizable = false
+		flgs.vsync = false
 		if flgs.fullscreen then
 			w, h = 960, 640
 			flgs.fullscreen = false
@@ -317,6 +331,11 @@ function RenderMode.Start(arg)
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
 	RenderMode.DEPLS.AutoPlay = true
 	
+	if AquaShine.GetCommandLineConfig("tga") then
+		RenderMode.EncodeType = "tga"
+	end
+	benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
+	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
 	
@@ -327,13 +346,12 @@ function RenderMode.Start(arg)
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
 	
 	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
+	AudioMixer.SoundDataBuffer.Pointer = ffi.cast("int16_t*", AudioMixer.SoundDataBuffer.Handle:getPointer())
 	RenderMode.Duration = RenderMode.Duration * 1000
 end
 
-local function SetSampleBreak(i, l, r)
-	if pcall(AudioMixer.SoundDataMetatable.setSample, AudioMixer.SoundDataBuffer.Handle, i, l, r) == false then
-		assert(false, "Sample out-of-range index "..i)
-	end
+local function SetSampleBreak(i, l)
+	AudioMixer.SoundDataBuffer.Pointer[i] = l * 32767
 end
 
 function RenderMode.Update(deltaT)
@@ -362,20 +380,18 @@ function RenderMode.Update(deltaT)
 	for i = 1, 735 do
 		local as_l, as_r = 0, 0
 		
-		for n, v in pairs(AudioMixer.SourceList) do
-			if v.Playing then
-				local sd = v.SoundData
+		for j = #AudioMixer.SourcePlaying, 1, -1 do
+			local v = AudioMixer.SourcePlaying[j]
+			
+			if v.Position < v.MaxSamples then
+				local sl, sr = v.Pointer[v.Position * 2] / 32768, v.Pointer[v.Position * 2 + 1] / 32768
 				
-				if v.Position < v.MaxSamples then
-					local vol = n:getVolume() * 0.8
-					local sl, sr = sd:getSample(v.Position * 2) * vol, sd:getSample(v.Position * 2 + 1) * vol
-					
-					as_l, as_r = mix_audio_signal(as_l, sl), mix_audio_signal(as_r, sr)
-					
-					v.Position = v.Position + 1
-				else
-					v.Playing = false
-				end
+				as_l, as_r = mix_audio_signal(as_l, sl * v.Volume), mix_audio_signal(as_r, sr * v.Volume)
+				
+				v.Position = v.Position + 1
+			else
+				v.Playing = false
+				table.remove(AudioMixer.SourcePlaying, j)
 			end
 		end
 		

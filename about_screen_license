@@ -21,7 +21,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ExternalLicenses[#ExternalLicenses + 1] = {285, 480, [[
 Simple JSON encoding and decoding in pure Lua.
 
-Copyright 2010-2016 Jeffrey Friedl
+Copyright 2010-2017 Jeffrey Friedl
 http://regex.info/blog/
 Latest version: http://regex.info/blog/lua/json
 
@@ -33,7 +33,7 @@ It can be used for any purpose so long as:
    2) the web-page links above are maintained
    3) the 'AUTHOR_NOTE' string below is maintained
 
-AUTHOR_NOTE = -[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20161103.20 ]-
+AUTHOR_NOTE = -[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170416.23 ]-
 ]]}
 
 ExternalLicenses[#ExternalLicenses + 1] = {285, 495, [[

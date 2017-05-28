@@ -14,9 +14,21 @@ function SIFTrain.Load(file)
 	local data = love.filesystem.read(file[1]..".rs")
 	local out = {}
 	
-	-- Please, this is SIFTrain fault of using non-compilant JSON parser
-	if data:find("\"music_file\"") and data:find("\"music_file\":\"") == nil then
-		data = data:gsub("\"music_file\":([^,]+)", "\"music_file\":\"%1\"")
+	-- It turns out that SIFTrain uses relaxed Javascript object notation. Damn tons of regex incoming lol
+	do
+		local music_file_pos = {data:find("music_file", 1, true)}
+		
+		if #music_file_pos > 0 then
+			if data:sub(music_file_pos[1] - 1, music_file_pos[1] - 1) ~= "\"" then
+				-- Quote it first
+				data = data:gsub("music_file", "\"music_file\"", 1)
+			end
+			
+			if data:find("\"music_file\":\"", 1, true) == nil then
+				-- Quote the song file
+				data = data:gsub("\"music_file\":([^,]+)", "\"music_file\":\"%1\"")
+			end
+		end
 	end
 	
 	local sift = JSON:decode(data)
