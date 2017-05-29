@@ -13,14 +13,16 @@ local AquaShine = {
 		OffY = 0,
 		ScaleOverall = 1
 	},
+	AlwaysRunUnfocus = false,
+	SleepDisabled = false,
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
-	CacheTable = {},
+	CacheTable = setmetatable({}, {__mode = "v"}),
 	-- Preload entry points
 	PreloadedEntryPoint = {},
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	AllowEntryPointPreload = true,
+	AllowEntryPointPreload = false,
 }
 
 local love = require("love")
@@ -148,6 +150,11 @@ local TemporaryEntryPoint
 function AquaShine.LoadEntryPoint(name, arg)
 	local scriptdata, title
 	
+	AquaShine.AlwaysRunUnfocus = false
+	AquaShine.SleepDisabled = false
+	
+	love.window.setDisplaySleepEnabled(true)
+	
 	if AquaShine.PreloadedEntryPoint[name] then
 		scriptdata, title = AquaShine.PreloadedEntryPoint[name]()
 	else
@@ -162,8 +169,6 @@ function AquaShine.LoadEntryPoint(name, arg)
 	else
 		love.window.setTitle(AquaShine.WindowName)
 	end
-	
-	love.window.setDisplaySleepEnabled(true)
 end
 
 --! Function used to replace extension on file
@@ -242,6 +247,13 @@ function AquaShine.DisableSleep()
 	return love.window.setDisplaySleepEnabled(false)
 end
 
+--! @brief Disable pause when loses focus
+--! @param disable Always run even when losing focus (true) or not (false)
+--! @note Should be called only in Start function
+function AquaShine.RunUnfocused(disable)
+	AquaShine.AlwaysRunUnfocus = not(not(disable))
+end
+
 --! @brief Gets cached data from cache table, or execute function to load and store in cache
 --! @param name The cache name
 --! @param onfailfunc Function to execute when cache is not found. The return value of the function
@@ -267,7 +279,7 @@ end
 ----------------------------
 -- AquaShine Font Caching --
 ----------------------------
-local FontList = {}
+local FontList = setmetatable({}, {__mode = "v"})
 
 --! @brief Load font
 --! @param name The font name
@@ -294,8 +306,8 @@ end
 --------------------------------------
 -- AquaShine Image Loader & Caching --
 --------------------------------------
-local LoadedShelshaObject = {}
-local LoadedImage = {}
+local LoadedShelshaObject = setmetatable({}, {__mode = "v"})
+local LoadedImage = setmetatable({}, {__mode = "v"})
 
 --! @brief Load image without caching
 --! @param path The image path
@@ -408,15 +420,47 @@ function AquaShine.MainLoop()
 		
 		-- Process events.
 		love.event.pump()
-		for name, a,b,c,d,e,f in love.event.poll() do
+		for name, a, b, c, d, e, f in love.event.poll() do
 			if name == "quit" then
-				if love.quit then love.quit() end
+				if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
+					AquaShine.CurrentEntryPoint.Exit(true)
+				end
+				
 				return a
+			elseif name == "focus" then
+				if a == false and not(AquaShine.AlwaysRunUnfocus) then
+					love.audio.pause()
+					love.window.setDisplaySleepEnabled(true)
+					love.handlers[name](a, b, c, d, e, f)
+					
+					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+						AquaShine.CurrentEntryPoint.Focus(false)
+					end
+					
+					repeat
+						name, a, b, c, d, e, f = love.event.wait()
+						
+						if name then
+							love.handlers[name](a, b, c, d, e, f)
+						end
+						love.timer.step()
+					until name == "focus" and a
+					
+					love.audio.resume()
+					
+					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+						AquaShine.CurrentEntryPoint.Focus(true)
+					end
+					
+					if AquaShine.SleepDisabled then
+						love.window.setDisplaySleepEnabled(false)
+					end
+				end
 			end
 			
-			love.handlers[name](a,b,c,d,e,f)
+			love.handlers[name](a, b, c, d, e, f)
 		end
- 
+		
 		-- Update dt, as we'll be passing it to update
 		love.timer.step()
 		dt = love.timer.getDelta()
@@ -589,6 +633,8 @@ end
 -- When running low memory
 local cache_list = {FontList, LoadedShelshaObject, LoadedImage, AquaShine.CacheTable}
 function love.lowmemory()
+	collectgarbage()
+	
 	-- Remove all caches
 	for i = 1, #cache_list do
 		for n, v in pairs(cache_list[i]) do
@@ -596,7 +642,7 @@ function love.lowmemory()
 		end
 	end
 	
-	collectgarbage("collect")
+	collectgarbage()
 end
 
 -- Initialization

@@ -344,6 +344,7 @@ function RenderMode.Start(arg)
 	
 	-- Post-init
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
+	AquaShine.RunUnfocused(true)
 	
 	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
 	AudioMixer.SoundDataBuffer.Pointer = ffi.cast("int16_t*", AudioMixer.SoundDataBuffer.Handle:getPointer())
@@ -430,7 +431,7 @@ local function dwordu2string(num)
 		string.char(bit.rshift(bit.band(num, 0xFF000000), 24))
 end
 
-function love.quit()
+function RenderMode.Exit()
 	repeat
 		love.timer.sleep(0.1)
 	until RenderManager.IsIdle()

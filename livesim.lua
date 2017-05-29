@@ -70,6 +70,18 @@ local DEPLS = {
 	Sound = {}
 }
 
+local EllipseRot = {
+	0,
+	math.pi / 8,
+	math.pi / 4,
+	3 * math.pi / 8,
+	math.pi / 2,
+	5 * math.pi / 8,
+	3 * math.pi / 4,
+	7 * math.pi / 8,
+	math.pi,
+}
+
 -----------------------
 -- Private functions --
 -----------------------
@@ -508,13 +520,6 @@ function DEPLS.Start(argv)
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
-	--[[
-	DEPLS.Sound.PerfectTap = love.audio.newSource("sound/SE_306.ogg", "static")
-	DEPLS.Sound.GreatTap = love.audio.newSource("sound/SE_307.ogg", "static")
-	DEPLS.Sound.GoodTap = love.audio.newSource("sound/SE_308.ogg", "static")
-	DEPLS.Sound.BadTap = love.audio.newSource("sound/SE_309.ogg", "static")
-	DEPLS.Sound.StarExplode = love.audio.newSource("sound/SE_326.ogg", "static")
-	]]
 	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData("sound/SE_306.ogg", love.audio.newSource, "sound/SE_306.ogg", "static")
 	DEPLS.Sound.PerfectTap:setVolume(0.64)
 	DEPLS.Sound.GreatTap = AquaShine.GetCachedData("sound/SE_307.ogg", love.audio.newSource, "sound/SE_307.ogg", "static")
@@ -937,33 +942,20 @@ end
 -- LOVE2D mouse/touch pressed
 local TouchTracking = {}
 local isMousePress = false
-local EllipseRot = {
-	math.pi,
-	7 * math.pi / 8,
-	3 * math.pi / 4,
-	5 * math.pi / 8,
-	math.pi / 2,
-	3 * math.pi / 8,
-	math.pi / 4,
-	math.pi / 8,
-	0,
-}
 function DEPLS.MousePressed(x, y, button, touch_id)
-	if touch_id == true then return end
-	if DEPLS.ElapsedTime <= 0 then return end
+	if DEPLS.ElapsedTime <= 0 or DEPLS.AutoPlay then return end
 	
 	touch_id = touch_id or 0
 	isMousePress = touch_id == 0 and button == 1
 	
 	-- Calculate idol position
-	local LowestIdx
-	local LowestDist = 127
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
-		local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 192
-		local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 144
+		local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 104
+		local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 72
 		
 		if xp * xp + yp * yp <= 1 then
+			TouchTracking[touch_id] = i
 			DEPLS.NoteManager.SetTouch(i, touch_id)
 			break
 		end
@@ -971,18 +963,17 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 end
 
 function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
+	if DEPLS.AutoPlay then return end
 	if isMousePress or touch_id then
 		touch_id = touch_id or 0
 		
 		local lastpos = TouchTracking[touch_id]
-		local LowestIdx
-		local LowestDist = 127
 		
 		for i = 1, 9 do
 			if i ~= lastpos then
 				local idolpos = DEPLS.IdolPosition[i]
-				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 192
-				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 144
+				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 104
+				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 72
 				
 				if xp * xp + yp * yp <= 1 then
 					TouchTracking[touch_id] = i
@@ -1075,6 +1066,12 @@ function DEPLS.Exit()
 	
 	-- Unmount
 	AquaShine.MountZip()
+end
+
+function DEPLS.Focus(focus)
+	if focus and DEPLS.Sound.LiveAudio and DEPLS.ElapsedTime >= 0 then
+		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime / 1000)
+	end
 end
 
 DEPLS.Distance = distance
