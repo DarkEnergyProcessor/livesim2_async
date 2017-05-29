@@ -1,21 +1,20 @@
--- DEPLS settings
--- Copyright © 2038 Dark Energy Processor
--- TODO: complete it
+-- Live Simulator: 2 Settings
+-- Original written by RayFirefist, refactored by MikuAuahDark
 
 local love = love
 local AquaShine = AquaShine
 local Settings = {
+	--[[
 	Config = {	-- Default configuration
 		AUTOPLAY = 0,
 		BACKGROUND_IMAGE = 11,
 		IDOL_KEYS = "a\ts\td\tf\tspace\tj\tk\tl\t;",
 		LIVESIM_DELAY = 1000,
-		LLP_SIFT_DEFATTR = 1,
+		LLP_SIFT_DEFATTR = 10,
 		NOTE_SPEED = 800,
 		SCORE_ADD_NOTE = 1024,
 		STAMINA_DISPLAY = 32
-	},
-	CurrentConfig = {},	-- Current configuration
+	},]]
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
 	BackButtonSe = AquaShine.LoadImage("assets/image/ui/com_button_01se.png"),
@@ -25,25 +24,61 @@ local Settings = {
 	DescImage = AquaShine.LoadImage("assets/image/ui/com_win_42.png"),
 }
 
-local SettingsList = {
-	AUTOMODE = {
-		before = AquaShine.LoadConfig("AUTOPLAY", 0),
-		after = AquaShine.LoadConfig("AUTOPLAY", 0)
+local SettingSelection = {
+	{
+		Name = "AUTOPLAY", Default = 0,
+		Caption = "Autoplay",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	},
-	BACKGROUND_IMAGE = {
-		before = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11),
-		after = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
+	{
+		Name = "NOTE_STYLE", Default = 1,
+		Caption = "SIF-v5 Note Style",
+		Type = "switch",
+		On = 2,
+		Off = 1
 	},
-	NOTE_STYLE = {
-		before = AquaShine.LoadConfig("NOTE_STYLE", 1),
-		after = AquaShine.LoadConfig("NOTE_STYLE", 2)
+	{
+		Name = "CBF_UNIT_LOAD", Default = 1,
+		Caption = "Load CBF Units",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	},
-	NOTE_SPEED = {
-		before = AquaShine.LoadConfig("NOTE_SPEED", 800),
-		after = AquaShine.LoadConfig("NOTE_SPEED", 800)
+	{
+		Name = "BACKGROUND_IMAGE", Default = 11,
+		Caption = "Background Number",
+		Type = "number",
+		Min = 1,
+		Max = 15,
+		Changed = function(this, oldval)
+			-- When initialized, `oldval` is nil
+			Settings.Background = {AquaShine.LoadImage(
+				"assets/image/background/liveback_"..this.Value..".png",
+				string.format("assets/image/background/b_liveback_%03d_01.png", this.Value),
+				string.format("assets/image/background/b_liveback_%03d_02.png", this.Value),
+				string.format("assets/image/background/b_liveback_%03d_03.png", this.Value),
+				string.format("assets/image/background/b_liveback_%03d_04.png", this.Value)
+			)}
+		end
+	},
+	{
+		Name = "NOTE_SPEED", Default = 800,
+		Caption = "Notes Speed (ms)",
+		Type = "number",
+		Min = 400,
+		Max = 4500,
+		Increment = 100
+	},
+	{
+		Name = "LLP_SIFT_DEFATTR", Default = 10,
+		Caption = "Default LLP Attribute",
+		Type = "number",
+		Min = 1,
+		Max = 11
 	}
 }
-Settings.Background = AquaShine.LoadImage("assets/image/background/liveback_"..SettingsList.BACKGROUND_IMAGE.after..".png")
 
 local MouseState = {0, 0, false}	-- x, y, is click?
 
@@ -60,21 +95,29 @@ local OffButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_15se.png")
 
 -- Usual configuration settings
 function Settings.Start()
-	for n, v in pairs(Settings.Config) do
-		Settings.CurrentConfig[n] = AquaShine.LoadConfig(n, v)
+	for i = 1, #SettingSelection do
+		local idx = SettingSelection[i]
+		
+		idx.Value = AquaShine.LoadConfig(idx.Name, idx.Default)
+		
+		if idx.Changed then
+			idx:Changed()
+		end
 	end	
 end
 
-function Settings.Update(deltaT)
-	--Buttons
-	setAutomodeButtons()
-	setNotesButtons()
-end
+function Settings.Update(deltaT) end
 
 function Settings.Draw(deltaT)
-	AquaShine.SetScissor(0, 0, 960, 640)
 	-- Draw background
-	love.graphics.draw(Settings.Background)
+	love.graphics.draw(Settings.Background[1])
+	love.graphics.draw(Settings.Background[2], -88, 0)
+	love.graphics.draw(Settings.Background[3], 960, 0)
+	love.graphics.draw(Settings.Background[4], 0, -43)
+	love.graphics.draw(Settings.Background[5], 0, 640)
+	
+	-- Limit drawing
+	AquaShine.SetScissor(0, 0, 960, 640)
 	
 	-- Draw back button and image
 	love.graphics.draw(Settings.BackImage, -98, 0)
@@ -91,16 +134,27 @@ function Settings.Draw(deltaT)
 		love.graphics.draw(Settings.BackButton)
 	end
 	
-	if
-		MouseState[3] and
-		MouseState[1] >= 124 and MouseState[1] <= 190 and
-		MouseState[2] >= 55 and MouseState[2] <= 65
-	then
-		-- Draw se
-		love.graphics.draw(OnButtonSe, 185, 60)
+	if MouseState[3] then
+		if 
+			MouseState[1] >= 124 and MouseState[1] <= 190 and
+			MouseState[2] >= 55 and MouseState[2] <= 65
+		then
+			love.graphics.draw(OnButtonSe, 185, 60)
+		else
+			love.graphics.draw(OnButton, 185, 60)
+		end
+		
+		if 
+			MouseState[1] >= 750 and MouseState[2] >= 20 and
+			MouseState[1] < 894 and MouseState[2] < 78
+		then
+			love.graphics.draw(set_button_19se, 750, 20)
+		else
+			love.graphics.draw(set_button_19, 750, 20)
+		end
 	else
-		-- Draw normal
 		love.graphics.draw(OnButton, 185, 60)
+		love.graphics.draw(set_button_19, 750, 20)
 	end
 
 	-- Draw label
@@ -109,7 +163,29 @@ function Settings.Draw(deltaT)
 	love.graphics.print("Settings", 95, 13)
 	love.graphics.setColor(255, 255, 255, 255)
 	
-	printSettings()
+	for i = 1, #SettingSelection do
+		local idx = SettingSelection[i]
+		local yp = i * 80
+		
+		love.graphics.draw(Settings.BackImage, idx.Type == "number" and -38 or -98, yp)
+		
+		if idx.Type == "switch" then
+			love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 185, yp - 20)
+			love.graphics.draw(idx.Value == idx.Off and OffButtonSe or OffButton, 275, yp - 20)
+			
+			love.graphics.setColor(0, 0, 0)
+		elseif idx.Type == "number" then
+			love.graphics.draw(minus, 240, yp + 10)
+			love.graphics.draw(plus, 400, yp + 10)
+			
+			love.graphics.setColor(0, 0, 0)
+			love.graphics.print(tostring(idx.Value), 320, yp + 10)
+		end
+		
+		love.graphics.print(idx.Caption, 5, yp + 10)
+		love.graphics.setColor(255, 255, 255, 255)
+	end
+	
 	AquaShine.ClearScissor()
 end
 
@@ -130,178 +206,60 @@ function Settings.MouseReleased(x, y, button)
 	MouseState[1], MouseState[2] = x, y
 	MouseState[3] = false
 	
-	if x >= 0 and x <= 86 and y >= 0 and y <= 58 then
-		-- Exit settings
+	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		AquaShine.LoadEntryPoint("main_menu.lua")
-	end
-
-	-- Apply changes
-	if (x >= 752 and x <= 890) and (y >= 20 and y <= 85) then
-		changeSettings()
-	end
-	-- Set automode as ON
-	if (x >= 215 and x <= 270) and (y >= 70 and y <= 130) then
-		SettingsList.AUTOMODE.after = 1
-		love.graphics.draw(OnButton, 185, 60)
-		love.graphics.draw(OffButtonSe, 275, 61)
-	end
-
-	-- Set automode as OFF
-	if (x >= 300 and x <= 355) and (y >= 65 and y <= 130) then
-		SettingsList.AUTOMODE.after = 0
-		love.graphics.draw(OnButtonSe, 185, 61)
-		love.graphics.draw(OffButton, 275, 60)
-	end
-
-	-- Set 5.0 as ON
-	if (x >= 215 and x <= 270) and (y >= 310 and y <= 375) then
-		SettingsList.NOTE_STYLE.after = 2
-	end
-
-	-- Set 5.0 as OFF
-	if (x >= 300 and x <= 355) and (y >= 310 and y <= 375) then
-		SettingsList.NOTE_STYLE.after = 1
-	end
-
-	-- Remove 100 as note speed
-	if (x >= 280 and x <= 305) and (y >= 245 and y <= 275) then
-		if SettingsList.NOTE_SPEED.after > 400 then
-			SettingsList.NOTE_SPEED.after = SettingsList.NOTE_SPEED.after - 100
+	elseif x >= 752 and x < 890 and y >= 20 and y < 85 then
+		for i = 1, #SettingSelection do
+			local idx = SettingSelection[i]
+			
+			AquaShine.SaveConfig(idx.Name, idx.Value)
 		end
-	end
-
-	-- Add 100 as note speed
-	if (x >= 395 and x <= 420) and (y >= 245 and y <= 275) then
-		if SettingsList.NOTE_SPEED.after < 4500 then
-			SettingsList.NOTE_SPEED.after = SettingsList.NOTE_SPEED.after + 100
-		end
-	end
-
-	-- Remove 100 as note speed
-	if (x >= 280 and x <= 305) and (y >= 170 and y <= 190) then
-		if SettingsList.BACKGROUND_IMAGE.after > 1 then
-			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after - 1
-		end
-		
-		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
-	end
-
-	-- Add 100 as note speed
-	if (x >= 395 and x <= 420) and (y >= 170 and y <= 190) then
-		if SettingsList.BACKGROUND_IMAGE.after < 15 then
-			SettingsList.BACKGROUND_IMAGE.after = SettingsList.BACKGROUND_IMAGE.after + 1
-		end
-		
-		Settings.Background = AquaShine.LoadImage(string.format("assets/image/background/liveback_%d.png", SettingsList.BACKGROUND_IMAGE.after))
-	end
-
-	--Other
-end
-
-function printSettings()
-	--Apply
-	--Button
-	if MouseState[3] and
-		MouseState[1] >= 750 and MouseState[2] >= 20 and
-		MouseState[1] < 894 and MouseState[2] < 78
-	then
-		love.graphics.draw(set_button_19se, 750, 20)
 	else
-		love.graphics.draw(set_button_19, 750, 20)
-	end
-
-	--Autoplay
-	--Label
-	love.graphics.draw(Settings.BackImage, -98, 80)
-	--Text
-	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Autoplay", 5, 93)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Button
-	setAutomodeButtons()
-
-	--Background image ID
-	--Label
-	love.graphics.draw(Settings.BackImage, -38, 160)
-	--Text
-	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Background ID", 5, 173)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Speed indicator
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print(SettingsList.BACKGROUND_IMAGE.after, 350, 170)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Button
-	love.graphics.draw(minus, 284, 170)
-	love.graphics.draw(plus, 400, 170)
-
-	--Speed Notes
-	--Label
-	love.graphics.draw(Settings.BackImage, -38, 240)
-	--Text
-	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("Notes Speed", 5, 253)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Speed indicator
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print(SettingsList.NOTE_SPEED.after, 335, 253)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Button
-	--Button
-	love.graphics.draw(minus, 284, 250)
-	love.graphics.draw(plus, 400, 250)
-
-	--5.0 notes icon
-	--Label
-	love.graphics.draw(Settings.BackImage, -98, 320)
-	--Text
-	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
-	love.graphics.print("5.0 Notes", 5, 333)
-	love.graphics.setColor(255, 255, 255, 255)
-	--Button
-	setNotesButtons()
-end
-
-function setAutomodeButtons()
-	if SettingsList.AUTOMODE.after == 0 then
-		love.graphics.draw(OnButton, 185, 60)
-		love.graphics.draw(OffButtonSe, 275, 61)
-	else
-		love.graphics.draw(OnButtonSe, 185, 61)
-		love.graphics.draw(OffButton, 275, 60)
+		for i = 1, #SettingSelection do
+			local idx = SettingSelection[i]
+			local oldval = idx.Value
+			local yp = i * 80
+			
+			if idx.Type == "switch" and y >= yp - 17 and y < yp + 55 then
+				if idx.Value ~= idx.Off and x >= 296 and x < 368 then
+					-- Off
+					idx.Value = idx.Off
+					
+					if idx.Changed then
+						idx:Changed(oldval)
+					end
+				elseif idx.Value ~= idx.On and x >= 206 and x < 278 then
+					-- On
+					idx.Value = idx.On
+					
+					if idx.Changed then
+						idx:Changed(oldval)
+					end
+				end
+			elseif idx.Type == "number" and y >= yp + 4 and y < yp + 36 then
+				if x >= 224 and x < 272 then
+					-- Subtract
+					idx.Value = math.max(idx.Value - (idx.Increment or 1), idx.Min)
+					
+					if idx.Changed then
+						idx:Changed(oldval)
+					end
+				elseif x >= 384 and x < 432 then
+					-- Add
+					idx.Value = math.min(idx.Value + (idx.Increment or 1), idx.Max)
+					
+					if idx.Changed then
+						idx:Changed(oldval)
+					end
+				end
+			end
+		end
 	end
 end
 
-function setNotesButtons()
-	if SettingsList.NOTE_STYLE.after == 1 then
-		love.graphics.draw(OnButton, 185, 300)
-		love.graphics.draw(OffButtonSe, 275, 301)
-	else
-		love.graphics.draw(OnButtonSe, 185, 301)
-		love.graphics.draw(OffButton, 275, 300)
-	end
-end
-
-function changeSettings()
-	if not(SettingsList.AUTOMODE.before == SettingsList.AUTOMODE.after) then
-		AquaShine.SaveConfig("AUTOPLAY", SettingsList.AUTOMODE.after)
-		SettingsList.AUTOMODE.before = SettingsList.AUTOMODE.after
-	end
-	if not(SettingsList.BACKGROUND_IMAGE.before == SettingsList.BACKGROUND_IMAGE.after) then
-		AquaShine.SaveConfig("BACKGROUND_IMAGE", SettingsList.BACKGROUND_IMAGE.after)
-		SettingsList.BACKGROUND_IMAGE.before = SettingsList.BACKGROUND_IMAGE.after
-	end
-	if not(SettingsList.NOTE_STYLE.before == SettingsList.NOTE_STYLE.after) then
-		AquaShine.SaveConfig("NOTE_STYLE", SettingsList.NOTE_STYLE.after)
-		SettingsList.NOTE_STYLE.before = SettingsList.NOTE_STYLE.after
-	end
-	if not(SettingsList.NOTE_SPEED.before == SettingsList.NOTE_SPEED.after) then
-		AquaShine.SaveConfig("NOTE_SPEED", SettingsList.NOTE_SPEED.after)
-		SettingsList.NOTE_SPEED.before = SettingsList.NOTE_SPEED.after
+function Settings.KeyReleased(key)
+	if key == "escape" then
+		AquaShine.LoadEntryPoint("main_menu.lua")
 	end
 end
 

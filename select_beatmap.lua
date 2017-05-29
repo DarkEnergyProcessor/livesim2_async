@@ -30,7 +30,7 @@ local CaseInsensitivePath = AquaShine.OperatingSystem == "Windows"
 local RandomMountPoint = string.format("temp/%09d", math.random(1, 999999999))
 
 function SelectBeatmap.Start(arg)
-	local noteloader = love.filesystem.load("note_loader.lua")()
+	local noteloader = assert(love.filesystem.load("note_loader.lua"))()
 	BeatmapList = noteloader.Enumerate()
 	
 	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
