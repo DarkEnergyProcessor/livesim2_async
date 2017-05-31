@@ -47,6 +47,13 @@ local SettingSelection = {
 		Off = 0
 	},
 	{
+		Name = "UNFOCUSED_RUN", Default = 1,
+		Caption = "Run in Background",
+		Type = "switch",
+		On = 1,
+		Off = 0
+	},
+	{
 		Name = "BACKGROUND_IMAGE", Default = 11,
 		Caption = "Background Number",
 		Type = "number",

@@ -15,6 +15,7 @@ local AquaShine = {
 	},
 	AlwaysRunUnfocus = false,
 	SleepDisabled = false,
+	FirstBoot = false,
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
 	CacheTable = setmetatable({}, {__mode = "v"}),
@@ -150,7 +151,7 @@ local TemporaryEntryPoint
 function AquaShine.LoadEntryPoint(name, arg)
 	local scriptdata, title
 	
-	AquaShine.AlwaysRunUnfocus = false
+	AquaShine.AlwaysRunUnfocus = AquaShine.LoadConfig("UNFOCUSED_RUN", 1) == 1
 	AquaShine.SleepDisabled = false
 	
 	love.window.setDisplaySleepEnabled(true)
@@ -429,31 +430,35 @@ function AquaShine.MainLoop()
 				return a
 			elseif name == "focus" then
 				if a == false and not(AquaShine.AlwaysRunUnfocus) then
-					love.audio.pause()
-					love.window.setDisplaySleepEnabled(true)
-					love.handlers[name](a, b, c, d, e, f)
-					
-					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-						AquaShine.CurrentEntryPoint.Focus(false)
-					end
-					
-					repeat
-						name, a, b, c, d, e, f = love.event.wait()
+					if AquaShine.FirstBoot == false then
+						AquaShine.FirstBoot = true
+					else
+						love.audio.pause()
+						love.window.setDisplaySleepEnabled(true)
+						love.handlers[name](a, b, c, d, e, f)
 						
-						if name then
-							love.handlers[name](a, b, c, d, e, f)
+						if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+							AquaShine.CurrentEntryPoint.Focus(false)
 						end
-						love.timer.step()
-					until name == "focus" and a
-					
-					love.audio.resume()
-					
-					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-						AquaShine.CurrentEntryPoint.Focus(true)
-					end
-					
-					if AquaShine.SleepDisabled then
-						love.window.setDisplaySleepEnabled(false)
+						
+						repeat
+							name, a, b, c, d, e, f = love.event.wait()
+							
+							if name then
+								love.handlers[name](a, b, c, d, e, f)
+							end
+							love.timer.step()
+						until name == "focus" and a
+						
+						love.audio.resume()
+						
+						if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+							AquaShine.CurrentEntryPoint.Focus(true)
+						end
+						
+						if AquaShine.SleepDisabled then
+							love.window.setDisplaySleepEnabled(false)
+						end
 					end
 				end
 			end
@@ -628,6 +633,10 @@ function love.resize(w, h)
 	AquaShine.LogicalScale.OffY = (AquaShine.LogicalScale.ScreenY - AquaShine.LogicalScale.ScaleOverall * ly) / 2
 	
 	AquaShine.MainCanvas = love.graphics.newCanvas()
+	
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Resize then
+		AquaShine.CurrentEntryPoint.Resize(w, h)
+	end
 end
 
 -- When running low memory

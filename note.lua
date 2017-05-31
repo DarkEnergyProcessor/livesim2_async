@@ -844,6 +844,8 @@ function Note.SetTouch(pos, touchid, release, previous)
 		return
 	end
 	
+	Note.SetTouch(previous, touchid, true)
+	
 	if ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
 		noteobj:SetTouchID(touchid)
 		
