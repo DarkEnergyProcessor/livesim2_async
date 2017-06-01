@@ -4,17 +4,6 @@
 local love = love
 local AquaShine = AquaShine
 local Settings = {
-	--[[
-	Config = {	-- Default configuration
-		AUTOPLAY = 0,
-		BACKGROUND_IMAGE = 11,
-		IDOL_KEYS = "a\ts\td\tf\tspace\tj\tk\tl\t;",
-		LIVESIM_DELAY = 1000,
-		LLP_SIFT_DEFATTR = 10,
-		NOTE_SPEED = 800,
-		SCORE_ADD_NOTE = 1024,
-		STAMINA_DISPLAY = 32
-	},]]
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
 	BackButtonSe = AquaShine.LoadImage("assets/image/ui/com_button_01se.png"),
@@ -49,6 +38,13 @@ local SettingSelection = {
 	{
 		Name = "UNFOCUSED_RUN", Default = 1,
 		Caption = "Run in Background",
+		Type = "switch",
+		On = 1,
+		Off = 0
+	},
+	{
+		Name = "MINIMAL_EFFECT", Default = 0,
+		Caption = "Minimal Effect",
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -129,26 +125,14 @@ function Settings.Draw(deltaT)
 	-- Draw back button and image
 	love.graphics.draw(Settings.BackImage, -98, 0)
 	
-	if
-		MouseState[3] and
-		MouseState[1] >= 0 and MouseState[1] <= 86 and
-		MouseState[2] >= 0 and MouseState[2] <= 58
-	then
-		-- Draw se
-		love.graphics.draw(Settings.BackButtonSe)
-	else
-		-- Draw normal
-		love.graphics.draw(Settings.BackButton)
-	end
-	
 	if MouseState[3] then
 		if 
-			MouseState[1] >= 124 and MouseState[1] <= 190 and
-			MouseState[2] >= 55 and MouseState[2] <= 65
+			MouseState[1] >= 0 and MouseState[1] <= 86 and
+			MouseState[2] >= 0 and MouseState[2] <= 58
 		then
-			love.graphics.draw(OnButtonSe, 185, 60)
+			love.graphics.draw(Settings.BackButtonSe)
 		else
-			love.graphics.draw(OnButton, 185, 60)
+			love.graphics.draw(Settings.BackButton)
 		end
 		
 		if 
@@ -160,7 +144,7 @@ function Settings.Draw(deltaT)
 			love.graphics.draw(set_button_19, 750, 20)
 		end
 	else
-		love.graphics.draw(OnButton, 185, 60)
+		love.graphics.draw(Settings.BackButton)
 		love.graphics.draw(set_button_19, 750, 20)
 	end
 
@@ -172,7 +156,7 @@ function Settings.Draw(deltaT)
 	
 	for i = 1, #SettingSelection do
 		local idx = SettingSelection[i]
-		local yp = i * 80
+		local yp = i * 72
 		
 		love.graphics.draw(Settings.BackImage, idx.Type == "number" and -38 or -98, yp)
 		
@@ -225,7 +209,7 @@ function Settings.MouseReleased(x, y, button)
 		for i = 1, #SettingSelection do
 			local idx = SettingSelection[i]
 			local oldval = idx.Value
-			local yp = i * 80
+			local yp = i * 72
 			
 			if idx.Type == "switch" and y >= yp - 17 and y < yp + 55 then
 				if idx.Value ~= idx.Off and x >= 296 and x < 368 then

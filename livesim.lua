@@ -47,6 +47,7 @@ local DEPLS = {
 		{nil, 255}, {nil, 255}, {nil, 255},
 		{nil, 255}, {nil, 255}, {nil, 255}
 	},
+	MinimalEffect = nil,		-- True means decreased dynamic effects
 	NoteAccuracy = {{16, nil}, {40, nil}, {64, nil}, {112, nil}, {128, nil}},	-- Note accuracy
 	NoteManager = nil,
 	NoteLoader = nil,
@@ -162,24 +163,10 @@ function DEPLS.AddScore(score)
 	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + added_score
 	DEPLS.Routines.ScoreEclipseF.Replay = true
 	
-	EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(added_score))
+	if not(DEPLS.MinimalEffect) then
+		EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(added_score))
+	end
 end
-
---! @brief Load image
---! @param path The image path
---! @returns Image handle or `nil` and error message on fail
-function DEPLS.LoadImageSafe(path)
-	local _, token_image = pcall(love.graphics.newImage, path)
-	
-	if _ == false then return nil, token_image
-	else return token_image end
-end
-
---! @brief Load audio
---! @param path The audio path
---! @param noorder Force existing extension?
---! @returns Audio handle or `nil` plus error message on failure
-DEPLS.LoadAudio = AquaShine.LoadAudio
 
 do
 	local dummy_image
@@ -567,6 +554,10 @@ function DEPLS.Start(argv)
 		DEPLS.AutoPlay = true
 	end
 	
+	if DEPLS.MinimalEffect == nil then
+		DEPLS.MinimalEffect = AquaShine.LoadConfig("MINIMAL_EFFECT", 0) == 1
+	end
+	
 	-- Load modules
 	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS)
 	DEPLS.NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
@@ -673,7 +664,7 @@ function DEPLS.Start(argv)
 	-- Load beatmap audio
 	if not(DEPLS.Sound.BeatmapAudio) then
 		-- Beatmap audio needs to be safe loaded
-		DEPLS.Sound.BeatmapAudio = DEPLS.LoadAudio("audio/"..(argv[2] or argv[1]..".wav"), not(not(argv[2])))
+		DEPLS.Sound.BeatmapAudio = AquaShine.LoadAudio("audio/"..(argv[2] or argv[1]..".wav"), not(not(argv[2])))
 	end
 	
 	-- BeatmapAudio is actually SoundData, LiveAudio is the real Source

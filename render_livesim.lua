@@ -13,7 +13,8 @@ local RenderMode = {
 	DeltaTime = 50 / 3,
 	ElapsedTime = 0,
 	Frame = 0,
-	EncodeType = "png"
+	EncodeType = "png",
+	FXAAShader = nil,
 }
 local AudioMixer = {
 	NewSource = love.audio.newSource,
@@ -39,7 +40,7 @@ local RenderManager = {
 do
 	local c = lsys.getProcessorCount()
 	print("Processors", c)
-	c = c + 2
+	c = c * 2
 	print("Using "..c.." threads")
 	
 	for i = 1, c do
@@ -326,15 +327,22 @@ function RenderMode.Start(arg)
 	end
 	
 	-- Init DEPLS
-	RenderMode.DEPLS = love.filesystem.load("livesim.lua")()
+	RenderMode.DEPLS = (AquaShine.PreloadedEntryPoint["livesim.lua"] or love.filesystem.load("livesim.lua"))()
 	RenderMode.DEPLS.RenderingMode = true
+	RenderMode.DEPLS.MinimalEffect = false
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
 	RenderMode.DEPLS.AutoPlay = true
 	
+	-- Image formats
 	if AquaShine.GetCommandLineConfig("tga") then
 		RenderMode.EncodeType = "tga"
 	end
 	benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
+	
+	-- FXAA Shader
+	if AquaShine.GetCommandLineConfig("fxaa") then
+		RenderMode.FXAAShader = require("render_livesim_fxaa")
+	end
 	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
@@ -346,6 +354,7 @@ function RenderMode.Start(arg)
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
 	AquaShine.RunUnfocused(true)
 	
+	-- Sound data buffer post-init
 	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
 	AudioMixer.SoundDataBuffer.Pointer = ffi.cast("int16_t*", AudioMixer.SoundDataBuffer.Handle:getPointer())
 	RenderMode.Duration = RenderMode.Duration * 1000
@@ -417,9 +426,18 @@ function RenderMode.Draw(deltaT)
 		print("Rendering Frame", RenderMode.Frame)
 	end
 	
+	if RenderMode.FXAAShader then
+		love.graphics.setShader(RenderMode.FXAAShader)
+	end
+	
 	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.draw(RenderMode.Canvas, -AquaShine.LogicalScale.OffX, -AquaShine.LogicalScale.OffY)
 	love.graphics.setBlendMode("alpha")
+	
+	if RenderMode.FXAAShader then
+		love.graphics.setShader()
+	end
+	
 	RenderMode.DEPLS.DrawDebugInfo()
 end
 

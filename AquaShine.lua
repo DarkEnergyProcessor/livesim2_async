@@ -15,7 +15,6 @@ local AquaShine = {
 	},
 	AlwaysRunUnfocus = false,
 	SleepDisabled = false,
-	FirstBoot = false,
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
 	CacheTable = setmetatable({}, {__mode = "v"}),
@@ -23,7 +22,7 @@ local AquaShine = {
 	PreloadedEntryPoint = {},
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	AllowEntryPointPreload = false,
+	AllowEntryPointPreload = true,
 }
 
 local love = require("love")
@@ -395,8 +394,8 @@ function AquaShine.MainLoop()
 		if AquaShine.CurrentEntryPoint then
 			dt = dt * 1000
 			AquaShine.CurrentEntryPoint.Update(dt)
-			love.graphics.push()
 			
+			love.graphics.push()
 			love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
 			love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
 			AquaShine.CurrentEntryPoint.Draw(dt)
@@ -430,35 +429,31 @@ function AquaShine.MainLoop()
 				return a
 			elseif name == "focus" then
 				if a == false and not(AquaShine.AlwaysRunUnfocus) then
-					if AquaShine.FirstBoot == false then
-						AquaShine.FirstBoot = true
-					else
-						love.audio.pause()
-						love.window.setDisplaySleepEnabled(true)
-						love.handlers[name](a, b, c, d, e, f)
+					love.audio.pause()
+					love.window.setDisplaySleepEnabled(true)
+					love.handlers[name](a, b, c, d, e, f)
+					
+					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+						AquaShine.CurrentEntryPoint.Focus(false)
+					end
+					
+					repeat
+						name, a, b, c, d, e, f = love.event.wait()
 						
-						if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-							AquaShine.CurrentEntryPoint.Focus(false)
+						if name then
+							love.handlers[name](a, b, c, d, e, f)
 						end
-						
-						repeat
-							name, a, b, c, d, e, f = love.event.wait()
-							
-							if name then
-								love.handlers[name](a, b, c, d, e, f)
-							end
-							love.timer.step()
-						until name == "focus" and a
-						
-						love.audio.resume()
-						
-						if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-							AquaShine.CurrentEntryPoint.Focus(true)
-						end
-						
-						if AquaShine.SleepDisabled then
-							love.window.setDisplaySleepEnabled(false)
-						end
+						love.timer.step()
+					until name == "focus" and a
+					
+					love.audio.resume()
+					
+					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+						AquaShine.CurrentEntryPoint.Focus(true)
+					end
+					
+					if AquaShine.SleepDisabled then
+						love.window.setDisplaySleepEnabled(false)
 					end
 				end
 			end
@@ -640,19 +635,7 @@ function love.resize(w, h)
 end
 
 -- When running low memory
-local cache_list = {FontList, LoadedShelshaObject, LoadedImage, AquaShine.CacheTable}
-function love.lowmemory()
-	collectgarbage()
-	
-	-- Remove all caches
-	for i = 1, #cache_list do
-		for n, v in pairs(cache_list[i]) do
-			cache_list[i][n] = nil
-		end
-	end
-	
-	collectgarbage()
-end
+love.lowmemory = collectgarbage
 
 -- Initialization
 function love.load(arg)

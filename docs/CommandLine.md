@@ -3,7 +3,7 @@ Special Command-Line Features
 
 Live Simulator: 2 contains some special, useful feature which can be used when invoked from command-line (Terminal/Command Prompt). This feature were unavailable under mobile devices.
 
-Command-line of Live Simulator: 2 are:
+Command-line of Live Simulator: 2, which is handled entirely by AquaShine, are:
 
 	love <livesim2 folder> <entry point=main_menu> [entry point arguments] [optional command-line options]
 
@@ -72,6 +72,10 @@ To create video from the image sequence (encode as H.264 video, AAC audio, MP4 c
 
 Note: `-framerate 60` is necessary so the resulting video is 60FPS  
 Note2: Although you see some debug information while in rendering mode, it won't appear in the final image sequence.
+Note3: Render mode always disable minimal effect settings and runs even when the window is out of focus.
+
+Limitation: You only able to create image sequence in fixed, 60 FPS. No other framerates are supported.  
+Limitation2: Audio with sample rate higher than 44.1KHz is not supported.
 
 ### noteloader
 
@@ -98,6 +102,10 @@ Command-line switches can be placed anywhere after `love livesim` (or `livesim2`
 
 * `/notestyle=<1|2>` overrides note style setting (storyboard, setting). 1 for old note style, 2 for SIF-v5 note style
 
-* `/interpreter` forces LuaJIT to interpret bytecode instead of compiling it to machine code. Decreases frame stutter in some cases. Does nothing when using Lua 5.1 \*
+* `/interpreter` forces LuaJIT to interpret bytecode instead of compiling it to machine code. Decreases frame stutter in some cases. Does nothing when using Lua 5.1
+
+* `/tga` makes the render mode image sequence to output Targa image instead of PNG image
+
+* `/fxaa` enables Fast Approximate Anti-Aliasing (render mode only)
 
 \* - For debugging purpose.

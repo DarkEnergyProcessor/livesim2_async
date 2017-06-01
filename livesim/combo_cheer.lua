@@ -12,6 +12,8 @@ local Steps = {"cut_01_loop_end", "cut_02_loop_end", "cut_03_loop_end"}
 local CurrentStep = 1
 
 function ComboCheer.Update(deltaT)
+	if DEPLS.MinimalEffect then return end
+	
 	if DEPLS.Routines.ComboCounter.CurrentCombo >= 100 then
 		if DEPLS.Routines.ComboCounter.CurrentCombo >= 300 and CurrentStep ~= 3 then
 			CurrentStep = 3
@@ -40,6 +42,8 @@ function ComboCheer.Update(deltaT)
 end
 
 function ComboCheer.Draw()
+	if DEPLS.MinimalEffect then return end
+	
 	if DEPLS.Routines.ComboCounter.CurrentCombo >= 100 then
 		FlashFile:setOpacity(DEPLS.LiveOpacity)
 		FlashFile:draw()

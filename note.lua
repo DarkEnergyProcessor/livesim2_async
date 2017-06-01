@@ -192,10 +192,13 @@ local function NewNoteObject(note_data)
 		noteobj.Vert[4] = {-1, -1, 0, 0.0625}
 		
 		noteobj.LongNoteMesh:setTexture(DEPLS.Images.Note.LongNote)
-		noteobj.LNEffectRotation = PredefinedLNEffectRotation[note_data.position]
-		noteobj.LNEffect = hold_effect:clone()
-		noteobj.LNTrail = 0
-		noteobj.LNTrailTween = tween.new(500, noteobj, {LNTrail = 1}, sine_interpolation)
+		
+		if not(DEPLS.MinimalEffect) then
+			noteobj.LNEffectRotation = PredefinedLNEffectRotation[note_data.position]
+			noteobj.LNEffect = hold_effect:clone()
+			noteobj.LNTrail = 0
+			noteobj.LNTrailTween = tween.new(500, noteobj, {LNTrail = 1}, sine_interpolation)
+		end
 		
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
@@ -443,7 +446,7 @@ function LongNoteObject.Update(this, deltaT)
 	
 	this.LongNoteMesh:setVertices(this.Vert)
 	
-	if this.TouchID then
+	if this.TouchID and not(DEPLS.MinimalEffect) then
 		this.LNEffect:update(deltaT)
 		
 		if this.LNTrailTween:update(deltaT) then
@@ -479,7 +482,7 @@ function LongNoteObject.Draw(this)
 		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
 	end
 	
-	if this.TouchID then
+	if this.TouchID and not(DEPLS.MinimalEffect) then
 		love.graphics.push()
 		love.graphics.translate(this.FirstCircle[1], this.FirstCircle[2])
 		love.graphics.rotate(this.LNEffectRotation)
