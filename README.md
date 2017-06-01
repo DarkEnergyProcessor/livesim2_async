@@ -87,4 +87,21 @@ Special Thanks
 License
 =======
 
-Please see `LICENSE.md` for more details
+Live Simulator: 2 is licensed under MIT License. See `LICENSE.md` for more details.
+
+Live Simulator: 2 uses Motoya L Maru font. Please see `LICENSE.MTLmr3m` for
+Motoya L Maru font license.
+
+Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
+
+Live Simulator: 2 uses these external libraries:
+
+* [tween.lua](https://github.com/kikito/tween.lua)
+
+* [JSON.lua](http://regex.info/blog/lua/json)
+
+* Lua FFT library (`luafft.lua`)
+
+* LuaBit library (`bit.lua`) (fallback if `bit` library is unavailable)
+
+Please see respective files (or website) for license of those libraries.
