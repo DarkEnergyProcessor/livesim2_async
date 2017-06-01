@@ -46,7 +46,13 @@ function SelectBeatmap.Start(arg)
 	com_button_13 = AquaShine.LoadImage("assets/image/ui/com_button_13.png")
 	com_button_13se = AquaShine.LoadImage("assets/image/ui/com_button_13se.png")
 	
-	liveback_1 = AquaShine.LoadImage("assets/image/background/liveback_1.png")
+	liveback_1 = {AquaShine.LoadImage(
+		"assets/image/background/liveback_1.png",
+		"assets/image/background/b_liveback_001_01.png",
+		"assets/image/background/b_liveback_001_02.png",
+		"assets/image/background/b_liveback_001_03.png",
+		"assets/image/background/b_liveback_001_04.png"
+	)}
 	
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
@@ -89,7 +95,11 @@ local setColor = love.graphics.setColor
 function SelectBeatmap.Draw()
 	-- Grid: 4x10 beatmap list. Starts at 48x100px
 	setColor(255, 255, 255)
-	draw(liveback_1)
+	draw(liveback_1[1])
+	draw(liveback_1[2], -88, 0)
+	draw(liveback_1[3], 960, 0)
+	draw(liveback_1[4], 0, -43)
+	draw(liveback_1[5], 0, 640)
 	setFont(FontDesc)
 	draw(BackImage, -98, 0)
 	setColor(0, 0, 0)
