@@ -1,9 +1,10 @@
--- livesim2 beatmap file
+-- Live Simulator: 2 binary beatmap loader
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local ls2 = {
 	_VERSION = "1.1",
-	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat",
+	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat. See copyright notice in main.lua",
 	_AUTHOR  = "AuahDark",
 	encoder = {}
 }

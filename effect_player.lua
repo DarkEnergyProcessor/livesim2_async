@@ -1,4 +1,7 @@
--- DEPLS effect player
+-- Just a simple effect player queue
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local ep = {}
 local ep_list = {}
 

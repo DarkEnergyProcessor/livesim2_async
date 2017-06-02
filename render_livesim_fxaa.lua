@@ -1,6 +1,7 @@
--- Live Simulator: 2 render mode FXAA
--- Enable with "/fxaa" flag in command-line options
+-- Fast Approximate Anti-Aliasing shader
+-- Enable with "/fxaa" command-line options when rendering
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 return love.graphics.newShader [[
 /**

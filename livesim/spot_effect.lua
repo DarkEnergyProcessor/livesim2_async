@@ -1,3 +1,7 @@
+-- Umm, I forgot this one lol
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local DEPLS = ...
 local love = love
 local tween = require("tween")

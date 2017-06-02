@@ -1,6 +1,7 @@
 -- DEPLS beatmap loader
--- Inherited from CBF and SIF beatmap format, 2nd most complex beatmap
+-- Based on CBF and SIF beatmap format, 2nd most complex beatmap
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
 local JSON = require("JSON")

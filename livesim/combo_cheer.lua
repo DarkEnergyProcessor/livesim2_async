@@ -1,5 +1,6 @@
 -- Combo cheer
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local DEPLS = ...
 local Yohane = require("Yohane")

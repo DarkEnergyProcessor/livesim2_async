@@ -1,4 +1,7 @@
 -- Score bar render
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local DEPLS, AquaShine = ...
 local ScoreBar = {}
 

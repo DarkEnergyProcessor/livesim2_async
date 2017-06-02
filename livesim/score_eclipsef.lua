@@ -1,4 +1,7 @@
--- Score eclipse flash animation with new DEPLS routine architecture
+-- Score eclipse flash animation
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local tween = require("tween")
 local DEPLS = ...
 local ScoreEclipseF = {}

@@ -1,5 +1,6 @@
 -- Beatmap selection
--- Part of DEPLS2
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local SelectBeatmap = {}
 local BeatmapList = {}

@@ -1,4 +1,7 @@
 -- Circle tap effect routines using the new EffectPlayer
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local tween = require("tween")
 local DEPLS = ...
 local CircleTapEffect = {}

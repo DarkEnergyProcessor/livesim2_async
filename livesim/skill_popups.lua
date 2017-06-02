@@ -1,4 +1,7 @@
--- Live Simulator: 2 Skill Popups
+-- Skill cutin for storyboard
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local DEPLS, AquaShine = ...
 local tween = require("tween")
 local lg = require("love.graphics")

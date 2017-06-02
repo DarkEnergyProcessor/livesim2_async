@@ -1,4 +1,6 @@
 -- Live clear animation (incl. FULLCOMBO)
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local DEPLS = ...
 local Yohane = require("Yohane")

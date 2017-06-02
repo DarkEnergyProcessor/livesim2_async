@@ -1,6 +1,7 @@
 -- SIF beatmap loader
--- Part of Live Simulator: 2
 -- It's a native beatmap format that Live Simulator: 2 internally uses
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local JSON = require("JSON")
 

@@ -1,4 +1,8 @@
+-- About screen
+-- Part of Live Simulator: 2
+
 local AquaShine = AquaShine
+local love = love
 local AboutScreen = {}
 
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)

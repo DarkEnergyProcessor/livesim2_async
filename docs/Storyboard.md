@@ -217,6 +217,8 @@ Parameters:
 
 Returns: `ShelshaObject` or `nil` on failure.
 
+> This function is now deprecated and will be removed in the future
+
 *************************************************
 
 ### `void ForceNewNoteStyle(boolean new_style)`

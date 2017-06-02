@@ -1,5 +1,8 @@
 -- Score display
-local DEPLS = ...
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
+local DEPLS, AquaShine = ...
 local ScoreUpdate = {CurrentScore = 0}
 
 local draw = love.graphics.draw

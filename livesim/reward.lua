@@ -1,12 +1,13 @@
 -- Result screen. Original by RayFirefist. Edited by AuahDark
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local love = love
 local DEPLS, AquaShine = ...
 local tween = require("tween")
 local ResultScreen = {}
 
---UI Stuff
+-- UI Stuff
 local Font = AquaShine.LoadFont("MTLmr3m.ttf", 36)
 
 local comboWin = AquaShine.LoadImage("assets/image/live/l_win_07.png")

@@ -1,4 +1,7 @@
 -- Note icon and it's circle
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local tween = require("tween")
 local DEPLS = ...
 local NoteIcon = {}

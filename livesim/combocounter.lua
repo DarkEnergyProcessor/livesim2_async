@@ -1,4 +1,7 @@
--- Combo counter animation using the new DEPLS routine architecture
+-- Combo counter animation
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local tween = require("tween")
 local DEPLS = ...
 local ComboCounter = {CurrentCombo = 0}

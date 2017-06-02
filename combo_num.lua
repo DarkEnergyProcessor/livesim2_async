@@ -1,3 +1,7 @@
+-- Combo number image table
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 return {
 	{
 		AquaShine.LoadImage("assets/flash/ui/live/img/ef_301_000.png"),

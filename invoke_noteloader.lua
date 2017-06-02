@@ -1,5 +1,6 @@
--- Beatmap converter, using built-in Live Simulator: 2 note loader
+-- Beatmap converter, using built-in Live Simulator: 2 NoteLoader
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local NoteConvert = {}
 local JSON = require("JSON")

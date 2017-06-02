@@ -1,6 +1,8 @@
--- Live Simulator: 2 Render mode. Render frame by frame, and render audio to WAV
+-- Render frame by frame, and render audio to WAV
 -- It's your turn to encode the image frames to videos and mix the audio
 -- Only supported in Desktop environment, unless you have a beast phone.
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 assert(jit, "Render mode is unavailable in Lua 5.1")
 

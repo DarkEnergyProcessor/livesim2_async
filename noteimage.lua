@@ -1,5 +1,6 @@
--- Note image handling.
+-- Note image handling
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local love = love
 local bit = require("bit")
@@ -7,6 +8,7 @@ local DEPLS, AquaShine = ...
 
 local NoteImageLoader = {}
 
+-- TODO: Optimize by loading only necessary images
 local old_style = {
 	AquaShine.LoadImage("assets/image/tap_circle/red.png"),
 	AquaShine.LoadImage("assets/image/tap_circle/green.png"),

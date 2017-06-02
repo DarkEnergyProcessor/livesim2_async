@@ -1,6 +1,8 @@
 -- Lua storyboard handler
--- Copyright © 2038 Dark Energy Processor
-local Shelsha = require("Shelsha")
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
+local Shelsha = require("Shelsha")	-- TODO: Remove it in the future
 
 local DEPLS = DEPLS		-- TODO: Should be avoided if possible
 local AquaShine = AquaShine

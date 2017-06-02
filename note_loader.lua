@@ -1,5 +1,6 @@
 -- Live Simulator: 2 NoteLoader
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local AquaShine = AquaShine
 local JSON = require("JSON")

@@ -1,5 +1,6 @@
 -- Unit selection page
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local love = love
 local AquaShine = AquaShine

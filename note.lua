@@ -1,9 +1,8 @@
---! @file note.lua
 -- Live Simulator: 2 Note management routines
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local DEPLS = ...
-local List = require("List")
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
 local Yohane = require("Yohane")

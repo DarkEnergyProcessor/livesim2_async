@@ -1,5 +1,6 @@
--- Live Simulator: 2 beatmap loader
+-- Live Simulator: 2 binary beatmap loader
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local ls2 = require("ls2")
 

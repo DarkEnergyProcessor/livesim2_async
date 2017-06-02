@@ -1,4 +1,7 @@
--- Perfect node animation with new DEPLS routine architecture
+-- Perfect node animation
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
 local tween = require("tween")
 local DEPLS = ...
 local PerfectNode = {}

@@ -1,6 +1,7 @@
 -- Sukufest Simulator beatmap loader
--- Part of Live Simulator: 2
 -- TODO: support for new format https://twitter.com/yuyu0127_/status/823520047582748673
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
 

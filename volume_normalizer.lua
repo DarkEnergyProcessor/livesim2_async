@@ -1,5 +1,6 @@
 -- Audio volume normalizer, similar to ReplayGain but it's not
 -- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local love = love
 local _, ffi = pcall(require, "ffi")

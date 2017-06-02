@@ -1,4 +1,4 @@
--- SIF Beatmap randomizer
+-- SIF Beatmap randomizer (experimental)
 -- Written by AuahDark, with help from Winshley
 
 local function CopyBeatmap(b)

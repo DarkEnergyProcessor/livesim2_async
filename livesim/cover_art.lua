@@ -1,5 +1,8 @@
-local DEPLS = ...
-local AquaShine = AquaShine
+-- Album cover art
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
+
+local DEPLS, AquaShine = ...
 local tween = require("tween")
 local CoverArt = {CoverData = {}}
 

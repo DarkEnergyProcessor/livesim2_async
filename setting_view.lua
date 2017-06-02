@@ -1,5 +1,7 @@
 -- Live Simulator: 2 Settings
--- Original written by RayFirefist, refactored by MikuAuahDark
+-- Original written by RayFirefist, refactored by AuahDark
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 
 local love = love
 local AquaShine = AquaShine
@@ -80,6 +82,13 @@ local SettingSelection = {
 		Type = "number",
 		Min = 1,
 		Max = 11
+	},
+	{
+		Name = "JUST_IN_TIME", Default = "off",
+		Caption = "JIT (Requires Restart)",
+		Type = "switch",
+		On = "on",
+		Off = "off"
 	}
 }
 
@@ -91,10 +100,15 @@ local minus = AquaShine.LoadImage("assets/image/ui/com_etc_205.png")
 local set_button_19 = AquaShine.LoadImage("assets/image/ui/set_button_19.png")
 local set_button_19se = AquaShine.LoadImage("assets/image/ui/set_button_19se.png")
 
+local com_button_68 = AquaShine.LoadImage("assets/image/ui/com_button_68.png")
+local com_button_68se = AquaShine.LoadImage("assets/image/ui/com_button_68se.png")
+
 local OnButton = AquaShine.LoadImage("assets/image/ui/set_button_14.png")
 local OnButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_14se.png")
 local OffButton = AquaShine.LoadImage("assets/image/ui/set_button_15.png")
 local OffButtonSe = AquaShine.LoadImage("assets/image/ui/set_button_15se.png")
+
+local settings_index_multipler = 0
 
 -- Usual configuration settings
 function Settings.Start()
@@ -136,16 +150,26 @@ function Settings.Draw(deltaT)
 		end
 		
 		if 
-			MouseState[1] >= 750 and MouseState[2] >= 20 and
-			MouseState[1] < 894 and MouseState[2] < 78
+			MouseState[1] >= 800 and MouseState[2] >= 540 and
+			MouseState[1] < 944 and MouseState[2] < 598
 		then
-			love.graphics.draw(set_button_19se, 750, 20)
+			love.graphics.draw(set_button_19se, 800, 540)
 		else
-			love.graphics.draw(set_button_19, 750, 20)
+			love.graphics.draw(set_button_19, 800, 540)
+		end
+		
+		if 
+			MouseState[1] >= 874 and MouseState[2] >= 0 and
+			MouseState[1] < 960 and MouseState[2] < 58
+		then
+			love.graphics.draw(com_button_68se, 874, 0)
+		else
+			love.graphics.draw(com_button_68, 874, 0)
 		end
 	else
 		love.graphics.draw(Settings.BackButton)
-		love.graphics.draw(set_button_19, 750, 20)
+		love.graphics.draw(set_button_19, 800, 540)
+		love.graphics.draw(com_button_68, 874, 0)
 	end
 
 	-- Draw label
@@ -154,27 +178,30 @@ function Settings.Draw(deltaT)
 	love.graphics.print("Settings", 95, 13)
 	love.graphics.setColor(255, 255, 255, 255)
 	
-	for i = 1, #SettingSelection do
+	for i = settings_index_multipler * 8 + 1, (settings_index_multipler + 1) * 8 do
 		local idx = SettingSelection[i]
-		local yp = i * 72
 		
-		love.graphics.draw(Settings.BackImage, idx.Type == "number" and -38 or -98, yp)
-		
-		if idx.Type == "switch" then
-			love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 185, yp - 20)
-			love.graphics.draw(idx.Value == idx.Off and OffButtonSe or OffButton, 275, yp - 20)
+		if idx then
+			local yp = (i - settings_index_multipler * 8) * 72
 			
-			love.graphics.setColor(0, 0, 0)
-		elseif idx.Type == "number" then
-			love.graphics.draw(minus, 240, yp + 10)
-			love.graphics.draw(plus, 400, yp + 10)
+			love.graphics.draw(Settings.BackImage, idx.Type == "number" and -38 or -98, yp)
 			
-			love.graphics.setColor(0, 0, 0)
-			love.graphics.print(tostring(idx.Value), 320, yp + 10)
+			if idx.Type == "switch" then
+				love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 185, yp - 20)
+				love.graphics.draw(idx.Value == idx.Off and OffButtonSe or OffButton, 275, yp - 20)
+				
+				love.graphics.setColor(0, 0, 0)
+			elseif idx.Type == "number" then
+				love.graphics.draw(minus, 240, yp + 10)
+				love.graphics.draw(plus, 400, yp + 10)
+				
+				love.graphics.setColor(0, 0, 0)
+				love.graphics.print(tostring(idx.Value), 320, yp + 10)
+			end
+			
+			love.graphics.print(idx.Caption, 5, yp + 10)
+			love.graphics.setColor(255, 255, 255, 255)
 		end
-		
-		love.graphics.print(idx.Caption, 5, yp + 10)
-		love.graphics.setColor(255, 255, 255, 255)
 	end
 	
 	AquaShine.ClearScissor()
@@ -199,48 +226,53 @@ function Settings.MouseReleased(x, y, button)
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		AquaShine.LoadEntryPoint("main_menu.lua")
-	elseif x >= 752 and x < 890 and y >= 20 and y < 85 then
+	elseif x >= 800 and x < 944 and y >= 540 and y < 598 then
 		for i = 1, #SettingSelection do
 			local idx = SettingSelection[i]
 			
 			AquaShine.SaveConfig(idx.Name, idx.Value)
 		end
+	elseif x >= 874 and x < 960 and y >= 0 and y < 58 then
+		settings_index_multipler = (settings_index_multipler + 1) % math.ceil(#SettingSelection / 8)
 	else
-		for i = 1, #SettingSelection do
+		for i = settings_index_multipler * 8 + 1, (settings_index_multipler + 1) * 8 do
 			local idx = SettingSelection[i]
-			local oldval = idx.Value
-			local yp = i * 72
 			
-			if idx.Type == "switch" and y >= yp - 17 and y < yp + 55 then
-				if idx.Value ~= idx.Off and x >= 296 and x < 368 then
-					-- Off
-					idx.Value = idx.Off
-					
-					if idx.Changed then
-						idx:Changed(oldval)
+			if idx then
+				local oldval = idx.Value
+				local yp = (i - settings_index_multipler * 8) * 72
+				
+				if idx.Type == "switch" and y >= yp - 17 and y < yp + 55 then
+					if idx.Value ~= idx.Off and x >= 296 and x < 368 then
+						-- Off
+						idx.Value = idx.Off
+						
+						if idx.Changed then
+							idx:Changed(oldval)
+						end
+					elseif idx.Value ~= idx.On and x >= 206 and x < 278 then
+						-- On
+						idx.Value = idx.On
+						
+						if idx.Changed then
+							idx:Changed(oldval)
+						end
 					end
-				elseif idx.Value ~= idx.On and x >= 206 and x < 278 then
-					-- On
-					idx.Value = idx.On
-					
-					if idx.Changed then
-						idx:Changed(oldval)
-					end
-				end
-			elseif idx.Type == "number" and y >= yp + 4 and y < yp + 36 then
-				if x >= 224 and x < 272 then
-					-- Subtract
-					idx.Value = math.max(idx.Value - (idx.Increment or 1), idx.Min)
-					
-					if idx.Changed then
-						idx:Changed(oldval)
-					end
-				elseif x >= 384 and x < 432 then
-					-- Add
-					idx.Value = math.min(idx.Value + (idx.Increment or 1), idx.Max)
-					
-					if idx.Changed then
-						idx:Changed(oldval)
+				elseif idx.Type == "number" and y >= yp + 4 and y < yp + 36 then
+					if x >= 224 and x < 272 then
+						-- Subtract
+						idx.Value = math.max(idx.Value - (idx.Increment or 1), idx.Min)
+						
+						if idx.Changed then
+							idx:Changed(oldval)
+						end
+					elseif x >= 384 and x < 432 then
+						-- Add
+						idx.Value = math.min(idx.Value + (idx.Increment or 1), idx.Max)
+						
+						if idx.Changed then
+							idx:Changed(oldval)
+						end
 					end
 				end
 			end

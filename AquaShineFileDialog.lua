@@ -1,5 +1,6 @@
 -- AquaShine file dialog system
 -- Part of Live Simulator: 2
+-- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
 

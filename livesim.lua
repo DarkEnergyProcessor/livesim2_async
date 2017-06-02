@@ -1,11 +1,10 @@
 -- Live Simulator: 2, enhanced version of DEPLS!
--- Copyright © 2038 Dark Energy Processor
+-- See copyright notice in main.lua
 
 local love = love
 local AquaShine = AquaShine
 local tween = require("tween")
 local EffectPlayer = require("effect_player")
-local List = require("List")
 local JSON = require("JSON")
 local Yohane = require("Yohane")
 local DEPLS = {
