@@ -339,16 +339,17 @@ function RenderMode.Start(arg)
 	end
 	benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
 	
+	-- Create canvas
+	RenderMode.Canvas = love.graphics.newCanvas()
+	
 	-- FXAA Shader
 	if AquaShine.GetCommandLineConfig("fxaa") then
 		RenderMode.FXAAShader = require("render_livesim_fxaa")
+		RenderMode.Canvas2 = love.graphics.newCanvas()
 	end
 	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
-	
-	-- Create canvas
-	RenderMode.Canvas = love.graphics.newCanvas()
 	
 	-- Post-init
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
@@ -418,6 +419,19 @@ function RenderMode.Draw(deltaT)
 		love.graphics.setCanvas(RenderMode.Canvas)
 		love.graphics.clear()
 		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
+		
+		if RenderMode.FXAAShader then
+			love.graphics.setCanvas(RenderMode.Canvas2)
+			love.graphics.clear()
+			love.graphics.setShader(RenderMode.FXAAShader)
+			love.graphics.setBlendMode("alpha", "premultiplied")
+			love.graphics.draw(RenderMode.Canvas)
+			love.graphics.setBlendMode("alpha")
+			love.graphics.setShader()
+			
+			RenderMode.Canvas, RenderMode.Canvas2 = RenderMode.Canvas2, RenderMode.Canvas
+		end
+		
 		love.graphics.setCanvas(nil)
 		RenderMode.Frame = RenderMode.Frame + 1
 		
@@ -426,17 +440,9 @@ function RenderMode.Draw(deltaT)
 		print("Rendering Frame", RenderMode.Frame)
 	end
 	
-	if RenderMode.FXAAShader then
-		love.graphics.setShader(RenderMode.FXAAShader)
-	end
-	
 	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.draw(RenderMode.Canvas, -AquaShine.LogicalScale.OffX, -AquaShine.LogicalScale.OffY)
 	love.graphics.setBlendMode("alpha")
-	
-	if RenderMode.FXAAShader then
-		love.graphics.setShader()
-	end
 	
 	RenderMode.DEPLS.DrawDebugInfo()
 end
