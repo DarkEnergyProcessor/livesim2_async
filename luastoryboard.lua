@@ -158,7 +158,6 @@ local isolated_love = {
 -- List of whitelisted libraries for storyboard
 local allowed_libs = {
 	JSON = require("JSON"),
-	List = require("List"),
 	tween = require("tween"),
 	EffectPlayer = require("effect_player"),
 	luafft = isolate_globals(love.filesystem.load("luafft.lua")),

@@ -672,7 +672,8 @@ function love.load(arg)
 		local setmode_param = {
 			fullscreen = false,
 			fullscreentype = "desktop",
-			resizable = true
+			resizable = true,
+			vsync = true
 		}
 		
 		if config_list.width then
@@ -689,6 +690,11 @@ function love.load(arg)
 			force_setmode = true
 			setmode_param.fullscreen = true
 			wx, wy = 0, 0
+		end
+		
+		if config_list.novsync then
+			force_setmode = true
+			setmode_param.vsync = false
 		end
 		
 		if force_setmode then
