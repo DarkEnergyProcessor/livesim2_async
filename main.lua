@@ -1,4 +1,5 @@
--- Live Simulator: 2 initialization code
+-- Live Simulator: 2
+-- High-performance Live Simulator
 
 --[[---------------------------------------------------------------------------
 -- Copyright (c) 2038 Dark Energy Processor Corporation
@@ -22,7 +23,7 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-DEPLS_VERSION = "1.1.1"
+DEPLS_VERSION = "1.1.2"
 
 ----------------------
 -- AquaShine loader --

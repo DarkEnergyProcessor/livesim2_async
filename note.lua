@@ -20,6 +20,9 @@ local floor = math.floor
 local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh", "ef_317")
 local hold_effect = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
 
+local NoteSoundAccumulation = AquaShine.LoadConfig("NS_ACCUMULATION", 0) == 1
+local NoteSoundAccumulationState = {false, false, false, false}
+
 -- Precomputed tables
 local FullRot = 2 * math.pi
 local PredefinedSlideRotation = {
@@ -288,10 +291,13 @@ function SingleNoteObject.SetTouchID(this, touchid)
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 		DEPLS.Routines.PerfectNode.Replay = true
 		this.ScoreMultipler = 1
-		this.Audio.Perfect:play()
+		Note.Perfect = Note.Perfect + 1
 		this.Delete = true
 		
-		Note.Perfect = Note.Perfect + 1
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[1] == false then
+			this.Audio.Perfect:play()
+			NoteSoundAccumulationState[1] = true
+		end
 		
 		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
 		EffectPlayer.Spawn(AfterCircleTap)
@@ -315,41 +321,51 @@ function SingleNoteObject.SetTouchID(this, touchid)
 	if notedistance <= NoteAccuracy[4][2] then
 		if notedistance <= NoteAccuracy[1][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-			
 			this.ScoreMultipler = 1
-			this.Audio.Perfect:play()
-			
 			Note.Perfect = Note.Perfect + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[1] == false then
+				this.Audio.Perfect:play()
+				NoteSoundAccumulationState[1] = true
+			end
 		elseif notedistance <= NoteAccuracy[2][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
-			
 			this.ScoreMultipler = 0.88
-			this.Audio.Great:play()
-			
 			Note.Great = Note.Great + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[2] == false then
+				this.Audio.Great:play()
+				NoteSoundAccumulationState[2] = true
+			end
 		elseif notedistance <= NoteAccuracy[3][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
-			
 			this.ScoreMultipler = 0.8
-			this.Audio.Good:play()
-			
 			Note.Good = Note.Good + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[3] == false then
+				this.Audio.Good:play()
+				NoteSoundAccumulationState[3] = true
+			end
 		else
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
 			DEPLS.Routines.ComboCounter.Reset = true
-			
 			this.ScoreMultipler = 0.4
-			this.Audio.Bad:play()
-			
 			Note.Bad = Note.Bad + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[4] == false then
+				this.Audio.Bad:play()
+				NoteSoundAccumulationState[4] = true
+			end
 		end
 		
 		DEPLS.Routines.PerfectNode.Replay = true
 		
 		if DEPLS.Routines.ComboCounter.Reset and this.StarImage then
+			local ef = NoteBombEffect.Create(this.CenterIdol[1], this.CenterIdol[2])
+			
+			EffectPlayer.Spawn(ef)
 			this.Audio.StarExplode:play()
-			-- TODO: play star explode effect
 		end
 		
 		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
@@ -524,9 +540,12 @@ function LongNoteObject.SetTouchID(this, touchid)
 		
 		this.ScoreMultipler = 1
 		this.TouchID = touchid
-		this.Audio.Perfect:play()
-		
 		Note.Perfect = Note.Perfect + 1
+		
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[1] == false then
+			this.Audio.Perfect:play()
+			NoteSoundAccumulationState[1] = true
+		end
 
 		storyboard_callback("LongNoteTap",
 			false,							-- release
@@ -545,33 +564,42 @@ function LongNoteObject.SetTouchID(this, touchid)
 	if notedistance <= NoteAccuracy[4][2] then
 		if notedistance <= NoteAccuracy[1][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-			
 			this.ScoreMultipler = 1
-			this.Audio.Perfect:play()
-			
 			Note.Perfect = Note.Perfect + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[1] == false then
+				this.Audio.Perfect:play()
+				NoteSoundAccumulationState[1] = true
+			end
 		elseif notedistance <= NoteAccuracy[2][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
-			this.Audio.Great:play()
-			
 			Note.Great = Note.Great + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[2] == false then
+				this.Audio.Great:play()
+				NoteSoundAccumulationState[2] = true
+			end
 		elseif notedistance <= NoteAccuracy[3][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
-			
 			this.ScoreMultipler = 0.8
-			this.Audio.Good:play()
-			
 			Note.Good = Note.Good + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[3] == false then
+				this.Audio.Good:play()
+				NoteSoundAccumulationState[3] = true
+			end
 		else
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
 			DEPLS.Routines.ComboCounter.Reset = true
-			
 			this.ScoreMultipler = 0.4
-			this.Audio.Bad:play()
-			
 			Note.Bad = Note.Bad + 1
+			
+			if not(NoteSoundAccumulation) or NoteSoundAccumulationState[4] == false then
+				this.Audio.Bad:play()
+				NoteSoundAccumulationState[4] = true
+			end
 		end
 		
 		DEPLS.Routines.PerfectNode.Replay = true
@@ -601,46 +629,51 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 	-- Check if perfect
 	if DEPLS.AutoPlay or notedistance <= NoteAccuracy[1][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-		DEPLS.Routines.PerfectNode.Replay = true
-		
 		this.ScoreMultipler2 = 1
-		this.Audio2.Perfect:play()
-		
 		Note.Perfect = Note.Perfect + 1
+		
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[1] == false then
+			this.Audio2.Perfect:play()
+			NoteSoundAccumulationState[1] = true
+		end
 	elseif notedistance <= NoteAccuracy[2][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
-		DEPLS.Routines.PerfectNode.Replay = true
-		
 		this.ScoreMultipler2 = 0.88
-		this.Audio2.Great:play()
-		
 		Note.Great = Note.Great + 1
+		
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[2] == false then
+			this.Audio2.Great:play()
+			NoteSoundAccumulationState[2] = true
+		end
 	elseif notedistance <= NoteAccuracy[3][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
-		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
-		
 		this.ScoreMultipler2 = 0.8
-		this.Audio2.Good:play()
-		
 		Note.Good = Note.Good + 1
+		
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[3] == false then
+			this.Audio2.Good:play()
+			NoteSoundAccumulationState[3] = true
+		end
 	elseif notedistance <= NoteAccuracy[4][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
-		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
-		
 		this.ScoreMultipler2 = 0.4
-		this.Audio2.Bad:play()
-		
 		Note.Bad = Note.Bad + 1
+		
+		if not(NoteSoundAccumulation) or NoteSoundAccumulationState[4] == false then
+			this.Audio2.Bad:play()
+			NoteSoundAccumulationState[4] = true
+		end
 	else
 		Note.Miss = Note.Miss + 1
 		is_miss = true
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
-		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
 		this.ScoreMultipler2 = 0
 	end
+	
+	DEPLS.Routines.PerfectNode.Replay = true
 	
 	if not(is_miss) then
 		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.SecondCircle[1], this.SecondCircle[2], 255, 255, 255)
@@ -733,6 +766,14 @@ local ComboCounter = DEPLS.Routines.ComboCounter
 function Note.Update(deltaT)
 	local ElapsedTime = DEPLS.ElapsedTime
 	local score = 0
+	
+	-- if note sound accumulation is enabled, clear state
+	if NoteSoundAccumulation then
+		NoteSoundAccumulationState[1] = false
+		NoteSoundAccumulationState[2] = false
+		NoteSoundAccumulationState[3] = false
+		NoteSoundAccumulationState[4] = false
+	end
 	
 	for i = 1, 9 do
 		local j = 1

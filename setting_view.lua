@@ -85,10 +85,17 @@ local SettingSelection = {
 	},
 	{
 		Name = "JUST_IN_TIME", Default = "off",
-		Caption = "JIT (Requires Restart)",
+		Caption = "JIT (Needs Restart)",
 		Type = "switch",
 		On = "on",
 		Off = "off"
+	},
+	{
+		Name = "NS_ACCUMULATION", Default = 0,
+		Caption = "N.S. Accumulation",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	}
 }
 

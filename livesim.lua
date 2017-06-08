@@ -454,6 +454,12 @@ function DEPLS.StoryboardFunctions.HSL(h, s, l)
    return math.ceil((r+m)*256),math.ceil((g+m)*256),math.ceil((b+m)*256)
 end
 
+--! @brief Check if current renderer is OpenGLES
+--! @returns `true` if running under OpenGLES, `false` otherwise
+function DEPLS.StoryboardFunctions.IsOpenGLES()
+	return AquaShine.RendererInfo[1] == "OpenGL ES"
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------

@@ -1,0 +1,11 @@
+v1.1.2
+- Notes Sound Accumulation				OK
+- SIFTrain beatmap loading fix for UTF8-BOM		OK
+- Add IsOpenGLES() storyboard function			OK
+
+v2.0
+- FFmpeg extension
+- Unit creation
+- AquaShine UI library
+- NoteLoader2 (metadata loading only, beatmap verification)
+- Removal of Playground TEXB Loader

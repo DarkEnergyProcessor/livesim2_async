@@ -707,6 +707,7 @@ function love.load(arg)
 	end
 	
 	AquaShine.WindowName = love.window.getTitle()
+	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	love.resize(wx, wy)

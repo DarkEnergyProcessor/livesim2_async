@@ -270,6 +270,15 @@ drawn by default.
 
 > This function can only be called inside `Initialize` function.
 
+### `bool IsOpenGLES()`
+
+Check if current renderer is OpenGL ES. This can be used to select shader code to be used because Desktop GL shader and GLES shader  
+were bit different each other
+
+Returns: `true` if running under OpenGLES, `false` otherwise
+
+> This function returns `true` when running LOVE2D under desktop with [ANGLE](angleproject.org) renderer.
+
 Storyboard Callback Functions
 =============================
 

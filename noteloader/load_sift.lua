@@ -15,6 +15,11 @@ function SIFTrain.Load(file)
 	local data = love.filesystem.read(file[1]..".rs")
 	local out = {}
 	
+	if data:sub(1, 3) == "\239\187\191" then
+		-- BOM. Useless in here.
+		data = data:sub(4)
+	end
+	
 	-- It turns out that SIFTrain uses relaxed Javascript object notation. Damn tons of regex incoming lol
 	do
 		local music_file_pos = {data:find("music_file", 1, true)}
