@@ -106,6 +106,8 @@ Add the beatmap file/folder to `<livesim2 R/W directory>/beatmap` and the option
 Example Beatmap
 ---------------
 
+**Example beatmap is now deprecated. It's preferred to download the .ls2 file in `test` folder and add that to Live Simulator: 2 instead**
+
 To run example beatmap, command-line must be used to start Live Simulator: 2. Invoking example beatmap under mobile device is impossible. The beatmap name must be start with two colons then followed by the example beatmap ID. So it will be:
 
     love <livesim2 folder> livesim ::<id>
@@ -117,5 +119,3 @@ Here is example beatmap IDs:
 1. [Weisser Schnee beatmap by me](https://www.youtube.com/watch?v=szN0faby5HM). Uses swing notes, storyboard (with shader), custom units, and note style enforcing.
 
 2. [Thrilling･One Way by me](https://www.youtube.com/watch?v=xfWGjFo5dy8). Uses storyboard (with shader), FFT, and custom units.
-
-As times goes on, I might add more example beatmaps.

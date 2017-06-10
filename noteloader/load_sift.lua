@@ -73,7 +73,10 @@ function SIFTrain.Load(file)
 		end
 	end
 	
-	-- SIFTrain doesn't store attribute information, like LLPractice beatmap
+	if sift.song_info.star and AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 1 then
+		out.background = math.min(sift.song_info.star, 12)
+	end
+	
 	local defattr = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 10)
 	local sif_notes = {}
 	
@@ -82,8 +85,9 @@ function SIFTrain.Load(file)
 		local nbm = {}
 		
 		nbm.timing_sec = sbm.timing_sec
-		nbm.notes_attribute = defattr	-- SIFTrain doesn't store attribute information, like LLPractice beatmap
-		nbm.notes_level = 1
+		nbm.notes_attribute = sbm.notes_attribute or defattr
+		nbm.notes_level = sbm.notes_level or 1
+		nbm.effect = 1
 		nbm.effect_value = sbm.effect_value
 		nbm.position = sbm.position
 		
@@ -97,6 +101,15 @@ function SIFTrain.Load(file)
 		elseif bit.band(sbm.effect, 8) > 0 then
 			-- Star note
 			nbm.effect = 4
+		end
+		
+		if bit.band(sbm.effect, 32) > 0 then
+			-- Swing note
+			nbm.effect = nbm.effect + 10
+		end
+		
+		if nbm.effect > 13 then
+			nbm.effect = 11
 		end
 		
 		sif_notes[#sif_notes + 1] = nbm

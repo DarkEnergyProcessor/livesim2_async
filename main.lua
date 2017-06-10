@@ -23,7 +23,8 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-DEPLS_VERSION = "1.1.2"
+DEPLS_VERSION = "1.1.3-pre1"
+DEPLS_VERSION_NUMBER = 01010201	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 ----------------------
 -- AquaShine loader --

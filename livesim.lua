@@ -391,8 +391,9 @@ function DEPLS.StoryboardFunctions.SetNotesSpeed(notes_speed)
 	
 	-- Recalculate accuracy
 	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] * 1000 / notes_speed
+		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / (400 / math.max(notes_speed, 800) * 0.001)
 	end
+	DEPLS.NoteAccuracy.InvV = (math.max(notes_speed, 800) * 0.001) / 400
 	
 	return prev
 end
@@ -643,8 +644,9 @@ function DEPLS.Start(argv)
 	
 	-- Calculate note accuracy
 	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] * 1000 / DEPLS.NotesSpeed
+		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / (400 / (math.max(DEPLS.NotesSpeed, 800) * 0.001))
 	end
+	DEPLS.NoteAccuracy.InvV = (math.max(DEPLS.NotesSpeed, 800) * 0.001) / 400
 	
 	-- Initialize flash animation
 	DEPLS.LiveShowCleared:setMovie("ef_311")
@@ -938,6 +940,8 @@ end
 -- LOVE2D mouse/touch pressed
 local TouchTracking = {}
 local isMousePress = false
+local TouchXRadius = 128
+local TouchYRadius = 75
 function DEPLS.MousePressed(x, y, button, touch_id)
 	if DEPLS.ElapsedTime <= 0 or DEPLS.AutoPlay then return end
 	
@@ -947,8 +951,8 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 	-- Calculate idol position
 	for i = 1, 9 do
 		local idolpos = DEPLS.IdolPosition[i]
-		local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 104
-		local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 72
+		local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchXRadius
+		local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchYRadius
 		
 		if xp * xp + yp * yp <= 1 then
 			TouchTracking[touch_id] = i
@@ -968,8 +972,8 @@ function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 		for i = 1, 9 do
 			if i ~= lastpos then
 				local idolpos = DEPLS.IdolPosition[i]
-				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 104
-				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / 72
+				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchXRadius
+				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchYRadius
 				
 				if xp * xp + yp * yp <= 1 then
 					TouchTracking[touch_id] = i

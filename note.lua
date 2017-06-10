@@ -233,7 +233,7 @@ function SingleNoteObject.Update(this, deltaT)
 	-- If it's not pressed, and it's beyond miss range, make it miss
 	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 
-	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
+	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][1] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
@@ -285,7 +285,7 @@ function SingleNoteObject.Draw(this)
 end
 
 function SingleNoteObject.SetTouchID(this, touchid)
-	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 	
 	if DEPLS.AutoPlay then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
@@ -414,7 +414,7 @@ function LongNoteObject.Update(this, deltaT)
 		if ElapsedTime >= cmp2 then
 			local notedistance = distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
 			
-			if notedistance >= NoteAccuracy[5][2] then
+			if notedistance >= NoteAccuracy[5][1] then
 				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
@@ -532,7 +532,7 @@ end
 --! @param this NoteObject
 --! @param touchid Unique touch identification which needs to be same on release
 function LongNoteObject.SetTouchID(this, touchid)
-	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 	
 	if DEPLS.AutoPlay then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
@@ -623,7 +623,7 @@ end
 function LongNoteObject.UnsetTouchID(this, touchid)
 	if this.TouchID ~= touchid then return end
 	
-	local notedistance = distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
+	local notedistance = NoteAccuracy.InvV * distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
 	local is_miss = false
 	
 	-- Check if perfect
@@ -716,6 +716,7 @@ function Note.InitializeImage()
 		local swing = SlideNoteList[i]
 		
 		if swing.noteobj.Rotation == nil then
+			local last_level = swing.notes_level
 			local last_pos_2 = swing.position
 			local last_timing = swing.timing_sec
 			local last_pos = swing.position
@@ -726,25 +727,43 @@ function Note.InitializeImage()
 				last_timing = last_timing + swing.effect_value
 			end
 			
+			local function applyswing(chainswing)
+				last_obj.Rotation = (last_pos - chainswing.position > 0 and 0 or math.pi) + PredefinedSlideRotation[last_pos]
+				
+				last_pos_2 = last_pos
+				last_timing = chainswing.timing_sec
+				last_pos = chainswing.position
+				last_obj = chainswing.noteobj
+				last_index = chainswing.index
+				
+				if chainswing.effect == 13 then
+					last_timing = last_timing + chainswing.effect_value
+				end
+			end
+			
 			for j = i + 1, #SlideNoteList do
 				local chainswing = SlideNoteList[j]
 				
-				if
-					chainswing.noteobj.Rotation == nil and
-					chainswing.timing_sec > last_timing and
-					math.abs(chainswing.index - last_index) < 3 and
-					math.abs(chainswing.position - last_pos) == 1
-				then
-					last_obj.Rotation = (last_pos - chainswing.position > 0 and 0 or math.pi) + PredefinedSlideRotation[last_pos]
+				if chainswing.noteobj.Rotation == nil then
+					if chainswing.notes_level and chainswing.notes_level > 1 then
+						if chainswing.notes_level - last_level == 0 then
+							applyswing(chainswing)
+						end
+					elseif
+						chainswing.timing_sec + 0.001 >= last_timing and
+						math.abs(chainswing.index - last_index) < 3 and
+						math.abs(chainswing.position - last_pos) == 1
+					then
+						applyswing(chainswing)
+					end
 					
-					last_pos_2 = last_pos
-					last_timing = chainswing.timing_sec
-					last_pos = chainswing.position
-					last_obj = chainswing.noteobj
-					last_index = chainswing.index
 					
-					if chainswing.effect == 13 then
-						last_timing = last_timing + chainswing.effect_value
+					if (chainswing.effect == 13 and
+							chainswing.timing_sec + chainswing.effect_value or
+							chainswing.timing_sec
+						) - last_timing > 0.25
+					then
+						break
 					end
 				end
 			end

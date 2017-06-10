@@ -50,7 +50,7 @@ do
 	--! @returns The image handle or nil if image can't be loaded
 	function NoteLoader.UnitLoader(beatmap_name, path)
 		if path:sub(-4) == ".txt" then
-			local path_link = assert(love.filesystem.newFileData(beatmap_name.."/"..path)):getString()
+			local path_link = assert(love.filesystem.read(beatmap_name.."/"..path))
 			
 			return NoteLoader.LoadImageRelative(beatmap_name, path_link)
 		else
