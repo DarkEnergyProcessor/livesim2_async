@@ -2,6 +2,44 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+------------------
+-- /gles switch --
+------------------
+if arg then
+	local _, ffi = pcall(require, "ffi")
+
+	if _ then
+		local setenv_load = assert(loadstring("local x=... return x.setenv"))
+		local putenv_load = assert(loadstring("local x=... return x._putenv"))
+		ffi.cdef [[
+			int setenv(const char *envname, const char *envval, int overwrite);
+			int _putenv(const char *envstring);
+		]]
+		
+		local ss, setenv = pcall(setenv_load, ffi.C)
+		local ps, putenv = pcall(putenv_load, ffi.C)
+		
+		if ss or ps then
+			-- analyze arg
+			for i = 1, #arg do
+				if arg[i] == "/gles" or arg[i] == "-gles" then
+					if ss then
+						setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1)
+					elseif ps then
+						putenv("LOVE_GRAPHICS_USE_OPENGLES=1")
+					end
+					
+					break
+				end
+			end
+		end
+	end
+end
+
+-------------------------------------------------
+-- Configuration file                          --
+-- TODO: Bring /width, /height, ... flags here --
+-------------------------------------------------
 function love.conf(t)
 	t.identity = "DEPLS"                 -- The name of the save directory (string)
 	t.version = "0.10.1"                 -- The LÖVE version this game was made for (string)

@@ -277,7 +277,7 @@ were bit different each other
 
 Returns: `true` if running under OpenGLES, `false` otherwise
 
-> This function returns `true` when running LOVE2D under desktop with [ANGLE](angleproject.org) renderer.
+> This function returns `true` when running LOVE2D under desktop with [ANGLE](http://angleproject.org) renderer.
 
 Storyboard Callback Functions
 =============================
