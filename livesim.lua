@@ -391,9 +391,9 @@ function DEPLS.StoryboardFunctions.SetNotesSpeed(notes_speed)
 	
 	-- Recalculate accuracy
 	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / (400 / math.max(notes_speed, 800) * 0.001)
+		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / 310 * math.max(notes_speed, 800)
 	end
-	DEPLS.NoteAccuracy.InvV = (math.max(notes_speed, 800) * 0.001) / 400
+	DEPLS.NoteAccuracy.InvV = math.max(notes_speed, 800) / 400
 	
 	return prev
 end
@@ -649,9 +649,9 @@ function DEPLS.Start(argv)
 	
 	-- Calculate note accuracy
 	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / (400 / (math.max(DEPLS.NotesSpeed, 800) * 0.001))
+		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / 310 * math.max(DEPLS.NotesSpeed, 800)
 	end
-	DEPLS.NoteAccuracy.InvV = (math.max(DEPLS.NotesSpeed, 800) * 0.001) / 400
+	DEPLS.NoteAccuracy.InvV = math.max(DEPLS.NotesSpeed, 800) / 400
 	
 	-- Initialize flash animation
 	DEPLS.LiveShowCleared:setMovie("ef_311")
@@ -946,7 +946,7 @@ end
 local TouchTracking = {}
 local isMousePress = false
 local TouchXRadius = 128
-local TouchYRadius = 75
+local TouchYRadius = 76
 function DEPLS.MousePressed(x, y, button, touch_id)
 	if DEPLS.ElapsedTime <= 0 or DEPLS.AutoPlay then return end
 	
@@ -1023,6 +1023,13 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 	elseif key == "f5" then
 		DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
 		update_audio_volume()
+	elseif DEPLS.ElapsedTime >= 0 then
+		for i = 1, 9 do
+			if key == DEPLS.Keys[i] then
+				DEPLS.NoteManager.SetTouch(i, key)
+				break
+			end
+		end
 	end
 end
 

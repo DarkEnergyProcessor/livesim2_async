@@ -224,9 +224,9 @@ function SingleNoteObject.Update(this, deltaT)
 	this.CircleScale = math.min(ElapsedTime / DEPLS.NotesSpeed, 1)
 	
 	-- If it's not pressed, and it's beyond miss range, make it miss
-	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 
-	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][1] then
+	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
@@ -311,7 +311,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= NoteAccuracy[4][2] then
+	if notedistance <= NoteAccuracy[5][2] then
 		if notedistance <= NoteAccuracy[1][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
@@ -405,9 +405,9 @@ function LongNoteObject.Update(this, deltaT)
 		local cmp2 = this.TouchID and NotesSpeed + this.ZeroAccuracyEndNote or NotesSpeed
 		
 		if ElapsedTime >= cmp2 then
-			local notedistance = distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
+			local notedistance = NoteAccuracy.InvV * distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
 			
-			if notedistance >= NoteAccuracy[5][1] then
+			if notedistance > NoteAccuracy[5][2] then
 				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
@@ -554,7 +554,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= NoteAccuracy[4][2] then
+	if notedistance <= NoteAccuracy[5][2] then
 		if notedistance <= NoteAccuracy[1][2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
