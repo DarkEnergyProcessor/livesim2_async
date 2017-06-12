@@ -10,7 +10,9 @@ Before you proceed, make sure your device comply these requirements
 
 * At least 256MB of free RAM. \*
 
-* OpenGL 2.1 (OpenGLES 2 for mobile devices) capable graphics card
+* Desktop: Direct3D 9 capable graphics card under Windows or OpenGL 2.1 under Linux and OS X. OpenGL 2.1 capable graphics card is recommended anyway.
+
+* Mobile: OpenGLES 2 capable graphics card.
 
 * Windows: Windows Vista or above (sorry Windows XP users)
 
@@ -18,7 +20,7 @@ Before you proceed, make sure your device comply these requirements
 
 * Mac OS X: Mac OS X v10.7 or above.
 
-* Android: Android v2.3 or above.
+* Android: Android v4.0 or above. x86 is supported. **ARMv5 and ARMv6 is not supported**
 
 * iOS: iOS 9. Live Simulator: 2 only tested under iOS 9 atm.
 
@@ -27,7 +29,7 @@ Before you proceed, make sure your device comply these requirements
 Getting LOVE2D and run Live Simulator: 2
 ----------------------------------------
 
-If your device comply with requirements above, then proceed. livesim2 requires LOVE2D v0.10.1 (or later) game framework. Below are steps to get LOVE2D installed.
+If your device comply with requirements above, then proceed.
 
 ### Windows
 
