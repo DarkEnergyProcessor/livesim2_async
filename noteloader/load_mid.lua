@@ -183,7 +183,7 @@ local function midi2sif(stream)
 						sif_beatmap[#sif_beatmap + 1] = {
 							timing_sec = v.tick * 60 / ppqn / tempo,
 							notes_attribute = attribute,
-							notes_level = is_swing and v.vel + 2 or 1,
+							notes_level = is_swing and v.vel + 1 or 1,
 							effect = effect + (is_swing and 10 or 0),
 							effect_value = 2,
 							position = position
@@ -198,7 +198,7 @@ local function midi2sif(stream)
 					sif_beatmap[#sif_beatmap + 1] = {
 						timing_sec = queue[1] * 60 / ppqn / tempo,
 						notes_attribute = attribute,
-						notes_level = is_swing and queue[5] + 2 or 1,
+						notes_level = is_swing and queue[5] + 1 or 1,
 						effect = is_swing and 13 or 3,
 						effect_value = (v.tick - queue[1]) * 60 / ppqn / tempo,
 						position = position

@@ -3,7 +3,7 @@ Live Simulator: 2
 
 Live Simulator: 2 (`DEPLS2`) is a Love Live! School Idol Festival Live Show Simulator written in Lua.
 
-LOVE2D v0.10.1 or later is required to run this live simulator.
+It is currently LL!SIF live simulator that supports variety of different beatmap formats.
 
 How to run
 ==========
@@ -51,7 +51,7 @@ Controls
 Supported Beatmaps
 ==================
 
-* Raw SIF beatmap, this is main beatmap format that DEPLS uses.
+* Raw SIF beatmap, this is main beatmap format that Live Simulator: 2 internally uses.
 
 * Sukufesu Simulator beatmap, yuyu live simulator beatmap.
 
@@ -59,7 +59,9 @@ Supported Beatmaps
 
 * MIDI, specialized MIDI file.
 
-* LLPractice beatmap, with some bit complex setup.
+* LLPractice beatmap.
+
+* SIFTrain beatmap, both original one and "extended" one were supported.
 
 Screenshots
 ===========
@@ -102,6 +104,6 @@ Live Simulator: 2 uses these external libraries:
 
 * Lua FFT library (`luafft.lua`)
 
-* LuaBit library (`bit.lua`) (fallback if `bit` library is unavailable)
+* LuaBit library (`bit.lua`) (fallback: used if `bit` library is unavailable)
 
 Please see respective files (or website) for license of those libraries.

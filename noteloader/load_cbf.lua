@@ -14,46 +14,53 @@ local UnitLoadingAllowed = AquaShine.LoadConfig("CBF_UNIT_LOAD", 1) == 1
 local CompositionCache = {}
 local UnitIconCache, IconCache, ComposeUnitImage, LoadUnitStrategy1, LoadUnitStrategy2
 
+local UnitIconNames = {
+	HONOKA_POOL = "assets/image/cbf/01_pool_unidolized_game_4.png",
+	HONOKA_POOL_IDOL = "assets/image/cbf/01_pool_idolized_game_3.png",
+	KOTORI_POOL = "assets/image/cbf/01_pool_unidolized_game_3.png",
+	KOTORI_POOL_IDOL = "assets/image/cbf/01_pool_idolized_game_2.png",
+	MAKI_CIRCUS = "assets/image/cbf/02_circus_unidolized_game.png",
+	MAKI_CIRCUS_IDOL = "assets/image/cbf/02_circus_idolized_game.png",
+	HANAMARU_SWIMSUIT = "assets/image/cbf/01_Swimsuit_Unidolized_game.png",
+	HANAMARU_SWIMSUIT_IDOL = "assets/image/cbf/01_Swimsuit_Idolized_game.png",
+	HANAMARU_INITIAL = "assets/image/cbf/01_Initial_Unidolized_game.png",
+	HANAMARU_INITIAL_IDOL = "assets/image/cbf/01_Initial_Idolized_game.png",
+	ELI_THIEF = "assets/image/cbf/02_thief_unidolized_game.png",
+	ELI_THIEF_IDOL = "assets/image/cbf/02_thief_idolized_game.png",
+	RIN_ARABIAN = "assets/image/cbf/01_arabianSet_unidolized_game.png",
+	RIN_ARABIAN_IDOL = "assets/image/cbf/01_arabianSet_idolized_game.png",
+	NOZOMI_IDOLSET = "assets/image/cbf/01_idolCostumeSet_unidolized_game.png",
+	NOZOMI_IDOLSET_IDOL = "assets/image/cbf/01_idolCostumeSet_idolized_game.png",
+	NICO_DEVIL = "assets/image/cbf/01_devil_unidolized_game.png",
+	NICO_DEVIL_IDOL = "assets/image/cbf/01_devil_idolized_game.png",
+	UMI_DEVIL = "assets/image/cbf/01_devil_unidolized_game_2.png",
+	HANAYO_TAISHOROMAN = "assets/image/cbf/01_taishoRoman_unidolized_game.png",
+	HANAYO_TAISHOROMAN_IDOL = "assets/image/cbf/01_taishoRoman_idolized_game.png",
+	ELI_POOL = "assets/image/cbf/01_pool_unidolized_game.png",
+	KANAN_YUKATA = "assets/image/cbf/01_yukata_unidolized_game.png",
+	KANAN_YUKATA_IDOL = "assets/image/cbf/01_yukata_idolized_game.png",
+	YOSHIKO_YUKATA = "assets/image/cbf/01_yukata_unidolized_game_2.png",
+	YOSHIKO_YUKATA_IDOL = "assets/image/cbf/01_yukata_idolized_game_3.png",
+	YOU_YUKATA = "assets/image/cbf/01_yukata_unidolized_game_3.png",
+	YOU_YUKATA_IDOL = "assets/image/cbf/01_yukata_idolized_game_2.png",
+	MAKI_POOL = "assets/image/cbf/01_pool_unidolized_game_2.png",
+	MAKI_POOL_IDOL = "assets/image/cbf/01_pool_idolized_game.png",
+	RUBY_GOTHIC = "assets/image/cbf/01_gothic_unidolized_game.png",
+	RUBY_GOTHIC_IDOL = "assets/image/cbf/01_gothic_idolized_game.png",
+	YOSHIKO_HALLOWEEN = "assets/image/cbf/01_halloween_unidolized_game.png",
+	YOSHIKO_HALLOWEEN_IDOL = "assets/image/cbf/01_halloween_idolized_game_2.png",
+	MARI_HALLOWEEN_IDOL = "assets/image/cbf/01_halloween_idolized_game.png",
+	RIKO_HALLOWEEN_IDOL = "assets/image/cbf/01_halloween_idolized_game_3.png",
+	HANAMARU_YUKATA = "assets/image/cbf/02_yukata_unidolized_game.png"
+}
+
 if UnitLoadingAllowed then
-	UnitIconCache = {
-		HONOKA_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_4.png"),
-		HONOKA_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game_3.png"),
-		KOTORI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_3.png"),
-		KOTORI_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game_2.png"),
-		MAKI_CIRCUS = AquaShine.LoadImage("assets/image/cbf/02_circus_unidolized_game.png"),
-		MAKI_CIRCUS_IDOL = AquaShine.LoadImage("assets/image/cbf/02_circus_idolized_game.png"),
-		HANAMARU_SWIMSUIT = AquaShine.LoadImage("assets/image/cbf/01_Swimsuit_Unidolized_game.png"),
-		HANAMARU_SWIMSUIT_IDOL = AquaShine.LoadImage("assets/image/cbf/01_Swimsuit_Idolized_game.png"),
-		HANAMARU_INITIAL = AquaShine.LoadImage("assets/image/cbf/01_Initial_Unidolized_game.png"),
-		HANAMARU_INITIAL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_Initial_Idolized_game.png"),
-		ELI_THIEF = AquaShine.LoadImage("assets/image/cbf/02_thief_unidolized_game.png"),
-		ELI_THIEF_IDOL = AquaShine.LoadImage("assets/image/cbf/02_thief_idolized_game.png"),
-		RIN_ARABIAN = AquaShine.LoadImage("assets/image/cbf/01_arabianSet_unidolized_game.png"),
-		RIN_ARABIAN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_arabianSet_idolized_game.png"),
-		NOZOMI_IDOLSET = AquaShine.LoadImage("assets/image/cbf/01_idolCostumeSet_unidolized_game.png"),
-		NOZOMI_IDOLSET_IDOL = AquaShine.LoadImage("assets/image/cbf/01_idolCostumeSet_idolized_game.png"),
-		NICO_DEVIL = AquaShine.LoadImage("assets/image/cbf/01_devil_unidolized_game.png"),
-		NICO_DEVIL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_devil_idolized_game.png"),
-		UMI_DEVIL = AquaShine.LoadImage("assets/image/cbf/01_devil_unidolized_game_2.png"),
-		HANAYO_TAISHOROMAN = AquaShine.LoadImage("assets/image/cbf/01_taishoRoman_unidolized_game.png"),
-		HANAYO_TAISHOROMAN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_taishoRoman_idolized_game.png"),
-		ELI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game.png"),
-		KANAN_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game.png"),
-		KANAN_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game.png"),
-		YOSHIKO_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game_2.png"),
-		YOSHIKO_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game_3.png"),
-		YOU_YUKATA = AquaShine.LoadImage("assets/image/cbf/01_yukata_unidolized_game_3.png"),
-		YOU_YUKATA_IDOL = AquaShine.LoadImage("assets/image/cbf/01_yukata_idolized_game_2.png"),
-		MAKI_POOL = AquaShine.LoadImage("assets/image/cbf/01_pool_unidolized_game_2.png"),
-		MAKI_POOL_IDOL = AquaShine.LoadImage("assets/image/cbf/01_pool_idolized_game.png"),
-		RUBY_GOTHIC = AquaShine.LoadImage("assets/image/cbf/01_gothic_unidolized_game.png"),
-		RUBY_GOTHIC_IDOL = AquaShine.LoadImage("assets/image/cbf/01_gothic_idolized_game.png"),
-		YOSHIKO_HALLOWEEN = AquaShine.LoadImage("assets/image/cbf/01_halloween_unidolized_game.png"),
-		YOSHIKO_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game_2.png"),
-		MARI_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game.png"),
-		RIKO_HALLOWEEN_IDOL = AquaShine.LoadImage("assets/image/cbf/01_halloween_idolized_game_3.png"),
-		HANAMARU_YUKATA = AquaShine.LoadImage("assets/image/cbf/02_yukata_unidolized_game.png")
-	}
+	UnitIconCache = setmetatable({}, {__index = function(_, var)
+		local x = AquaShine.LoadImage(UnitIconNames[var])
+		_[var] = x
+		
+		return x
+	end})
 	
 	IconCache = {
 		None = {

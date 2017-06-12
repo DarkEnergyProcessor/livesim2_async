@@ -83,6 +83,9 @@ local SettingSelection = {
 		Min = 1,
 		Max = 11
 	},
+	------------------
+	-- Another page --
+	------------------
 	{
 		Name = "JUST_IN_TIME", Default = "off",
 		Caption = "JIT (Needs Restart)",
@@ -96,6 +99,21 @@ local SettingSelection = {
 		Type = "switch",
 		On = 1,
 		Off = 0
+	},
+	{
+		Name = "AUTO_BACKGROUND", Default = 1,
+		Caption = "Custom Background",
+		Type = "switch",
+		On = 1,
+		Off = 0
+	},
+	{
+		Name = "GLOBAL_OFFSET", Default = 0,
+		Caption = "Beatmap Offset",
+		Type = "number",
+		Min = -4000,
+		Max = 4000,
+		Increment = 20
 	}
 }
 

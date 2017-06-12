@@ -123,9 +123,11 @@ local SlideNoteList = {}
 --! @brief Creates new SingleNoteObject
 --! @param note_data SIF-compilant note data
 --! @returns New NoteObject
-local function NewNoteObject(note_data)
+local function NewNoteObject(note_data, offset)
+	offset = offset or 0
+	
 	local noteobj = {
-		ZeroAccuracyTime = note_data.timing_sec * 1000,
+		ZeroAccuracyTime = note_data.timing_sec * 1000 + offset,
 		Attribute = tonumber(note_data.notes_attribute),
 		Position = note_data.position,
 		Audio = {
@@ -137,6 +139,7 @@ local function NewNoteObject(note_data)
 		FirstCircle = {480, 160}
 	}
 	local idolpos = assert(DEPLS.IdolPosition[note_data.position], "Invalid idol position")
+	local note_effect = note_data.effect % 10
 	
 	-- Idol position
 	noteobj.NoteposDiff = {idolpos[1] - 416, idolpos[2] - 96}
@@ -148,32 +151,24 @@ local function NewNoteObject(note_data)
 		noteobj.SimulNote = true
 	end
 	
-	if note_data.effect == 2 then
-		-- Token note
-		noteobj.TokenNote = true
-	elseif note_data.effect == 4 then
-		-- Star note
-		noteobj.StarNote = true
-	elseif note_data.effect == 11 then
-		-- Slide note
+	-- Swing note
+	noteobj.SlideNote = (note_data.effect - 1) / 10 >= 1 and note_effect < 4
+	
+	if noteobj.SlideNote then
 		local newnotedata = Yohane.CopyTable(note_data)
 		
-		noteobj.SlideNote = true
 		SlideNoteList[#SlideNoteList + 1] = newnotedata
 		newnotedata.noteobj = noteobj
 		newnotedata.index = Note.TotalNotes
-	elseif note_data.effect == 3 or note_data.effect == 13 then
-		-- Long note (necessarily with swing)
-		if note_data.effect == 13 then
-			local newnotedata = Yohane.CopyTable(note_data)
-			
-			noteobj.SlideNote = true
-			noteobj.SlideNote = true
-			SlideNoteList[#SlideNoteList + 1] = newnotedata
-			newnotedata.noteobj = noteobj
-			newnotedata.index = Note.TotalNotes
-		end
-		
+	end
+	
+	if note_effect == 2 then
+		-- Token note
+		noteobj.TokenNote = true
+	elseif note_effect == 4 then
+		-- Star note
+		noteobj.StarNote = true
+	elseif note_effect == 3 then
 		-- Long note. Use LongNoteObject metatable
 		noteobj.Audio2 = {
 			Perfect = DEPLS.Sound.PerfectTap:clone(),
@@ -181,6 +176,8 @@ local function NewNoteObject(note_data)
 			Good = DEPLS.Sound.GoodTap:clone(),
 			Bad = DEPLS.Sound.BadTap:clone(),
 		}
+		
+		-- Create trail mesh vertices
 		noteobj.Vert = {}
 		noteobj.SecondCircle = {480, 160}
 		noteobj.ZeroAccuracyEndNote = note_data.effect_value * 1000
@@ -204,10 +201,6 @@ local function NewNoteObject(note_data)
 		
 		setmetatable(noteobj, {__index = LongNoteObject})
 		return noteobj
-	end
-	
-	if note_data.effect ~= 11 then
-		PreviousSlideNote = nil
 	end
 	
 	-- SingleNoteObject in here
@@ -695,10 +688,10 @@ end
 
 --! @brief Add note
 --! @param note_data SIF-compilant note data
-function Note.Add(note_data)
+function Note.Add(note_data, offset)
 	Note.NoteRemaining = Note.NoteRemaining + 1
 	Note.TotalNotes = Note.TotalNotes + 1
-	table.insert(Note[note_data.position], NewNoteObject(note_data))
+	table.insert(Note[note_data.position], NewNoteObject(note_data, offset))
 end
 
 local function initnote_pos(a)
@@ -757,9 +750,8 @@ function Note.InitializeImage()
 						applyswing(chainswing)
 					end
 					
-					
 					if (chainswing.effect == 13 and
-							chainswing.timing_sec + chainswing.effect_value or
+							chainswing.timing_sec  + chainswing.effect_value or
 							chainswing.timing_sec
 						) - last_timing > 0.25
 					then

@@ -188,6 +188,8 @@ Returns: Previous notes speed
 
 > This function throws error if `notes_speed` is less than 400ms
 
+> This function is now deprecated and will be removed in the future
+
 *************************************************
 
 ### `number SetPlaySpeed([number speed_factor])`

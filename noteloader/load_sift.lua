@@ -21,6 +21,7 @@ function SIFTrain.Load(file)
 	end
 	
 	-- It turns out that SIFTrain uses relaxed Javascript object notation. Damn tons of regex incoming lol
+	-- Subject to removal in v2.0 update
 	do
 		local music_file_pos = {data:find("music_file", 1, true)}
 		
@@ -62,6 +63,7 @@ function SIFTrain.Load(file)
 		end
 	end
 	
+	-- Load music file
 	if sift.music_file then
 		out.song_file = AquaShine.LoadAudio("audio/"..sift.music_file)
 	else
@@ -73,7 +75,8 @@ function SIFTrain.Load(file)
 		end
 	end
 	
-	if sift.song_info.star and AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 1 then
+	-- Part of SIFTrain beatmap extension. Use background specificed in "star" info
+	if sift.song_info.star then
 		out.background = math.min(sift.song_info.star, 12)
 	end
 	

@@ -4,18 +4,28 @@ v1.1.2
 - Add IsOpenGLES() storyboard function			OK
 
 v1.1.3
-- SIFTrain beatmap extension				WIP
+- SIFTrain beatmap extension				OK
 - /gles switch						OK
 - Improved swing note detection				OK
-- Swing token note
-- Difficulty-Background mapping				WIP
+- Swing token note					OK
+- Difficulty-Background mapping				OK
 - New note tap accuracy					OK
-- Deprecation of test beatmap				OK
+- Global offset setting					OK
+- Deprecation of test beatmap
+- Deprecation of SetNotesSpeed
 
 v2.0
 - FFmpeg extension
 - Unit creation
 - AquaShine UI library
-- NoteLoader2 (metadata loading only, beatmap verification)
-- Removal of Playground TEXB Loader
-- Deprecation of test beatmap
+- NoteLoader2 (metadata loading, beatmap verification)
+- Hidden note and sudden note
+- Individual note speed
+- Live Show! Failed
+- Pause
+- Adjustable combo display size
+- Adjustable SE volume
+- Actual unit live skill
+- Removal of Playground TEXB Loader (Shelsha)
+- Removal of test beatmap
+- Removal of SetNotesSpeed

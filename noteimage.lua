@@ -5,54 +5,62 @@
 local love = love
 local bit = require("bit")
 local DEPLS, AquaShine = ...
-
 local NoteImageLoader = {}
 
--- TODO: Optimize by loading only necessary images
-local old_style = {
-	AquaShine.LoadImage("assets/image/tap_circle/red.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/green.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/cyan.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/blue.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/yellow.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/orange.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/pink.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/purple.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/gray.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/rainbow.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/black.png"),
+local function make_cache_table(link)
+	return setmetatable({}, {__index = function(_, var)
+		local x = AquaShine.LoadImage(link[var])
+		
+		_[var] = x
+		return x
+	end})
+end
+
+local old_style = make_cache_table {
+	"assets/image/tap_circle/red.png",
+	"assets/image/tap_circle/green.png",
+	"assets/image/tap_circle/cyan.png",
+	"assets/image/tap_circle/blue.png",
+	"assets/image/tap_circle/yellow.png",
+	"assets/image/tap_circle/orange.png",
+	"assets/image/tap_circle/pink.png",
+	"assets/image/tap_circle/purple.png",
+	"assets/image/tap_circle/gray.png",
+	"assets/image/tap_circle/rainbow.png",
+	"assets/image/tap_circle/black.png",
 	
-	Simultaneous = AquaShine.LoadImage("assets/image/tap_circle/timing_normal.png"),
-	Slide = AquaShine.LoadImage("assets/image/tap_circle/slide_normal.png")
+	Simultaneous = "assets/image/tap_circle/timing_normal.png",
+	Slide = "assets/image/tap_circle/slide_normal.png"
 }
-local new_style = {
-	AquaShine.LoadImage("assets/image/tap_circle/pink_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/green_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/cyan_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/blue_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/yellow_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/orange_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/red_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/purple_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/gray_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/rainbow_v5.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/black_v5.png"),
+local new_style = make_cache_table {
+	"assets/image/tap_circle/pink_v5.png",
+	"assets/image/tap_circle/green_v5.png",
+	"assets/image/tap_circle/cyan_v5.png",
+	"assets/image/tap_circle/blue_v5.png",
+	"assets/image/tap_circle/yellow_v5.png",
+	"assets/image/tap_circle/orange_v5.png",
+	"assets/image/tap_circle/red_v5.png",
+	"assets/image/tap_circle/purple_v5.png",
+	"assets/image/tap_circle/gray_v5.png",
+	"assets/image/tap_circle/rainbow_v5.png",
+	"assets/image/tap_circle/black_v5.png",
 	
-	Simultaneous = AquaShine.LoadImage("assets/image/tap_circle/timing_v5.png")
+	Simultaneous = "assets/image/tap_circle/timing_v5.png"
 }
-local new_style_slide = {
-	AquaShine.LoadImage("assets/image/tap_circle/slide_pink.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_green.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_cyan.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_blue.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_yellow.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_orange.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_red.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_purple.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_gray.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_rainbow.png"),
-	AquaShine.LoadImage("assets/image/tap_circle/slide_black.png")
+local new_style_slide = make_cache_table {
+	"assets/image/tap_circle/slide_pink.png",
+	"assets/image/tap_circle/slide_green.png",
+	"assets/image/tap_circle/slide_cyan.png",
+	"assets/image/tap_circle/slide_blue.png",
+	"assets/image/tap_circle/slide_yellow.png",
+	"assets/image/tap_circle/slide_orange.png",
+	"assets/image/tap_circle/slide_red.png",
+	"assets/image/tap_circle/slide_purple.png",
+	"assets/image/tap_circle/slide_gray.png",
+	"assets/image/tap_circle/slide_rainbow.png",
+	"assets/image/tap_circle/slide_black.png"
 }
+
 local new_style_rotation = {
 	math.rad(-90),
 	math.rad(-67.5),
@@ -104,6 +112,10 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 		)
 		
 		if is_slide then
+			if is_token then
+				love.graphics.draw(DEPLS.Images.Note.Token, 64, 64, -rot, 1, 1, 64, 64)
+			end
+			
 			love.graphics.draw(new_style_slide[9], 64, 64, 0, 1, 1, 64, 64)
 			love.graphics.setColor(255, 255, 255)
 			
@@ -126,6 +138,10 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 		end
 	else
 		if is_slide then
+			if is_token then
+				love.graphics.draw(DEPLS.Images.Note.Token)
+			end
+			
 			love.graphics.draw(new_style_slide[attribute], 64, 64, 0, 1, 1, 64, 64)
 			
 			if is_simultaneous then
@@ -197,7 +213,9 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 		love.graphics.draw(DEPLS.Images.Note.Token)
 	elseif is_star then
 		love.graphics.draw(star_icon)
-	elseif is_slide then
+	end
+	
+	if is_slide then
 		love.graphics.draw(old_style.Slide)
 	end
 	

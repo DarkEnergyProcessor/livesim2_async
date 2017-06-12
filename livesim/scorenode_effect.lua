@@ -24,12 +24,12 @@ function ScoreNode.Create(score)
 		local canvas = graphics.newCanvas(500, 32)
 		local temp = {}
 		
-		temp.Used = true
 		temp.Canvas = canvas
 		out.score_canvas = temp
 		ScoreNode.CanvasList[#ScoreNode.CanvasList + 1] = temp
 	end
-		
+	
+	out.score_canvas.Used = true
 	out.score_info = {opacity = 0, scale = 0.9, x = 530}
 	out.opacity_tw = tween.new(100, out.score_info, {opacity = 255})
 	out.scale_tw = tween.new(200, out.score_info, {scale = 1}, "inOutSine")

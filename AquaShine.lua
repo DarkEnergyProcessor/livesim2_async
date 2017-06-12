@@ -720,6 +720,22 @@ function love.load(arg)
 		jit.off()
 	end
 	
+	if AquaShine.GetCommandLineConfig("debug") then
+		function AquaShine.Log(part, msg, ...)
+			if not(part) then
+				local info = debug.getinfo(2)
+				
+				if info.short_src and info.currentline then
+					part = info.short_src..":"..info.currentline
+				end
+			end
+			
+			io.stderr:write("[", part or "unknown", "] ", string.format(msg or "", ...), "\n")
+		end
+	else
+		function AquaShine.Log() end
+	end
+	
 	-- Preload entry points
 	if AquaShine.AllowEntryPointPreload then
 		for n, v in pairs(ASArg.Entries) do

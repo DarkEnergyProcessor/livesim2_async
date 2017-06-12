@@ -479,7 +479,6 @@ function DEPLS.DrawDebugInfo()
 	local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
 	local text = string.format([[
 %d FPS
-SAVE_DIR = %s
 NOTE_SPEED = %d ms
 ELAPSED_TIME = %d ms
 SPEED_FACTOR = %.2f%%
@@ -493,7 +492,7 @@ REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]		, love.timer.getFPS(), DEPLS.SaveDirectory, DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
+]]		, love.timer.getFPS(), DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
 		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
 		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
@@ -536,6 +535,7 @@ function DEPLS.Start(argv)
 	
 	-- Load configuration
 	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
+	local GlobalOffset = AquaShine.LoadConfig("GLOBAL_OFFSET", 0)
 	local Keys = AquaShine.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
 	local Auto = assert(tonumber(AquaShine.LoadConfig("AUTOPLAY", 0)))
 	DEPLS.LiveDelay = math.max(AquaShine.LoadConfig("LIVESIM_DELAY", 1000), 1000)
@@ -598,6 +598,11 @@ function DEPLS.Start(argv)
 	notes_list = noteloader_data.notes_list
 	
 	-- Load background
+	if  AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 0 then
+		-- Background always default one
+		noteloader_data.background = nil
+	end
+	
 	if type(noteloader_data.background) == "number" then
 		BackgroundID = noteloader_data.background
 	elseif type(noteloader_data.background) == "table" then
@@ -637,7 +642,7 @@ function DEPLS.Start(argv)
 	-- Add to note manager
 	do
 		for i = 1, #notes_list do
-			DEPLS.NoteManager.Add(notes_list[i])
+			DEPLS.NoteManager.Add(notes_list[i], GlobalOffset)
 		end
 	end
 	DEPLS.NoteManager.InitializeImage()
