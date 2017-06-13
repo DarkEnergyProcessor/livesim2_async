@@ -47,7 +47,6 @@ local AquaShine = {
 }
 
 local love = require("love")
-local Shelsha = require("Shelsha")
 
 local ScreenshotThreadCode = [[
 local lt = require("love.timer")
@@ -219,8 +218,38 @@ function AquaShine.LoadAudio(path, noorder)
 	
 	_, token_image = pcall(love.sound.newSoundData, path)
 	
-	if _ == false then return nil, token_image
-	else return token_image end
+	if _ == false then
+		if AquaShine.FFmpegExt then
+			_, token_image = pcall(AquaShine.FFmpegExt, path)
+			
+			if _ then
+				return token_image
+			end
+		end
+		
+		return nil, token_image
+	else
+		return token_image
+	end
+end
+
+--! @brief Load video
+--! @param path The video path
+--! @returns Video handle or `nil` plus error message on failure
+--! @note Audio stream doesn't loaded
+function AquaShine.LoadVideo(path)
+	local _, a = pcall(love.graphics.newVideo, path)
+	
+	if _ then return a end
+	
+	-- Possible incompatible format. Load with FFmpegExt if available
+	if AquaShine.FFmpegExt then
+		_, a = pcall(AquaShine.FFmpegExt.LoadVideo, path)
+		
+		if _ then return a end
+	end
+	
+	return nil, a
 end
 
 --! @brief Creates new image with specificed position from specificed lists of layers
@@ -327,41 +356,20 @@ end
 --------------------------------------
 -- AquaShine Image Loader & Caching --
 --------------------------------------
-local LoadedShelshaObject = setmetatable({}, {__mode = "v"})
 local LoadedImage = setmetatable({}, {__mode = "v"})
 
 --! @brief Load image without caching
 --! @param path The image path
---! @param pngonly Do not load .png.imag file even if one exist
 --! @returns Drawable object
---! @note The ShelshaObject texture bank will ALWAYS BE CACHED!.
-function AquaShine.LoadImageNoCache(path, pngonly)
+function AquaShine.LoadImageNoCache(path)
 	assert(path:sub(-4) == ".png", "Only PNG image is supported")
-	local _, img = pcall(love.graphics.newImage, path, ConstImageFlags)
+	local x, y = pcall(love.graphics.newImage, path, ConstImageFlags)
 	
-	if _ then
-		-- .png image loaded
-		return img
-	elseif not(pngonly) then
-		-- Try .png.imag
-		local imag = love.filesystem.newFile(path .. ".imag", "r")
-		
-		if imag and imag:read(4) == "LINK" then
-			local l = {imag:read(4):byte(1, 4)}
-			local texbfile = imag:read(l[1] * 16777216 + l[2] * 65536 + l[3] * 256 + l[4]):gsub("%z", "")
-			local shelsha_object = LoadedShelshaObject[texbfile]
-			
-			-- If TEXB not cached, load it and cache it
-			if not(shelsha_object) then
-				shelsha_object = Shelsha.newTextureBank(texbfile)
-				LoadedShelshaObject[texbfile] = shelsha_object
-			end
-			
-			return shelsha_object:getImageMesh(path:sub(1, -5))
-		end
+	if x then
+		return y
 	end
 	
-	assert(false, img)
+	return nil, y
 end
 
 --! @brief Load image with caching
@@ -664,7 +672,7 @@ function love.load(arg)
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.OperatingSystem = love.system.getOS()
 	AquaShine.ParseCommandLineConfig(arg)
-	love.filesystem.setIdentity(love.filesystem.getIdentity(), false)
+	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 	
 	-- Flags check
 	do
@@ -706,20 +714,6 @@ function love.load(arg)
 		end
 	end
 	
-	AquaShine.WindowName = love.window.getTitle()
-	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
-	
-	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
-	love.resize(wx, wy)
-	
-	if AquaShine.OperatingSystem == "Android" then
-		jit[AquaShine.LoadConfig("JUST_IN_TIME", "off")]()
-	end
-	
-	if jit and AquaShine.GetCommandLineConfig("interpreter") then
-		jit.off()
-	end
-	
 	if AquaShine.GetCommandLineConfig("debug") then
 		function AquaShine.Log(part, msg, ...)
 			if not(part) then
@@ -734,6 +728,21 @@ function love.load(arg)
 		end
 	else
 		function AquaShine.Log() end
+	end
+	
+	AquaShine.WindowName = love.window.getTitle()
+	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
+	
+	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
+	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
+	love.resize(wx, wy)
+	
+	if AquaShine.OperatingSystem == "Android" then
+		jit[AquaShine.LoadConfig("JUST_IN_TIME", "off")]()
+	end
+	
+	if jit and AquaShine.GetCommandLineConfig("interpreter") then
+		jit.off()
 	end
 	
 	-- Preload entry points

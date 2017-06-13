@@ -6,7 +6,6 @@ local AquaShine = AquaShine
 local JSON = require("JSON")
 local love = love
 
-local testbeatmap = {"Mon_LS2" , "oneway_LS2"}
 local NoteLoader = {}
 local SaveDirectory = love.filesystem.getSaveDirectory()
 
@@ -74,17 +73,6 @@ end
 --!          - live_clear
 --! @warning This function causes lua error if the beatmap is not found
 function NoteLoader.NoteLoader(path)
-	if path:find("::") == 1 then
-		-- Test beatmap
-		local ls2_loader = loaders[3]
-		local id = tonumber(path:match("::(%d+)"))
-		local bmname = assert(testbeatmap[id], "Invalid test beatmap ID")
-		local bmt = {}
-		bmt[1] = "test/"..bmname
-		
-		return ls2_loader.Load(bmt)
-	end
-	
 	path = {
 		"beatmap/"..path,
 		SaveDirectory.."/beatmap/"..path

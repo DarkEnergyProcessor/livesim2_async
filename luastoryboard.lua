@@ -2,8 +2,6 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local Shelsha = require("Shelsha")	-- TODO: Remove it in the future
-
 local DEPLS = DEPLS		-- TODO: Should be avoided if possible
 local AquaShine = AquaShine
 
@@ -31,7 +29,7 @@ end
 local VideoList = {}
 local function RelativeLoadVideo(path)
 	if BeatmapDir then
-		local _, x = pcall(love.graphics.newVideo, BeatmapDir..path, false)
+		local _, x = pcall(AquaShine.LoadVideo, BeatmapDir..path)
 		
 		if _ then
 			VideoList[#VideoList + 1] = x
@@ -51,26 +49,6 @@ local function RelativeLoadImage(path)
 	if BeatmapDir then
 		local _, x = pcall(love.graphics.newImage, BeatmapDir..path)
 		if _ then return x end
-	end
-	
-	return nil
-end
-
-local function LoadTextureBank(file)
-	if AdditionalData[file] then
-		local _, a = pcall(Shelsha.newTextureBank, AdditionalData[file])
-		
-		if _ then return a end
-	end
-	
-	if BeatmapDir then
-		local x = love.filesystem.newFileData(BeatmapDir..file)
-		
-		if not(x) then return nil end
-		
-		local _, a = pcall(Shelsha.newTextureBank, x)
-		
-		if _ then return a end
 	end
 	
 	return nil
@@ -183,12 +161,8 @@ function LuaStoryboard.LoadString(str, dir)
 		LoadImage = RelativeLoadImage,
 		ReadFile = RelativeReadFile,
 		DrawObject = love.graphics.draw,
-		LoadTextureBank = LoadTextureBank,
 		LoadShader = love.graphics.newShader,
 		LoadFont = AquaShine.LoadFont,
-		
-		-- Deprecated. Exists for backward compatibility. Removed anytime soon
-		FontManager = {GetFont = AquaShine.LoadFont}
 	}
 	
 	for n, v in pairs(_G) do

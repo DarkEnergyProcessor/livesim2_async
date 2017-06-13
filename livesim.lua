@@ -377,27 +377,6 @@ function DEPLS.StoryboardFunctions.DisablePlaySpeedAlteration()
 	end
 end
 
---! @brief Get or set notes speed
---! @param notes_speed Note speed, in milliseconds. 0.8 notes speed in SIF is equal to 800 in here
---! @returns Previous notes speed
---! @warning This function throws error if notes_speed is less than 400ms
-function DEPLS.StoryboardFunctions.SetNotesSpeed(notes_speed)
-	if notes_speed then
-		assert(notes_speed >= 400, "notes_speed can't be less than 400ms")
-	end
-	
-	local prev = DEPLS.NotesSpeed
-	DEPLS.NotesSpeed = notes_speed or prev
-	
-	-- Recalculate accuracy
-	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / 310 * math.max(notes_speed, 800)
-	end
-	DEPLS.NoteAccuracy.InvV = math.max(notes_speed, 800) / 400
-	
-	return prev
-end
-
 --! @brief Get or set play speed. This affects how fast the live simulator are
 --! @param speed_factor The speed factor, in decimals. 1 means 100% speed (runs normally)
 --! @returns Previous play speed factor
@@ -853,6 +832,10 @@ function DEPLS.Draw(deltaT)
 	local Routines = DEPLS.Routines
 	local ElapsedTime = DEPLS.ElapsedTime
 	local AllowedDraw = DEPLS.ElapsedTime > 0 
+	
+	if AquaShine.FFmpegExt then
+		AquaShine.FFmpegExt.Update(deltaT * 0.001)
+	end
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then

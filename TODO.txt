@@ -15,7 +15,7 @@ v1.1.3
 - Deprecation of SetNotesSpeed
 
 v2.0
-- FFmpeg extension
+- FFmpeg extension					WIP
 - Unit creation
 - AquaShine UI library
 - NoteLoader2 (metadata loading, beatmap verification)
@@ -26,6 +26,6 @@ v2.0
 - Adjustable combo display size
 - Adjustable SE volume
 - Actual unit live skill
-- Removal of Playground TEXB Loader (Shelsha)
-- Removal of test beatmap
-- Removal of SetNotesSpeed
+- Removal of Playground TEXB Loader (Shelsha)		OK
+- Removal of test beatmap				OK
+- Removal of SetNotesSpeed				OK

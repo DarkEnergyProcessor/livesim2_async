@@ -176,22 +176,6 @@ Returns: Image handle or `nil` on failure
 
 *************************************************
 
-### `number SetNotesSpeed([number notes_speed])`
-
-Get or set notes speed
-
-Parameters:
-
-* `notes_speed` - Note speed, in milliseconds. 0.8 notes speed in SIF is equal to 800 in here
-
-Returns: Previous notes speed
-
-> This function throws error if `notes_speed` is less than 400ms
-
-> This function is now deprecated and will be removed in the future
-
-*************************************************
-
 ### `number SetPlaySpeed([number speed_factor])`
 
 Get or set play speed. This affects how fast the live simulator are
@@ -205,21 +189,6 @@ Returns: Previous play speed factor
 > This function throws error if `speed_factor` is zero or less
 
 > This function is disabled in rendering mode. Calls to this function in rendering mode will always result in error
-
-*************************************************
-
-### `ShelshaObject LoadTextureBank(string filename)`
-
-Load Playground texture bank (TEXB). Uses [Shelsha](https://github.com/MikuAuahDark/Shelsha) LOVE2D library to load
-Playground TEXB and parse it's mesh data, so you should check Shelsha documentation for function reference.
-
-Parameters:
-
-* `filename` - The texture bank filename. The TEXB must be decrypted before used. **Live Simulator: 2 doesn't decrypt the files**
-
-Returns: `ShelshaObject` or `nil` on failure.
-
-> This function is now deprecated and will be removed in the future
 
 *************************************************
 
