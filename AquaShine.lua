@@ -43,9 +43,10 @@ local AquaShine = {
 	PreloadedEntryPoint = {},
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	AllowEntryPointPreload = true,
+	AllowEntryPointPreload = false,
 }
 
+local hasffi, ffi = pcall(require, "ffi")
 local love = require("love")
 
 local ScreenshotThreadCode = [[
@@ -148,6 +149,7 @@ end
 --! @param key The configuration name (case-insensitive)
 --! @param defval The configuration default value
 function AquaShine.LoadConfig(key, defval)
+	AquaShine.Log("AquaShine", "LoadConfig %s", key)
 	local file = love.filesystem.newFile(key:upper()..".txt")
 	
 	if not(file:open("r")) then
@@ -159,6 +161,7 @@ function AquaShine.LoadConfig(key, defval)
 	end
 	
 	local data = file:read()
+	file:close()
 	
 	return tonumber(data) or data
 end
@@ -238,15 +241,27 @@ end
 --! @returns Video handle or `nil` plus error message on failure
 --! @note Audio stream doesn't loaded
 function AquaShine.LoadVideo(path)
-	local _, a = pcall(love.graphics.newVideo, path)
+	local _, a
 	
-	if _ then return a end
+	if AquaShine.FFmpegExt and (path:sub(-4) == ".ogg" or path:sub(-4) == ".ogv") or not(AquaShine.FFmpegExt) then
+		AquaShine.Log("AquaShine", "LoadVideo love.graphics.newVideo %s", path)
+		local _, a = pcall(love.graphics.newVideo, path)
+	
+		if _ then
+			AquaShine.Log("AquaShine", "LoadVideo love.graphics.newVideo %s success", path)
+			return a
+		end
+	end
 	
 	-- Possible incompatible format. Load with FFmpegExt if available
 	if AquaShine.FFmpegExt then
+		AquaShine.Log("AquaShine", "LoadVideo FFmpegExt %s", path)
 		_, a = pcall(AquaShine.FFmpegExt.LoadVideo, path)
 		
-		if _ then return a end
+		if _ then
+			AquaShine.Log("AquaShine", "LoadVideo FFmpegExt %s success", path)
+			return a
+		end
 	end
 	
 	return nil, a
@@ -311,9 +326,11 @@ end
 --! @param ... additional data passed to `onfailfunc`
 function AquaShine.GetCachedData(name, onfailfunc, ...)
 	local val = AquaShine.CacheTable[name]
+	AquaShine.Log("AquaShine", "GetCachedData %s", name)
 	
 	if val == nil then
 		val = onfailfunc(...)
+		AquaShine.Log("AquaShine", "CachedData, created & cached %s", name)
 		AquaShine.CacheTable[name] = val
 	end
 	
@@ -369,6 +386,7 @@ function AquaShine.LoadImageNoCache(path)
 		return y
 	end
 	
+	AquaShine.Log("AquaShine", "LoadImageNoCache %s", path)
 	return nil, y
 end
 
@@ -387,6 +405,7 @@ function AquaShine.LoadImage(...)
 			LoadedImage[path] = img
 		end
 		
+		AquaShine.Log("AquaShine", "LoadImage %s", path)
 		out[i] = img
 	end
 	
@@ -622,6 +641,9 @@ end
 function love.keyreleased(key, scancode)
 	if key == "f12" then
 		love.thread.newThread(ScreenshotThreadCode):start(AquaShine.MainCanvas:newImageData())
+	elseif key == "f10" then
+		AquaShine.Log("AquaShine", "F10: collectgarbage")
+		collectgarbage("collect")
 	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyReleased then
@@ -733,8 +755,10 @@ function love.load(arg)
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	
+	-- Load additional extension
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
+	if hasffi then assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine) end
+	
 	love.resize(wx, wy)
 	
 	if AquaShine.OperatingSystem == "Android" then

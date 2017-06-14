@@ -256,7 +256,9 @@ local function process_SRYL(stream, path)
 		storyboard = a and b or storyboard
 	end
 	
-	luastoryboard.Load = function() luastoryboard.Storyboard.LoadString(storyboard, path) end
+	luastoryboard.Load = function(export)
+		luastoryboard.Storyboard.LoadString(storyboard, path, export)
+	end
 	return luastoryboard
 end
 

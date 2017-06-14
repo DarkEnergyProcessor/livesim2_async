@@ -2,7 +2,6 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local DEPLS = DEPLS		-- TODO: Should be avoided if possible
 local AquaShine = AquaShine
 
 -- The Lua storyboard
@@ -29,7 +28,9 @@ end
 local VideoList = {}
 local function RelativeLoadVideo(path)
 	if BeatmapDir then
+		AquaShine.Log("LuaStoryboard", "Attempt LoadVideo %s", path)
 		local _, x = pcall(AquaShine.LoadVideo, BeatmapDir..path)
+		AquaShine.Log("LuaStoryboard", "Attempt LoadVideo %s done. Result = %s", path, tostring(_))
 		
 		if _ then
 			VideoList[#VideoList + 1] = x
@@ -151,10 +152,11 @@ local allowed_libs = {
 }
 
 -- Storyboard lua file
-function LuaStoryboard.LoadString(str, dir)
+function LuaStoryboard.LoadString(str, dir, export)
 	local lua = type(str) == "function" and str or loadstring(str)
 	BeatmapDir = dir
 	
+	AquaShine.Log("LuaStoryboard", "Initializing environment")
 	-- Copy environment
 	local env = {
 		LoadVideo = RelativeLoadVideo,
@@ -169,8 +171,10 @@ function LuaStoryboard.LoadString(str, dir)
 		env[n] = v
 	end
 	
-	for n, v in pairs(DEPLS.StoryboardFunctions) do
-		env[n] = v
+	if export then
+		for n, v in pairs(export) do
+			env[n] = v
+		end
 	end
 	
 	-- Remove some dayas
@@ -195,15 +199,28 @@ function LuaStoryboard.LoadString(str, dir)
 	env.require = function(libname)
 		return (assert(allowed_libs[libname], "require is limited in storyboard lua script"))
 	end
+	env.print = function(...)
+		local a = {}
+		
+		for n, v in ipairs({...}) do
+			a[#a + 1] = tostring(v)
+		end
+		
+		AquaShine.Log("storyboard", table.concat(a, "\t"))
+	end
 	
 	setfenv(lua, env)
 	
 	-- Call state once
+	AquaShine.Log("LuaStoryboard", "Initializing Lua script storyboard")
 	local luastate = coroutine.wrap(lua)
 	luastate()
+	AquaShine.Log("LuaStoryboard", "Lua script storyboard initialized")
 	
 	if env.Initialize then
+		AquaShine.Log("LuaStoryboard", "Lua script storyboard initialize function call")
 		env.Initialize()
+		AquaShine.Log("LuaStoryboard", "Lua script storyboard initialize function called")
 	end
 	
 	StoryboardLua = {
@@ -213,8 +230,8 @@ function LuaStoryboard.LoadString(str, dir)
 	}
 end
 
-function LuaStoryboard.Load(file)
-	LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1))
+function LuaStoryboard.Load(file, export)
+	LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1), export)
 end
 
 local graphics = love.graphics
@@ -252,8 +269,9 @@ end
 function LuaStoryboard.Cleanup()
 	for i = 1, #VideoList do
 		VideoList[i]:pause()
-		VideoList[i] = nil
 	end
+	
+	VideoList = nil
 end
 
 -- Callback functions

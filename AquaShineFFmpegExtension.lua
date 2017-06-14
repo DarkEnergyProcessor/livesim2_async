@@ -63,7 +63,8 @@ end
 -- AquaShine FFmpeg video extension --
 --------------------------------------
 
-local FFmpegExt = {_playing = {}, __index = {}}
+local FFmpegExt = {_playing = setmetatable({}, {__mode="v"})}
+local FFmpegExtMt = {__index = {}}
 
 -- The order is important, especially in Android
 local avutil = load_ffmpeg_library("avutil", 55)
@@ -117,7 +118,7 @@ avcodec.avcodec_register_all()
 AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized", libname, ver)
 
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
-function make_read_callback(file)
+local function make_read_callback(file)
 	local x = function(_unused, buf, buf_size)
 		local readed, size = file:read(buf_size)
 		
@@ -131,7 +132,7 @@ function make_read_callback(file)
 end
 
 local seek_callback = ffi.typeof("int64_t(*)(void *opaque, int64_t offset, int whence)")
-function make_seek_callback(file)
+local function make_seek_callback(file)
 	local filestreamsize = nil 
 	local x = function(_unused, pos, whence)
 		local success = false
@@ -173,8 +174,8 @@ local function __free_frame(frame)
 end
 
 -- Used to free associated resource a.k.a destructor
-local function __ffmpeg_data_cleanup(ptr)
-	local this = ffi.cast("AquaShineFFmpegData*", ptr)
+local function ffmpeg_data_cleanup(this)
+	AquaShine.Log("AquaShineFFmpeg", "Cleanup %s", tostring(this))
 	
 	if this.SwsCtx ~= nil then
 		swscale.sws_freeContext(this.SwsCtx)
@@ -203,10 +204,8 @@ local function __ffmpeg_data_cleanup(ptr)
 		avutil.av_free(this.IOContext)
 	end
 	
-	return avutil.av_free(ptr)
+	return avutil.av_free(this)
 end
-local ffmpeg_data_cleanup = ffi.cast("void(*)(void* ptr)", __ffmpeg_data_cleanup)
-jit.off(__ffmpeg_data_cleanup)
 
 --! @brief Load audio in the specificed path with FFmpeg
 --! @param path The video path
@@ -223,8 +222,10 @@ function FFmpegExt.LoadVideo(path)
 		ffmpeg_data_cleanup
 	)
 	
+	AquaShine.Log("AquaShineFFmpeg", "LoadVideo %s", path)
 	-- Load the file with love.filesystem API
 	this.FileStream = assert(love.filesystem.newFile(path, "r"))
+	AquaShine.Log("AquaShineFFmpeg", "LoadVideo %s stream opened", path)
 	this.ReadType, this.ReadFunc = make_read_callback(this.FileStream)
 	this.SeekType, this.SeekFunc = make_seek_callback(this.FileStream)
 	
@@ -321,7 +322,7 @@ function FFmpegExt.LoadVideo(path)
 	this.TimeBase = videostream.time_base
 	
 	-- Ready to use
-	return (setmetatable(this, FFmpegExt))
+	return (setmetatable(this, FFmpegExtMt))
 end
 
 -- Reusable object
@@ -387,17 +388,17 @@ end
 
 --! @brief Play video
 --! @param this AquaShineVideo object
-function FFmpegExt.__index.play(this)
+function FFmpegExtMt.__index.play(this)
 	if this.Playing then return end
 	
 	-- Set up callback
-	jit.off(this.ReadFunc)
-	jit.off(this.SeekFunc)
 	this.ReadType = read_callback(this.ReadFunc)
 	this.SeekType = seek_callback(this.SeekFunc)
 	this.FFmpegData.IOContext.read_packet = this.ReadType
 	this.FFmpegData.IOContext.seek = this.SeekType
 	this.Playing = true
+	jit.off(this.ReadFunc)
+	jit.off(this.SeekFunc)
 	
 	-- Insert to playing queue
 	FFmpegExt._playing[#FFmpegExt._playing + 1] = this
@@ -405,7 +406,7 @@ end
 
 --! @brief Pause video
 --! @param this AquaShineVideo object
-function FFmpegExt.__index.pause(this)
+function FFmpegExtMt.__index.pause(this)
 	if this.Playing == false then return end
 	
 	for i = 1, #FFmpegExt._playing do
@@ -424,42 +425,42 @@ end
 
 --! @brief Rewind video
 --! @param this AquaShineVideo object
-function FFmpegExt.__index.rewind(this)
+function FFmpegExtMt.__index.rewind(this)
 	assert(avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, 0LL, 1) >= 0, "Failed to rewind")
 end
 
-function FFmpegExt.__index.isPlaying(this)
+function FFmpegExtMt.__index.isPlaying(this)
 	return this.Playing
 end
 
 -- Dimensions
-function FFmpegExt.__index.getDimensions(this)
+function FFmpegExtMt.__index.getDimensions(this)
 	return this.FFmpegData.CodecContext.width, this.FFmpegData.CodecContext.height
 end
 
-function FFmpegExt.__index.getWidth(this)
+function FFmpegExtMt.__index.getWidth(this)
 	return this.FFmpegData.CodecContext.width
 end
 
-function FFmpegExt.__index.getHeight(this)
+function FFmpegExtMt.__index.getHeight(this)
 	return this.FFmpegData.CodecContext.height
 end
 
 -- Filters
-function FFmpegExt.__index.getFilter(this)
+function FFmpegExtMt.__index.getFilter(this)
 	return this.Image:getFilter()
 end
 
-function FFmpegExt.__index.setFilter(this, min, mag, anis)
+function FFmpegExtMt.__index.setFilter(this, min, mag, anis)
 	return this.Image:setFilter(min, mag, anis)
 end
 
 -- Utils
-function FFmpegExt.__index.getSource()
+function FFmpegExtMt.__index.getSource()
 	return nil
 end
 
-function FFmpegExt.__index.type()
+function FFmpegExtMt.__index.type()
 	return "AquaShineVideo"
 end
 

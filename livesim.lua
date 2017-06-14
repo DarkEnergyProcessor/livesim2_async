@@ -440,6 +440,13 @@ function DEPLS.StoryboardFunctions.IsOpenGLES()
 	return AquaShine.RendererInfo[1] == "OpenGL ES"
 end
 
+--! @brief Check if the current system supports FFmpeg extension
+--!        which allows loading of video other than Theora
+--! @returns `true` if FFmpeg extension is supported, `false` otherwise
+function DEPLS.StoryboardFunctions.MultiVideoFormatSupported()
+	return not(not(AquaShine.FFmpegExt))
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -486,7 +493,6 @@ end
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
 	DEPLS.Arg = argv
-	_G.DEPLS = DEPLS	-- TODO: Should be avoided
 	AquaShine.DisableSleep()
 	EffectPlayer.Clear()
 	
@@ -567,7 +573,7 @@ function DEPLS.Start(argv)
 		notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(noteloader_data.notes_list)
 		
 		if not(notes_list) then
-			print("Can't be randomized", msg)
+			AquaShine.Log("livesim2", "Can't be randomized: %s", msg)
 		else
 			DEPLS.NoteRandomized = true
 			noteloader_data.notes_list = notes_list
@@ -605,12 +611,14 @@ function DEPLS.Start(argv)
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime - 3167
 		noteloader_data.cover.title = noteloader_data.cover.title or argv[1]
 		
+		AquaShine.Log("livesim2", "Cover art init")
 		DEPLS.Routines.CoverPreview.Initialize(noteloader_data.cover)
 	end
 	
 	-- Initialize storyboard
 	if noteloader_data.storyboard then
-		noteloader_data.storyboard.Load()
+		AquaShine.Log("livesim2", "Storyboard init")
+		noteloader_data.storyboard.Load(DEPLS.StoryboardFunctions)
 	end
 	
 	-- If note style forcing is not enabled, get from config
@@ -619,8 +627,10 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Add to note manager
+	AquaShine.Log("livesim2", "Note data init")
 	do
 		for i = 1, #notes_list do
+			DEPLS.StoryboardCallback("AddNote", notes_list[i])
 			DEPLS.NoteManager.Add(notes_list[i], GlobalOffset)
 		end
 	end
@@ -1035,10 +1045,6 @@ function DEPLS.KeyReleased(key)
 	elseif key == "pagedown" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed > 0.0625 then
 		-- Decrease play speed
 		DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 0.5)
-	elseif key == "up" then
-		DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed + 100)
-	elseif key == "down" and DEPLS.NotesSpeed > 400 then
-		DEPLS.StoryboardFunctions.SetNotesSpeed(DEPLS.NotesSpeed - 100)
 	elseif DEPLS.ElapsedTime >= 0 then
 		for i = 1, 9 do
 			if key == DEPLS.Keys[i] then
