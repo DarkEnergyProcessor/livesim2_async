@@ -17,7 +17,7 @@ function LS2Beatmap.Load(file, depls_folder)
 	local f = love.filesystem.newFile(file[1]..".ls2")
 	assert(f:open("r"))
 	
-	return ls2.parsestream(f)
+	return ls2.parsestream(f, depls_folder)
 end
 
 return LS2Beatmap

@@ -3,13 +3,14 @@
 -- See copyright notice in main.lua
 
 local ls2 = {
-	_VERSION = "1.1",
+	_VERSION = "1.2",
 	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat. See copyright notice in main.lua",
 	_AUTHOR  = "AuahDark",
 	encoder = {}
 }
 local bit = require("bit")
 local love = require("love")
+local LuaStoryboard = require("luastoryboard2")
 
 -- String to little endian dword (signed)
 local function string2dword(str)
@@ -248,7 +249,6 @@ end
 --! @returns Lua storyboard object
 local function process_SRYL(stream, path)
 	local storyboard = readstring(stream)
-	local luastoryboard = {Storyboard = love.filesystem.load("luastoryboard.lua")()}
 	
 	do
 		local a, b = pcall(love.math.decompress, storyboard, "zlib")
@@ -256,10 +256,7 @@ local function process_SRYL(stream, path)
 		storyboard = a and b or storyboard
 	end
 	
-	luastoryboard.Load = function(export)
-		luastoryboard.Storyboard.LoadString(storyboard, path, export)
-	end
-	return luastoryboard
+	return LuaStoryboard.LoadString(storyboard, path)
 end
 
 --! @brief Custom unit image section
@@ -414,7 +411,7 @@ function ls2.parsestream(stream, path)
 	
 	-- If there's storyboard, add file search from additional datas
 	if output.storyboard then
-		output.storyboard.Storyboard.SetAdditionalFiles(additional_data)
+		output.storyboard:SetAdditionalFiles(additional_data)
 	end
 	
 	-- Background ID or background data. Background data has higher priority
@@ -467,7 +464,7 @@ function ls2.parsefile(file, path)
 		f = assert(io.open(file, "rb"))
 	end
 	
-	return ls2.parsestream(f)
+	return ls2.parsestream(f, path)
 end
 
 ---------------------------------

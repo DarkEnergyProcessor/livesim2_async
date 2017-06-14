@@ -63,7 +63,7 @@ end
 -- AquaShine FFmpeg video extension --
 --------------------------------------
 
-local FFmpegExt = {_playing = setmetatable({}, {__mode="v"})}
+local FFmpegExt = {_playing = setmetatable({}, {__mode = "v"})}
 local FFmpegExtMt = {__index = {}}
 
 -- The order is important, especially in Android

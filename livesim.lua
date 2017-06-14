@@ -456,7 +456,7 @@ end
 --! @param ... Additional arguments passed to callback function
 function DEPLS.StoryboardCallback(name, ...)
 	if DEPLS.StoryboardHandle then
-		DEPLS.StoryboardHandle.On(name, ...)
+		DEPLS.StoryboardHandle:Callback(name, ...)
 	end
 end
 
@@ -557,7 +557,7 @@ function DEPLS.Start(argv)
 	local notes_list
 	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[1])
 	local custom_background = false
-	DEPLS.StoryboardHandle = noteloader_data.storyboard and noteloader_data.storyboard.Storyboard
+	DEPLS.StoryboardHandle = noteloader_data.storyboard
 	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
 	DEPLS.Sound.LiveClear = noteloader_data.live_clear
 	
@@ -618,7 +618,7 @@ function DEPLS.Start(argv)
 	-- Initialize storyboard
 	if noteloader_data.storyboard then
 		AquaShine.Log("livesim2", "Storyboard init")
-		noteloader_data.storyboard.Load(DEPLS.StoryboardFunctions)
+		noteloader_data.storyboard:Initialize(DEPLS.StoryboardFunctions)
 	end
 	
 	-- If note style forcing is not enabled, get from config
@@ -849,7 +849,7 @@ function DEPLS.Draw(deltaT)
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
-		DEPLS.StoryboardHandle.Draw(deltaT)
+		DEPLS.StoryboardHandle:Draw(deltaT)
 	else
 		-- No storyboard. Draw background
 		local BackgroundImage = DEPLS.BackgroundImage
@@ -1062,7 +1062,7 @@ function DEPLS.Exit()
 	
 	-- Cleanup storyboard
 	if DEPLS.StoryboardHandle then
-		DEPLS.StoryboardHandle.Cleanup()
+		DEPLS.StoryboardHandle:Cleanup()
 	end
 	
 	-- Unmount

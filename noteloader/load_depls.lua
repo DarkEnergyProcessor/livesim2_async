@@ -5,6 +5,7 @@
 
 local AquaShine, NoteLoader = ...
 local JSON = require("JSON")
+local LuaStoryboard = require("luastoryboard2")
 local DEPLS2Beatmap = {
 	Name = "DEPLS Beatmap Folder",
 	Extension = nil		-- Detect function is necessary
@@ -51,7 +52,7 @@ end
 --!          - storyboard is the DEPLS beatmap storyboard object handle or nil if no storyboard is present
 --!          - background is beatmap-specific background ID or handle list (extended backgrounds) (jpg supported) or nil
 --!          - units is custom units image list or nil
-function DEPLS2Beatmap.Load(file)
+function DEPLS2Beatmap.Load(file, _unused)
 	local notes_data
 	local storyboard
 	local scoreinfo
@@ -79,10 +80,7 @@ function DEPLS2Beatmap.Load(file)
 	
 	-- Get storyboard
 	if love.filesystem.isFile(file[1].."/storyboard.lua") then
-		storyboard = {Storyboard = love.filesystem.load("luastoryboard.lua")()}
-		storyboard.Load = function(export)
-			storyboard.Storyboard.Load(file[1].."/storyboard.lua", export)
-		end
+		storyboard = LuaStoryboard.Load(file[1].."/storyboard.lua")
 	end
 	
 	-- Get background

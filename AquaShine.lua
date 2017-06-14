@@ -381,12 +381,12 @@ local LoadedImage = setmetatable({}, {__mode = "v"})
 function AquaShine.LoadImageNoCache(path)
 	assert(path:sub(-4) == ".png", "Only PNG image is supported")
 	local x, y = pcall(love.graphics.newImage, path, ConstImageFlags)
+	AquaShine.Log("AquaShine", "LoadImageNoCache %s", path)
 	
 	if x then
 		return y
 	end
 	
-	AquaShine.Log("AquaShine", "LoadImageNoCache %s", path)
 	return nil, y
 end
 
@@ -405,7 +405,6 @@ function AquaShine.LoadImage(...)
 			LoadedImage[path] = img
 		end
 		
-		AquaShine.Log("AquaShine", "LoadImage %s", path)
 		out[i] = img
 	end
 	

@@ -97,16 +97,6 @@ function NoteLoader.NoteLoader(path)
 	assert(false, "Cannot open beatmap \""..path[1].."\"")
 end
 
-local beatmap_names = {
-	"DEPLS Beatmap Folder",
-	"Custom Beatmap Festival",
-	"LS2 Packed Beatmap",
-	"SIF Beatmap",
-	"Sukufesu Simulator Beatmap",
-	"LLPractice Beatmap",
-	"MIDI Beatmap"
-}
-
 --! @brief Enumerates beatmap list in <save directory>/beatmap folder
 --! @returns List of beatmaps, with following data:
 --!          - name, beatmap name
