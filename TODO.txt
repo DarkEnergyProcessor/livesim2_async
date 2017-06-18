@@ -16,16 +16,18 @@ v1.1.3
 
 v2.0
 - FFmpeg extension					WIP
-- Unit creation
-- AquaShine UI library
-- NoteLoader2 (metadata loading, beatmap verification)
-- Hidden note and sudden note
-- Individual note speed
-- Live Show! Failed
-- Pause
-- Adjustable combo display size
-- Adjustable SE volume
-- Actual unit live skill
+- Unit creation						
+- AquaShine UI library					
+- NoteLoader2 (metadata loading, beatmap verification)	
+- Hidden note and sudden note				
+- Individual note speed					
+- Live Show! Failed					
+- Pause							
+- Adjustable combo display size				
+- Adjustable SE volume					
+- Download SIF beatmaps					PERMISSION GRANTED
+- Actual unit live skill				
+- LS2 v2.0						WIP
 - Removal of Playground TEXB Loader (Shelsha)		OK
 - Removal of test beatmap				OK
 - Removal of SetNotesSpeed				OK
