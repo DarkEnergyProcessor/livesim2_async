@@ -43,18 +43,21 @@ else
 	-- For desktop, we just need "ffi.load" it
 	function load_ffmpeg_library(libname, ver)
 		AquaShine.Log("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
-		local _, out = pcall(ffi.load, libname.."-"..ver)
+		local name = libname.."-"..ver
+		local _, out = pcall(ffi.load, name)
 		
 		if _ then
 			return out
 		end
 		
+		AquaShine.Log("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
 		_, out = pcall(ffi.load, libname)
 		
 		if _ then
 			return out
 		end
 		
+		AquaShine.Log("AquaShineFFmpeg", "Failed to load %s: %s", libname, out)
 		return nil
 	end
 end

@@ -642,6 +642,7 @@ function love.keyreleased(key, scancode)
 		love.thread.newThread(ScreenshotThreadCode):start(AquaShine.MainCanvas:newImageData())
 	elseif key == "f10" then
 		AquaShine.Log("AquaShine", "F10: collectgarbage")
+		if jit then jit.flush() end
 		collectgarbage("collect")
 	end
 	
@@ -685,7 +686,11 @@ function love.resize(w, h)
 end
 
 -- When running low memory
-love.lowmemory = collectgarbage
+if jit then
+	love.lowmemory = jit.flush
+else
+	love.lowmemory = collectgarbage
+end
 
 -- Initialization
 function love.load(arg)

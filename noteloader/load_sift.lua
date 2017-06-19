@@ -76,8 +76,8 @@ function SIFTrain.Load(file)
 	end
 	
 	-- Part of SIFTrain beatmap extension. Use background specificed in "star" info
-	if sift.song_info.star then
-		out.background = math.min(sift.song_info.star, 12)
+	if sift.song_info[1].star then
+		out.background = math.min(sift.song_info[1].star, 12)
 	end
 	
 	local defattr = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 10)
