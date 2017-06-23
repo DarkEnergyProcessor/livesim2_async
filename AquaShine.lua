@@ -759,9 +759,10 @@ function love.load(arg)
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	
-	-- Load additional extension
+	-- Load additional AquaShine files
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
-	if hasffi then assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine) end
+	assert(love.filesystem.load("AquaShineUI.lua"))(AquaShine)
+	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
 	
 	love.resize(wx, wy)
 	

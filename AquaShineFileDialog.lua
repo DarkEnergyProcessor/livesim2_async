@@ -3,6 +3,7 @@
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
+local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
 
 if not(AquaShine.IsDesktopSystem()) then return end
 
@@ -144,7 +145,10 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		if multiple then return {} end
 		return nil
 	end
-elseif os.execute("which zenity") <= 0 then
+	
+	AquaShine.Log("AquaShineFileDialog", "Using native Win32 API as file selection dialog backend")
+	return
+elseif os.execute("which zenity 2> "..null_device) <= 0 then
 	function AquaShine.FileSelection(title, directory, filter, multiple)
 		local cmdbuild = {}
 		
@@ -191,7 +195,10 @@ elseif os.execute("which zenity") <= 0 then
 			return list
 		end
 	end
-elseif os.execute("which kdialog") <= 0 then
+	
+	AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
+	return
+elseif os.execute("which kdialog 2> "..null_device) <= 0 then
 	function AquaShine.FileSelection(title, directory, filter, multiple)
 		-- title and multiple is not supported unfortunately
 		local cmdbuild = {}
@@ -228,4 +235,9 @@ elseif os.execute("which kdialog") <= 0 then
 			end
 		end
 	end
+	
+	AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
+	return
 end
+
+AquaShine.Log("AquaShineFileDialog", "File dialog is not supported")

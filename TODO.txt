@@ -27,6 +27,7 @@ v2.0
 - Adjustable SE volume					
 - Download SIF beatmaps					PERMISSION GRANTED
 - Actual unit live skill				
+- Album art for SIFTrain beatmap			
 - LS2 v2.0						WIP
 - Removal of Playground TEXB Loader (Shelsha)		OK
 - Removal of test beatmap				OK

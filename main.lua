@@ -23,8 +23,8 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-DEPLS_VERSION = "1.1.4"
-DEPLS_VERSION_NUMBER = 01010400	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-20170621"
+DEPLS_VERSION_NUMBER = 01010401	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 ----------------------
 -- AquaShine loader --
@@ -40,6 +40,7 @@ AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 		render = {3, "render_livesim.lua"},
 		noteloader = {1, "invoke_noteloader.lua"},
 		unit_create = {0, "unit_create.lua"},
+		uitest = {0, "AquaShineUITest.lua"}
 	},
 	DefaultEntry = "main_menu",
 	Width = 960,	-- Letterboxing

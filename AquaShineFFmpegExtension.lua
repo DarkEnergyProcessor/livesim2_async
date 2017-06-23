@@ -161,7 +161,7 @@ local function make_seek_callback(file)
 			success = file:seek(tonumber(pos) + filestreamsize)
 		end
 		
-		return success and file:tell() or -1LL
+		return success and file:tell() or -1
 	end
 	local y = ffi.cast(seek_callback, x)
 	
@@ -348,7 +348,7 @@ function FFmpegExt.Update(deltaT)
 					-- Get presentation timestamp
 					local effortts = avutil.av_frame_get_best_effort_timestamp(data.FrameVideo)
 					
-					if effortts ~= -9223372036854775808LL then
+					if tostring(effortts) ~= "-9223372036854775808LL" then
 						obj.PresentationTS = tonumber(effortts - data.FmtContext.start_time) / obj.TimeBase.den * obj.TimeBase.num
 					end
 					
@@ -429,7 +429,7 @@ end
 --! @brief Rewind video
 --! @param this AquaShineVideo object
 function FFmpegExtMt.__index.rewind(this)
-	assert(avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, 0LL, 1) >= 0, "Failed to rewind")
+	assert(avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, 0, 1) >= 0, "Failed to rewind")
 end
 
 function FFmpegExtMt.__index.isPlaying(this)
