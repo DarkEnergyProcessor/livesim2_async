@@ -23,6 +23,7 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
+local weak_table = {__mode = "v"}
 local ASArg = ...	-- Must contain entry point lists
 local AquaShine = {
 	CurrentEntryPoint = nil,
@@ -38,7 +39,7 @@ local AquaShine = {
 	SleepDisabled = false,
 	
 	-- Cache table. Anything inside this table can be cleared at any time when running under low memory
-	CacheTable = setmetatable({}, {__mode = "v"}),
+	CacheTable = setmetatable({}, weak_table),
 	-- Preload entry points
 	PreloadedEntryPoint = {},
 	-- Allow entry points to be preloaded?
@@ -176,12 +177,16 @@ function AquaShine.LoadEntryPoint(name, arg)
 	AquaShine.AlwaysRunUnfocus = AquaShine.LoadConfig("UNFOCUSED_RUN", 1) == 1
 	AquaShine.SleepDisabled = false
 	
+	if AquaShine._TempTouchEffect and AquaShine.TouchEffect == nil then
+		AquaShine.TouchEffect, AquaShine._TempTouchEffect = AquaShine._TempTouchEffect, nil
+	end
+	
 	love.window.setDisplaySleepEnabled(true)
 	
 	if AquaShine.PreloadedEntryPoint[name] then
-		scriptdata, title = AquaShine.PreloadedEntryPoint[name]()
+		scriptdata, title = AquaShine.PreloadedEntryPoint[name](AquaShine)
 	else
-		scriptdata, title = assert(love.filesystem.load(name))()
+		scriptdata, title = assert(love.filesystem.load(name))(AquaShine)
 	end
 	
 	scriptdata.Start(arg or {})
@@ -312,6 +317,14 @@ function AquaShine.DisableSleep()
 	return love.window.setDisplaySleepEnabled(false)
 end
 
+--! @brief Disable touch particle effect
+--! @note Should be called only in Start function
+function AquaShine.DisableTouchEffect()
+	if AquaShine.TouchEffect and AquaShine._TempTouchEffect == nil then
+		AquaShine._TempTouchEffect, AquaShine.TouchEffect = AquaShine.TouchEffect, nil
+	end
+end
+
 --! @brief Disable pause when loses focus
 --! @param disable Always run even when losing focus (true) or not (false)
 --! @note Should be called only in Start function
@@ -343,31 +356,41 @@ function AquaShine.IsDesktopSystem()
 	return AquaShine.OperatingSystem == "Windows" or AquaShine.OperatingSystem == "Linux" or AquaShine.OperatingSystem == "OS X"
 end
 
+--! @brief Set touch effect callback
+function AquaShine.SetTouchEffectCallback(c)
+	assert(c.Update and c.Start and c.Pause and c.Draw and c.SetPosition, "Invalid callback")
+	
+	AquaShine.TouchEffect = c
+end
+
+
+function AquaShine.Log() end
+
 ----------------------------
 -- AquaShine Font Caching --
 ----------------------------
-local FontList = setmetatable({}, {__mode = "v"})
+local FontList = setmetatable({}, weak_table)
 
 --! @brief Load font
 --! @param name The font name
 --! @param size The font size
 --! @returns Font object or nil on failure
 function AquaShine.LoadFont(name, size)
-	if not(FontList[name]) then
-		FontList[name] = {}
-	end
+	size = size or 12
 	
-	if not(FontList[name][size]) then
+	local cache_name = string.format("%s_%d", name, size)
+	
+	if not(FontList[cache_name]) then
 		local _, a = pcall(love.graphics.newFont, name, size)
 		
 		if _ then
-			FontList[name][size] = a
+			FontList[cache_name] = a
 		else
 			return nil, a
 		end
 	end
 	
-	return FontList[name][size]
+	return FontList[cache_name]
 end
 
 --------------------------------------
@@ -398,14 +421,19 @@ function AquaShine.LoadImage(...)
 	
 	for i = 1, #out do
 		local path = out[i]
-		local img = LoadedImage[path]
 		
-		if not(img) then
-			img = AquaShine.LoadImageNoCache(path)
-			LoadedImage[path] = img
+		if type(path) == "string" then
+			local img = LoadedImage[path]
+			
+			if not(img) then
+				img = AquaShine.LoadImageNoCache(path)
+				LoadedImage[path] = img
+			end
+			
+			out[i] = img
+		else
+			out[i] = path
 		end
-		
-		out[i] = img
 	end
 	
 	return unpack(out)
@@ -415,10 +443,15 @@ end
 -- AquaShine Scissor to handle letterboxing --
 ----------------------------------------------
 function AquaShine.SetScissor(x, y, width, height)
+	if not(x and y and width and height) then
+		love.graphics.setScissor()
+		return
+	end
+	
 	x, y = AquaShine.CalculateTouchPosition(x, y)
 	
 	love.graphics.setScissor(
-		AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY,
+		AquaShine.LogicalScale.OffX + x, AquaShine.LogicalScale.OffY + y,
 		width * AquaShine.LogicalScale.ScaleOverall,
 		height * AquaShine.LogicalScale.ScaleOverall
 	)
@@ -426,6 +459,28 @@ end
 
 function AquaShine.ClearScissor()
 	love.graphics.setScissor()
+end
+
+function AquaShine.IntersectScissor(x, y, width, height)
+	x, y = AquaShine.CalculateTouchPosition(x, y)
+	
+	love.graphics.intersectScissor(
+		AquaShine.LogicalScale.OffX + x, AquaShine.LogicalScale.OffY + y,
+		width * AquaShine.LogicalScale.ScaleOverall,
+		height * AquaShine.LogicalScale.ScaleOverall
+	)
+end
+
+function AquaShine.GetScissor()
+	local x, y, w, h = love.graphics.getScissor()
+	
+	if not(x and y and w and h) then return end
+	
+	return
+		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
+		w / AquaShine.LogicalScale.ScaleOverall,
+		h / AquaShine.LogicalScale.ScaleOverall
 end
 
 ------------------------------
@@ -439,6 +494,9 @@ function AquaShine.MainLoop()
 		love.graphics.clear()
 		
 		if AquaShine.CurrentEntryPoint then
+			if AquaShine.TouchEffect then
+				AquaShine.TouchEffect.Update(dt)
+			end
 			dt = dt * 1000
 			AquaShine.CurrentEntryPoint.Update(dt)
 			
@@ -446,6 +504,11 @@ function AquaShine.MainLoop()
 			love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
 			love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
 			AquaShine.CurrentEntryPoint.Draw(dt)
+			
+			if AquaShine.TouchEffect then
+				AquaShine.TouchEffect.Draw()
+			end
+			
 			love.graphics.pop()
 			love.graphics.setColor(255, 255, 255)
 		else
@@ -595,6 +658,10 @@ end
 function love.mousepressed(x, y, button, istouch)
 	if istouch == true then return end
 	
+	if AquaShine.TouchEffect then
+		AquaShine.TouchEffect.Start()
+	end
+	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MousePressed then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MousePressed(x, y, button, istouch)
@@ -604,14 +671,22 @@ end
 function love.mousemoved(x, y, dx, dy, istouch)
 	if istouch == true then return end
 	
+	if AquaShine.TouchEffect then
+		AquaShine.TouchEffect.SetPosition(x, y)
+	end
+	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseMoved then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
-		AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx, dy, istouch)
+		AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx / AquaShine.LogicalScale.ScaleOverall, dy / AquaShine.LogicalScale.ScaleOverall, istouch)
 	end
 end
 
 function love.mousereleased(x, y, button, istouch)
 	if istouch == true then return end
+	
+	if AquaShine.TouchEffect then
+		AquaShine.TouchEffect.Pause()
+	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseReleased then
 		x, y = AquaShine.CalculateTouchPosition(x, y)
@@ -752,16 +827,14 @@ function love.load(arg)
 			
 			io.stderr:write("[", part or "unknown", "] ", string.format(msg or "", ...), "\n")
 		end
-	else
-		function AquaShine.Log() end
 	end
 	
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	
 	-- Load additional AquaShine files
+	assert(love.filesystem.load("AquaShineComposition.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineUI.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
 	
 	love.resize(wx, wy)

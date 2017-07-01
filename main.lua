@@ -23,13 +23,14 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-DEPLS_VERSION = "2.0-20170621"
-DEPLS_VERSION_NUMBER = 01010401	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-20170701"
+DEPLS_VERSION_NUMBER = 01010402	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+
 
 ----------------------
 -- AquaShine loader --
 ----------------------
-AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
+local AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 	Entries = {
 		livesim = {1, "livesim.lua"},
 		settings = {0, "setting_view.lua"},
@@ -46,7 +47,6 @@ AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 	Width = 960,	-- Letterboxing
 	Height = 640	-- Letterboxing
 })
-
 
 --------------------------------
 -- Yohane Initialization Code --
@@ -96,6 +96,39 @@ end
 
 Yohane.Init(love.filesystem.load)
 
+-- Touch Effect --
+local ps = love.graphics.newParticleSystem(AquaShine.LoadImage("assets/flash/ui/live/img/ef_326_003.png"), 1000)
+ps:setSpeed(4, 20)
+ps:setParticleLifetime(0.25, 1)
+ps:setLinearAcceleration(-30, -30, 30, 30)
+ps:setAreaSpread("normal", 5, 5)
+ps:setEmissionRate(25)
+ps:setColors(255, 255, 255, 255, 255, 255, 255, 0)
+ps:setRotation(0, math.pi * 2)
+ps:setSpin(0, math.pi * 2)
+ps:setSpinVariation(1)
+ps:setSizes(0.25, 0.8)
+ps:setSizeVariation(1)
+ps:pause()
+
+AquaShine.SetTouchEffectCallback {
+	Start = function()
+		ps:start()
+	end,
+	Pause = function()
+		ps:pause()
+	end,
+	SetPosition = function(x, y)
+		ps:setPosition(x, y)
+	end,
+	Update = function(deltaT)
+		ps:update(deltaT)
+	end,
+	Draw = function()
+		love.graphics.draw(ps)
+	end
+}
+
 ----------------------------
 -- Force Create Directory --
 ----------------------------
@@ -104,3 +137,5 @@ assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory")
 assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory")
 assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory")
 assert(love.filesystem.createDirectory("temp"), "Failed to create directory")
+
+_G.AquaShine = AquaShine

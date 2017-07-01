@@ -4,7 +4,7 @@
 -- See copyright notice in main.lua
 
 local love = love
-local AquaShine = AquaShine
+local AquaShine = ...
 local Settings = {
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),

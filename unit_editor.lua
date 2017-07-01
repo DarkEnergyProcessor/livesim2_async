@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local AquaShine = AquaShine
+local AquaShine = ...
 local UnitEditor = {State = _G.SavedUnitEditorState}
 local MouseState = {0, 0, false}	-- x, y, is click?
 local IdolPosition = {	-- Idol position. 9 is leftmost

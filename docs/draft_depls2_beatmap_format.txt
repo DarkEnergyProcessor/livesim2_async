@@ -54,17 +54,17 @@ Sections:
         dwordu - Attribute. Some possible values:
                  * bit 0-3: Note images following Sukufesu simulator note colors in order. Ask yuyu for it, lol.
                             * If it's 15 - CBF extension colored note
-                                         * bit 23-31 - R color (9 bits, unsigned)
-                                         * bit 14-22 - G color (9 bits, unsigned)
-                                         * bit 5-13  - B color (9 bits, unsigned)
+                                * bit 23-31 - R color (9 bits, unsigned)
+                                * bit 14-22 - G color (9 bits, unsigned)
+                                * bit 5-13  - B color (9 bits, unsigned)
                  * bit 4: Is swing note?
         dwordu - Note effect
                  * bit 0-3 - Note position. 9 is leftmost, 1 is rightmost
                  * bit 4-5: Note effect.
-                               0 = Normal note
-                               1 = Token note
-                               2 = Long note (bit 6-23 is the length, max 262.143 seconds or 262143 ms length)
-                               3 = Star note
+                            0 = Normal note
+                            1 = Token note
+                            2 = Long note (bit 6-23 is the length, max 262.143 seconds or 262143 ms length)
+                            3 = Star note
                  * bit 24-31: Swing note group (or 0)
                  * Note: There's no way to specify if notes is simultaneous, because it's determined at runtime
     End For

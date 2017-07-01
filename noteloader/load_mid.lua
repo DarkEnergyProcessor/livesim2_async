@@ -69,6 +69,7 @@ local function midi2sif(stream)
 			timing_total = timing_total + timing
 			
 			if event_type == 8 then
+				-- Note Off
 				note = ss:read(1):byte()
 				velocity = ss:read(1):byte()
 				
@@ -79,6 +80,7 @@ local function midi2sif(stream)
 					channel = event_byte % 16
 				})
 			elseif event_type == 9 then
+				-- Note On
 				note = ss:read(1):byte()
 				velocity = ss:read(1):byte()
 				
@@ -88,6 +90,9 @@ local function midi2sif(stream)
 					velocity = velocity,
 					channel = event_byte % 16
 				})
+			elseif event_type == 12 or event_type == 13 then
+				-- Program change or Aftertouch
+				ss:seek("cur", 1)
 			elseif event_byte == 255 then
 				-- meta
 				

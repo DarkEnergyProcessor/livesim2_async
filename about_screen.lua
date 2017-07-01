@@ -1,7 +1,7 @@
 -- About screen
 -- Part of Live Simulator: 2
 
-local AquaShine = AquaShine
+local AquaShine = ...
 local love = love
 local AboutScreen = {}
 
@@ -38,7 +38,7 @@ This Live Simulator uses these external libraries:
 	* JSON.lua				 	License
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
-	* Shelsha TEXB Loader	  	License
+	* FFmpeg (when available)  	License
 	* LuaBit				  	 License		(Used when running under Lua 5.1)
 
 

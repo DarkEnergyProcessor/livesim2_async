@@ -418,23 +418,28 @@ end
 
 function RenderMode.Draw(deltaT)
 	if RenderManager.HasFreeThreads() and RenderMode.ElapsedTime < RenderMode.Duration then
+		love.graphics.push("all")
 		love.graphics.setCanvas(RenderMode.Canvas)
-		love.graphics.clear()
+		love.graphics.clear(0, 0, 0, 255)
 		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
 		
 		if RenderMode.FXAAShader then
 			love.graphics.setCanvas(RenderMode.Canvas2)
-			love.graphics.clear()
+			love.graphics.clear(0, 0, 0, 255)
 			love.graphics.setShader(RenderMode.FXAAShader)
 			love.graphics.setBlendMode("alpha", "premultiplied")
-			love.graphics.draw(RenderMode.Canvas)
+			love.graphics.draw(RenderMode.Canvas,
+				-AquaShine.LogicalScale.OffX / AquaShine.LogicalScale.ScaleOverall,
+				-AquaShine.LogicalScale.OffY / AquaShine.LogicalScale.ScaleOverall,
+				0, 1 / AquaShine.LogicalScale.ScaleOverall
+			)
 			love.graphics.setBlendMode("alpha")
 			love.graphics.setShader()
 			
 			RenderMode.Canvas, RenderMode.Canvas2 = RenderMode.Canvas2, RenderMode.Canvas
 		end
 		
-		love.graphics.setCanvas(nil)
+		love.graphics.pop()
 		RenderMode.Frame = RenderMode.Frame + 1
 		
 		RenderManager.EncodeFrame(RenderMode.Canvas:newImageData(), RenderMode.Frame)
@@ -443,7 +448,12 @@ function RenderMode.Draw(deltaT)
 	end
 	
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(RenderMode.Canvas, -AquaShine.LogicalScale.OffX, -AquaShine.LogicalScale.OffY)
+	love.graphics.draw(
+		RenderMode.Canvas,
+		-AquaShine.LogicalScale.OffX / AquaShine.LogicalScale.ScaleOverall,
+		-AquaShine.LogicalScale.OffY / AquaShine.LogicalScale.ScaleOverall,
+		0, 1 / AquaShine.LogicalScale.ScaleOverall
+	)
 	love.graphics.setBlendMode("alpha")
 	
 	RenderMode.DEPLS.DrawDebugInfo()

@@ -2,7 +2,7 @@
 -- See copyright notice in main.lua
 
 local love = love
-local AquaShine = AquaShine
+local AquaShine = ...
 local tween = require("tween")
 local EffectPlayer = require("effect_player")
 local JSON = require("JSON")
@@ -494,6 +494,7 @@ end
 function DEPLS.Start(argv)
 	DEPLS.Arg = argv
 	AquaShine.DisableSleep()
+	AquaShine.DisableTouchEffect()
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority

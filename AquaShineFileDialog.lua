@@ -5,7 +5,10 @@
 local AquaShine = ...
 local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
 
-if not(AquaShine.IsDesktopSystem()) then return end
+if not(AquaShine.IsDesktopSystem()) or AquaShine.OperatingSystem == "OS X" then
+	AquaShine.Log("AquaShineFileDialog", "Platform not supported for file dialog")
+	return
+end
 
 --! @fn AquaShine.FileSelection(title, directory, filter, multiple)
 --! @brief Shows file selection dialog
@@ -146,98 +149,100 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		return nil
 	end
 	
-	AquaShine.Log("AquaShineFileDialog", "Using native Win32 API as file selection dialog backend")
+	AquaShine.Log("AquaShineFileDialog", "Using WinAPI as file selection dialog backend")
 	return
-elseif os.execute("which zenity 2> "..null_device) <= 0 then
-	function AquaShine.FileSelection(title, directory, filter, multiple)
-		local cmdbuild = {}
-		
-		cmdbuild[#cmdbuild + 1] = "zenity --file-selection"
-		
-		if title then
-			cmdbuild[#cmdbuild + 1] = string.format("--title=%q", title)
-		end
-		
-		if filter then
-			cmdbuild[#cmdbuild + 1] = "--file-filter='"..filter.."'"
-		end
-		
-		if multiple then
-			cmdbuild[#cmdbuild + 1] = "--multiple --separator='|'"
-		end
-		
-		if directory then
-			table.insert(cmdbuild, 1, string.format("(cd %q &&", directory))
-			cmdbuild[#cmdbuild + 1] = ")"
-		end
-		
-		local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
-		local list = cmd:read("*a")
-		cmd:close()
-		
-		if #list == 0 then
-			if multiple then
-				return {}
-			else
-				return nil
-			end
-		end
-		
-		if multiple then
-			local filelist = {}
+elseif AquaShine.OperatingSystem == "Linux" then
+	if os.execute("command -v zenity >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] zenity not found.\"; exit 1; }") == 0 then
+		function AquaShine.FileSelection(title, directory, filter, multiple)
+			local cmdbuild = {}
 			
-			for w in list:gmatch("[^|]+") do
-				filelist[#filelist + 1] = w:gsub("[\r\n|\r|\n]+", "")
+			cmdbuild[#cmdbuild + 1] = "zenity --file-selection"
+			
+			if title then
+				cmdbuild[#cmdbuild + 1] = string.format("--title=%q", title)
 			end
 			
-			return filelist
-		else
-			return list
-		end
-	end
-	
-	AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
-	return
-elseif os.execute("which kdialog 2> "..null_device) <= 0 then
-	function AquaShine.FileSelection(title, directory, filter, multiple)
-		-- title and multiple is not supported unfortunately
-		local cmdbuild = {}
-		
-		cmdbuild[#cmdbuild + 1] = "kdialog --getopenfilename"
-		
-		if directory then
-			cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
-		else
-			cmdbuild[#cmdbuild + 1] = ":livesim2select"
-		end
-		
-		if filter then
-			cmdbuild[#cmdbuild + 1] = string.format("'%s|Specific Files (%s)'", filter, filter)
-		end
-		
-		local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
-		local list = cmd:read("*a")
-		cmd:close()
-		
-		if #list > 0 then
-			list = list:gsub("[\r\n|\r|\n]+", "")
-
+			if filter then
+				cmdbuild[#cmdbuild + 1] = "--file-filter='"..filter.."'"
+			end
+			
 			if multiple then
-				return {list}
+				cmdbuild[#cmdbuild + 1] = "--multiple --separator='|'"
+			end
+			
+			if directory then
+				table.insert(cmdbuild, 1, string.format("(cd %q &&", directory))
+				cmdbuild[#cmdbuild + 1] = ")"
+			end
+			
+			local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
+			local list = cmd:read("*a")
+			cmd:close()
+			
+			if #list == 0 then
+				if multiple then
+					return {}
+				else
+					return nil
+				end
+			end
+			
+			if multiple then
+				local filelist = {}
+				
+				for w in list:gmatch("[^|]+") do
+					filelist[#filelist + 1] = w:gsub("[\r\n|\r|\n]+", "")
+				end
+				
+				return filelist
 			else
 				return list
 			end
-		else
-			if multiple then
-				return {}
+		end
+		
+		AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
+		return
+	elseif os.execute("command -v kdialog >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] kdialog not found.\"; exit 1; }") == 0 then
+		function AquaShine.FileSelection(title, directory, filter, multiple)
+			-- title and multiple is not supported unfortunately
+			local cmdbuild = {}
+			
+			cmdbuild[#cmdbuild + 1] = "kdialog --getopenfilename"
+			
+			if directory then
+				cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
 			else
-				return nil
+				cmdbuild[#cmdbuild + 1] = ":livesim2select"
+			end
+			
+			if filter then
+				cmdbuild[#cmdbuild + 1] = string.format("'%s|Specific Files (%s)'", filter, filter)
+			end
+			
+			local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
+			local list = cmd:read("*a")
+			cmd:close()
+			
+			if #list > 0 then
+				list = list:gsub("[\r\n|\r|\n]+", "")
+
+				if multiple then
+					return {list}
+				else
+					return list
+				end
+			else
+				if multiple then
+					return {}
+				else
+					return nil
+				end
 			end
 		end
+		
+		AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
+		return
 	end
-	
-	AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
-	return
 end
 
 AquaShine.Log("AquaShineFileDialog", "File dialog is not supported")

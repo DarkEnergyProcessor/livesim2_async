@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = love
-local AquaShine = AquaShine
+local AquaShine = ...
 local UnitSelect = {CurrentPage = 0}
 local MouseState = {0, 0, false}	-- x, y, is click?
 
