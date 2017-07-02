@@ -834,6 +834,7 @@ function love.load(arg)
 	
 	-- Load additional AquaShine files
 	assert(love.filesystem.load("AquaShineComposition.lua"))(AquaShine)
+	assert(love.filesystem.load("AquaShineDownload.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
 	

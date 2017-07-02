@@ -1,4 +1,6 @@
 -- AquaShine Composition Drawing system
+-- Part of Live Simulator: 2
+-- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
 local love = love

@@ -24,7 +24,7 @@ v2.0
 - Pause							
 - Adjustable combo display size				
 - Adjustable SE volume					
-- Download SIF beatmaps					PERMISSION GRANTED
+- Download SIF beatmaps					WIP (with RayFirefist)
 - Actual unit live skill				
 - Album art for SIFTrain beatmap			
 - Decrease sensitivity for swing note accuracy		

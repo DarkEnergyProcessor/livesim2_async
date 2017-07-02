@@ -1,5 +1,6 @@
 -- AquaShine FFmpeg extension
 -- Part of Live Simulator: 2
+-- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
 local love = love
@@ -333,8 +334,7 @@ local packet = ffi.new("AVPacket[1]")
 local framefinished = ffi.new("int[1]")
 function FFmpegExt.Update(deltaT)
 	-- deltaT in seconds
-	for i = 1, #FFmpegExt._playing do
-		local obj = FFmpegExt._playing[i]
+	for i, obj in pairs(FFmpegExt._playing) do
 		local data = obj.FFmpegData
 		obj.CurrentTimer = obj.CurrentTimer + deltaT
 		
