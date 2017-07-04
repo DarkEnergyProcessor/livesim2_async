@@ -19,7 +19,29 @@ end
 local selection_image, selection_image_se, TitleIcon
 local background
 local MTLMr3m, TitleFont, ReleaseFont
-local versionText = "Live Simulator: 2 v"..DEPLS_VERSION.." ("..string.format("%08d", DEPLS_VERSION_NUMBER)..") ("..(jit and jit.version or _VERSION)..")\nUses AquaShine loader & LOVE2D game framework\nR/W Directory: "..love.filesystem.getSaveDirectory()
+local versionText = AquaShine.GetCachedData("versionText", function()
+	local bld = {}
+	bld[#bld + 1] = "Live Simulator: 2 v"
+	bld[#bld + 1] = DEPLS_VERSION
+	bld[#bld + 1] = " ("
+	bld[#bld + 1] = string.format("%08d", DEPLS_VERSION_NUMBER)
+	bld[#bld + 1] = ") ("
+	bld[#bld + 1] = jit and jit.version or _VERSION
+	bld[#bld + 1] = ") "
+	
+	if AquaShine.FileSelection then
+		bld[#bld + 1] = "FileSelection "
+	end
+	
+	if AquaShine.FFmpegExt then
+		bld[#bld + 1] = "FFmpegExt"
+	end
+	
+	bld[#bld + 1] = "\nUses AquaShine loader & LOVE2D game framework\nR/W Directory: "
+	bld[#bld + 1] = love.filesystem.getSaveDirectory()
+	
+	return table.concat(bld)
+end)
 
 local composition = AquaShine.Composition.Create({
 	{

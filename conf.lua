@@ -10,10 +10,10 @@ if arg then
 
 	if _ then
 		local setenv_load = assert(loadstring("local x=... return x.setenv"))
-		local putenv_load = assert(loadstring("local x=... return x._putenv"))
+		local putenv_load = assert(loadstring("local x=... return x.SetEnvironmentVariableA"))
 		ffi.cdef [[
 			int setenv(const char *envname, const char *envval, int overwrite);
-			int _putenv(const char *envstring);
+			int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
 		]]
 		
 		local ss, setenv = pcall(setenv_load, ffi.C)
@@ -26,7 +26,7 @@ if arg then
 					if ss then
 						setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1)
 					elseif ps then
-						putenv("LOVE_GRAPHICS_USE_OPENGLES=1")
+						putenv("LOVE_GRAPHICS_USE_OPENGLES", "1")
 					end
 					
 					break

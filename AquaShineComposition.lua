@@ -23,6 +23,10 @@ local _example = {
 }
 ]]
 
+----------------------
+-- Composition Main --
+----------------------
+
 function Composition.Create(list)
 	local this = {}
 	-- format: component index, x, y, click
@@ -161,4 +165,51 @@ function Composition.Wrap(this, load_func, additional)
 	return a
 end
 
+--------------------------
+-- Composition Template --
+--------------------------
+local Template = {}
+
+local function override(t1, t2)
+	if t2 then
+		for n, v in pairs(t2) do
+			t1[n] = v
+		end
+	end
+	
+	return t1
+end
+
+function Template.Image(img, x, y, lw, ovrd)
+	local a = {}
+	a.x, a.y = x, y
+	
+	if lw then
+		a.w, a.h = img:getDimensions()
+	end
+	
+	a.image = img
+	a.draw = function()
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(img)
+	end
+	
+	return override(a, ovrd)
+end
+
+function Template.Text(font, text, x, y, r, g, b, a, ovrd)
+	local z = {}
+	z.x, z.y = x, y
+	
+	z.font = font
+	z.draw = function()
+		love.graphics.setColor(r, g, b, a)
+		love.graphics.setFont(font)
+		love.graphics.print(text)
+	end
+	
+	return override(z, ovrd)
+end
+
+Composition.Template = Template
 AquaShine.Composition = Composition
