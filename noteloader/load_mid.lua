@@ -8,7 +8,7 @@ local stringstream = require("stringstream")
 
 local MIDILoader = {ProjectLoader = false}
 local MIDIBeatmap = {}
-MIDIBeatmap.__index = setmetatable({}, NoteLoader.NoteLoaderNoteObject())
+MIDIBeatmap.__index = setmetatable(MIDIBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
 
 local function str2dword_be(str)
 	return str:sub(1,1):byte() * 16777216 + str:sub(2,2):byte() * 65536 + str:sub(3,3):byte() * 256 + str:sub(4,4):byte()
@@ -227,7 +227,7 @@ function MIDILoader.GetLoaderName()
 end
 
 function MIDILoader.LoadNoteFromFilename(file)
-	local f = assert(love.filesystem.newFile(file[1]..".mid", "r"))
+	local f = assert(love.filesystem.newFile(file, "r"))
 	local out = midi2sif(f)
 	local this = setmetatable({}, MIDIBeatmap)
 	f:close()
@@ -253,4 +253,4 @@ function MIDIBeatmap.GetBeatmapTypename()
 	return "MIDI Beatmap"
 end
 
-return MIDIBeatmap
+return MIDILoader

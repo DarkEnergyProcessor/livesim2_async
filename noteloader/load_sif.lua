@@ -9,7 +9,7 @@ local JSON = require("JSON")
 local SIFLoader = {ProjectLoader = false}
 local SIFBeatmap = {}
 
-SIFBeatmap.__index = setmetatable({}, NoteLoader.NoteLoaderNoteObject())
+SIFBeatmap.__index = setmetatable(SIFBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
 
 ------------------------
 -- SIF Beatmap Loader --
@@ -35,7 +35,7 @@ function SIFLoader.LoadNoteFromFilename(file)
 				return a.timing_sec < b.timing_sec
 			end)
 			
-			this.notes_list = sif.live_info[1].notes_list,
+			this.notes_list = sif.live_info[1].notes_list
 			this.score = {
 				sif.rank_info[2].rank_min,
 				sif.rank_info[3].rank_min,
@@ -43,7 +43,7 @@ function SIFLoader.LoadNoteFromFilename(file)
 				sif.rank_info[5].rank_min
 			}
 		end
-	elseif #sif > 0
+	elseif #sif > 0 then
 		this.notes_list = sif
 	else
 		assert(false, "Not a valid SIF beatmap")

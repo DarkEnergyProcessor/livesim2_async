@@ -77,32 +77,40 @@ function AquaShine.CalculateTouchPosition(x, y)
 		(y - AquaShine.LogicalScale.OffY) / AquaShine.LogicalScale.ScaleOverall
 end
 
-local mount_target
---! @brief Mount a zip file, relative to DEPLS save directory.
---!        Unmounts previous mounted zip file, so only one zip file
---!        can be mounted.
---! @param path The Zip file path (or nil to clear)
---! @param target The Zip mount point
---! @returns Previous mounted ZIP filename (or nil if no Zip was mounted)
+local mount_target = {}
+--! @brief Counted ZIP mounting. Mounts ZIP file
+--! @param path The Zip file path
+--! @param target The Zip mount point (or nil to unmount)
+--! @returns true on success, false on failure
 function AquaShine.MountZip(path, target)
-	local prev_mount = mount_target
+	assert(type(path) == "string")
 	
-	if path ~= nil and mount_target == path then
-		return prev_mount
+	if target == nil then
+		if mount_target[path] then
+			mount_target[path] = mount_target[path] - 1
+			
+			if mount_target[path] == 0 then
+				assert(love.filesystem.unmount(path), "Unmount failed")
+			end
+			
+			return true
+		else
+			return false
+		end
+	else
+		if not(mount_target[path]) then
+			local r = love.filesystem.mount(path, target)
+			
+			if r then
+				mount_target[path] = 1
+			end
+			
+			return r
+		else
+			mount_target[path] = mount_target[path] + 1
+			return true
+		end
 	end
-	
-	if mount_target then
-		love.filesystem.unmount(mount_target)
-		mount_target = nil
-	end
-	
-	if path then
-		assert(love.filesystem.mount(path, target))
-		
-		mount_target = path
-	end
-	
-	return prev_mount
 end
 
 local config_list = {}
@@ -363,6 +371,25 @@ function AquaShine.SetTouchEffectCallback(c)
 	AquaShine.TouchEffect = c
 end
 
+-- Fo module that requires AquaShine parameter to be passed as 1st argument
+local modules = {}
+function AquaShine.LoadModule(name, ...)
+	local x = modules[name]
+	
+	if x == nil then
+		local y = {assert(love.filesystem.load(name..".lua"))(AquaShine, ...)}
+		
+		if #y == 0 then
+			x = {}
+		else
+			x = {y[1]}
+		end
+		
+		modules[name] = x
+	end
+	
+	return x[1]
+end
 
 function AquaShine.Log() end
 
