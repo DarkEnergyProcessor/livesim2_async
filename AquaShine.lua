@@ -865,4 +865,8 @@ function love.load(arg)
 	end
 end
 
+function love._getAquaShineHandle()
+	return AquaShine
+end
+
 return AquaShine

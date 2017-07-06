@@ -3,12 +3,12 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
 local stringstream = require("stringstream")
 
-local MIDILoader = {ProjectLoader = false}
-local MIDIBeatmap = {}
-MIDIBeatmap.__index = setmetatable({}, NoteLoader.NoteLoaderNoteObject())
+local MIDIBeatmap = {
+	Name = "MIDI Beatmap",
+	Extension = "mid"
+}
 
 local function str2dword_be(str)
 	return str:sub(1,1):byte() * 16777216 + str:sub(2,2):byte() * 65536 + str:sub(3,3):byte() * 256 + str:sub(4,4):byte()
@@ -21,7 +21,7 @@ local function read_varint(fs)
 	repeat
 		local b = tonumber(fs:read(1):byte())
 		
-		last_bit_set = b * 0.0078125 >= 1
+		last_bit_set = b / 128 >= 1
 		out = out * 128 + (b % 128)
 	until last_bit_set == false
 	
@@ -218,39 +218,19 @@ local function midi2sif(stream)
 	return sif_beatmap
 end
 
--------------------------
--- MIDI Beatmap Loader --
--------------------------
-
-function MIDILoader.GetLoaderName()
-	return "Custom MIDI Beatmap"
-end
-
-function MIDILoader.LoadNoteFromFilename(file)
+--! @brief Loads MIDI beatmap
+--! @param file Table contains:
+--!        - path relative to DEPLS save dir
+--!        - absolute path
+--!        - forward slashed and not contain trailing slash
+--! @returns table with these data
+--!          - notes_list is the SIF-compilant notes data
+function MIDIBeatmap.Load(file)
 	local f = assert(love.filesystem.newFile(file[1]..".mid", "r"))
-	local out = midi2sif(f)
-	local this = setmetatable({}, MIDIBeatmap)
-	f:close()
+	local out = {notes_list = midi2sif(f)}
 	
-	this.out = out
-	this.name = NoteLoader._GetBasenameWOExt(file)
-	return this
-end
-
-------------------------------
--- MIDI Beatmap Note Object --
-------------------------------
-
-function MIDIBeatmap.GetNotesList(this)
-	return this.out
-end
-
-function MIDIBeatmap.GetName(this)
-	return this.name
-end
-
-function MIDIBeatmap.GetBeatmapTypename()
-	return "MIDI Beatmap"
+	f:close()
+	return out
 end
 
 return MIDIBeatmap

@@ -12,7 +12,8 @@ TODO:
 
 local AquaShine = ...
 local love = love
-local MainComposition = AquaShine.Composition.Create {
+local BeatmapSelect = {}
+local MainUIComposition = AquaShine.Composition.Create {
 	{
 		-- Background
 		x = 0, y = 0,
@@ -55,4 +56,24 @@ local MainComposition = AquaShine.Composition.Create {
 	),
 }
 
-return AquaShine.Composition.Wrap(MainComposition)
+BeatmapSelect.List = {}
+
+function BeatmapSelect.Start(arg)
+	local noteloader = assert(love.filesystem.load("note_loader.lua"))()
+	local BeatmapList = noteloader.Enumerate()
+	
+	-- Sort by name
+	table.sort(BeatmapList, function(a, b)
+		return a:GetBestName() < b:GetBestName()
+	end)
+	
+	for i = 0, math.floor(#BeatmapList / 8) do
+		local list = {}	-- Composition
+		
+		for j = 1, 8 do
+			local idx = i * 8 + j
+			
+			
+		end
+	end
+end

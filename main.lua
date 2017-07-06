@@ -1,5 +1,5 @@
 -- Live Simulator: 2
--- High-performance Live Simulator
+-- High-performance LL!SIF Live Simulator
 
 --[[---------------------------------------------------------------------------
 -- Copyright (c) 2038 Dark Energy Processor Corporation
@@ -23,9 +23,9 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
+-- Version
 DEPLS_VERSION = "2.0-20170701"
 DEPLS_VERSION_NUMBER = 01010402	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
-
 
 ----------------------
 -- AquaShine loader --
@@ -137,5 +137,3 @@ assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory")
 assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory")
 assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory")
 assert(love.filesystem.createDirectory("temp"), "Failed to create directory")
-
-_G.AquaShine = AquaShine

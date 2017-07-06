@@ -7,6 +7,7 @@ The section can appear in any order. Like, storyboard section can appear
 before beatmap section. LS2 parser should expect undefined sections.
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
+	qword - 8 bytes
     dword - 4 bytes
     word - 2 bytes
     byte - 1 byte
@@ -14,7 +15,8 @@ Datatypes ("u" suffix means unsigned, except string). All are in little endian:
 
 File information start:
 
-Header: File header. Always "livesim2" (first 8 bytes)
+Header: File header
+	qword - Header signature. Must be and always be 0x326D69736576696C (string "livesim2")
     wordu - Amount of sections
     byteu - * bit 0-3: Used background ID (or 0 to use from BIMG section below or from config)
             * bit 4-6: Force note style (1 = old note style; 2 = v5 note style; 0 = no enforcing)
