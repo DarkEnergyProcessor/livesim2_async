@@ -9,41 +9,41 @@ local url = require("socket.url")
 -- From Luasocket 2.0.2 with some modifications
 -- where proxy and authentication is removed
 local default = {
-    host = "",
-    port = PORT,
-    path ="/",
-    scheme = "http"
+	host = "",
+	port = PORT,
+	path ="/",
+	scheme = "http"
 }
 
 local function adjusturi(reqt)
-    return url.build {
-       path = assert(reqt.path, "invalid path 'nil'"),
-       params = reqt.params,
-       query = reqt.query,
-       fragment = reqt.fragment
-    }
+	return url.build {
+	   path = assert(reqt.path, "invalid path 'nil'"),
+	   params = reqt.params,
+	   query = reqt.query,
+	   fragment = reqt.fragment
+	}
 end
 
 local function adjustheaders(reqt)
-    -- default headers
-    local lower = {
-        ["host"] = reqt.host,
-        ["connection"] = "close, TE",
-        ["te"] = "trailers"
-    }
-    -- override with user headers
-    for i,v in pairs(reqt.headers or lower) do
-        lower[string.lower(i)] = v
-    end
-    return lower
+	-- default headers
+	local lower = {
+		["host"] = reqt.host,
+		["connection"] = "close, TE",
+		["te"] = "trailers"
+	}
+	-- override with user headers
+	for i,v in pairs(reqt.headers or lower) do
+		lower[string.lower(i)] = v
+	end
+	return lower
 end
 
 -- default url parts
 local default = {
-    host = "",
-    port = PORT,
-    path ="/",
-    scheme = "http"
+	host = "",
+	port = PORT,
+	path ="/",
+	scheme = "http"
 }
 
 local function check_if_quit()
@@ -51,17 +51,17 @@ local function check_if_quit()
 end
 
 local function adjustrequest(reqt)
-    -- parse url if provided
-    local nreqt = reqt.url and url.parse(reqt.url, default) or {}
-    -- explicit components override url
-    for i,v in pairs(reqt) do nreqt[i] = v end
-    if nreqt.port == "" then nreqt.port = 80 end
-    assert(nreqt.host and nreqt.host ~= "", "invalid host")
-    -- compute uri if user hasn't overriden
-    nreqt.uri = reqt.uri or adjusturi(nreqt)
-    -- adjust headers in request
-    nreqt.headers = adjustheaders(nreqt)
-    return nreqt
+	-- parse url if provided
+	local nreqt = reqt.url and url.parse(reqt.url, default) or {}
+	-- explicit components override url
+	for i,v in pairs(reqt) do nreqt[i] = v end
+	if nreqt.port == "" then nreqt.port = 80 end
+	assert(nreqt.host and nreqt.host ~= "", "invalid host")
+	-- compute uri if user hasn't overriden
+	nreqt.uri = reqt.uri or adjusturi(nreqt)
+	-- adjust headers in request
+	nreqt.headers = adjustheaders(nreqt)
+	return nreqt
 end
 
 -- We create our custom sink function which does send
@@ -86,30 +86,30 @@ local request_http = socket.protect(function(url)
 	-- Adjust
 	local nreqt = adjustrequest(req)
 	local h = http.open(nreqt.host, nreqt.port, nreqt.create)
-    h:sendrequestline(nreqt.method, nreqt.uri)
-    h:sendheaders(nreqt.headers)
+	h:sendrequestline(nreqt.method, nreqt.uri)
+	h:sendheaders(nreqt.headers)
 	
-    local code, status = h:receivestatusline()
-    -- if it is an HTTP/0.9 server, simply get the body and we are done
-    if not code then
+	local code, status = h:receivestatusline()
+	-- if it is an HTTP/0.9 server, simply get the body and we are done
+	if not code then
 		cout:push("RESP")
-        cout:push(200)
+		cout:push(200)
 		cout:push("SIZE")
 		cout:push(-1)
-        h:receive09body(status, nreqt.sink, nreqt.step)
+		h:receive09body(status, nreqt.sink, nreqt.step)
 		cout:push("DONE")
 		cout:push(0)
 		
 		return
-    end
+	end
 	
-    local headers
-    -- ignore any 100-continue messages
-    while code == 100 do 
-        headers = h:receiveheaders()
-        code, status = h:receivestatusline()
-    end
-    headers = h:receiveheaders()
+	local headers
+	-- ignore any 100-continue messages
+	while code == 100 do 
+		headers = h:receiveheaders()
+		code, status = h:receivestatusline()
+	end
+	headers = h:receiveheaders()
 	
 	cout:push("RESP")
 	cout:push(code)

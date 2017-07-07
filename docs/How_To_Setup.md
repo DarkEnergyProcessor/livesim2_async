@@ -91,17 +91,19 @@ Live Simulator: 2 supports these beatmap formats:
 
 * LS2 beatmap file. This is new Live Simulator: 2 binary beatmap file format which allows single LS2 file to contain storyboard, custom unit data, and such. Currently there's no encoder, but the file format structure is available.
 
-* Raw SIF beatmap, with or without score information. This is beatmap format internally used by Live Simulator: 2, without any modification. The extension is `.json`.
+* Raw SIF beatmap, with (captured version) or without score information (raw version).
 
 * SIFs, yuyu live simulator beatmap, the one with `.txt` extension (not `.ssp` one). **TODO: support for the new beatmap format**
 
 * Custom Beatmap Festival project folder. Can be in ZIP. **Project data must be in root and not in a directory**
 
-* Specialized MIDI file. The extension is `.mid`
+* Specialized MIDI file.
 
-* LLPractice beatmap. The extension is `.llp`. **Make sure to rename the extension to prevent confusion**
+* LLPractice beatmap.
 
-* SIFTrain beatmap. The extension is `.rs`. SIFTrain **Extended** beatmap by [MilesElectric168](https://www.reddit.com/r/SchoolIdolFestival/comments/6gqnxk/reintroducting_my_llsif_live_simulator_depls_live/ditlqdg/) is also supported.
+* SIFTrain beatmap. SIFTrain **Extended** beatmap by [MilesElectric168](https://www.reddit.com/r/SchoolIdolFestival/comments/6gqnxk/reintroducting_my_llsif_live_simulator_depls_live/ditlqdg/) is also supported.
+
+As of Live Simulator: 2 v2.0, file extension no longer matters. Live Simulator: 2 will try to scan the file contents instead of checking the file extension.
 
 Live Simulator: 2 supports these audio formats
 

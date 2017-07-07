@@ -310,12 +310,12 @@ end
 --! @brief Loads cover information
 --! @param stream The file stream
 local function process_COVR(stream)
-	local title = readstring(stream)
-	local arr = readstring(stream)
 	local img = love.graphics.newImage(love.filesystem.newFileData(
 		readstring(stream),
 		"cover.png"
 	))
+	local title = readstring(stream)
+	local arr = readstring(stream)
 	
 	if #title == 0 then title = nil end
 	if #arr == 0 then arr = nil end

@@ -132,8 +132,9 @@ AquaShine.SetTouchEffectCallback {
 ----------------------------
 -- Force Create Directory --
 ----------------------------
-assert(love.filesystem.createDirectory("audio"), "Failed to create directory")
-assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory")
-assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory")
-assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory")
-assert(love.filesystem.createDirectory("temp"), "Failed to create directory")
+assert(love.filesystem.createDirectory("audio"), "Failed to create directory \"audio\"")
+assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory \"beatmap\"")
+assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
+assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory \"screenshots\"")
+assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
+assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory \"unit_icon\"")

@@ -50,7 +50,7 @@ public:
 	
 	virtual Livesim2::ComboInfo** GetComboInformation();
 	virtual Livesim2::Storyboard* GetStoryboard();
-	virtual Livesim2::Background* GetCustomBackground();
+	virtual Livesim2::Background*|int GetCustomBackground();
 	virtual Livesim2::SoundData* GetBeatmapAudio();
 	virtual Livesim2::SoundData* GetLiveClearSound();
 	
@@ -81,7 +81,7 @@ NoteLoader.ProjectLoaders = {}
 -- Note Loading Function --
 ---------------------------
 function NoteLoader._GetBasenameWOExt(file)
-	return (file:match("(.+)([%.$]*)"):gsub("(.*/)(.*)", "%2"))
+	return ((file:match("^(.+)%..*$") or file):gsub("(.*/)(.*)", "%2"))
 end
 
 function NoteLoader.NoteLoader(file)
@@ -126,6 +126,8 @@ function NoteLoader.NoteLoader(file)
 			local _, nobj = pcall(ldr.LoadNoteFromFilename, destination)
 			
 			if _ then
+				print(nobj:GetName(), nobj:GetBeatmapTypename())
+				assert(nobj:GetName())
 				return nobj
 			end
 			
@@ -141,7 +143,6 @@ function NoteLoader.Enumerate()
 		local b = NoteLoader.NoteLoader("beatmap/"..f)
 		
 		if b then
-			print(b:GetBeatmapTypename())
 			a[#a + 1] = b
 		end
 	end
