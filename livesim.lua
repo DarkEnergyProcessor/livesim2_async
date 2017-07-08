@@ -939,8 +939,8 @@ end
 -- LOVE2D mouse/touch pressed
 local TouchTracking = {}
 local isMousePress = false
-local TouchXRadius = 128
-local TouchYRadius = 76
+local TouchXRadius = 132
+local TouchYRadius = 74
 function DEPLS.MousePressed(x, y, button, touch_id)
 	if DEPLS.ElapsedTime <= 0 or DEPLS.AutoPlay then return end
 	

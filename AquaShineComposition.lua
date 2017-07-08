@@ -180,6 +180,17 @@ local function override(t1, t2)
 	return t1
 end
 
+local function draw_image(this)
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.draw(this.image)
+end
+
+local function draw_text(this)
+	love.graphics.setColor(this.color)
+	love.graphics.setFont(this.font)
+	love.graphics.print(this.text)
+end
+
 function Template.Image(img, x, y, lw, ovrd)
 	local a = {}
 	a.x, a.y = x, y
@@ -189,10 +200,7 @@ function Template.Image(img, x, y, lw, ovrd)
 	end
 	
 	a.image = img
-	a.draw = function()
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(img)
-	end
+	a.draw = draw_image
 	
 	return override(a, ovrd)
 end
@@ -202,11 +210,9 @@ function Template.Text(font, text, x, y, r, g, b, a, ovrd)
 	z.x, z.y = x, y
 	
 	z.font = font
-	z.draw = function()
-		love.graphics.setColor(r, g, b, a)
-		love.graphics.setFont(font)
-		love.graphics.print(text)
-	end
+	z.text = text
+	z.color = {r, g, b, a}
+	z.draw = draw_text
 	
 	return override(z, ovrd)
 end
