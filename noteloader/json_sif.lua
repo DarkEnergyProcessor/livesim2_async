@@ -4,7 +4,7 @@
 
 local AquaShine, NoteLoader = ...
 local SIFBeatmap = {}
-SIFBeatmap.__index = setmetatable(SIFBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
+SIFBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(SIFBeatmap)
 
 -----------------------------
 -- SIF Beatmap Note Object --
@@ -24,6 +24,15 @@ end
 
 function SIFBeatmap.GetScoreInformation(this)
 	return this.score
+end
+
+function SIFBeatmap.GetBeatmapAudio(this)
+	if not(this.song_file_loaded) then
+		this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
+		this.song_file_loaded = true
+	end
+	
+	return this.song_file
 end
 
 return function(sif, file)

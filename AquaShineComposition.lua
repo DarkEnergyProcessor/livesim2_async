@@ -138,6 +138,7 @@ function Composition.MouseReleased(this, x, y)
 			x < a.x + a.w and y < a.y + a.h
 		then
 			a:click(x, y)
+			this.mousedata[1] = nil
 			return true
 		end
 	end

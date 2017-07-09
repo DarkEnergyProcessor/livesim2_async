@@ -7,9 +7,6 @@ local love = love
 local JSON = require("JSON")
 
 local JSONLoader = {ProjectLoader = false}
-local JSONBeatmap = {}
-
-JSONBeatmap.__index = setmetatable(JSONBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
 
 --------------------------
 -- JSON Beatmap Loaders --

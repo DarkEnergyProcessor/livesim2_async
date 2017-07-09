@@ -8,7 +8,7 @@ local stringstream = require("stringstream")
 
 local MIDILoader = {ProjectLoader = false}
 local MIDIBeatmap = {}
-MIDIBeatmap.__index = setmetatable(MIDIBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
+MIDIBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(MIDIBeatmap)
 
 local function str2dword_be(str)
 	return str:sub(1,1):byte() * 16777216 + str:sub(2,2):byte() * 65536 + str:sub(3,3):byte() * 256 + str:sub(4,4):byte()
@@ -234,6 +234,7 @@ function MIDILoader.LoadNoteFromFilename(file)
 	
 	this.out = out
 	this.name = NoteLoader._GetBasenameWOExt(file)
+	this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
 	return this
 end
 
@@ -251,6 +252,10 @@ end
 
 function MIDIBeatmap.GetBeatmapTypename()
 	return "MIDI Beatmap"
+end
+
+function MIDIBeatmap.GetBeatmapAudio(this)
+	return this.song_file
 end
 
 return MIDILoader

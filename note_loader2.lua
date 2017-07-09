@@ -50,7 +50,15 @@ public:
 	
 	virtual Livesim2::ComboInfo** GetComboInformation();
 	virtual Livesim2::Storyboard* GetStoryboard();
-	virtual Livesim2::Background*|int GetCustomBackground();
+	
+	/// \brief Retrieves background ID
+	/// \returns -1, if custom background present, 0 if no background ID present, otherwise the background ID
+	virtual int GetBackgroundID();
+	
+	/// \brief Retrieves custom background
+	/// \returns NULL if custom background not present, otherwise handle to custom background object
+	virtual Livesim2::Background* GetCustomBackground();
+	
 	virtual Livesim2::SoundData* GetBeatmapAudio();
 	virtual Livesim2::SoundData* GetLiveClearSound();
 	
@@ -59,6 +67,7 @@ public:
 	/// \returns Star difficulty information, or 0 if not available
 	virtual int GetStarDifficultyInfo(bool random);
 	
+	virtual void ReleaseBeatmapAudio();
 	virtual void SetZIPMountPath(const char* path);
 	virtual void Release();
 };
@@ -82,6 +91,10 @@ NoteLoader.ProjectLoaders = {}
 ---------------------------
 function NoteLoader._GetBasenameWOExt(file)
 	return ((file:match("^(.+)%..*$") or file):gsub("(.*/)(.*)", "%2"))
+end
+
+function NoteLoader._LoadDefaultAudioFromFilename(file)
+	return AquaShine.LoadAudio("audio/"..NoteLoader._GetBasenameWOExt(file)..".wav")
 end
 
 function NoteLoader.NoteLoader(file)
@@ -126,8 +139,6 @@ function NoteLoader.NoteLoader(file)
 			local _, nobj = pcall(ldr.LoadNoteFromFilename, destination)
 			
 			if _ then
-				print(nobj:GetName(), nobj:GetBeatmapTypename())
-				assert(nobj:GetName())
 				return nobj
 			end
 			
@@ -165,10 +176,11 @@ end
 -- NoteLoader Note Object --
 ----------------------------
 local function nilret() return nil end
+local function zeroret() return 0 end
 
 -- Derive function
-function NoteLoaderNoteObject._derive()
-	return setmetatable({}, NoteLoaderNoteObject)
+function NoteLoaderNoteObject._derive(tbl)
+	return setmetatable(tbl, NoteLoaderNoteObject)
 end
 
 function NoteLoaderNoteObject.GetNotesList()
@@ -183,13 +195,12 @@ function NoteLoaderNoteObject.GetBeatmapTypename()
 	assert(false, "Derive NoteLoaderNoteObject then implement GetBeatmapTypename")
 end
 
-function NoteLoaderNoteObject.GetStarDifficultyInfo()
-	return 0
-end
-
 function NoteLoaderNoteObject.GetCustomUnitInformation()
 	return {}
 end
+
+NoteLoaderNoteObject.GetStarDifficultyInfo = zeroret
+NoteLoaderNoteObject.GetBackgroundID = zeroret
 
 NoteLoaderNoteObject.GetCoverArt = nilret
 NoteLoaderNoteObject.GetScoreInformation = nilret
@@ -199,6 +210,7 @@ NoteLoaderNoteObject.GetCustomBackground = nilret
 NoteLoaderNoteObject.GetBeatmapAudio = nilret
 NoteLoaderNoteObject.GetLiveClearSound = nilret
 NoteLoaderNoteObject.SetZIPMountPath = nilret
+NoteLoaderNoteObject.ReleaseBeatmapAudio = nilret
 NoteLoaderNoteObject.Release = nilret
 
 ----------------

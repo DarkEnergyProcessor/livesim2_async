@@ -5,7 +5,7 @@
 local AquaShine, NoteLoader = ...
 local bit = require("bit")
 local SIFTBeatmap = {}
-SIFTBeatmap.__index = setmetatable(SIFTBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
+SIFTBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(SIFTBeatmap)
 
 ----------------------------------
 -- SIFTrain Beatmap Note Object --
@@ -119,16 +119,17 @@ end
 function SIFTBeatmap.GetBeatmapAudio(this)
 	if not(this.song_file_loaded) then
 		if this.sift.music_file then
-			out.song_file = AquaShine.LoadAudio("audio/"..this.sift.music_file)
+			this.song_file = AquaShine.LoadAudio("audio/"..this.sift.music_file)
 		else
 			local bn = AquaShine.Basename(this.filename)
 			local a, b = bn:match("(.)_(%d+)")
 			
 			if a and b then
-				out.song_file = AquaShine.LoadAudio("audio/"..a.."_"..b..".wav")
+				this.song_file = AquaShine.LoadAudio("audio/"..a.."_"..b..".wav")
 			end
 		end
 		
+		this.song_file = this.song_file or NoteLoader._LoadDefaultAudioFromFilename(this.filename)
 		this.song_file_loaded = true
 	end
 	

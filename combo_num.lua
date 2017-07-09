@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local AquaShine = ...
 return {
 	{
 		AquaShine.LoadImage("assets/flash/ui/live/img/ef_301_000.png"),

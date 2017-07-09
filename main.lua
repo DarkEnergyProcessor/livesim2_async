@@ -32,10 +32,10 @@ DEPLS_VERSION_NUMBER = 01010402	-- xxyyzzww. x = major, y = minor, z = patch, w 
 ----------------------
 local AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 	Entries = {
-		livesim = {1, "livesim.lua"},
+		livesim = {1, "livesim2_cliwrap.lua"},
 		settings = {0, "setting_view.lua"},
 		main_menu = {0, "main_menu.lua"},
-		beatmap_select = {0, "select_beatmap.lua"},
+		beatmap_select = {0, "beatmap_select.lua"},
 		unit_editor = {0, "unit_editor.lua"},
 		about = {0, "about_screen.lua"},
 		render = {3, "render_livesim.lua"},

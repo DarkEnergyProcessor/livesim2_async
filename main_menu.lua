@@ -6,7 +6,7 @@ local AquaShine = ...
 
 local menu_select = {
 	-- Name, Func
-	{"Play", function() AquaShine.LoadEntryPoint("select_beatmap.lua") end},
+	{"Play", function() AquaShine.LoadEntryPoint("beatmap_select.lua") end},
 	{"Change Units", function() AquaShine.LoadEntryPoint("unit_editor.lua") end},
 	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end}
 }

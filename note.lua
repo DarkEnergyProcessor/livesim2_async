@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local DEPLS = ...
+local DEPLS, AquaShine = ...
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
 local Yohane = require("Yohane")

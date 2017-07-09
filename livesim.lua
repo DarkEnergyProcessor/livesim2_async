@@ -65,7 +65,7 @@ local DEPLS = {
 	Images = {		-- Lists of loaded images
 		Note = {},
 		ScoreNode = {},
-		ComboNumbers = require("combo_num")
+		ComboNumbers = AquaShine.LoadModule("combo_num")
 	},
 	Sound = {}
 }
@@ -551,37 +551,33 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load modules
-	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS)
-	DEPLS.NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
+	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS, AquaShine)
 	
 	-- Load beatmap
-	local notes_list
-	local noteloader_data = DEPLS.NoteLoader.NoteLoader(argv[1])
+	local noteloader_data = argv.Beatmap
+	local notes_list = noteloader_data:GetNotesList()
 	local custom_background = false
-	DEPLS.StoryboardHandle = noteloader_data.storyboard
-	DEPLS.Sound.BeatmapAudio = noteloader_data.song_file
-	DEPLS.Sound.LiveClear = noteloader_data.live_clear
+	DEPLS.StoryboardHandle = noteloader_data:GetStoryboard()
+	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
+	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
 	
 	-- Normalize song volume
 	-- Enabled on fast system by default
-	if noteloader_data.song_file and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
-		require("volume_normalizer")(noteloader_data.song_file)
+	if DEPLS.Sound.BeatmapAudio and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
+		require("volume_normalizer")(DEPLS.Sound.BeatmapAudio)
 	end
 	
 	-- Randomize note
 	if argv.Random or AquaShine.GetCommandLineConfig("random") then
-		local msg
-		notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(noteloader_data.notes_list)
+		local new_notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(notes_list)
 		
-		if not(notes_list) then
+		if not(new_notes_list) then
 			AquaShine.Log("livesim2", "Can't be randomized: %s", msg)
 		else
 			DEPLS.NoteRandomized = true
-			noteloader_data.notes_list = notes_list
+			notes_list = new_notes_list
 		end
 	end
-	
-	notes_list = noteloader_data.notes_list
 	
 	-- Load background
 	if  AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 0 then
@@ -589,16 +585,19 @@ function DEPLS.Start(argv)
 		noteloader_data.background = nil
 	end
 	
-	if type(noteloader_data.background) == "number" then
-		BackgroundID = noteloader_data.background
-	elseif type(noteloader_data.background) == "table" then
-		DEPLS.BackgroundImage[0][1] = noteloader_data.background[0]
-		DEPLS.BackgroundImage[0][4] = 960 / noteloader_data.background[0]:getWidth()
-		DEPLS.BackgroundImage[0][5] = 640 / noteloader_data.background[0]:getHeight()
-		DEPLS.BackgroundImage[1][1] = noteloader_data.background[1]
-		DEPLS.BackgroundImage[2][1] = noteloader_data.background[2]
-		DEPLS.BackgroundImage[3][1] = noteloader_data.background[3]
-		DEPLS.BackgroundImage[4][1] = noteloader_data.background[4]
+	local noteloader_background = noteloader_data:GetBackgroundID()
+	
+	if noteloader_background > 0 then
+		BackgroundID = noteloader_backgroundid
+	elseif noteloader_background == -1 then
+		local cbackground = noteloader_data:GetCustomBackground()
+		DEPLS.BackgroundImage[0][1] = cbackground[0]
+		DEPLS.BackgroundImage[0][4] = 960 / cbackground[0]:getWidth()
+		DEPLS.BackgroundImage[0][5] = 640 / cbackground[0]:getHeight()
+		DEPLS.BackgroundImage[1][1] = cbackground[1]
+		DEPLS.BackgroundImage[2][1] = cbackground[2]
+		DEPLS.BackgroundImage[3][1] = cbackground[3]
+		DEPLS.BackgroundImage[4][1] = cbackground[4]
 		
 		custom_background = true
 	end
@@ -648,10 +647,11 @@ function DEPLS.Start(argv)
 	DEPLS.FullComboAnim:setMovie("ef_329")
 	
 	-- Calculate score bar
-	if noteloader_data.score then
+	local score_info = noteloader_data:GetScoreInformation()
+	if score_info then
 		for i = 1, 4 do
 			-- Use info from beatmap
-			DEPLS.ScoreData[i] = noteloader_data.score[i]
+			DEPLS.ScoreData[i] = score_info[i]
 		end
 	else
 		-- Calculate using master difficulty preset
@@ -661,12 +661,6 @@ function DEPLS.Start(argv)
 		DEPLS.ScoreData[2] = math.floor(s_score * 0.71448 + 0.5)
 		DEPLS.ScoreData[3] = math.floor(s_score * 0.856563 + 0.5)
 		DEPLS.ScoreData[4] = s_score
-	end
-	
-	-- Load beatmap audio
-	if not(DEPLS.Sound.BeatmapAudio) then
-		-- Beatmap audio needs to be safe loaded
-		DEPLS.Sound.BeatmapAudio = AquaShine.LoadAudio("audio/"..(argv[2] or argv[1]..".wav"), not(not(argv[2])))
 	end
 	
 	-- BeatmapAudio is actually SoundData, LiveAudio is the real Source
@@ -1000,7 +994,7 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	
 	if DEPLS.Routines.ResultScreen.CanExit then
 		-- Back
-		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
+		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
 	end
 end
 
@@ -1030,7 +1024,7 @@ end
 function DEPLS.KeyReleased(key)
 	if key == "escape" then
 		-- Back
-		AquaShine.LoadEntryPoint("select_beatmap.lua", {DEPLS.Arg[1], Random = DEPLS.Arg.Random})
+		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
 	elseif key == "backspace" then
 		-- Restart
 		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
@@ -1065,9 +1059,6 @@ function DEPLS.Exit()
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Cleanup()
 	end
-	
-	-- Unmount
-	AquaShine.MountZip()
 end
 
 function DEPLS.Focus(focus)

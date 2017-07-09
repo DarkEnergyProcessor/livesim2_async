@@ -34,7 +34,7 @@ BeatmapSelect.PageCompositionTable = {
 		love.graphics.print(this.text)
 	end
 }
-BeatmapSelect.BeatmapInfoCompositionTable = {
+BeatmapSelect.BeatmapInfoData = {
 	x = 0, y = 0,
 	title = AquaShine.LoadFont("MTLmr3m.ttf", 30),
 	draw = function(this)
@@ -45,11 +45,95 @@ BeatmapSelect.BeatmapInfoCompositionTable = {
 		love.graphics.print("S\nA\nB\nC", 604, 152)
 		love.graphics.print("Beatmap Type:", 440, 340)
 		love.graphics.print("Difficulty:", 440, 380)
-		love.graphics.print("Autoplay", 474, 504)
-		love.graphics.print("Random", 474, 538)
+		love.graphics.print("Audio Preview", 440, 440)
 		
 		if this.beatmap then
+			local name = this.beatmap:GetName()
+			local si = this.beatmap:GetScoreInformation()
+			local ci = this.beatmap:GetComboInformation()
+			local din = this.beatmap:GetStarDifficultyInfo()
+			
+			if si then
+				love.graphics.print(("%d\n%d\n%d\n%d"):format(
+					si[4], si[3], si[2], si[1]
+				), 620, 152)
+			else
+				love.graphics.print("-\n-\n-\n-", 620, 152)
+			end
+			
+			if ci then
+				love.graphics.print(("%d\n%d\n%d\n%d"):format(
+					ci[4], ci[3], ci[2], ci[1]
+				), 800, 152)
+			else
+				love.graphics.print("-\n-\n-\n-", 800, 152)
+			end
+			
+			love.graphics.print(this.beatmap:GetBeatmapTypename(), 600, 340)
+			
+			if din > 0 then
+				local dir = this.beatmap:GetStarDifficultyInfo(true)
+				
+				if dir ~= din then
+					love.graphics.print(string.format("%d* (Random %d*)", din, dir), 600, 380)
+				else
+					love.graphics.print(string.format("%d*", din), 600, 380)
+				end
+			else
+				love.graphics.print("Unknown", 600, 380)
+			end
+			
+			love.graphics.setFont(this.title)
+			love.graphics.print(name, 419, 79)
+			love.graphics.print(name, 421, 81)
+			love.graphics.setColor(255, 255, 255)
+			love.graphics.print(name, 420, 80)
 		end
+	end
+}
+BeatmapSelect.AutoplayTick = {
+	x = 440, y = 502,
+	w = 24, h = 24,
+	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
+	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
+	is_ticked = AquaShine.LoadConfig("AUTOPLAY") == 1,
+	draw = function(this)
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(this.default)
+		
+		if this.is_ticked then
+			love.graphics.draw(this.tick, -2, 0)
+		end
+		
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.setFont(BeatmapSelect.SongNameFont)
+		love.graphics.print("Autoplay", 33, 2)
+	end,
+	click = function(this)
+		this.is_ticked = not(this.is_ticked)
+		AquaShine.SaveConfig("AUTOPLAY", this.is_ticked and "1" or "0")
+	end
+}
+BeatmapSelect.RandomTick = {
+	x = 440, y = 538,
+	w = 24, h = 24,
+	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
+	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
+	is_ticked = false,
+	draw = function(this)
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(this.default)
+		
+		if this.is_ticked then
+			love.graphics.draw(this.tick, -2, 0)
+		end
+		
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.setFont(BeatmapSelect.SongNameFont)
+		love.graphics.print("Random", 33, 2)
+	end,
+	click = function(this)
+		this.is_ticked = not(this.is_ticked)
 	end
 }
 BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
@@ -103,7 +187,77 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 			love.graphics.rectangle("fill", 20, 20, 160, 160)
 		end
 	},
-	BeatmapSelect.BeatmapInfoCompositionTable
+	BeatmapSelect.BeatmapInfoData,
+	BeatmapSelect.AutoplayTick,
+	BeatmapSelect.RandomTick,
+	{
+		x = 596, y = 430, w = 108, h = 43.5,
+		buttons = {AquaShine.LoadImage(
+			"assets/image/ui/button_play.png",
+			"assets/image/ui/button_play_se.png",
+			"assets/image/ui/button_play_di.png",
+			"assets/image/ui/button_stop.png",
+			"assets/image/ui/button_stop_se.png"
+		)},
+		draw = function(this)
+			love.graphics.setColor(255, 255, 255)
+			
+			if not(BeatmapSelect.BeatmapInfoData.beatmap_song) then
+				love.graphics.draw(this.buttons[3], 0, 0, 0, 0.75)
+				return
+			end
+			
+			love.graphics.draw(
+				BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() and this.buttons[4] or this.buttons[1],
+				0, 0, 0, 0.75
+			)
+		end,
+		draw_se = function(this)
+			love.graphics.setColor(255, 255, 255)
+			
+			if not(BeatmapSelect.BeatmapInfoData.beatmap_song) then
+				love.graphics.draw(this.buttons[3], 0, 0, 0, 0.75)
+				return
+			end
+			
+			love.graphics.draw(
+				BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() and this.buttons[5] or this.buttons[2],
+				0, 0, 0, 0.75
+			)
+		end,
+		click = function(this)
+			if BeatmapSelect.BeatmapInfoData.beatmap_song then
+				if BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() then
+					BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
+				else
+					BeatmapSelect.BeatmapInfoData.beatmap_song:play()
+				end
+			end
+		end
+	},
+	{
+		x = 768, y = 529, w = 144, h = 58,
+		buttons = {AquaShine.LoadImage(
+			"assets/image/ui/com_button_14.png",
+			"assets/image/ui/com_button_14di.png",
+			"assets/image/ui/com_button_14se.png"
+		)},
+		draw = function(this)
+			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[1] or this.buttons[2])
+		end,
+		draw_se = function(this)
+			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[3] or this.buttons[2])
+		end,
+		click = function(this)
+			if BeatmapSelect.BeatmapInfoData.beatmap then
+				if BeatmapSelect.BeatmapInfoData.beatmap_song then
+					BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
+				end
+				
+				AquaShine.LoadEntryPoint("livesim.lua", {Beatmap = BeatmapSelect.BeatmapInfoData.beatmap, Random = BeatmapSelect.RandomTick.is_ticked})
+			end
+		end
+	}
 }
 
 function BeatmapSelect.Start(arg)
@@ -147,6 +301,19 @@ function BeatmapSelect.Start(arg)
 					love.graphics.draw(this.select_se, 0, 0, 0, 0.75)
 					this:draw_text()
 				end,
+				click = function(this)
+					local audio = this.beatmap_info:GetBeatmapAudio()
+					BeatmapSelect.BeatmapInfoData.beatmap = this.beatmap_info
+					
+					if BeatmapSelect.BeatmapInfoData.beatmap_song then
+						BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
+						BeatmapSelect.BeatmapInfoData.beatmap_song = nil
+					end
+					
+					if audio then
+						BeatmapSelect.BeatmapInfoData.beatmap_song = love.audio.newSource(audio)
+					end
+				end
 			}
 			list[#list + 1] = composition
 		end

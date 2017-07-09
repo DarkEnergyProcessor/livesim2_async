@@ -4,7 +4,7 @@
 
 local AquaShine, NoteLoader = ...
 local LLPBeatmap = {}
-LLPBeatmap.__index = setmetatable(LLPBeatmap, NoteLoader.NoteLoaderNoteObject._derive())
+LLPBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(LLPBeatmap)
 
 ------------------------------------
 -- LLPractice Beatmap Note Object --
@@ -49,6 +49,19 @@ end
 
 function LLPBeatmap.GetBeatmapTypename()
 	return "LLPractice Beatmap"
+end
+
+function LLPBeatmap.GetBeatmapAudio(this)
+	if not(this.song_file_loaded) then
+		if this.llp.audiofile then
+			this.song_file = AquaShine.LoadAudio("audio/"..this.llp.audiofile..".wav")
+		end
+		
+		this.song_file = this.song_file or NoteLoader._LoadDefaultAudioFromFilename(file)
+		this.song_file_loaded = true
+	end
+	
+	return this.song_file
 end
 
 return function(json, filename)

@@ -90,6 +90,7 @@ function AquaShine.MountZip(path, target)
 			mount_target[path] = mount_target[path] - 1
 			
 			if mount_target[path] == 0 then
+				mount_target[path] = nil
 				assert(love.filesystem.unmount(path), "Unmount failed")
 			end
 			
