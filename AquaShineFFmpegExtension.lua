@@ -4,11 +4,12 @@
 
 local AquaShine = ...
 local love = love
-local _, ffi = pcall(require, "ffi")
+local has_ffi, ffi = pcall(require, "ffi")
+local stringstream = require("stringstream")
 local load_ffmpeg_library
 
 -- iOS, or using Lua 5.1 is not supported
-if AquaShine.OperatingSystem == "iOS" or _ == false then
+if AquaShine.OperatingSystem == "iOS" or has_ffi == false then
 	AquaShine.Log("AquaShineFFmpeg", "AquaShine FFmpeg extension is not supported")
 	return
 elseif AquaShine.OperatingSystem == "Android" then
@@ -116,6 +117,13 @@ typedef struct AquaShineFFmpegData
 	AVFrame* FrameRGB;
 	struct SwsContext* SwsCtx;
 } AquaShineFFmpegData;
+
+typedef struct AquaShineMemoryStream
+{
+	const char* buffer;
+	size_t bufsize;
+	size_t pos;
+} AquaShineMemoryStream;
 ]]
 avformat.av_register_all()
 avcodec.avcodec_register_all()
@@ -124,10 +132,10 @@ AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized", libname, ver)
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
 local function make_read_callback(file)
 	local x = function(_unused, buf, buf_size)
-		local readed, size = file:read(buf_size)
+		local readed = file:read(buf_size)
 		
-		ffi.copy(buf, readed, size)
-		return size
+		ffi.copy(buf, readed, #readed)
+		return #readed
 	end
 	local y = ffi.cast(read_callback, x)
 	
@@ -163,6 +171,28 @@ local function make_seek_callback(file)
 		end
 		
 		return success and file:tell() or -1
+	end
+	local y = ffi.cast(seek_callback, x)
+	
+	jit.off(x)
+	return y, x
+end
+
+local function make_seek_callback_mem(file)
+	local filestreamsize = nil
+	local whence_str = {[0] = "set", 1 = "cur", 2 = "end"}
+	local x = function(_unused, pos, whence)
+		local success = false
+		if whence == 0x10000 then
+			-- AVSEEK_SIZE
+			if not(filestreamsize) then
+				filestreamsize = #file:string()
+			end
+			
+			return filestreamsize
+		else
+			return file:seek(assert(whence_str[whence], "invalid seek position"), pos)
+		end
 	end
 	local y = ffi.cast(seek_callback, x)
 	
@@ -470,11 +500,20 @@ end
 --------------------------------------
 -- AquaShine FFmpeg audio extension --
 --------------------------------------
-function FFmpegExt.LoadAudio(path)
+function FFmpegExt.LoadAudio(path, memstr)
 	-- Load the file with love.filesystem API
-	local filestream = assert(love.filesystem.newFile(path, "r"))
+	local filestream
+	local seektype, seekfunc
+	
+	if memstr then
+		filestream = stringstream.create(path)
+		seektype, seekfunc = make_seek_callback_mem(filestream, true)
+	else
+		filestream = assert(love.filesystem.newFile(path, "r"))
+		seektype, seekfunc = make_seek_callback(filestream, true)
+	end
+	
 	local readtype, readfunc = make_read_callback(filestream, true)
-	local seektype, seekfunc = make_seek_callback(filestream, true)
 	
 	-- Create AVIOContext
 	local IOContext = avformat.avio_alloc_context(

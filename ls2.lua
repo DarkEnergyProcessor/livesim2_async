@@ -12,6 +12,21 @@ local bit = require("bit")
 local love = require("love")
 local LuaStoryboard = require("luastoryboard2")
 
+---------------------------------------------------
+-- File reading/writing wrapper, for consistency --
+---------------------------------------------------
+local fileptr = debug.getregistry()["FILE*"]
+local fsw = {
+	read = fileptr.read,
+	write = fileptr.write,
+	seek = fileptr.seek,
+	close = fileptr.close
+}
+
+---------------
+-- Utilities --
+---------------
+
 -- String to little endian dword (signed)
 local function string2dword(str)
 	return bit.bor(
@@ -42,7 +57,7 @@ end
 
 -- String read datatype
 local function readstring(stream)
-	return stream:read(string2dwordu(stream:read(4)))
+	return fsw.read(stream, string2dwordu(fsw.read(stream, 4)))
 end
 
 -- Generate random string
@@ -69,8 +84,8 @@ end
 local function process_MTDT(stream)
 	local out = {}
 	
-	local has_info = stream:read(1):byte()
-	local star_info = stream:read(1):byte()
+	local has_info = fsw.read(stream, 1):byte()
+	local star_info = fsw.read(stream, 1):byte()
 	
 	out.name = readstring(stream)
 	if #out.name == 0 then out.name = nil end
@@ -92,28 +107,33 @@ local function process_MTDT(stream)
 	if bit.band(has_info, 1) > 0 then
 		-- Has score
 		out.score = {
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4))
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4))
 		}
 	else
-		stream:read(16)
+		fsw.read(stream, 16)
 	end
 	
 	if bit.band(has_info, 2) > 0 then
 		-- Has combo
 		out.combo = {
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4)),
-			string2dwordu(stream:read(4))
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4)),
+			string2dwordu(fsw.read(stream, 4))
 		}
 	else
-		stream:read(16)
+		fsw.read(stream, 16)
 	end
 	
 	return out
+end
+
+local function skip_MTDT(stream)
+	fsw.seek(stream, "cur", 2)
+	fsw.seek(string2dwordu(fsw.read(stream, 4)) + 32)
 end
 
 --! @brief Beatmap Millisecond parser
@@ -122,15 +142,15 @@ end
 --! @returns SIF-compilant beatmap
 local function process_BMPM(stream, v2)
 	local sif_notes = {}
-	local amount_notes = string2dwordu(stream:read(4))
+	local amount_notes = string2dwordu(fsw.read(stream, 4))
 	
 	for i = 1, amount_notes do
 		local effect_new = 1
 		local effect_new_val = 2
 		local notes_level = 1
-		local timing_sec = string2dwordu(stream:read(4)) / 1000
-		local attribute = string2dwordu(stream:read(4))
-		local note_effect = string2dwordu(stream:read(4))
+		local timing_sec = string2dwordu(fsw.read(stream, 4)) / 1000
+		local attribute = string2dwordu(fsw.read(stream, 4))
+		local note_effect = string2dwordu(fsw.read(stream, 4))
 		local position = bit.band(note_effect, 15)
 		
 		assert(position > 0 and position < 10, "Invalid note position")
@@ -180,18 +200,22 @@ local function process_BMPM(stream, v2)
 	return sif_notes
 end
 
+local function skip_BMPM(stream)
+	fsw.seek(stream, string2dwordu(fsw.read(stream, 4)) * 12)
+end
+
 --! @brief Beatmap Tick parser
 --! @param stream The file stream
 --! @param v2 use v2.0 parsing method?
 --! @returns SIF-compilant beatmap
 local function process_BMPT(stream, v2)
 	local sif_notes = {}
-	local ppqn = string2word(stream:read(2))
-	local bpm = string2word(stream:read(2)) / 1000
+	local ppqn = string2word(fsw.read(stream, 2))
+	local bpm = string2word(fsw.read(stream, 2)) / 1000
 	local highest_tick = 0
 	local current_timing = 0
 	local add_timing = 60 / bpm * ppqn
-	local amount_notes = string2dwordu(stream:read(4))
+	local amount_notes = string2dwordu(fsw.read(stream, 4))
 	local events_list = {}
 	
 	-- Convert to events
@@ -201,9 +225,9 @@ local function process_BMPT(stream, v2)
 		local attribute
 		local note_effect
 		
-		event.tick = string2dwordu(stream:read(4))
-		attribute = string2dwordu(stream:read(4))
-		note_effect = string2dwordu(stream:read(4))
+		event.tick = string2dwordu(fsw.read(stream, 4))
+		attribute = string2dwordu(fsw.read(stream, 4))
+		note_effect = string2dwordu(fsw.read(stream, 4))
 		
 		if attribute == 4294967295 then
 			-- BPM change
@@ -322,23 +346,31 @@ local function process_BMPT(stream, v2)
 	return sif_notes
 end
 
---! @brief Score value section processing
+local function skip_BMPT(stream)
+	fsw.seek(6)
+	fsw.seek(stream, string2dwordu(fsw.read(stream, 4)) * 12)
+end
+
+--! @brief Score value section processing (v1.x only, ignored in v2.0)
 --! @param stream The file stream
 --! @returns Table containing the score requirements for C, B, A and S score
 local function process_SCRI(stream)
 	return {
-		string2dword(stream:read(4)),
-		string2dword(stream:read(4)),
-		string2dword(stream:read(4)),
-		string2dword(stream:read(4))
+		string2dword(fsw.read(stream, 4)),
+		string2dword(fsw.read(stream, 4)),
+		string2dword(fsw.read(stream, 4)),
+		string2dword(fsw.read(stream, 4))
 	}
+end
+
+local function skip_SCRI(stream)
+	fsw.seek(stream, "cur", 16)
 end
 
 --! @brief Lua storyboard section
 --! @param stream The file stream
---! @param path Beatmap path or nil if not in DEPLS beatmap folder
---! @returns Lua storyboard object
-local function process_SRYL(stream, path)
+--! @returns String containing the storyboard
+local function process_SRYL(stream)
 	local storyboard = readstring(stream)
 	
 	do
@@ -347,69 +379,103 @@ local function process_SRYL(stream, path)
 		storyboard = a and b or storyboard
 	end
 	
-	return LuaStoryboard.LoadString(storyboard, path)
+	return storyboard
+end
+
+local function skip_SRYL(stream)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
 --! @brief Custom unit image section
 --! @param stream The file stream
---! @returns Unit image index and unit Image object
+--! @returns Unit image index and unit image PNG string
 local function process_UIMG(stream)
 	
-	return
-		stream:read(1):byte(),
-		love.graphics.newImage(love.filesystem.newFileData(readstring(stream), randstring(8).. ".png"))
+	return fsw.read(stream, 1):byte(), readstring(stream)
 end
 
+local function skip_UIMG(stream)
+	fsw.seek(stream, "cur", 1)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
+end
+
+--! @brief Custom unit position mapping
+--! @param stream The file stream
+--! @returns Mapping of custom unit image position
 local function process_UNIT(stream)
 	local list = {}
 	
-	for i = 1, stream:read(1):byte() do
-		list[#list + 1] = {stream:read(1):byte(), stream:read(1):byte()}
+	for i = 1, fsw.read(stream, 1):byte() do
+		list[#list + 1] = {fsw.read(stream, 1):byte(), fsw.read(stream, 1):byte()}
 	end
 	
 	return list
 end
 
-local process_BIMG = process_UIMG	-- Literally same
+local function skip_UNIT(stream)
+	fsw.seek(stream, "cur", fsw.read(stream, 1):byte() * 2)
+end
 
 --! @brief Process additional data
 --! @param stream The file stream
---! @returns Filename and the FileData object (2 values)
+--! @returns Filename and the file contents (2 values)
 local function process_DATA(stream)
 	local filename = readstring(stream)
 	
-	return
-		filename,
-		love.filesystem.newFileData(readstring(stream), filename)
+	return readstring(stream), readstring(stream)
+end
+
+local function skip_DATA(stream)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
 --! @brief Returns audio from ADIO section
 --! @param stream The file stream
---! @returns SoundData object
+--! @returns Extension and audio object
 local function process_ADIO(stream)
-	local extension = {[0] = ".wav", ".ogg", ".mp3"}
-	local ext = stream:read(1):byte()
+	local extension = {[0] = "wav", "ogg", "mp3"}
+	local ext = fsw.read(stream, 1):byte()
+	local ext_low = bit.band(ext, 15)
 	
-	assert(extension[ext], "Invalid extension")
-	
-	return love.sound.newSoundData(love.filesystem.newFileData(
-		readstring(stream),
-		"_" .. extension[ext]
-	))
+	if ext_low == 15 then
+		if ls2.has_ffmpegext then
+			local extlen = bit.rshift(ext, 4)
+			local strdata = readstring(stream)
+			
+			return strdata:sub(1, 3), strdata:sub(extlen + 1)
+		else
+			assert(false, "File not supported")
+		end
+	elseif ext_low < 3 then
+		return extension[ext], readstring(stream)
+	end
+end
+
+local function skip_ADIO(stream)
+	fsw.seek(stream, "cur", 1)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
 --! @brief Loads cover information
 --! @param stream The file stream
+--! @param v2 use v2.0 parsing method?
 local function process_COVR(stream, v2)
-	local img = love.graphics.newImage(love.filesystem.newFileData(
-		readstring(stream),
-		"cover.png"
-	))
-	local title = readstring(stream)
-	local arr = readstring(stream)
+	local img, title, arr
+	
+	if v2 then
+		img = readstring(stream)
+		title = readstring(stream)
+		arr = readstring(stream)
+	else
+		title = readstring(stream)
+		arr = readstring(stream)
+		img = readstring(stream)
+	end
 	
 	if #title == 0 then title = nil end
 	if #arr == 0 then arr = nil end
+	assert(#img > 0)
 	
 	return {
 		title = title,
@@ -417,6 +483,27 @@ local function process_COVR(stream, v2)
 		image = img
 	}
 end
+
+local function skip_COVR(stream)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
+end
+
+local sections_fourcc = {
+	ADIO = {process_ADIO, skip_ADIO},
+	BIMG = {process_UNIT, skip_UNIT},
+	BMPM = {process_BMPM, skip_BMPM},
+	BMPT = {process_BMPT, skip_BMPT},
+	COVR = {process_COVR, skip_COVR},
+	DATA = {process_DATA, skip_DATA},
+	LCLR = {process_ADIO, skip_ADIO},
+	MTDT = {process_MTDT, skip_MTDT},
+	SCRI = {process_SCRI, skip_SCRI},
+	SRYL = {process_SRYL, skip_SRYL},
+	UIMG = {process_UIMG, skip_UIMG},
+	UNIT = {process_UNIT, skip_UNIT}
+}
 
 --! @brief Parse LS2 beatmap from specificed stream
 --! @param stream The file stream
@@ -435,17 +522,17 @@ function ls2.parsestream(stream, path)
 	local staminadisp
 	local scoretap
 	
-	assert(assert(stream:read(8)) == "livesim2", "Invalid LS2 beatmap file")
+	assert(assert(fsw.read(stream, 8)) == "livesim2", "Invalid LS2 beatmap file")
 	
-	section_amount = string2wordu(stream:read(2))
-	backgroundid = stream:read(1):byte()
+	section_amount = string2wordu(fsw.read(stream, 2))
+	backgroundid = fsw.read(stream, 1):byte()
 	force_ns = math.floor(backgroundid / 16)
 	backgroundid = backgroundid % 16
-	staminadisp = stream:read(1):byte()
-	scoretap = string2wordu(stream:read(2))
+	staminadisp = fsw.read(stream, 1):byte()
+	scoretap = string2wordu(fsw.read(stream, 2))
 	
 	for i = 1, section_amount do
-		local section = stream:read(4)
+		local section = fsw.read(stream, 4)
 		
 		if section == "BMPM" then
 			ndata[#ndata + 1] = process_BMPM(stream)
@@ -544,18 +631,50 @@ function ls2.parsestream(stream, path)
 	return output
 end
 
---! @brief Parse LS2 beatmap file from filename
---! @param file The filename
---! @param path DEPLS beatmap folder directory or nil if it's not in DEPLS beatmap folder
---! @returns See NoteLoader.NoteLoader
-function ls2.parsefile(file, path)
-	local f
+function ls2.loadstream(stream)
+	local this = {}
+	assert(fsw.read(stream, 8) == "livesim2", "Invalid signature. Expected \"livesim2\"")
 	
-	if type(file) == "string" then
-		f = assert(io.open(file, "rb"))
+	local section_count = string2wordu(fsw.read(stream, 2))
+	local bginfo = fsw.read(stream, 1):byte()
+	
+	this.sections = {}
+	this.background_id = bit.band(bginfo, 15)
+	this.note_style = bit.band(bit.rshift(bginfo, 4), 7)
+	this.version_2 = bginfo > 127
+	this.stamina_display = fsw.read(stream, 1):byte()
+	
+	if this.stamina_display == 255 then
+		this.stamina_display = nil
 	end
 	
-	return ls2.parsestream(f, path)
+	this.score_tap = string2wordu(fsw.read(stream, 2))
+	
+	if this.score_tap == 0 then
+		this.score_tap = nil
+	end
+	
+	for i = 1, section_count do
+		local fourcc = fsw.read(stream, 4)
+		
+		assert(sections_fourcc[fourcc], "Unknown section "..fourcc)
+		
+		local sect = sections_fourcc[fourcc]
+		local sect_this = this.sections[sect]
+		
+		if not(sect_this) then
+			sect_this = {}
+			this.sections[sect] = sect_this
+		end
+		
+		sect_this[#sect_this + 1] = fsw.seek(stream, "cur")
+		sections_fourcc[fourcc][2](stream)	-- Skip
+	end
+	
+	assert(this.sections.BMPM or this.sections.BMPT, "No beatmap data found")
+	assert(this.version_2 and this.sections.MTDR or not(this.version_2), "No metadata section found")
+	
+	return this
 end
 
 ---------------------------------

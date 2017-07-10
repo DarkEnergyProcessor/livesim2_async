@@ -4,7 +4,7 @@ Version 2.0
 The beatmap format consist of multiple sections, where each
 section has FourCC and possibly with size depends on the FourCC itself.
 The section can appear in any order. Like, storyboard section can appear
-before beatmap section. LS2 parser should expect undefined sections.
+before beatmap section. LS2 parser should throw error if unknown section found
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
     qword - 8 bytes
@@ -25,7 +25,7 @@ Header: File header
     wordu - Score for each note tap (or 0 to use from config)
 
 Sections:
-1. MTDT - Live Simulator: 2 metadata. Mandatory in v2.0 or later
+1. MTDT - Live Simulator: 2 metadata. Mandatory in v2.0 or later. Optional in v1.x
     byteu - Metadata information
         * bit 0: Has score information?
         * bit 1: Has combo information?
@@ -76,7 +76,7 @@ Sections:
           if BMPM section doesn't exist.
     word   - PPQN in MIDI. Zero or negative is not allowed
     dwordu - BPM which is premultiplied by 1000 to retain BPM precision. Zero or negative is not a valid value
-    dword  - Amount of notes in this section
+    dwordu - Amount of notes in this section
     For Every amount of notes above:
         * Note: same as BMPM, except timing is in tick, not in milliseconds.
         * If Attribute is 0xFFFFFFFF, then it's tempo change. Note effect is the new BPM premultipled by 1000
@@ -107,9 +107,9 @@ Sections:
 
 9. ADIO - Audio/song file. Optional. Only one can be specificed
     byte   - Audio type.
-             * bit 0-3: 0 is PCM in WAV, 1 is Vorbis in OGG, 2 is MP3, 3 see below
+             * bit 0-3: 0 is PCM in WAV, 1 is Vorbis in OGG, 2 is MP3
              * If bit 0-3 is 1, FFmpeg extension audio data.
-                * bit 4-7: extension string length, prepended in audio data below
+                * bit 4-7: extension string length (without dot), prepended in audio data below
                 * Note: If FFmpeg extension not supported, throw error.
     string - Audio data, including the extension prepended if FFmpeg extension audio is used.
 
@@ -124,10 +124,12 @@ Sections:
 Changelog: Date follows dd/mm/yyyy convention
 
 18/06/2017: v2.0
+- Undefined sections no longer allowed
 - Added mandatoy MTDT section
 - Changed order of COVR data
 - Changed the way it interprets beatmap data, for advanced swing note support
 - ADIO (and LCLR) now can use audio unsupported by LOVE2D IF FFmpeg extension is available
+- Removed SCRI, moved to MTDT
 
 xx/yy/2017: v1.2
 - Swing note support
