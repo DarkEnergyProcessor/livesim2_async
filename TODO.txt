@@ -15,9 +15,9 @@ v1.1.3
 - Deprecation of SetNotesSpeed
 
 v2.0
-- FFmpeg extension					WIP
+- FFmpeg extension					OK
 - Unit creation						
-- NoteLoader2 (metadata loading, beatmap verification)	
+- NoteLoader2 (metadata loading, beatmap verification)	OK (core, TODO: Loaders)
 - Hidden note and sudden note				
 - Individual note speed					
 - Live Show! Failed					

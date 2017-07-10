@@ -1,7 +1,7 @@
-DEPLS2 beatmap file format (draft). Extension: .ls2
-Most things in here are subject to change.
+Live Simulator: 2 binary beatmap file format. Extension: .ls2
+Version 2.0
 
-DEPLS2 beatmap format consist of multiple sections, where each
+The beatmap format consist of multiple sections, where each
 section has FourCC and possibly with size depends on the FourCC itself.
 The section can appear in any order. Like, storyboard section can appear
 before beatmap section. LS2 parser should expect undefined sections.
@@ -17,7 +17,7 @@ File information start:
 
 Header: File header
     qword - Header signature. Must be and always be 0x326D69736576696C (string "livesim2")
-    wordu - Amount of sections
+    wordu - Amount of sections (including unknown sections)
     byteu - * bit 0-3: Used background ID (or 0 to use from BIMG section below or from config)
             * bit 4-6: Force note style (1 = old note style; 2 = v5 note style; 0 = no enforcing)
             * bit 7: Live Simulator: 2 Binary Beatmap v2.0? (introduces backward incompatibility changes to some sections)
@@ -27,10 +27,10 @@ Header: File header
 Sections:
 1. MTDT - Live Simulator: 2 metadata. Mandatory in v2.0 or later
     byteu - Metadata information
-        * bit 1: Has score information?
-        * bit 2: Has combo information?
-        * bit 3: Has star information?
-        * bit 4: Has random star information? (bit 2 must be 1 too)
+        * bit 0: Has score information?
+        * bit 1: Has combo information?
+        * bit 2: Has star information?
+        * bit 3: Has random star information? (bit 2 must be 1 too)
     byteu - Star information
         * bit 0-3: Normal star data (or 0 if star information is not available)
         * bit 4-7: Random star data, or 0 if random star information or star information is not available.
@@ -50,7 +50,7 @@ Sections:
 2. BMPM - Beatmap data with millisecond timing. This section can appear multiple times,
           in which case, the notes data are merged. This section must appear at least once
           if BMPT section doesn't exist.
-    dwordu - Amount of notes
+    dwordu - Amount of notes in this section
     For Every amount of notes above:
         dwordu - Timing milliseconds
         dwordu - Attribute. Some possible values:
@@ -76,7 +76,7 @@ Sections:
           if BMPM section doesn't exist.
     word   - PPQN in MIDI. Zero or negative is not allowed
     dwordu - BPM which is premultiplied by 1000 to retain BPM precision. Zero or negative is not a valid value
-    dword  - Amount of notes
+    dword  - Amount of notes in this section
     For Every amount of notes above:
         * Note: same as BMPM, except timing is in tick, not in milliseconds.
         * If Attribute is 0xFFFFFFFF, then it's tempo change. Note effect is the new BPM premultipled by 1000
