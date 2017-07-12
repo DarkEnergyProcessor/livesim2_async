@@ -6,6 +6,7 @@
 
 assert(jit, "Render mode is unavailable in Lua 5.1")
 
+local AquaShine = ...
 local love = love
 local lsys = require("love.system")
 local ffi = require("ffi")
@@ -329,7 +330,7 @@ function RenderMode.Start(arg)
 	end
 	
 	-- Init DEPLS
-	RenderMode.DEPLS = (AquaShine.PreloadedEntryPoint["livesim.lua"] or love.filesystem.load("livesim.lua"))()
+	RenderMode.DEPLS = (AquaShine.PreloadedEntryPoint["livesim2_cliwrap.lua"] or love.filesystem.load("livesim2_cliwrap.lua"))(AquaShine)
 	RenderMode.DEPLS.RenderingMode = true
 	RenderMode.DEPLS.MinimalEffect = false
 	RenderMode.DEPLS.Start({arg[3], arg[4]})

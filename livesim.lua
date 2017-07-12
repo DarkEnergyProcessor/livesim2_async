@@ -561,6 +561,8 @@ function DEPLS.Start(argv)
 	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
 	
+	if DEPLS.Sound.LiveClear then DEPLS.Sound.LiveClear = love.audio.newSource(DEPLS.Sound.LiveClear) end
+	
 	-- Normalize song volume
 	-- Enabled on fast system by default
 	if DEPLS.Sound.BeatmapAudio and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
@@ -605,20 +607,26 @@ function DEPLS.Start(argv)
 	DEPLS.ScoreBase = noteloader_data.scoretap or DEPLS.ScoreBase
 	DEPLS.Stamina = noteloader_data.staminadisp or DEPLS.Stamina
 	
-	if noteloader_data.cover then
+	local noteloader_coverdata = noteloader_data:GetCoverArt()
+	if noteloader_coverdata then
+		local new_coverdata = {}
+		
 		DEPLS.HasCoverImage = true
 		DEPLS.CoverShown = 3167
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime - 3167
-		noteloader_data.cover.title = noteloader_data.cover.title or argv[1]
+		
+		new_coverdata.arrangement = noteloader_coverdata.arrangement
+		new_coverdata.title = noteloader_coverdata.title or argv[1]
+		new_coverdata.image = noteloader_coverdata.image
 		
 		AquaShine.Log("livesim2", "Cover art init")
-		DEPLS.Routines.CoverPreview.Initialize(noteloader_data.cover)
+		DEPLS.Routines.CoverPreview.Initialize(new_coverdata)
 	end
 	
 	-- Initialize storyboard
-	if noteloader_data.storyboard then
+	if DEPLS.StoryboardHandle then
 		AquaShine.Log("livesim2", "Storyboard init")
-		noteloader_data.storyboard:Initialize(DEPLS.StoryboardFunctions)
+		DEPLS.StoryboardHandle:Initialize(DEPLS.StoryboardFunctions)
 	end
 	
 	-- If note style forcing is not enabled, get from config
@@ -690,7 +698,7 @@ function DEPLS.Start(argv)
 	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
 	
 	-- Load unit icons
-	noteloader_data.units = noteloader_data.units or {}
+	local noteloader_units = noteloader_data:GetCustomUnitInformation()
 	local IdolImagePath = {}
 	do
 		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
@@ -700,7 +708,7 @@ function DEPLS.Start(argv)
 		end
 	end
 	for i = 1, 9 do
-		DEPLS.IdolImageData[i][1] = noteloader_data.units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
+		DEPLS.IdolImageData[i][1] = noteloader_units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
 	end
 	
 	-- Load stamina image (bar and number)

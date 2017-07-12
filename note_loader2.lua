@@ -37,6 +37,7 @@ public:
 	
 	/// \brief Get custom unit informmation
 	/// \returns Custom unit information. Index 0 is rightmost (8 is leftmost). Some index may be NULL, but the returned pointer never NULL.
+	/// \note Lua is 1-based, so it should be index 1 is rightmost.
 	virtual Livesim2::Unit*[9] GetCustomUnitInformation();
 	
 	/// \brief Get score information sequence.

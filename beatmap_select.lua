@@ -37,6 +37,7 @@ BeatmapSelect.PageCompositionTable = {
 BeatmapSelect.BeatmapInfoData = {
 	x = 0, y = 0,
 	title = AquaShine.LoadFont("MTLmr3m.ttf", 30),
+	arrangement_info = AquaShine.LoadFont("MTLmr3m.ttf", 16),
 	draw = function(this)
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.setFont(BeatmapSelect.SongNameFont)
@@ -44,7 +45,7 @@ BeatmapSelect.BeatmapInfoData = {
 		love.graphics.print("Combo", 800, 132)
 		love.graphics.print("S\nA\nB\nC", 604, 152)
 		love.graphics.print("Beatmap Type:", 440, 340)
-		love.graphics.print("Difficulty:", 440, 380)
+		love.graphics.print("Difficulty:", 440, 400)
 		love.graphics.print("Audio Preview", 440, 440)
 		
 		if this.beatmap then
@@ -69,18 +70,18 @@ BeatmapSelect.BeatmapInfoData = {
 				love.graphics.print("-\n-\n-\n-", 800, 152)
 			end
 			
-			love.graphics.print(this.beatmap:GetBeatmapTypename(), 600, 340)
+			love.graphics.printf(this.beatmap:GetBeatmapTypename(), 600, 340, 316)
 			
 			if din > 0 then
 				local dir = this.beatmap:GetStarDifficultyInfo(true)
 				
 				if dir ~= din then
-					love.graphics.print(string.format("%d* (Random %d*)", din, dir), 600, 380)
+					love.graphics.print(string.format("%d* (Random %d*)", din, dir), 600, 400)
 				else
-					love.graphics.print(string.format("%d*", din), 600, 380)
+					love.graphics.print(string.format("%d*", din), 600, 400)
 				end
 			else
-				love.graphics.print("Unknown", 600, 380)
+				love.graphics.print("Unknown", 600, 410)
 			end
 			
 			love.graphics.setFont(this.title)
@@ -88,6 +89,17 @@ BeatmapSelect.BeatmapInfoData = {
 			love.graphics.print(name, 421, 81)
 			love.graphics.setColor(255, 255, 255)
 			love.graphics.print(name, 420, 80)
+			
+			if this.beatmap_cover then
+				local w, h = this.beatmap_cover.image:getDimensions()
+				love.graphics.draw(this.beatmap_cover.image, 440, 130, 0, 160 / w, 160 / h)
+				
+				if this.beatmap_cover.arrangement then
+					love.graphics.setColor(0, 0, 0)
+					love.graphics.setFont(this.arrangement_info)
+					love.graphics.printf(this.beatmap_cover.arrangement, 440, 296, 476)
+				end
+			end
 		end
 	end
 }
@@ -304,6 +316,7 @@ function BeatmapSelect.Start(arg)
 				click = function(this)
 					local audio = this.beatmap_info:GetBeatmapAudio()
 					BeatmapSelect.BeatmapInfoData.beatmap = this.beatmap_info
+					BeatmapSelect.BeatmapInfoData.beatmap_cover = this.beatmap_info:GetCoverArt()
 					
 					if BeatmapSelect.BeatmapInfoData.beatmap_song then
 						BeatmapSelect.BeatmapInfoData.beatmap_song:stop()

@@ -20,8 +20,13 @@ local fsw = {
 	read = fileptr.read,
 	write = fileptr.write,
 	seek = fileptr.seek,
-	close = fileptr.close
 }
+
+function ls2.setstreamwrapper(list)
+	fsw.read = assert(list.read)
+	fsw.write = assert(list.write)
+	fsw.seek = assert(list.seek)
+end
 
 ---------------
 -- Utilities --
@@ -133,7 +138,7 @@ end
 
 local function skip_MTDT(stream)
 	fsw.seek(stream, "cur", 2)
-	fsw.seek(string2dwordu(fsw.read(stream, 4)) + 32)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) + 32)
 end
 
 --! @brief Beatmap Millisecond parser
@@ -201,7 +206,7 @@ local function process_BMPM(stream, v2)
 end
 
 local function skip_BMPM(stream)
-	fsw.seek(stream, string2dwordu(fsw.read(stream, 4)) * 12)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) * 12)
 end
 
 --! @brief Beatmap Tick parser
@@ -347,8 +352,8 @@ local function process_BMPT(stream, v2)
 end
 
 local function skip_BMPT(stream)
-	fsw.seek(6)
-	fsw.seek(stream, string2dwordu(fsw.read(stream, 4)) * 12)
+	fsw.seek(stream, "cur", 6)
+	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) * 12)
 end
 
 --! @brief Score value section processing (v1.x only, ignored in v2.0)
@@ -369,7 +374,7 @@ end
 
 --! @brief Lua storyboard section
 --! @param stream The file stream
---! @returns String containing the storyboard
+--! @returns Storyboard Lua script
 local function process_SRYL(stream)
 	local storyboard = readstring(stream)
 	
@@ -420,8 +425,6 @@ end
 --! @param stream The file stream
 --! @returns Filename and the file contents (2 values)
 local function process_DATA(stream)
-	local filename = readstring(stream)
-	
 	return readstring(stream), readstring(stream)
 end
 
@@ -432,7 +435,7 @@ end
 
 --! @brief Returns audio from ADIO section
 --! @param stream The file stream
---! @returns Extension and audio object
+--! @returns Extension, audio object, and if FFmpeg extension is needed (bool)
 local function process_ADIO(stream)
 	local extension = {[0] = "wav", "ogg", "mp3"}
 	local ext = fsw.read(stream, 1):byte()
@@ -443,7 +446,7 @@ local function process_ADIO(stream)
 			local extlen = bit.rshift(ext, 4)
 			local strdata = readstring(stream)
 			
-			return strdata:sub(1, 3), strdata:sub(extlen + 1)
+			return strdata:sub(1, 3), strdata:sub(extlen + 1), true
 		else
 			assert(false, "File not supported")
 		end
@@ -490,7 +493,7 @@ local function skip_COVR(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
-local sections_fourcc = {
+ls2.section_processor = {
 	ADIO = {process_ADIO, skip_ADIO},
 	BIMG = {process_UNIT, skip_UNIT},
 	BMPM = {process_BMPM, skip_BMPM},
@@ -657,18 +660,16 @@ function ls2.loadstream(stream)
 	for i = 1, section_count do
 		local fourcc = fsw.read(stream, 4)
 		
-		assert(sections_fourcc[fourcc], "Unknown section "..fourcc)
+		assert(ls2.section_processor[fourcc], "Unknown section "..fourcc)
 		
-		local sect = sections_fourcc[fourcc]
-		local sect_this = this.sections[sect]
-		
+		local sect_this = this.sections[fourcc]
 		if not(sect_this) then
 			sect_this = {}
-			this.sections[sect] = sect_this
+			this.sections[fourcc] = sect_this
 		end
 		
 		sect_this[#sect_this + 1] = fsw.seek(stream, "cur")
-		sections_fourcc[fourcc][2](stream)	-- Skip
+		ls2.section_processor[fourcc][2](stream)	-- Skip
 	end
 	
 	assert(this.sections.BMPM or this.sections.BMPT, "No beatmap data found")

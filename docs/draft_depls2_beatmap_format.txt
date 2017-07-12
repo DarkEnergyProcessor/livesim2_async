@@ -17,7 +17,7 @@ File information start:
 
 Header: File header
     qword - Header signature. Must be and always be 0x326D69736576696C (string "livesim2")
-    wordu - Amount of sections (including unknown sections)
+    wordu - Amount of sections
     byteu - * bit 0-3: Used background ID (or 0 to use from BIMG section below or from config)
             * bit 4-6: Force note style (1 = old note style; 2 = v5 note style; 0 = no enforcing)
             * bit 7: Live Simulator: 2 Binary Beatmap v2.0? (introduces backward incompatibility changes to some sections)

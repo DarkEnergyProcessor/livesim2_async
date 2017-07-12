@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local AquaShine = AquaShine
+local AquaShine
 local love = love
 local StoryboardBase = require("storyboard_base")
 local LuaStoryboard = {}
@@ -305,6 +305,10 @@ end
 
 function LuaStoryboard.Load(file, export)
 	return LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1), export)
+end
+
+function LuaStoryboard._SetAquaShine(aqs)
+	AquaShine = aqs
 end
 
 return LuaStoryboard

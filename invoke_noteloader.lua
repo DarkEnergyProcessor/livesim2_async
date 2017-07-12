@@ -2,19 +2,15 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local AquaShine = ...
 local NoteConvert = {}
 local JSON = require("JSON")
+local NoteLoader = AquaShine.LoadModule("note_loader2")
 
 function NoteConvert.Start(arg)
-	local NoteLoader = assert(love.filesystem.load("note_loader.lua"))()
-	local _, noteloader_data = pcall(NoteLoader.NoteLoader, arg[1])
+	local noteloader_data = NoteLoader.NoteLoader(assert("beatmap/"..arg[1]))
 	
-	if _ == false then
-		io.stderr:write(noteloader_data)
-	else
-		io.write(JSON:encode(noteloader_data.notes_list))
-	end
-	
+	io.write(JSON:encode(noteloader_data:GetNotesList()))
 	love.event.quit()
 end
 

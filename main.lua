@@ -96,7 +96,10 @@ end
 
 Yohane.Init(love.filesystem.load)
 
+------------------
 -- Touch Effect --
+------------------
+-- TODO: Support multitouch
 local ps = love.graphics.newParticleSystem(AquaShine.LoadImage("assets/flash/ui/live/img/ef_326_003.png"), 1000)
 ps:setSpeed(4, 20)
 ps:setParticleLifetime(0.25, 1)
@@ -128,6 +131,41 @@ AquaShine.SetTouchEffectCallback {
 		love.graphics.draw(ps)
 	end
 }
+
+-------------------------------------------
+-- Live Simulator: 2 binary beatmap init --
+-------------------------------------------
+local ls2 = require("ls2")
+
+-- LOVE File object to be FILE*-like object
+ls2.setstreamwrapper {
+	read = function(stream, val)
+		return (stream:read(assert(val)))
+	end,
+	write = function(stream, data)
+		return stream:write(data)
+	end,
+	seek = function(stream, whence, offset)
+		local set = 0
+		
+		if whence == "cur" then
+			set = stream:tell()
+		elseif whence == "end" then
+			set = stream:getSize()
+		elseif whence ~= "set" then
+			assert(false, "Invalid whence")
+		end
+		
+		stream:seek(set + (offset or 0))
+		return stream:tell()
+	end
+}
+
+--------------------------
+-- Lua Storyboard setup --
+--------------------------
+local LuaStoryboard = require("luastoryboard2")
+LuaStoryboard._SetAquaShine(AquaShine)
 
 ----------------------------
 -- Force Create Directory --

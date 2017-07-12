@@ -180,7 +180,7 @@ end
 
 local function make_seek_callback_mem(file)
 	local filestreamsize = nil
-	local whence_str = {[0] = "set", 1 = "cur", 2 = "end"}
+	local whence_str = {[0] = "set", [1] = "cur", [2] = "end"}
 	local x = function(_unused, pos, whence)
 		local success = false
 		if whence == 0x10000 then
@@ -209,8 +209,6 @@ end
 
 -- Used to free associated resource a.k.a destructor
 local function ffmpeg_data_cleanup(this)
-	AquaShine.Log("AquaShineFFmpeg", "Cleanup %s", tostring(this))
-	
 	if this.SwsCtx ~= nil then
 		swscale.sws_freeContext(this.SwsCtx)
 	end
@@ -259,7 +257,6 @@ function FFmpegExt.LoadVideo(path)
 	AquaShine.Log("AquaShineFFmpeg", "LoadVideo %s", path)
 	-- Load the file with love.filesystem API
 	this.FileStream = assert(love.filesystem.newFile(path, "r"))
-	AquaShine.Log("AquaShineFFmpeg", "LoadVideo %s stream opened", path)
 	this.ReadType, this.ReadFunc = make_read_callback(this.FileStream)
 	this.SeekType, this.SeekFunc = make_seek_callback(this.FileStream)
 	
