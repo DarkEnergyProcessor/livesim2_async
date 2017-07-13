@@ -81,7 +81,7 @@ BeatmapSelect.BeatmapInfoData = {
 					love.graphics.print(string.format("%d*", din), 600, 400)
 				end
 			else
-				love.graphics.print("Unknown", 600, 410)
+				love.graphics.print("Unknown", 600, 400)
 			end
 			
 			love.graphics.setFont(this.title)
@@ -314,6 +314,10 @@ function BeatmapSelect.Start(arg)
 					this:draw_text()
 				end,
 				click = function(this)
+					if BeatmapSelect.BeatmapInfoData.beatmap then
+						BeatmapSelect.BeatmapInfoData.beatmap:ReleaseBeatmapAudio()
+					end
+					
 					local audio = this.beatmap_info:GetBeatmapAudio()
 					BeatmapSelect.BeatmapInfoData.beatmap = this.beatmap_info
 					BeatmapSelect.BeatmapInfoData.beatmap_cover = this.beatmap_info:GetCoverArt()
@@ -322,6 +326,7 @@ function BeatmapSelect.Start(arg)
 						BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
 						BeatmapSelect.BeatmapInfoData.beatmap_song = nil
 					end
+					
 					
 					if audio then
 						BeatmapSelect.BeatmapInfoData.beatmap_song = love.audio.newSource(audio)
@@ -343,6 +348,12 @@ end
 function BeatmapSelect.Draw()
 	BeatmapSelect.MainUIComposition:Draw()
 	BeatmapSelect.CompositionList[BeatmapSelect.Page]:Draw()
+end
+
+function BeatmapSelect.Exit()
+	if BeatmapSelect.BeatmapInfoData.beatmap_song then
+		BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
+	end
 end
 
 function BeatmapSelect.MousePressed(x, y, k, tid)
@@ -387,4 +398,4 @@ function BeatmapSelect.KeyReleased(key)
 	end
 end
 
-return BeatmapSelect
+return BeatmapSelect, "Select Beatmap"

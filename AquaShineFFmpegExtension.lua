@@ -348,9 +348,11 @@ function FFmpegExt.LoadVideo(path)
 	)
 	
 	-- Post init
-	this.CurrentTimer = 0
 	this.Playing = false
+	this.Delay = tonumber(tempfmtctx[0].start_time) / 1000000
 	this.TimeBase = videostream.time_base
+	this.CurrentTimer = -this.Delay
+	this.PresentationTS = 0
 	
 	-- Ready to use
 	return (setmetatable(this, FFmpegExtMt))
@@ -365,7 +367,7 @@ function FFmpegExt.Update(deltaT)
 		local data = obj.FFmpegData
 		obj.CurrentTimer = obj.CurrentTimer + deltaT
 		
-		while obj.PresentationTS == nil or obj.CurrentTimer >= obj.PresentationTS do
+		while obj.CurrentTimer >= obj.PresentationTS do
 			framefinished[0] = 0
 			
 			-- Read the video frame
@@ -376,7 +378,7 @@ function FFmpegExt.Update(deltaT)
 					local effortts = avutil.av_frame_get_best_effort_timestamp(data.FrameVideo)
 					
 					if tostring(effortts) ~= "-9223372036854775808LL" then
-						obj.PresentationTS = tonumber(effortts - data.FmtContext.start_time) / obj.TimeBase.den * obj.TimeBase.num
+						obj.PresentationTS = tonumber(effortts) / obj.TimeBase.den * obj.TimeBase.num - obj.Delay
 					end
 					
 					-- Decode

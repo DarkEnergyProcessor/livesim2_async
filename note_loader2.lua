@@ -49,16 +49,26 @@ public:
 	/// \returns Score information array (or NULL if no score information present)
 	virtual unsigned int* GetScoreInformation();
 	
-	virtual Livesim2::ComboInfo** GetComboInformation();
+	virtual unsigned int* GetComboInformation();
 	virtual Livesim2::Storyboard* GetStoryboard();
 	
 	/// \brief Retrieves background ID
-	/// \returns -1, if custom background present, 0 if no background ID present, otherwise the background ID
+	/// \returns -1, if custom background present, 0 if no background ID (or video) present, otherwise the background ID
 	virtual int GetBackgroundID();
 	
 	/// \brief Retrieves custom background
 	/// \returns NULL if custom background not present, otherwise handle to custom background object
 	virtual Livesim2::Background* GetCustomBackground();
+	
+	/// Returns the video handle or NULL if video not found
+	virtual Livesim2::Video* GetVideoBackground();
+	
+	/// Returns score per tap or 0 to use from config
+	virtual int GetScorePerTap();
+	/// Returns stamina or 0 to use from config
+	virtual char GetStamina();
+	/// Returns: 1 = old, 2 = v5, 0 = no enforcing
+	virtual int GetNotesStyle();
 	
 	virtual Livesim2::SoundData* GetBeatmapAudio();
 	virtual Livesim2::SoundData* GetLiveClearSound();
@@ -69,7 +79,6 @@ public:
 	virtual int GetStarDifficultyInfo(bool random);
 	
 	virtual void ReleaseBeatmapAudio();
-	virtual void SetZIPMountPath(const char* path);
 	virtual void Release();
 };
 ]]
@@ -98,30 +107,39 @@ function NoteLoader._LoadDefaultAudioFromFilename(file)
 	return AquaShine.LoadAudio("audio/"..NoteLoader._GetBasenameWOExt(file)..".wav")
 end
 
+function NoteLoader._UnzipOnGone(zip_path)
+	local x = newproxy(true)
+	local y = getmetatable(x)
+	
+	y.__gc = function()
+		AquaShine.MountZip(zip_path, nil)
+	end
+	
+	return x
+end
+
 function NoteLoader.NoteLoader(file)
 	local project_mode = love.filesystem.isDirectory(file)
 	local destination = file
+	local project_destination = "temp/.beatmap/"..file:gsub("(.*/)(.*)", "%2")
 	local zip_path
 	
-	if select(2, file:find(".zip", 1, true)) == #file then
-		-- ZIP mounting happends implictly, so beatmap loader doesn't need to worry about it
-		-- But beatmap loader responsible to unmount it if necessary
-		destination = "temp/.beatmap/"..file:gsub("(.*/)(.*)", "%2")
+	if not(project_mode) and AquaShine.MountZip(file, project_destination) then
+		-- File is mountable. Project-based beatmap.
 		project_mode = true
+		destination = project_destination
 		zip_path = file
-		
-		assert(AquaShine.MountZip(file, destination), "Failed to open ZIP")
 	end
 	
 	if project_mode then
 		-- Project folder loading
 		for i = 1, #NoteLoader.ProjectLoaders do
 			local ldr = NoteLoader.ProjectLoaders[i]
-			local _, nobj = pcall(ldr.LoadNoteFromFilename, destination)
+			local success, nobj = pcall(ldr.LoadNoteFromFilename, destination)
 			
-			if _ then
+			if success then
 				if zip_path then
-					nobj:SetZIPMountPath(file)
+					nobj._zipobj = NoteLoader._UnzipOnGone(zip_path)
 				end
 				
 				return nobj
@@ -137,9 +155,9 @@ function NoteLoader.NoteLoader(file)
 		-- File loading
 		for i = 1, #NoteLoader.FileLoaders do
 			local ldr = NoteLoader.FileLoaders[i]
-			local _, nobj = pcall(ldr.LoadNoteFromFilename, destination)
+			local success, nobj = pcall(ldr.LoadNoteFromFilename, destination)
 			
-			if _ then
+			if success then
 				return nobj
 			end
 			
@@ -202,15 +220,18 @@ end
 
 NoteLoaderNoteObject.GetStarDifficultyInfo = zeroret
 NoteLoaderNoteObject.GetBackgroundID = zeroret
+NoteLoaderNoteObject.GetScorePerTap = zeroret
+NoteLoaderNoteObject.GetStamina = zeroret
+NoteLoaderNoteObject.GetNotesStyle = zeroret
 
 NoteLoaderNoteObject.GetCoverArt = nilret
 NoteLoaderNoteObject.GetScoreInformation = nilret
 NoteLoaderNoteObject.GetComboInformation = nilret
 NoteLoaderNoteObject.GetStoryboard = nilret
 NoteLoaderNoteObject.GetCustomBackground = nilret
+NoteLoaderNoteObject.GetVideoBackground = nilret
 NoteLoaderNoteObject.GetBeatmapAudio = nilret
 NoteLoaderNoteObject.GetLiveClearSound = nilret
-NoteLoaderNoteObject.SetZIPMountPath = nilret
 NoteLoaderNoteObject.ReleaseBeatmapAudio = nilret
 NoteLoaderNoteObject.Release = nilret
 

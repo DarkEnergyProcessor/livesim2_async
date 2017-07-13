@@ -255,13 +255,13 @@ end
 --! @returns Video handle or `nil` plus error message on failure
 --! @note Audio stream doesn't loaded
 function AquaShine.LoadVideo(path)
-	local _, a
+	local s, a
 	
 	if AquaShine.FFmpegExt and (path:sub(-4) == ".ogg" or path:sub(-4) == ".ogv") or not(AquaShine.FFmpegExt) then
 		AquaShine.Log("AquaShine", "LoadVideo love.graphics.newVideo %s", path)
-		local _, a = pcall(love.graphics.newVideo, path)
+		s, a = pcall(love.graphics.newVideo, path)
 	
-		if _ then
+		if s then
 			AquaShine.Log("AquaShine", "LoadVideo love.graphics.newVideo %s success", path)
 			return a
 		end
@@ -270,14 +270,15 @@ function AquaShine.LoadVideo(path)
 	-- Possible incompatible format. Load with FFmpegExt if available
 	if AquaShine.FFmpegExt then
 		AquaShine.Log("AquaShine", "LoadVideo FFmpegExt %s", path)
-		_, a = pcall(AquaShine.FFmpegExt.LoadVideo, path)
+		s, a = pcall(AquaShine.FFmpegExt.LoadVideo, path)
 		
-		if _ then
+		if s then
 			AquaShine.Log("AquaShine", "LoadVideo FFmpegExt %s success", path)
 			return a
 		end
 	end
 	
+	print(a)
 	return nil, a
 end
 
@@ -472,28 +473,25 @@ end
 ----------------------------------------------
 function AquaShine.SetScissor(x, y, width, height)
 	if not(x and y and width and height) then
-		love.graphics.setScissor()
-		return
+		return love.graphics.setScissor()
 	end
 	
-	x, y = AquaShine.CalculateTouchPosition(x, y)
-	
 	love.graphics.setScissor(
-		AquaShine.LogicalScale.OffX + x, AquaShine.LogicalScale.OffY + y,
+		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
 		width * AquaShine.LogicalScale.ScaleOverall,
 		height * AquaShine.LogicalScale.ScaleOverall
 	)
 end
 
 function AquaShine.ClearScissor()
-	love.graphics.setScissor()
+	return love.graphics.setScissor()
 end
 
 function AquaShine.IntersectScissor(x, y, width, height)
-	x, y = AquaShine.CalculateTouchPosition(x, y)
-	
 	love.graphics.intersectScissor(
-		AquaShine.LogicalScale.OffX + x, AquaShine.LogicalScale.OffY + y,
+		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
 		width * AquaShine.LogicalScale.ScaleOverall,
 		height * AquaShine.LogicalScale.ScaleOverall
 	)

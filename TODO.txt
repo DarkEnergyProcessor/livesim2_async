@@ -28,7 +28,7 @@ v2.0
 - Actual unit live skill				
 - Album art for SIFTrain beatmap			
 - Decrease sensitivity for swing note accuracy		
-- LS2 v2.0						WIP
+- LS2 v2.0						OK
 - Removal of Playground TEXB Loader (Shelsha)		OK
 - Removal of test beatmap				OK
 - Removal of SetNotesSpeed				OK

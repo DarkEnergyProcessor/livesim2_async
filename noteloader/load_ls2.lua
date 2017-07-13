@@ -172,6 +172,15 @@ function LS2Beatmap.GetScoreInformation(this)
 	return this.score
 end
 
+function LS2Beatmap.GetComboInformation(this)
+	-- Combo information only supported in v2.0 beatmap format
+	if this.version_2 then
+		return this:_GetMetadata().combo
+	end
+	
+	return nil
+end
+
 function LS2Beatmap.GetStoryboard(this)
 	if this.ls2.sections.SRYL then
 		this.file:seek(this.ls2.sections.SRYL[1])
@@ -195,6 +204,44 @@ function LS2Beatmap.GetStoryboard(this)
 	end
 	
 	return nil
+end
+
+function LS2Beatmap.GetBackgroundID(this)
+	if this.ls2.sections.BIMG then
+		return -1
+	else
+		return this.ls2.background_id
+	end
+end
+
+function LS2Beatmap.GetCustomBackground(this)
+	if not(this.background_loaded) and this.ls2.sections.BIMG then
+		local backgrounds = {}
+		
+		for _, v in ipairs(this.ls2.sections.BIMG) do
+			this.file:seek(v)
+			local idx, img = ls2.section_processor.BIMG[1](this.file, this.ls2.version_2)
+			
+			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img))
+		end
+		
+		this.background_loaded = true
+		this.background = backgrounds
+	end
+	
+	return this.background
+end
+
+function LS2Beatmap.GetScorePerTap(this)
+	return this.ls2.score_tap or 0
+end
+
+function LS2Beatmap.GetStamina(this)
+	return this.ls2.stamina_display or 0
+end
+
+function LS2Beatmap.GetNotesStyle(this)
+	return this.ls2.note_style
 end
 
 function LS2Beatmap.GetBeatmapAudio(this)
@@ -233,6 +280,21 @@ function LS2Beatmap.GetLiveClearSound(this)
 	end
 	
 	return nil
+end
+
+function LS2Beatmap.GetStarDifficultyInfo(this, rand)
+	local metadata = this:_GetMetadata()
+	
+	return rand and metadata.random_star or metadata.star or 0
+end
+
+function LS2Beatmap.ReleaseBeatmapAudio(this)
+	this.audio_loaded, this.audio = false, nil
+end
+
+function LS2Beatmap.Release(this)
+	this.ls2 = nil
+	this.file:close()
 end
 
 return LS2Loader

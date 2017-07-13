@@ -465,6 +465,7 @@ function DEPLS.DrawDebugInfo()
 	local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
 	local text = string.format([[
 %d FPS
+RENDERER = %s %s
 NOTE_SPEED = %d ms
 ELAPSED_TIME = %d ms
 SPEED_FACTOR = %.2f%%
@@ -478,8 +479,8 @@ REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d
 GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]		, love.timer.getFPS(), DEPLS.NotesSpeed, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
-		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
+]]		, love.timer.getFPS(), AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], DEPLS.NotesSpeed, DEPLS.ElapsedTime
+		, DEPLS.PlaySpeed * 100, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
 		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 	love.graphics.setFont(DEPLS.MTLmr3m)
@@ -600,7 +601,6 @@ function DEPLS.Start(argv)
 		DEPLS.BackgroundImage[2][1] = cbackground[2]
 		DEPLS.BackgroundImage[3][1] = cbackground[3]
 		DEPLS.BackgroundImage[4][1] = cbackground[4]
-		
 		custom_background = true
 	end
 	
@@ -627,6 +627,14 @@ function DEPLS.Start(argv)
 	if DEPLS.StoryboardHandle then
 		AquaShine.Log("livesim2", "Storyboard init")
 		DEPLS.StoryboardHandle:Initialize(DEPLS.StoryboardFunctions)
+	else
+		local video = noteloader_data:GetVideoBackground()
+		
+		if video then
+			-- We have video. Letterbox the video accordingly
+			local w, h = video:getDimensions()
+			DEPLS.VideoBackgroundData = {video, w * 0.5, h * 0.5, math.max(960 / w, 640 / h)}
+		end
 	end
 	
 	-- If note style forcing is not enabled, get from config
@@ -803,6 +811,10 @@ function DEPLS.Update(deltaT)
 			audioplaying = true
 		end
 		
+		if DEPLS.VideoBackgroundData and not(DEPLS.VideoBackgroundData[5]) then
+			DEPLS.VideoBackgroundData[1]:play()
+		end
+		
 		-- Update note
 		DEPLS.NoteManager.Update(deltaT)
 		
@@ -853,8 +865,18 @@ function DEPLS.Draw(deltaT)
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Draw(deltaT)
+	elseif DEPLS.VideoBackgroundData and AllowedDraw then
+		-- Draw video if available
+		love.graphics.draw(
+			DEPLS.VideoBackgroundData[1],
+			480, 320, 0,
+			DEPLS.VideoBackgroundData[4],
+			DEPLS.VideoBackgroundData[4],
+			DEPLS.VideoBackgroundData[2],
+			DEPLS.VideoBackgroundData[3]
+		)
 	else
-		-- No storyboard. Draw background
+		-- No storyboard & video still not allowed to draw. Draw background
 		local BackgroundImage = DEPLS.BackgroundImage
 		
 		draw(

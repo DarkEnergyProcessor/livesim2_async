@@ -9,10 +9,7 @@ local NoteImageLoader = {}
 
 local function make_cache_table(link)
 	return setmetatable({}, {__index = function(_, var)
-		local x = AquaShine.LoadImage(link[var])
-		
-		_[var] = x
-		return x
+		return AquaShine.LoadImage(link[var])
 	end})
 end
 

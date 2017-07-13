@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+-- As of v2.0, AquaShine no longer in global namespace and must be set separately
 local AquaShine
 local love = love
 local StoryboardBase = require("storyboard_base")
@@ -307,6 +308,7 @@ function LuaStoryboard.Load(file, export)
 	return LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1), export)
 end
 
+-- As of v2.0, AquaShine no longer in global namespace and must be set in main.lua
 function LuaStoryboard._SetAquaShine(aqs)
 	AquaShine = aqs
 end

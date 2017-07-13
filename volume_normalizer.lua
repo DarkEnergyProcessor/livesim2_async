@@ -59,6 +59,8 @@ local ls = require("love.sound")
 local SoundData = debug.getregistry().SoundData
 local sd, start, stop, peak = ...
 
+if peak >= 1/32767 then return end
+
 for i = start, stop do
 	SoundData.setSample(sd, i, SoundData.getSample(sd, i) * peak)
 end

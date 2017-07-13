@@ -4,7 +4,7 @@
 
 local AquaShine = ...
 local NoteLoader = AquaShine.LoadModule("note_loader2")
-local DEPLS = assert(love.filesystem.load("livesim.lua"))(AquaShine)
+local DEPLS, a = assert(love.filesystem.load("livesim.lua"))(AquaShine)
 local DEPLS_Start = DEPLS.Start
 
 function DEPLS.Start(arg)
@@ -14,4 +14,4 @@ function DEPLS.Start(arg)
 	return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader("beatmap/"..beatmap), "Beatmap not found: "..beatmap)})
 end
 
-return DEPLS
+return DEPLS, a
