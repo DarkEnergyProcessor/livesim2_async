@@ -75,12 +75,15 @@ function NoteBombEffect:Draw()
 	self.flash:draw(self.x, self.y)
 end
 
-local function internal_simulnote_check(timing_sec, i)
+local function internal_simulnote_check(timing_sec, i, is_swing)
 	local j = 1
 	local notedata = Note[i][j]
 	
 	while notedata ~= nil do
-		if floor(notedata.ZeroAccuracyTime) == floor(timing_sec) then
+		if
+			floor(notedata.ZeroAccuracyTime) == floor(timing_sec) and
+			not(notedata.SlideNote and is_swing)
+		then
 			notedata.SimulNote = true
 			return true
 		end
@@ -96,24 +99,20 @@ end
 
 --! @brief Check if there's another note with same timing
 --! @param timing_sec The note timing to check
---! @param multiply1000 Is the `timing_sec` is in seconds?
+--! @param swing Is the note we're comparing to is swing note?
 --! @returns `true` if there's one, false otherwise
 --! @note This function modifies the note object that already queued if necessary
-local function CheckSimulNote(timing_sec, multiply1000)
-	if multiply1000 then
-		timing_sec = timing_sec * 1000
-	end
-	
+local function CheckSimulNote(timing_sec, swing)
 	return
-		internal_simulnote_check(timing_sec, 1) or
-		internal_simulnote_check(timing_sec, 2) or
-		internal_simulnote_check(timing_sec, 3) or
-		internal_simulnote_check(timing_sec, 4) or
-		internal_simulnote_check(timing_sec, 5) or
-		internal_simulnote_check(timing_sec, 6) or
-		internal_simulnote_check(timing_sec, 7) or
-		internal_simulnote_check(timing_sec, 8) or
-		internal_simulnote_check(timing_sec, 9)
+		internal_simulnote_check(timing_sec, 1, swing) or
+		internal_simulnote_check(timing_sec, 2, swing) or
+		internal_simulnote_check(timing_sec, 3, swing) or
+		internal_simulnote_check(timing_sec, 4, swing) or
+		internal_simulnote_check(timing_sec, 5, swing) or
+		internal_simulnote_check(timing_sec, 6, swing) or
+		internal_simulnote_check(timing_sec, 7, swing) or
+		internal_simulnote_check(timing_sec, 8, swing) or
+		internal_simulnote_check(timing_sec, 9, swing)
 end
 
 local SingleNoteObject = {}
@@ -126,6 +125,8 @@ local SlideNoteList = {}
 local function NewNoteObject(note_data, offset)
 	offset = offset or 0
 	
+	local note_speed = (note_data.speed or (DEPLS.NotesSpeed * 0.001)) * 1000
+	local note_speed_limit = math.max(note_speed, 800)
 	local noteobj = {
 		ZeroAccuracyTime = note_data.timing_sec * 1000 + offset,
 		Attribute = tonumber(note_data.notes_attribute),
@@ -136,7 +137,16 @@ local function NewNoteObject(note_data, offset)
 			Good = DEPLS.Sound.GoodTap:clone(),
 			Bad = DEPLS.Sound.BadTap:clone(),
 		},
-		FirstCircle = {480, 160}
+		NotesSpeed = note_speed,
+		FirstCircle = {480, 160},
+		NoteAccuracy = {
+			DEPLS.NoteAccuracy[1] / 325 * note_speed_limit,
+			DEPLS.NoteAccuracy[2] / 325 * note_speed_limit,
+			DEPLS.NoteAccuracy[3] / 325 * note_speed_limit,
+			DEPLS.NoteAccuracy[4] / 325 * note_speed_limit,
+			DEPLS.NoteAccuracy[5] / 325 * note_speed_limit,
+			InvV = note_speed_limit / 400
+		}
 	}
 	local idolpos = assert(DEPLS.IdolPosition[note_data.position], "Invalid idol position")
 	local note_effect = note_data.effect % 10
@@ -145,11 +155,6 @@ local function NewNoteObject(note_data, offset)
 	noteobj.NoteposDiff = {idolpos[1] - 416, idolpos[2] - 96}
 	noteobj.CenterIdol = {idolpos[1] + 64, idolpos[2] + 64}
 	noteobj.Direction = angle_from(480, 160, noteobj.CenterIdol[1], noteobj.CenterIdol[2])
-	
-	-- Simultaneous check
-	if CheckSimulNote(noteobj.ZeroAccuracyTime) then
-		noteobj.SimulNote = true
-	end
 	
 	-- Swing note
 	noteobj.SlideNote = (note_data.effect - 1) / 10 >= 1 and note_effect < 4
@@ -160,6 +165,11 @@ local function NewNoteObject(note_data, offset)
 		SlideNoteList[#SlideNoteList + 1] = newnotedata
 		newnotedata.noteobj = noteobj
 		newnotedata.index = Note.TotalNotes
+	end
+	
+	-- Simultaneous check
+	if CheckSimulNote(noteobj.ZeroAccuracyTime, noteobj.SlideNote) then
+		noteobj.SimulNote = true
 	end
 	
 	if note_effect == 2 then
@@ -216,17 +226,17 @@ end
 --! @param deltaT Delta-time between frame, in milliseconds
 function SingleNoteObject.Update(this, deltaT)
 	-- deltaT is in milliseconds
-	local NotesSpeed = DEPLS.NotesSpeed
+	local NotesSpeed = this.NotesSpeed
 	local ElapsedTime = DEPLS.ElapsedTime - this.ZeroAccuracyTime + NotesSpeed
 	
 	this.FirstCircle[1] = this.NoteposDiff[1] * (ElapsedTime / NotesSpeed) + 480
 	this.FirstCircle[2] = this.NoteposDiff[2] * (ElapsedTime / NotesSpeed) + 160
-	this.CircleScale = math.min(ElapsedTime / DEPLS.NotesSpeed, 1)
+	this.CircleScale = math.min(ElapsedTime / NotesSpeed, 1)
 	
 	-- If it's not pressed, and it's beyond miss range, make it miss
-	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = this.NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 
-	if ElapsedTime >= DEPLS.NotesSpeed and notedistance >= NoteAccuracy[5][2] then
+	if ElapsedTime >= NotesSpeed and notedistance >= this.NoteAccuracy[5] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
@@ -278,7 +288,7 @@ function SingleNoteObject.Draw(this)
 end
 
 function SingleNoteObject.SetTouchID(this, touchid)
-	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = this.NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 	
 	if DEPLS.AutoPlay then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
@@ -311,8 +321,8 @@ function SingleNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= NoteAccuracy[5][2] then
-		if notedistance <= NoteAccuracy[1][2] then
+	if notedistance <= this.NoteAccuracy[5] then
+		if notedistance <= this.NoteAccuracy[1] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -321,7 +331,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= NoteAccuracy[2][2] then
+		elseif notedistance <= this.NoteAccuracy[2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -330,7 +340,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= NoteAccuracy[3][2] then
+		elseif notedistance <= this.NoteAccuracy[3] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8
@@ -385,7 +395,7 @@ end
 --! @param deltaT Delta-time between frame, in milliseconds
 function LongNoteObject.Update(this, deltaT)
 	local direction = this.Direction
-	local NotesSpeed = DEPLS.NotesSpeed
+	local NotesSpeed = this.NotesSpeed
 	local ElapsedTime = DEPLS.ElapsedTime - this.ZeroAccuracyTime + NotesSpeed
 	
 	if this.TouchID == nil then
@@ -405,9 +415,9 @@ function LongNoteObject.Update(this, deltaT)
 		local cmp2 = this.TouchID and NotesSpeed + this.ZeroAccuracyEndNote or NotesSpeed
 		
 		if ElapsedTime >= cmp2 then
-			local notedistance = NoteAccuracy.InvV * distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
+			local notedistance = this.NoteAccuracy.InvV * distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
 			
-			if notedistance > NoteAccuracy[5][2] then
+			if notedistance > this.NoteAccuracy[5] then
 				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
@@ -525,7 +535,7 @@ end
 --! @param this NoteObject
 --! @param touchid Unique touch identification which needs to be same on release
 function LongNoteObject.SetTouchID(this, touchid)
-	local notedistance = NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local notedistance = this.NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
 	
 	if DEPLS.AutoPlay then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
@@ -554,8 +564,8 @@ function LongNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= NoteAccuracy[5][2] then
-		if notedistance <= NoteAccuracy[1][2] then
+	if notedistance <= this.NoteAccuracy[5] then
+		if notedistance <= this.NoteAccuracy[1] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -564,7 +574,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= NoteAccuracy[2][2] then
+		elseif notedistance <= this.NoteAccuracy[2] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -573,7 +583,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= NoteAccuracy[3][2] then
+		elseif notedistance <= this.NoteAccuracy[3] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8
@@ -616,11 +626,11 @@ end
 function LongNoteObject.UnsetTouchID(this, touchid)
 	if this.TouchID ~= touchid then return end
 	
-	local notedistance = NoteAccuracy.InvV * distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
+	local notedistance = this.NoteAccuracy.InvV * distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
 	local is_miss = false
 	
 	-- Check if perfect
-	if DEPLS.AutoPlay or notedistance <= NoteAccuracy[1][2] then
+	if DEPLS.AutoPlay or notedistance <= this.NoteAccuracy[1] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 		this.ScoreMultipler2 = 1
 		Note.Perfect = Note.Perfect + 1
@@ -629,7 +639,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 			this.Audio2.Perfect:play()
 			NoteSoundAccumulationState[1] = true
 		end
-	elseif notedistance <= NoteAccuracy[2][2] then
+	elseif notedistance <= this.NoteAccuracy[2] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 		this.ScoreMultipler2 = 0.88
 		Note.Great = Note.Great + 1
@@ -638,7 +648,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 			this.Audio2.Great:play()
 			NoteSoundAccumulationState[2] = true
 		end
-	elseif notedistance <= NoteAccuracy[3][2] then
+	elseif notedistance <= this.NoteAccuracy[3] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 		DEPLS.Routines.ComboCounter.Reset = true
 		this.ScoreMultipler2 = 0.8
@@ -648,7 +658,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 			this.Audio2.Good:play()
 			NoteSoundAccumulationState[3] = true
 		end
-	elseif notedistance <= NoteAccuracy[4][2] then
+	elseif notedistance <= this.NoteAccuracy[4] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Bad
 		DEPLS.Routines.ComboCounter.Reset = true
 		this.ScoreMultipler2 = 0.4
@@ -790,7 +800,7 @@ function Note.Update(deltaT)
 		local j = 1
 		local noteobj = Note[i][j]
 		
-		while noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed do
+		while noteobj and ElapsedTime >= noteobj.ZeroAccuracyTime - noteobj.NotesSpeed do
 			noteobj:Update(deltaT)
 			
 			-- If autoplay, make it always perfect
@@ -839,7 +849,7 @@ function Note.Draw()
 			local noteobj = Note[i][j]
 			
 			-- Only update if it should be spawned
-			if ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
+			if ElapsedTime >= noteobj.ZeroAccuracyTime - noteobj.NotesSpeed then
 				Note[i][j]:Draw()
 			else
 				break
@@ -900,7 +910,7 @@ function Note.SetTouch(pos, touchid, release, previous)
 	
 	Note.SetTouch(previous, touchid, true)
 	
-	if ElapsedTime >= noteobj.ZeroAccuracyTime - DEPLS.NotesSpeed then
+	if ElapsedTime >= noteobj.ZeroAccuracyTime - noteobj.NotesSpeed then
 		noteobj:SetTouchID(touchid)
 		
 		if noteobj.Delete then

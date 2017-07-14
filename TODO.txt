@@ -19,7 +19,7 @@ v2.0
 - Unit creation						
 - NoteLoader2 (metadata loading, beatmap verification)	OK (core, TODO: Loaders)
 - Hidden note and sudden note				
-- Individual note speed					
+- Individual note speed					OK
 - Live Show! Failed					
 - Pause							
 - Adjustable combo display size				

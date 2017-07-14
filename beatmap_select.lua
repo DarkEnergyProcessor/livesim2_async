@@ -44,9 +44,9 @@ BeatmapSelect.BeatmapInfoData = {
 		love.graphics.print("Score", 620, 132)
 		love.graphics.print("Combo", 800, 132)
 		love.graphics.print("S\nA\nB\nC", 604, 152)
-		love.graphics.print("Beatmap Type:", 440, 340)
-		love.graphics.print("Difficulty:", 440, 400)
-		love.graphics.print("Audio Preview", 440, 440)
+		love.graphics.print("Beatmap Type:", 440, 330)
+		love.graphics.print("Difficulty:", 440, 380)
+		love.graphics.print("Audio Preview", 440, 480)
 		
 		if this.beatmap then
 			local name = this.beatmap:GetName()
@@ -70,18 +70,18 @@ BeatmapSelect.BeatmapInfoData = {
 				love.graphics.print("-\n-\n-\n-", 800, 152)
 			end
 			
-			love.graphics.printf(this.beatmap:GetBeatmapTypename(), 600, 340, 316)
+			love.graphics.printf(this.beatmap:GetBeatmapTypename(), 600, 330, 316)
 			
 			if din > 0 then
 				local dir = this.beatmap:GetStarDifficultyInfo(true)
 				
 				if dir ~= din then
-					love.graphics.print(string.format("%d* (Random %d*)", din, dir), 600, 400)
+					love.graphics.print(string.format("%d\226\152\134 (Random %d\226\152\134)", din, dir), 600, 380)
 				else
-					love.graphics.print(string.format("%d*", din), 600, 400)
+					love.graphics.print(string.format("%d\226\152\134", din), 600, 380)
 				end
 			else
-				love.graphics.print("Unknown", 600, 400)
+				love.graphics.print("Unknown", 600, 380)
 			end
 			
 			love.graphics.setFont(this.title)
@@ -104,7 +104,7 @@ BeatmapSelect.BeatmapInfoData = {
 	end
 }
 BeatmapSelect.AutoplayTick = {
-	x = 440, y = 502,
+	x = 440, y = 520,
 	w = 24, h = 24,
 	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
 	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
@@ -127,7 +127,7 @@ BeatmapSelect.AutoplayTick = {
 	end
 }
 BeatmapSelect.RandomTick = {
-	x = 440, y = 538,
+	x = 440, y = 556,
 	w = 24, h = 24,
 	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
 	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
@@ -203,7 +203,7 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 	BeatmapSelect.AutoplayTick,
 	BeatmapSelect.RandomTick,
 	{
-		x = 596, y = 430, w = 108, h = 43.5,
+		x = 596, y = 470, w = 108, h = 43.5,
 		buttons = {AquaShine.LoadImage(
 			"assets/image/ui/button_play.png",
 			"assets/image/ui/button_play_se.png",

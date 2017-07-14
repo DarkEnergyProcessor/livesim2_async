@@ -293,7 +293,6 @@ function LS2Beatmap.ReleaseBeatmapAudio(this)
 end
 
 function LS2Beatmap.Release(this)
-	this.ls2 = nil
 	this.file:close()
 end
 

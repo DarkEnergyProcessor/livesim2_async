@@ -311,6 +311,8 @@ end
 
 --! @brief Stripes the directory and returns only the filename
 function AquaShine.Basename(file)
+	if not(file) then return end
+	
 	local _ = file:reverse()
 	return _:sub(1, (_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
 end

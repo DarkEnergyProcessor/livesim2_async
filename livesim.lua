@@ -47,7 +47,7 @@ local DEPLS = {
 		{nil, 255}, {nil, 255}, {nil, 255}
 	},
 	MinimalEffect = nil,		-- True means decreased dynamic effects
-	NoteAccuracy = {{16, nil}, {40, nil}, {64, nil}, {112, nil}, {128, nil}},	-- Note accuracy
+	NoteAccuracy = {16, 40, 64, 112, 128},	-- Note accuracy
 	NoteManager = nil,
 	NoteLoader = nil,
 	NoteRandomized = false,
@@ -639,7 +639,8 @@ function DEPLS.Start(argv)
 	
 	-- If note style forcing is not enabled, get from config
 	if not(DEPLS.ForceNoteStyle) then
-		DEPLS.ForceNoteStyle = noteloader_data.note_style or AquaShine.LoadConfig("NOTE_STYLE", 1)
+		local ns = noteloader_data:GetNotesStyle()
+		DEPLS.ForceNoteStyle = ns > 0 and ns or AquaShine.LoadConfig("NOTE_STYLE", 1)
 	end
 	
 	-- Add to note manager
@@ -651,12 +652,6 @@ function DEPLS.Start(argv)
 		end
 	end
 	DEPLS.NoteManager.InitializeImage()
-	
-	-- Calculate note accuracy
-	for i = 1, 5 do
-		DEPLS.NoteAccuracy[i][2] = DEPLS.NoteAccuracy[i][1] / 310 * math.max(DEPLS.NotesSpeed, 800)
-	end
-	DEPLS.NoteAccuracy.InvV = math.max(DEPLS.NotesSpeed, 800) / 400
 	
 	-- Initialize flash animation
 	DEPLS.LiveShowCleared:setMovie("ef_311")
@@ -777,6 +772,9 @@ function DEPLS.Start(argv)
 	
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
+	
+	-- Free note object
+	DEPLS.NoteLoaderObject = noteloader_data
 end
 
 -- Used internally
@@ -1058,6 +1056,7 @@ function DEPLS.KeyReleased(key)
 	elseif key == "backspace" then
 		-- Restart
 		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
+		DEPLS.NoteLoaderObjectNoRelease = true
 	elseif key == "lshift" then
 		DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 	elseif key == "lctrl" then
@@ -1088,6 +1087,11 @@ function DEPLS.Exit()
 	-- Cleanup storyboard
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Cleanup()
+	end
+	
+	if not(DEPLS.NoteLoaderObjectNoRelease) then
+		DEPLS.NoteLoaderObject:ReleaseBeatmapAudio()
+		DEPLS.NoteLoaderObject:Release()
 	end
 end
 
