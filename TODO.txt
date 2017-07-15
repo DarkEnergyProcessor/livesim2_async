@@ -17,7 +17,7 @@ v1.1.3
 v2.0
 - FFmpeg extension					OK
 - Unit creation						
-- NoteLoader2 (metadata loading, beatmap verification)	OK (core, TODO: Loaders)
+- NoteLoader2 (metadata loading, beatmap verification)	OK
 - Hidden note and sudden note				
 - Individual note speed					OK
 - Live Show! Failed					

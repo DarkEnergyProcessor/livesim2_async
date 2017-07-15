@@ -1,4 +1,5 @@
--- Live Simulator: 2, enhanced version of DEPLS!
+-- Live Simulator: 2
+-- High-performance LL!SIF Live Simulator
 -- See copyright notice in main.lua
 
 local love = love

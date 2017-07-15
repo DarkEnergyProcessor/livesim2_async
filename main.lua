@@ -24,8 +24,8 @@
 --]]---------------------------------------------------------------------------
 
 -- Version
-DEPLS_VERSION = "2.0-20170701"
-DEPLS_VERSION_NUMBER = 01010402	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-beta1"
+DEPLS_VERSION_NUMBER = 01010501	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 ----------------------
 -- AquaShine loader --
