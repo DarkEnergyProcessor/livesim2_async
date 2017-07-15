@@ -347,7 +347,10 @@ end
 
 function BeatmapSelect.Draw()
 	BeatmapSelect.MainUIComposition:Draw()
-	BeatmapSelect.CompositionList[BeatmapSelect.Page]:Draw()
+	
+	if #BeatmapSelect.CompositionList > 0 then
+		BeatmapSelect.CompositionList[BeatmapSelect.Page]:Draw()
+	end
 end
 
 function BeatmapSelect.Exit()

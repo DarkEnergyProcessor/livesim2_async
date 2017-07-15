@@ -154,7 +154,7 @@ function DEPLSBeatmap.GetBackgroundID(this)
 	
 	local bgidname = this.project_dir.."/background.txt"
 	if not(this.bgid_loaded) and love.filesystem.isFile(bgidname) then
-		this.bgid = tonumber(love.filesystem.read(bgidname))
+		this.bgid = tonumber((love.filesystem.read(bgidname)))
 		this.bgid_loaded = true
 	end
 	
@@ -181,12 +181,12 @@ function DEPLSBeatmap.GetCustomBackground(this)
 				
 				if not(this.background[1] and this.background[2]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain left or right part). Removed")
-					this.backgound[1], this.background[2] = nil, nil
+					this.background[1], this.background[2] = nil, nil
 				end
 				
 				if not(this.background[3] and this.background[4]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain top or bottom part). Removed")
-					this.backgound[3], this.background[4] = nil, nil
+					this.background[3], this.background[4] = nil, nil
 				end
 				
 				break

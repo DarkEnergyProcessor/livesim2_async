@@ -15,14 +15,14 @@ if AquaShine.OperatingSystem == "iOS" or has_ffi == false then
 elseif AquaShine.OperatingSystem == "Android" then
 	-- We have to find our "internal" save directory at first
 	-- so we can determine our "lib" dir
-	-- This assume external storage mode is enabled
+	-- This assume external storage mode is enabled. If not, edit accordingly
 	love.filesystem._setAndroidSaveExternal(false)
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 	
 	local lib_dir = love.filesystem.getSaveDirectory().."/../../../lib"
 	
 	-- Reset back to external storage mode
-	love.filesystem._setAndroidSaveExternal(false)
+	love.filesystem._setAndroidSaveExternal(true)
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 	
 	function load_ffmpeg_library(libname, ver)

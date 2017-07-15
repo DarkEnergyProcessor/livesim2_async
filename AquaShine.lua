@@ -685,26 +685,27 @@ end
 -- Inputs
 function love.mousepressed(x, y, button, istouch)
 	if istouch == true then return end
+	x, y = AquaShine.CalculateTouchPosition(x, y)
 	
 	if AquaShine.TouchEffect then
 		AquaShine.TouchEffect.Start()
+		AquaShine.TouchEffect.SetPosition(x, y)
 	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MousePressed then
-		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MousePressed(x, y, button, istouch)
 	end
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
 	if istouch == true then return end
+	x, y = AquaShine.CalculateTouchPosition(x, y)
 	
 	if AquaShine.TouchEffect then
 		AquaShine.TouchEffect.SetPosition(x, y)
 	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseMoved then
-		x, y = AquaShine.CalculateTouchPosition(x, y)
 		AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx / AquaShine.LogicalScale.ScaleOverall, dy / AquaShine.LogicalScale.ScaleOverall, istouch)
 	end
 end
