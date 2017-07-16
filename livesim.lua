@@ -573,7 +573,7 @@ function DEPLS.Start(argv)
 	
 	-- Randomize note
 	if argv.Random or AquaShine.GetCommandLineConfig("random") then
-		local new_notes_list, msg = assert(love.filesystem.load("randomizer.lua"))()(notes_list)
+		local new_notes_list, msg = (require("randomizer2"))(notes_list)
 		
 		if not(new_notes_list) then
 			AquaShine.Log("livesim2", "Can't be randomized: %s", msg)
@@ -1081,6 +1081,7 @@ function DEPLS.KeyReleased(key)
 end
 
 function DEPLS.Exit()
+	-- Stop audio
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:stop()
 	end
@@ -1090,9 +1091,15 @@ function DEPLS.Exit()
 		DEPLS.StoryboardHandle:Cleanup()
 	end
 	
+	-- Cleanup note object if necessary
 	if not(DEPLS.NoteLoaderObjectNoRelease) then
 		DEPLS.NoteLoaderObject:ReleaseBeatmapAudio()
 		DEPLS.NoteLoaderObject:Release()
+	end
+	
+	if DEPLS.VideoBackgroundData then
+		DEPLS.VideoBackgroundData[1]:pause()
+		DEPLS.VideoBackgroundData = nil
 	end
 end
 
