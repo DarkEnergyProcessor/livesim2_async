@@ -16,14 +16,18 @@ elseif AquaShine.OperatingSystem == "Android" then
 	-- We have to find our "internal" save directory at first
 	-- so we can determine our "lib" dir
 	-- This assume external storage mode is enabled. If not, edit accordingly
-	love.filesystem._setAndroidSaveExternal(false)
-	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 	
-	local lib_dir = love.filesystem.getSaveDirectory().."/../../../lib"
-	
-	-- Reset back to external storage mode
-	love.filesystem._setAndroidSaveExternal(true)
-	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	if not(AquaShine._AndroidAppDir) then
+		love.filesystem._setAndroidSaveExternal(false)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		
+		AquaShine._AndroidAppDir = love.filesystem.getSaveDirectory().."/../../.."
+		
+		-- Reset back to external storage mode
+		love.filesystem._setAndroidSaveExternal(true)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	end
+	local lib_dir = AquaShine._AndroidAppDir.."/lib"
 	
 	function load_ffmpeg_library(libname, ver)
 		AquaShine.Log("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)

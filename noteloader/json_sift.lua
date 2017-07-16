@@ -95,7 +95,7 @@ function SIFTBeatmap.GetScoreInformation(this)
 		
 		for i = 1, #this.sift.rank_info do
 			local idx = this.sift.rank_info[i].rank
-			ranks[idx - (idx - 3) * 2] = this.sift.rank_info[i].rank_max
+			ranks[idx - (idx - 3) * 2] = this.sift.rank_info[i].rank_max + 1
 		end
 		
 		for i = 1, 4 do
@@ -114,6 +114,34 @@ function SIFTBeatmap.GetScoreInformation(this)
 	end
 	
 	return this.score
+end
+
+function SIFTBeatmap.GetComboInformation(this)
+	if not(this.combo_loaded) and this.sift.combo_info then
+		local ranks = {}
+		local invalid = false
+		
+		for i = 1, #this.sift.combo_info do
+			local idx = this.sift.combo_info[i].combo
+			ranks[idx - (idx - 3) * 2] = this.sift.combo_info[i].combo_max + 1
+		end
+		
+		for i = 1, 4 do
+			if ranks[i] == nil then
+				invalid = true
+				break
+			end
+		end
+		
+		if not(invalid) then
+			ranks[5] = nil
+			this.combo = ranks
+		end
+		
+		this.score_loaded = true
+	end
+	
+	return this.combo
 end
 
 function SIFTBeatmap.GetBeatmapAudio(this)

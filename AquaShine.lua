@@ -217,7 +217,7 @@ end
 --! @param noorder Force existing extension?
 --! @returns Audio handle or `nil` plus error message on failure
 function AquaShine.LoadAudio(path, noorder)
-	local _, token_image
+	local s, token_image
 	
 	if not(noorder) then
 		local a = AquaShine.LoadAudio(substitute_extension(path, "wav"), true)
@@ -233,13 +233,13 @@ function AquaShine.LoadAudio(path, noorder)
 		return a
 	end
 	
-	_, token_image = pcall(love.sound.newSoundData, path)
+	s, token_image = pcall(love.sound.newSoundData, path)
 	
-	if _ == false then
+	if s == false then
 		if AquaShine.FFmpegExt then
-			_, token_image = pcall(AquaShine.FFmpegExt, path)
+			s, token_image = pcall(AquaShine.FFmpegExt, path)
 			
-			if _ then
+			if s then
 				return token_image
 			end
 		end
@@ -866,6 +866,7 @@ function love.load(arg)
 	assert(love.filesystem.load("AquaShineDownload.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
 	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
+	assert(love.filesystem.load("AquaShineTempDirectory.lua"))(AquaShine)
 	
 	love.resize(wx, wy)
 	
