@@ -60,7 +60,6 @@ end
 local function SIFrandom(notes_list) 
 	--[[This randomizer makes the following assumptions:
 		 * There are no Swing Notes
-		 * SIFTrain Format is loaded
 		 * Notes are listed from earliest to latest
 		 * There are no more than 2 holds at one time
 		 * If 2 notes are being held, then a note will not appear until a hold is released

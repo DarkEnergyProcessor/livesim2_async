@@ -108,7 +108,7 @@ BeatmapSelect.AutoplayTick = {
 	w = 24, h = 24,
 	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
 	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
-	is_ticked = AquaShine.LoadConfig("AUTOPLAY") == 1,
+	is_ticked = AquaShine.LoadConfig("AUTOPLAY", 0) == 1,
 	draw = function(this)
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.draw(this.default)

@@ -209,7 +209,7 @@ end
 function DEPLSBeatmap.GetVideoBackground(this)
 	if not(this.video_loaded) then
 		for _, v in ipairs(supported_video_fmts) do
-			local name = this.project_folder.."/video_background"..v
+			local name = this.project_dir.."/video_background"..v
 			
 			if love.filesystem.isFile(name) then
 				local message
