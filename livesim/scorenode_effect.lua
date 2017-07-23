@@ -30,10 +30,9 @@ function ScoreNode.Create(score)
 	end
 	
 	out.score_canvas.Used = true
-	out.score_info = {opacity = 0, scale = 0.9, x = 530}
-	out.opacity_tw = tween.new(100, out.score_info, {opacity = 255})
-	out.scale_tw = tween.new(200, out.score_info, {scale = 1}, "inOutSine")
-	out.xpos_tw = tween.new(250, out.score_info, {x = 570}, "outSine")
+	out.score_info = {opacity = 255, scale = 1.125, x = 520}
+	out.main_tween = tween.new(100, out.score_info, {x = 570, scale = 1})
+	out.opacity_tween = tween.new(200, out.score_info, {opacity = 0})
 	out.elapsed_time = 0
 	
 	-- Draw all in canvas
@@ -57,19 +56,19 @@ function ScoreNode.Create(score)
 end
 
 function ScoreNode.Update(this, deltaT)
-	local ended
-	this.xpos_tw:update(deltaT)
-	this.opacity_tw:update(this.elapsed_time > 350 and -deltaT or deltaT)
-	this.scale_tw:update(this.elapsed_time > 200 and -deltaT or deltaT)
-	
 	this.elapsed_time = this.elapsed_time + deltaT
-	ended = this.elapsed_time >= 500
+	this.main_tween:update(deltaT)
 	
-	if ended then
-		this.score_canvas.Used = false
+	if this.elapsed_time >= 200 then
+		this.opacity_tween:update(deltaT)
 	end
 	
-	return ended
+	if this.elapsed_time >= 450 then
+		this.score_canvas.Used = false
+		return true
+	end
+	
+	return false
 end
 
 function ScoreNode.Draw(this)

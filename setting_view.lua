@@ -114,6 +114,14 @@ local SettingSelection = {
 		Min = -4000,
 		Max = 4000,
 		Increment = 20
+	},
+	{
+		Name = "TEXT_SCALING", Default = 1,
+		Caption = "Text Scaling",
+		Type = "number",
+		Min = 0.5,
+		Max = 1,
+		Increment = 0.1
 	}
 }
 

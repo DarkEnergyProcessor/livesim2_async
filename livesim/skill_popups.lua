@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local DEPLS, AquaShine = ...
+local love = love
 local tween = require("tween")
 local lg = require("love.graphics")
 local Yohane = require("Yohane")

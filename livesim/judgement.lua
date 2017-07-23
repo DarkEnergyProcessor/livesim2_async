@@ -1,14 +1,16 @@
--- Perfect node animation
+-- Combo judgement animation
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
 local tween = require("tween")
+local love = love
 local DEPLS = ...
 local PerfectNode = {}
 
+local scaling = 2	-- Text size: FULL = 2, Small = 1.6, Mini = 1
 local et = 500
 local perfect_data = {opacity = 0, scale = 0}
-local perfect_tween = tween.new(50, perfect_data, {opacity = 255, scale = 2}, "outSine")
+local perfect_tween = tween.new(50, perfect_data, {opacity = 255, scale = 1}, "outSine")
 local perfect_tween_fadeout = tween.new(200, perfect_data, {opacity = 0})
 
 perfect_tween:update(50)
@@ -26,7 +28,7 @@ function PerfectNode.Update(deltaT)
 	
 	perfect_tween:update(deltaT)
 	
-	if et > 200 then
+	if et > 170 then
 		perfect_tween_fadeout:update(deltaT)
 	end
 	
@@ -36,14 +38,17 @@ function PerfectNode.Update(deltaT)
 	end
 end
 
-local setColor = love.graphics.setColor
-local draw = love.graphics.draw
 function PerfectNode.Draw()
 	if et < 500 then
-		setColor(255, 255, 255, perfect_data.opacity * DEPLS.LiveOpacity / 255)
-		draw(PerfectNode.Image, 480, 320, 0, perfect_data.scale, perfect_data.scale,
-			PerfectNode.Center[PerfectNode.Image][1], PerfectNode.Center[PerfectNode.Image][2])
-		setColor(255, 255, 255, 255)
+		love.graphics.setColor(255, 255, 255, perfect_data.opacity * DEPLS.LiveOpacity / 255)
+		love.graphics.draw(
+			PerfectNode.Image, 480, 320, 0,
+			perfect_data.scale * DEPLS.TextScaling,
+			perfect_data.scale * DEPLS.TextScaling,
+			PerfectNode.Center[PerfectNode.Image][1],
+			PerfectNode.Center[PerfectNode.Image][2]
+		)
+		love.graphics.setColor(255, 255, 255, 255)
 	end
 end
 

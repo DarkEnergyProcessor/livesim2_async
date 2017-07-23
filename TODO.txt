@@ -26,7 +26,7 @@ v2.0
 - Adjustable SE volume					
 - Download SIF beatmaps					WIP (with RayFirefist)
 - Actual unit live skill				
-- Album art for SIFTrain beatmap			
+- Album art for SIFTrain beatmap			OK
 - Decrease sensitivity for swing note accuracy		
 - LS2 v2.0						OK
 - Removal of Playground TEXB Loader (Shelsha)		OK

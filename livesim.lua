@@ -107,7 +107,7 @@ DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_
 -- Combo counter effect namespace
 DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS, AquaShine)
 -- Tap accuracy display routine
-DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/perfectnode.lua"))(DEPLS, AquaShine)
+DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/judgement.lua"))(DEPLS, AquaShine)
 -- Score flash animation routine
 DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS, AquaShine)
 -- Note icon (note spawn pos) animation
@@ -525,11 +525,12 @@ function DEPLS.Start(argv)
 	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
 	local GlobalOffset = AquaShine.LoadConfig("GLOBAL_OFFSET", 0)
 	local Keys = AquaShine.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
-	local Auto = assert(tonumber(AquaShine.LoadConfig("AUTOPLAY", 0)))
+	DEPLS.AutoPlay = assert(tonumber(AquaShine.LoadConfig("AUTOPLAY", 0))) == 1
 	DEPLS.LiveDelay = math.max(AquaShine.LoadConfig("LIVESIM_DELAY", 1000), 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
 	DEPLS.NotesSpeed = math.max(AquaShine.LoadConfig("NOTE_SPEED", 800), 400)
 	DEPLS.Stamina = math.min(AquaShine.LoadConfig("STAMINA_DISPLAY", 32) % 100, 99)
+	DEPLS.TextScaling = assert(tonumber(AquaShine.LoadConfig("TEXT_SCALING", 1)))
 	DEPLS.ScoreBase = AquaShine.LoadConfig("SCORE_ADD_NOTE", 1024)
 	DEPLS.Keys = {}
 	assert(DEPLS.LiveDelay > 0, "LIVESIM_DELAY must be positive and not zero")
@@ -541,11 +542,6 @@ function DEPLS.Start(argv)
 			
 			i = i - 1
 		end
-	end
-	if Auto == 0 then
-		DEPLS.AutoPlay = false
-	else
-		DEPLS.AutoPlay = true
 	end
 	
 	if DEPLS.MinimalEffect == nil then
@@ -751,17 +747,17 @@ function DEPLS.Start(argv)
 	DEPLS.Images.ScoreNode.Plus = AquaShine.LoadImage("assets/image/live/score_num/l_num_31.png")
 	
 	-- Tap accuracy image
-	DEPLS.Images.Perfect = AquaShine.LoadImage("assets/image/live/ef_313_004.png")
-	DEPLS.Images.Great = AquaShine.LoadImage("assets/image/live/ef_313_003.png")
-	DEPLS.Images.Good = AquaShine.LoadImage("assets/image/live/ef_313_002.png")
-	DEPLS.Images.Bad = AquaShine.LoadImage("assets/image/live/ef_313_001.png")
-	DEPLS.Images.Miss = AquaShine.LoadImage("assets/image/live/ef_313_000.png")
+	DEPLS.Images.Perfect = AquaShine.LoadImage("assets/image/live/ef_313_004_w2x.png")
+	DEPLS.Images.Great = AquaShine.LoadImage("assets/image/live/ef_313_003_w2x.png")
+	DEPLS.Images.Good = AquaShine.LoadImage("assets/image/live/ef_313_002_w2x.png")
+	DEPLS.Images.Bad = AquaShine.LoadImage("assets/image/live/ef_313_001_w2x.png")
+	DEPLS.Images.Miss = AquaShine.LoadImage("assets/image/live/ef_313_000_w2x.png")
 		DEPLS.Routines.PerfectNode.Center = {
-		[DEPLS.Images.Perfect] = {99, 19},
-		[DEPLS.Images.Great] = {73, 17},
-		[DEPLS.Images.Good] = {63, 17},
-		[DEPLS.Images.Bad] = {43, 16},
-		[DEPLS.Images.Miss] = {46, 15}
+		[DEPLS.Images.Perfect] = {198, 38},
+		[DEPLS.Images.Great] = {147, 35},
+		[DEPLS.Images.Good] = {127, 35},
+		[DEPLS.Images.Bad] = {86, 33},
+		[DEPLS.Images.Miss] = {93, 30}
 	}
 	DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 	-- Initialize tap accuracy routine
