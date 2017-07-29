@@ -41,6 +41,7 @@ local AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 		render = {3, "render_livesim.lua"},
 		noteloader = {1, "invoke_noteloader.lua"},
 		unit_create = {0, "unit_create.lua"},
+		beatmap_select2 = {0, "beatmap_select2.lua"}
 	},
 	DefaultEntry = "main_menu",
 	Width = 960,	-- Letterboxing

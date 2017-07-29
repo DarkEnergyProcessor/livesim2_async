@@ -22,16 +22,13 @@ function JSONLoader.GetLoaderName()
 	return "JSON-based Beatmap Loader"
 end
 
-function JSONLoader.LoadNoteFromFilename(file)
-	local f = assert(love.filesystem.newFile(file, "r"))
+function JSONLoader.LoadNoteFromFilename(f, file)
 	local fs, bm, loader
 	
 	assert(f:read(30):find("%s*{"), "Not a valid JSON beatmap")
 	f:seek(0)
 	
 	fs = f:read()
-	f:close()
-	
 	bm = JSON:decode(fs)
 	
 	if

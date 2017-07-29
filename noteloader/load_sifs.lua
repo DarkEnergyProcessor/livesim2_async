@@ -21,8 +21,7 @@ function SIFSLoader.GetLoaderName()
 	return "SIFs Beatmap"
 end
 
-function SIFSLoader.LoadNoteFromFilename(file)
-	local f = assert(love.filesystem.newFile(file, "r"))
+function SIFSLoader.LoadNoteFromFilename(f)
 	local lines = f:lines()
 	local this = {}
 	
@@ -39,7 +38,7 @@ function SIFSLoader.LoadNoteFromFilename(file)
 	lines()
 	this.beatmap_data = lines()
 	
-	f:close()
+	lines = nil
 	return setmetatable(this, SIFSBeatmap)
 end
 

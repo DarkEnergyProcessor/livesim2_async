@@ -50,6 +50,7 @@ public:
 	virtual unsigned int* GetScoreInformation();
 	
 	virtual unsigned int* GetComboInformation();
+	virtual bool HasStoryboard();
 	virtual Livesim2::Storyboard* GetStoryboard();
 	
 	/// \brief Retrieves background ID
@@ -83,11 +84,23 @@ public:
 };
 ]]
 
+--[[
+Note for beatmap loaders:
+
+For project-based loaders: LoadNoteFromFilename(path) returns 1 value
+For file-based loaders: LoadNoteFromFilename(handle, path) returns 2 values:
+	* The note object
+	* Value to indicate that the file shouldn't be closed
+]]
+
 local AquaShine = ...
 local love = love
+local JSON = require("JSON")
+local base64 = require("mime_base64")
 local NoteLoader = {}
 local NoteLoaderLoader = {}
 local NoteLoaderNoteObject = {}
+local NCache = assert(love.filesystem.load("noteloader_cache.lua"))(AquaShine, NoteLoader)
 
 NoteLoaderLoader.__index = NoteLoaderLoader
 NoteLoaderNoteObject.__index = NoteLoaderNoteObject
@@ -95,6 +108,16 @@ NoteLoaderNoteObject.__index = NoteLoaderNoteObject
 NoteLoader.NoteLoaderNoteObject = NoteLoaderNoteObject
 NoteLoader.FileLoaders = {}
 NoteLoader.ProjectLoaders = {}
+
+-- Use with string.gsub(str, ".", bin2hex)
+local function bin2hex(x)
+	return string.format("%02X", x:byte())
+end
+
+-- Use with string.gsub(str, "%x%x", hex2bin)
+local function hex2bin(x)
+	return string.char(tonumber(x, 16))
+end
 
 ---------------------------
 -- Note Loading Function --
@@ -118,13 +141,18 @@ function NoteLoader._UnzipOnGone(zip_path)
 	return x
 end
 
-function NoteLoader.NoteLoader(file)
-	local project_mode = love.filesystem.isDirectory(file)
+--! @brief Load note object from specificed path
+--! @param file The file path. Can be either file or directory
+--! @param noproject Do not attempt to load beatmap as project beatmap?
+--! @returns The note object, or nil on failure
+--! @note Error message is printed to log
+function NoteLoader.NoteLoader(file, noproject)
+	local project_mode = not(noproject) and love.filesystem.isDirectory(file)
 	local destination = file
 	local project_destination = "temp/.beatmap/"..file:gsub("(.*/)(.*)", "%2")
 	local zip_path
 	
-	if not(project_mode) and AquaShine.MountZip(file, project_destination) then
+	if not(project_mode) and not(noproject) and AquaShine.MountZip(file, project_destination) then
 		-- File is mountable. Project-based beatmap.
 		project_mode = true
 		destination = project_destination
@@ -153,16 +181,22 @@ function NoteLoader.NoteLoader(file)
 		end
 	else
 		-- File loading
+		local file_handle = love.filesystem.newFile(file, "r")
+		
 		for i = 1, #NoteLoader.FileLoaders do
 			local ldr = NoteLoader.FileLoaders[i]
-			local success, nobj = pcall(ldr.LoadNoteFromFilename, destination)
+			local success, nobj, noclose = pcall(ldr.LoadNoteFromFilename, file_handle, destination)
 			
 			if success then
+				if not(noclose) then file_handle:close() end
 				return nobj
 			end
 			
 			AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
+			file_handle:seek(0)
 		end
+		
+		file_handle:close()
 	end
 end
 
@@ -171,6 +205,20 @@ function NoteLoader.Enumerate()
 	
 	for _, f in ipairs(love.filesystem.getDirectoryItems("beatmap/")) do
 		local b = NoteLoader.NoteLoader("beatmap/"..f)
+		
+		if b then
+			a[#a + 1] = b
+		end
+	end
+	
+	return a
+end
+
+function NoteLoader.EnumerateCached()
+	local a = {}
+	
+	for _, f in ipairs(love.filesystem.getDirectoryItems("beatmap/")) do
+		local b = NCache.LoadCache("beatmap/"..f)
 		
 		if b then
 			a[#a + 1] = b
@@ -216,6 +264,10 @@ end
 
 function NoteLoaderNoteObject.GetCustomUnitInformation()
 	return {}
+end
+
+function NoteLoaderNoteObject.HasStoryboard()
+	return false
 end
 
 NoteLoaderNoteObject.GetStarDifficultyInfo = zeroret

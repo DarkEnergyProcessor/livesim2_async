@@ -20,14 +20,13 @@ function LS2Loader.GetLoaderName()
 	return "LS2 Loader"
 end
 
-function LS2Loader.LoadNoteFromFilename(file)
-	local f = assert(love.filesystem.newFile(file, "r"))
+function LS2Loader.LoadNoteFromFilename(f, file)
 	local this = setmetatable({}, LS2Beatmap)
 	
 	this.name = NoteLoader._GetBasenameWOExt(file)
 	this.file = f
 	this.ls2 = ls2.loadstream(f)
-	return this
+	return this, true
 end
 
 ------------------------
@@ -179,6 +178,10 @@ function LS2Beatmap.GetComboInformation(this)
 	end
 	
 	return nil
+end
+
+function LS2Beatmap.HasStoryboard(this)
+	return not(not(this.ls2.sections.SRYL))
 end
 
 function LS2Beatmap.GetStoryboard(this)

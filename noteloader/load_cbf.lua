@@ -178,7 +178,8 @@ local function LoadUnitStrategy2(table, file)
 		love.filesystem.isDirectory(file.."/Custom Cards") and
 		love.filesystem.isFile(listname)
 	then
-		for line in love.filesystem.lines(listname) do
+		local f = assert(love.filesystem.newFile(listname, "r"))
+		for line in f:lines() do
 			if #line > 0 then
 				local idx = line:match("([^/]+)/[^;]+")
 				local _, img = pcall(love.graphics.newImage, file.."/Custom Cards/"..idx..".png")
@@ -189,6 +190,7 @@ local function LoadUnitStrategy2(table, file)
 			end
 		end
 		
+		f:close()
 		return true
 	end
 	
@@ -405,6 +407,7 @@ function CBFBeatmap.GetCustomUnitInformation(this)
 		if love.filesystem.isFile(charpos) then
 			local composition_cache = {}
 			local cunitloc = LoadUnitStrategy0()
+			local f = assert(love.filesystem.newFile(charpos, "r"))
 			
 			-- Initialize units image
 			if not(LoadUnitStrategy1(cunitloc, this.project_folder)) then
@@ -441,7 +444,7 @@ function CBFBeatmap.GetCustomUnitInformation(this)
 				end
 			})
 			
-			for line in love.filesystem.lines(charpos) do
+			for line in f:lines() do
 				if #line > 0 then
 					local cache_name = line:sub(line:find("/") + 1)
 					local pos, attr, rar, cname, r, g, b = line:match("([^/]+)/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
@@ -457,6 +460,8 @@ function CBFBeatmap.GetCustomUnitInformation(this)
 					end
 				end
 			end
+			
+			f:close()
 		end
 		
 		this.unit_loaded = true

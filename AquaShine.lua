@@ -88,9 +88,11 @@ function AquaShine.MountZip(path, target)
 	if target == nil then
 		if mount_target[path] then
 			mount_target[path] = mount_target[path] - 1
+			AquaShine.Log("AquaShine", "Mount counter %d", mount_target[path])
 			
 			if mount_target[path] == 0 then
 				mount_target[path] = nil
+				AquaShine.Log("AquaShine", "Attempt to unmount %s", path)
 				assert(love.filesystem.unmount(path), "Unmount failed")
 			end
 			
@@ -106,9 +108,11 @@ function AquaShine.MountZip(path, target)
 				mount_target[path] = 1
 			end
 			
+			AquaShine.Log("AquaShine", "New mount %s", path)
 			return r
 		else
 			mount_target[path] = mount_target[path] + 1
+			AquaShine.Log("AquaShine", "Mount counter %d", mount_target[path])
 			return true
 		end
 	end

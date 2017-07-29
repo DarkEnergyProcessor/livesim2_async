@@ -79,12 +79,16 @@ function DEPLSBeatmap.GetCoverArt(this)
 		local cover_img = this.project_dir.."/cover.png"
 		
 		if love.filesystem.isFile(cover_info) and love.filesystem.isFile(cover_img) then
-			local line = love.filesystem.lines(cover_info)
+			local f = assert(love.filesystem.newFile(cover_info, "r"))
+			local line = f:lines()
 			
 			this.cover = {}
 			this.cover.image = love.graphics.newImage(cover_img)
 			this.cover.title = line()
 			this.cover.arrangement = line()
+			
+			line = nil
+			f:close()
 		else
 			this.cover = this.note_object:GetCoverArt()
 		end
@@ -132,6 +136,10 @@ end
 
 function DEPLSBeatmap.GetScoreInformation(this)
 	return this.note_object:GetScoreInformation()
+end
+
+function DEPLSBeatmap.HasStoryboard(this)
+	return love.filesystem.isFile(this.project_dir.."/storyboard.lua") or this.note_object:HasStoryboard()
 end
 
 function DEPLSBeatmap.GetStoryboard(this)

@@ -226,15 +226,12 @@ function MIDILoader.GetLoaderName()
 	return "Custom MIDI Beatmap"
 end
 
-function MIDILoader.LoadNoteFromFilename(file)
-	local f = assert(love.filesystem.newFile(file, "r"))
+function MIDILoader.LoadNoteFromFilename(f, file)
 	local out = midi2sif(f)
 	local this = setmetatable({}, MIDIBeatmap)
-	f:close()
 	
 	this.out = out
 	this.name = NoteLoader._GetBasenameWOExt(file)
-	this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
 	return this
 end
 
@@ -255,6 +252,11 @@ function MIDIBeatmap.GetBeatmapTypename()
 end
 
 function MIDIBeatmap.GetBeatmapAudio(this)
+	if not(this.song_file_loaded) then
+		this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
+		this.song_file_loaded = true
+	end
+	
 	return this.song_file
 end
 

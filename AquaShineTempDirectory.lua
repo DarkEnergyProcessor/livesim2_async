@@ -12,9 +12,18 @@ local has_ffi, ffi = pcall(require, "ffi")
 local temp_dir
 
 if AquaShine.OperatingSystem == "iOS" then
-	-- Use default save directory as temp
-	temp_dir = love.filesystem.getSaveDirectory().."/temp"
-	assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
+	-- Use os.getenv("TMPDIR")
+	temp_dir = os.getenv("TMPDIR")
+	
+	if temp_dir then
+		if temp_dir:sub(-1) == "/" then
+			temp_dir = temp_dir:sub(1, -2)
+		end
+	else
+		-- Fallback
+		temp_dir = love.filesystem.getSaveDirectory().."/temp"
+		assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
+	end
 elseif AquaShine.OperatingSystem == "Windows" then
 	-- Two techniques (the former is more reliable)
 	if hasffi then
@@ -42,7 +51,6 @@ elseif AquaShine.OperatingSystem == "Windows" then
 elseif AquaShine.OperatingSystem == "Android" then
 	-- Make sure to load FFmpegExt at first
 	temp_dir = AquaShine._AndroidAppDir.."/cache"
-	
 else	-- Linux & Mac OS X
 	temp_dir = (os.getenv("TMPDIR") or
 	            os.getenv("TMP") or
@@ -50,7 +58,7 @@ else	-- Linux & Mac OS X
 	            os.getenv("TEMPDIR") or
 	            "/var/tmp"):gsub("^(.+)/$", "%1")
 	
-	if os.execute("[ -d \""..temp_dir.."\" ]") == 1 then
+	if os.execute("[ -d \""..temp_dir.."\" ]") ~= 0 then
 		temp_dir = "/tmp"
 	end
 end
