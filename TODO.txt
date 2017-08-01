@@ -21,13 +21,13 @@ v2.0
 - Hidden note and sudden note				
 - Individual note speed					OK
 - Live Show! Failed					
-- Pause							
-- Adjustable combo display size				
+- Pause							WIP
+- Adjustable combo display size				OK
 - Adjustable SE volume					
 - Download SIF beatmaps					WIP (with RayFirefist)
-- Actual unit live skill				
+- Actual unit live skill				Possibly aborted
 - Album art for SIFTrain beatmap			OK
-- Decrease sensitivity for swing note accuracy		
+- Decrease sensitivity for swing note accuracy		OK
 - LS2 v2.0						OK
 - Removal of Playground TEXB Loader (Shelsha)		OK
 - Removal of test beatmap				OK

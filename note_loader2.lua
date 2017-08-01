@@ -96,7 +96,6 @@ For file-based loaders: LoadNoteFromFilename(handle, path) returns 2 values:
 local AquaShine = ...
 local love = love
 local JSON = require("JSON")
-local base64 = require("mime_base64")
 local NoteLoader = {}
 local NoteLoaderLoader = {}
 local NoteLoaderNoteObject = {}

@@ -6,6 +6,8 @@ local function noop() end
 local Storyboard = {_mt = {__index = {
 	Initialize = noop,
 	Draw = noop,
+	Pause = noop,
+	Resume = noop,
 	SetAdditionalFiles = noop,
 	Cleanup = noop,
 	Callback = noop,

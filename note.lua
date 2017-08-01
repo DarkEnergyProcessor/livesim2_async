@@ -322,7 +322,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 	
 	-- We don't want someone accidentally tap it while it's in long distance
 	if notedistance <= this.NoteAccuracy[5] then
-		if notedistance <= this.NoteAccuracy[1] then
+		if notedistance <= this.NoteAccuracy[1] or (this.SlideNote and notedistance <= this.NoteAccuracy[2]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -331,7 +331,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[2] then
+		elseif notedistance <= this.NoteAccuracy[2] or (this.SlideNote and notedistance <= this.NoteAccuracy[3]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -340,7 +340,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[3] then
+		elseif notedistance <= this.NoteAccuracy[3] or (this.SlideNote and notedistance <= this.NoteAccuracy[4]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8
@@ -564,8 +564,8 @@ function LongNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= this.NoteAccuracy[5] then
-		if notedistance <= this.NoteAccuracy[1] then
+	if notedistance <= this.NoteAccuracy[5]then
+		if notedistance <= this.NoteAccuracy[1] or (this.SlideNote and notedistance <= this.NoteAccuracy[2]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -574,7 +574,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[2] then
+		elseif notedistance <= this.NoteAccuracy[2] or (this.SlideNote and notedistance <= this.NoteAccuracy[3]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -583,7 +583,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[3] then
+		elseif notedistance <= this.NoteAccuracy[3] or (this.SlideNote and notedistance <= this.NoteAccuracy[4]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8

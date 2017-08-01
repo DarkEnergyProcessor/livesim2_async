@@ -122,13 +122,14 @@ local function setup_env(story, lua)
 		graphics = {
 			arc = love.graphics.arc,
 			circle = love.graphics.circle,
-			clear = function(...)
-				assert(love.graphics.getCanvas() ~= AquaShine.MainCanvas, "love.graphics.clear on real screen is not allowed!")
-				love.graphics.clear(...)
-			end,
+			clear = love.graphics.clear,
 			draw = love.graphics.draw,
 			ellipse = love.graphics.ellipse,
 			line = love.graphics.line,
+			origin = function()
+				love.graphics.origin()
+				love.graphics.translate(88, 43)
+			end,
 			points = love.graphics.points,
 			polygon = love.graphics.polygon,
 			print = love.graphics.print,
@@ -147,7 +148,7 @@ local function setup_env(story, lua)
 			
 			setBlendMode = love.graphics.setBlendMode,
 			setCanvas = function(canvas)
-				love.graphics.setCanvas(canvas or AquaShine.MainCanvas)
+				love.graphics.setCanvas(canvas or story.Canvas)
 			end,
 			setColor = love.graphics.setColor,
 			setColorMask = love.graphics.setColorMask,
@@ -210,15 +211,12 @@ local function setup_env(story, lua)
 	setfenv(lua, env)
 	
 	-- Call state once
-	AquaShine.Log("LuaStoryboard", "Initializing Lua script storyboard")
 	local luastate = coroutine.wrap(lua)
 	luastate()
 	AquaShine.Log("LuaStoryboard", "Lua script storyboard initialized")
 	
 	if env.Initialize then
-		AquaShine.Log("LuaStoryboard", "Lua script storyboard initialize function call")
 		env.Initialize()
-		AquaShine.Log("LuaStoryboard", "Lua script storyboard initialize function called")
 	end
 	
 	story.StoryboardLua = {
@@ -229,27 +227,37 @@ local function setup_env(story, lua)
 end
 
 local function storyboard_draw(this, deltaT)
-	love.graphics.push("all")
-	
-	local status, msg
-	if this.StoryboardLua[3] then
-		status, msg = pcall(this.StoryboardLua[2].Update, deltaT)
-	else
-		status, msg = pcall(this.StoryboardLua[1], deltaT)
-	end
-	
-	-- Rebalance push/pop
-	for i = 1, this.PushPopCount do
+	if not(this.Paused) then
+		love.graphics.push("all")
+		love.graphics.origin()
+		love.graphics.translate(88, 43)
+		love.graphics.setCanvas(this.Canvas)
+		love.graphics.clear()
+		
+		local status, msg
+		if this.StoryboardLua[3] then
+			status, msg = pcall(this.StoryboardLua[2].Update, deltaT)
+		else
+			status, msg = pcall(this.StoryboardLua[1], deltaT)
+		end
+		
+		-- Rebalance push/pop
+		for i = 1, this.PushPopCount do
+			love.graphics.pop()
+		end
+		this.PushPopCount = 0
+		
+		-- Cleanup
 		love.graphics.pop()
+		
+		if status == false then
+			AquaShine.Log("LuaStoryboard", "Storyboard Error: %s", msg)
+		end
 	end
-	this.PushPopCount = 0
 	
-	-- Cleanup
-	love.graphics.pop()
-	
-	if status == false then
-		AquaShine.Log("LuaStoryboard", "Storyboard Error: %s", msg)
-	end
+	love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.draw(this.Canvas, -88, -43)
+	love.graphics.setBlendMode("alpha", "alphamultiply")
 end
 
 local function storyboard_setfiles(this, datas)
@@ -263,6 +271,35 @@ local function storyboard_cleanup(this)
 	
 	this.VideoList = nil
 	this.StoryboardLua = nil
+	love.handlers.lowmemory()
+end
+
+local function storyboard_pause(this)
+	if not(this.Paused) then
+		for i = 1, #this.VideoList do
+			local vid = this.VideoList[i]
+			this.PausedVideos[vid] = vid:isPlaying()
+			vid:pause()
+		end
+		
+		this.Paused = true
+	end
+end
+
+local function storyboard_resume(this)
+	if this.Paused then
+		for i = 1, #this.VideoList do
+			local vid = this.VideoList[i]
+			
+			if this.PausedVideos[vid] then
+				vid:play()
+			end
+			
+			this.PausedVideos[vid] = nil
+		end
+		
+		this.Paused = false
+	end
 end
 
 local function storyboard_callback(this, name, ...)
@@ -280,7 +317,7 @@ end
 local function storyboard_initialize(this, export)
 	this.AdditionalFunctions = export
 	
-	setup_env(this, this.Lua)
+	return setup_env(this, this.Lua)
 end
 
 function LuaStoryboard.LoadString(str, dir, export)
@@ -293,6 +330,8 @@ function LuaStoryboard.LoadString(str, dir, export)
 	story.SetAdditionalFiles = storyboard_setfiles
 	story.Cleanup = storyboard_cleanup
 	story.Callback = storyboard_callback
+	story.Pause = storyboard_pause
+	story.Resume = storyboard_resume
 	
 	story.Lua = lua
 	story.BeatmapDir = dir
@@ -300,12 +339,19 @@ function LuaStoryboard.LoadString(str, dir, export)
 	story.AdditionalFunctions = export
 	story.VideoList = {}
 	story.PushPopCount = 0
+	story.Canvas = love.graphics.newCanvas(1136, 726)
+	story.Paused = false
+	story.PausedVideos = {}
 	
 	return story
 end
 
 function LuaStoryboard.Load(file, export)
-	return LuaStoryboard.LoadString(love.filesystem.load(file), file:sub(1, file:find("[^/]+$") - 1), export)
+	return LuaStoryboard.LoadString(
+		love.filesystem.load(file),
+		file:sub(1, file:find("[^/]+$") - 1),
+		export
+	)
 end
 
 -- As of v2.0, AquaShine no longer in global namespace and must be set in main.lua

@@ -9,18 +9,18 @@ local EffectPlayer = require("effect_player")
 local JSON = require("JSON")
 local Yohane = require("Yohane")
 local DEPLS = {
-	ElapsedTime = 0,	-- Elapsed time, in milliseconds
+	ElapsedTime = 0,            -- Elapsed time, in milliseconds
 	DebugDisplay = false,
-	SaveDirectory = "",	-- DEPLS Save Directory
-	BeatmapAudioVolume = 0.8,	-- The audio volume
-	PlaySpeed = 1.0,	-- Play speed factor. 1 = normal
-	PlaySpeedAlterDisabled = false,	-- Disallow alteration of DEPLS play speed factor
-	HasCoverImage = false,	-- Used to get livesim delay
-	CoverShown = 0,	-- Cover shown if this value starts at 3167
+	SaveDirectory = "",         -- DEPLS Save Directory
+	BeatmapAudioVolume = 0.8,   -- The audio volume
+	PlaySpeed = 1.0,            -- Play speed factor. 1 = normal
+	PlaySpeedAlterDisabled = false, -- Disallow alteration of DEPLS play speed factor
+	HasCoverImage = false,      -- Used to get livesim delay
+	CoverShown = 0,             -- Cover shown if this value starts at 3167
 	CoverData = {},
 	
-	BackgroundOpacity = 255,	-- User background opacity set from storyboard
-	BackgroundImage = {	-- Index 0 is the main background
+	BackgroundOpacity = 255,    -- User background opacity set from storyboard
+	BackgroundImage = {         -- Index 0 is the main background
 		-- {handle, logical x, logical y, x size, y size}
 		{nil, -88, 0},
 		{nil, 960, 0},
@@ -54,7 +54,6 @@ local DEPLS = {
 	NoteRandomized = false,
 	Stamina = 32,
 	NotesSpeed = 800,
-	NotesSpeedAlterDisabled = false,
 	ScoreBase = 500,
 	ScoreData = {		-- Contains C score, B score, A score, S score data, in order.
 		1,
@@ -130,6 +129,8 @@ DEPLS.Routines.SkillPopups = assert(love.filesystem.load("livesim/skill_popups.l
 DEPLS.Routines.ComboCheer = assert(love.filesystem.load("livesim/combo_cheer.lua"))(DEPLS, AquaShine)
 -- Result screen
 DEPLS.Routines.ResultScreen = assert(love.filesystem.load("livesim/reward.lua"))(DEPLS, AquaShine)
+-- Pause info
+DEPLS.Routines.PauseScreen = assert(love.filesystem.load("livesim/pause.lua"))(DEPLS, AquaShine)
 
 --------------------------------
 -- Another public functions   --
@@ -491,6 +492,41 @@ AUTOPLAY = %s
 	love.graphics.print(text)
 end
 
+-- Pause Live Simulator: 2
+function DEPLS.Pause()
+	if DEPLS.VideoBackgroundData then
+		DEPLS.VideoBackgroundData[1]:pause()
+	end
+	
+	if DEPLS.StoryboardHandle then
+		DEPLS.StoryboardCallback("Pause")
+		DEPLS.StoryboardHandle:Pause()
+	end
+	
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:pause()
+	end
+	
+	DEPLS.Routines.PauseScreen.InitiatePause(DEPLS.Resume)
+end
+
+-- Resume Live Simulator: 2
+function DEPLS.Resume()
+	if DEPLS.VideoBackgroundData then
+		DEPLS.VideoBackgroundData[1]:play()
+	end
+	
+	if DEPLS.StoryboardHandle then
+		DEPLS.StoryboardHandle:Resume()
+		DEPLS.StoryboardCallback("Resume")
+	end
+	
+	if DEPLS.Sound.LiveAudio then
+		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
+		DEPLS.Sound.LiveAudio:play()
+	end
+end
+
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
@@ -696,6 +732,7 @@ function DEPLS.Start(argv)
 	-- Load live header images
 	DEPLS.Images.Header = AquaShine.LoadImage("assets/image/live/live_header.png")
 	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
+	DEPLS.Images.Pause = AquaShine.LoadImage("assets/image/live/live_pause.png")
 	
 	-- Load unit icons
 	local noteloader_units = noteloader_data:GetCustomUnitInformation()
@@ -770,7 +807,7 @@ function DEPLS.Start(argv)
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 	
-	-- Free note object
+	-- Set NoteLoader object
 	DEPLS.NoteLoaderObject = noteloader_data
 end
 
@@ -784,7 +821,10 @@ local audiolasttime = 0
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Update(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
-	DEPLS.ElapsedTime = DEPLS.ElapsedTime + deltaT
+	
+	if not(DEPLS.Routines.PauseScreen.IsPaused()) then
+		DEPLS.ElapsedTime = DEPLS.ElapsedTime + deltaT
+	end
 	
 	local ElapsedTime = DEPLS.ElapsedTime
 	local Routines = DEPLS.Routines
@@ -802,7 +842,7 @@ function DEPLS.Update(deltaT)
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
 			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
 			DEPLS.Sound.LiveAudio:play()
-			DEPLS.Sound.LiveAudio:seek(ElapsedTime / 1000)
+			DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
 			audioplaying = true
 		end
 		
@@ -810,8 +850,10 @@ function DEPLS.Update(deltaT)
 			DEPLS.VideoBackgroundData[1]:play()
 		end
 		
-		-- Update note
-		DEPLS.NoteManager.Update(deltaT)
+		-- Update note if it's not paused
+		if not(DEPLS.Routines.PauseScreen.IsPaused()) then
+			DEPLS.NoteManager.Update(deltaT)
+		end
 		
 		-- Update combo cheer if no storyboard or storyboard allows it
 		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
@@ -827,6 +869,7 @@ function DEPLS.Update(deltaT)
 		Routines.SkillPopups.Update(deltaT)
 		Routines.PerfectNode.Update(deltaT)
 		
+		-- Update effect player
 		EffectPlayer.Update(deltaT)
 		
 		if
@@ -835,6 +878,8 @@ function DEPLS.Update(deltaT)
 		then
 			Routines.LiveClearAnim.Update(deltaT)
 		end
+		
+		Routines.PauseScreen.Update(deltaT)
 	end
 end
 
@@ -912,6 +957,7 @@ function DEPLS.Draw(deltaT)
 		setColor(255, 255, 255, DEPLS.LiveOpacity)
 		draw(Images.Header, 0, 0)
 		draw(Images.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
+		draw(Images.Pause, 916, 5, 0, 0.6)
 		
 		draw(Images.StaminaRelated.Bar, 14, 60)
 		for i = 1, #Images.StaminaRelated.DrawTarget do
@@ -948,6 +994,9 @@ function DEPLS.Draw(deltaT)
 		then
 			Routines.LiveClearAnim.Draw()
 		end
+		
+		-- Pause overlay
+		Routines.PauseScreen.Draw()
 	end
 	
 	if DEPLS.DebugDisplay then
@@ -961,6 +1010,10 @@ local isMousePress = false
 local TouchXRadius = 132
 local TouchYRadius = 74
 function DEPLS.MousePressed(x, y, button, touch_id)
+	if DEPLS.Routines.PauseScreen.IsPaused() then
+		return DEPLS.Routines.PauseScreen.MousePressed(x, y, button, touch_id)
+	end
+	
 	if DEPLS.ElapsedTime <= 0 or DEPLS.AutoPlay then return end
 	
 	touch_id = touch_id or 0
@@ -981,6 +1034,10 @@ function DEPLS.MousePressed(x, y, button, touch_id)
 end
 
 function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
+	if DEPLS.Routines.PauseScreen.IsPaused() then
+		return DEPLS.Routines.PauseScreen.MouseMoved(x, y, dx, dy, touch_id)
+	end
+	
 	if DEPLS.AutoPlay then return end
 	if isMousePress or touch_id then
 		touch_id = touch_id or 0
@@ -1005,6 +1062,10 @@ function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 end
 
 function DEPLS.MouseReleased(x, y, button, touch_id)
+	if DEPLS.Routines.PauseScreen.IsPaused() then
+		return DEPLS.Routines.PauseScreen.MouseReleased(x, y, button, touch_id)
+	end
+	
 	if DEPLS.ElapsedTime <= 0 then return end
 	
 	if isMousePress and touch_id == false and button == 1 then
@@ -1021,6 +1082,10 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 		-- Back
 		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
 	end
+	
+	if x >= 916 and y >= 6 and x < 952 and y < 42 then
+		DEPLS.Pause()
+	end
 end
 
 local function update_audio_volume()
@@ -1030,12 +1095,16 @@ local function update_audio_volume()
 end
 
 function DEPLS.KeyPressed(key, scancode, repeat_bit)
+	if DEPLS.Routines.PauseScreen.IsPaused() then return end
+	
 	if key == "f6" then
 		DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
 		update_audio_volume()
 	elseif key == "f5" then
 		DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
 		update_audio_volume()
+	elseif key == "pause" and DEPLS.ElapsedTime > 0 then
+		DEPLS.Pause()
 	elseif DEPLS.ElapsedTime >= 0 then
 		for i = 1, 9 do
 			if key == DEPLS.Keys[i] then
@@ -1066,7 +1135,7 @@ function DEPLS.KeyReleased(key)
 	elseif key == "pagedown" and not(DEPLS.PlaySpeedAlterDisabled) and DEPLS.PlaySpeed > 0.0625 then
 		-- Decrease play speed
 		DEPLS.StoryboardFunctions.SetPlaySpeed(DEPLS.PlaySpeed * 0.5)
-	elseif DEPLS.ElapsedTime >= 0 then
+	elseif DEPLS.ElapsedTime >= 0 and not(DEPLS.Routines.PauseScreen.IsPaused()) then
 		for i = 1, 9 do
 			if key == DEPLS.Keys[i] then
 				DEPLS.NoteManager.SetTouch(nil, key, true)
@@ -1096,12 +1165,13 @@ function DEPLS.Exit()
 	if DEPLS.VideoBackgroundData then
 		DEPLS.VideoBackgroundData[1]:pause()
 		DEPLS.VideoBackgroundData = nil
+		love.handlers.lowmemory()
 	end
 end
 
 function DEPLS.Focus(focus)
 	if focus and DEPLS.Sound.LiveAudio and DEPLS.ElapsedTime >= 0 then
-		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime / 1000)
+		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
 	end
 end
 
