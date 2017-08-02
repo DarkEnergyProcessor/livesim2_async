@@ -27,26 +27,7 @@
 DEPLS_VERSION = "2.0-beta1"
 DEPLS_VERSION_NUMBER = 01010501	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
-----------------------
--- AquaShine loader --
-----------------------
-local AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
-	Entries = {
-		livesim = {1, "livesim2_cliwrap.lua"},
-		settings = {0, "setting_view.lua"},
-		main_menu = {0, "main_menu.lua"},
-		beatmap_select = {0, "beatmap_select.lua"},
-		unit_editor = {0, "unit_editor.lua"},
-		about = {0, "about_screen.lua"},
-		render = {3, "render_livesim.lua"},
-		noteloader = {1, "invoke_noteloader.lua"},
-		unit_create = {0, "unit_create.lua"},
-		beatmap_select2 = {0, "beatmap_select2.lua"}
-	},
-	DefaultEntry = "main_menu",
-	Width = 960,	-- Letterboxing
-	Height = 640	-- Letterboxing
-})
+local AquaShine = love._getAquaShineHandle()
 
 --------------------------------
 -- Yohane Initialization Code --
@@ -55,7 +36,10 @@ local Yohane = require("Yohane")
 
 Yohane.Platform.ResolveImage = AquaShine.LoadImage
 function Yohane.Platform.ResolveAudio(path)
-	return love.audio.newSource(AquaShine.LoadAudio(path .. ".wav"))
+	local s = love.audio.newSource(AquaShine.LoadAudio(path .. ".wav"))
+	s:setVolume(AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008)
+	
+	return s
 end
 
 function Yohane.Platform.CloneImage(image_handle)

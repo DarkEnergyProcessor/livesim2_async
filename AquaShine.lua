@@ -129,11 +129,10 @@ function AquaShine.ParseCommandLineConfig(argv)
 		table.remove(argv, 1)
 	end
 	
-	local pattern = AquaShine.OperatingSystem == "Windows" and "[/|%-](%w+)=?(.*)" or "%-(%w+)=?(.*)"
 	local arglen = #arg
 	
 	for i = arglen, 1, -1 do
-		local k, v = arg[i]:match(pattern)
+		local k, v = arg[i]:match("^[/|%-](%w+)=?(.*)")
 		
 		if k and v then
 			config_list[k:lower()] = #v == 0 and true or tonumber(v) or v
@@ -805,48 +804,7 @@ function love.load(arg)
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.OperatingSystem = love.system.getOS()
-	AquaShine.ParseCommandLineConfig(arg)
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
-	
-	-- Flags check
-	do
-		local force_setmode = false
-		local setmode_param = {
-			fullscreen = false,
-			fullscreentype = "desktop",
-			resizable = true,
-			vsync = true
-		}
-		
-		if config_list.width then
-			force_setmode = true
-			wx = config_list.width
-		end
-		
-		if config_list.height then
-			force_setmode = true
-			wy = config_list.height
-		end
-		
-		if config_list.fullscreen then
-			force_setmode = true
-			setmode_param.fullscreen = true
-			wx, wy = 0, 0
-		end
-		
-		if config_list.novsync then
-			force_setmode = true
-			setmode_param.vsync = false
-		end
-		
-		if force_setmode then
-			love.window.setMode(wx, wy, setmode_param)
-			
-			if setmode_param.fullscreen then
-				wx, wy = love.graphics.getDimensions()
-			end
-		end
-	end
 	
 	if AquaShine.GetCommandLineConfig("debug") then
 		function AquaShine.Log(part, msg, ...)

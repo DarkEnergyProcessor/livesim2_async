@@ -17,13 +17,6 @@ local Settings = {
 
 local SettingSelection = {
 	{
-		Name = "AUTOPLAY", Default = 0,
-		Caption = "Autoplay",
-		Type = "switch",
-		On = 1,
-		Off = 0
-	},
-	{
 		Name = "NOTE_STYLE", Default = 1,
 		Caption = "SIF-v5 Note Style",
 		Type = "switch",
@@ -83,9 +76,6 @@ local SettingSelection = {
 		Min = 1,
 		Max = 11
 	},
-	------------------
-	-- Another page --
-	------------------
 	{
 		Name = "JUST_IN_TIME", Default = "off",
 		Caption = "JIT (Needs Restart)",
@@ -93,6 +83,9 @@ local SettingSelection = {
 		On = "on",
 		Off = "off"
 	},
+	------------------
+	-- Another page --
+	------------------
 	{
 		Name = "NS_ACCUMULATION", Default = 0,
 		Caption = "N.S. Accumulation",
@@ -122,6 +115,14 @@ local SettingSelection = {
 		Min = 0.5,
 		Max = 1,
 		Increment = 0.1
+	},
+	{
+		Name = "SE_VOLUME", Default = 80,
+		Caption = "SE Volume",
+		Type = "number",
+		Min = 0,
+		Max = 100,
+		Increment = 10
 	}
 }
 

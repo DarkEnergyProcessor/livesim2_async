@@ -11,11 +11,11 @@ local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
 local Background = AquaShine.LoadImage("assets/image/background/liveback_12.png")
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
-Written By:		AuahDark
-Special Thanks:	@yuyu0127_ for the SIF v5-style note images.
-
+Written By:     AuahDark
+Special Thanks: @yuyu0127_ for the SIF v5-style note images.
+                @RayFirefist for the contribution to Live Simulator: 2
+				/u/MilesElectric168 for the note randomizer algorithm
 License:
-
 The MIT License (MIT)
 Copyright (c) 2038 Dark Energy Processor Corporation
 

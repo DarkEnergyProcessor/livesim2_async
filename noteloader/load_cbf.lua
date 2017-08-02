@@ -499,7 +499,7 @@ function CBFBeatmap.GetCustomBackground(this)
 					
 					bg[0] = love.graphics.newImage(canvas:newImageData(88, 0, 960, 640))
 					bg[1] = love.graphics.newImage(canvas:newImageData(0, 0, 88, 640))
-					bg[2] = love.graphics.newImage(canvas:newImageData(960, 0, 88, 640))
+					bg[2] = love.graphics.newImage(canvas:newImageData(1048, 0, 88, 640))
 				elseif ratio >= 1.5 then
 					-- 2:3 ratio. Put it as-is
 					bg[0] = img

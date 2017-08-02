@@ -64,4 +64,4 @@ end
 return MySection, "Window title name"
 ```
 
-Please see `main.lua` for example how to initialize AquaShine.
+Please see `conf.lua` for example how to initialize AquaShine.

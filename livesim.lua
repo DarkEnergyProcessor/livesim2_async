@@ -464,25 +464,29 @@ end
 
 --! @brief Draws debug information
 function DEPLS.DrawDebugInfo()
+	local status = love.graphics.getStats()
 	local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
 	local text = string.format([[
 %d FPS
 RENDERER = %s %s
-NOTE_SPEED = %d ms
+DRAWCALLS = %d
+TEXTUREMEMORY = %d Bytes
+LOADED_IMAGES = %d
+LOADED_CANVAS = %d
+LOADED_FONTS = %d
 ELAPSED_TIME = %d ms
 SPEED_FACTOR = %.2f%%
 CURRENT_COMBO = %d
 PLAYING_EFFECT = %d
 LIVE_OPACITY = %.2f
 BACKGROUND_BLACKNESS = %.2f
-AUDIO_VOLUME = %.2f
-AUDIO_SAMPLE = %5.2f, %5.2f
+AUDIO_SAMPLE = (%.2f) %5.2f, %5.2f
 REMAINING_NOTES = %d
-PERFECT = %d GREAT = %d
-GOOD = %d BAD = %d MISS = %d
+PERFECT = %d GREAT = %d GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]		, love.timer.getFPS(), AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], DEPLS.NotesSpeed, DEPLS.ElapsedTime
-		, DEPLS.PlaySpeed * 100, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
+]]		, love.timer.getFPS(), AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls, status.texturememory
+		, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
+		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
 		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 	love.graphics.setFont(DEPLS.MTLmr3m)
@@ -527,6 +531,12 @@ function DEPLS.Resume()
 	end
 end
 
+function DEPLS.IsLiveEnded()
+	return (not(DEPLS.Sound.LiveAudio) or
+			DEPLS.Sound.LiveAudio:isPlaying() == false) and
+			DEPLS.NoteManager.NoteRemaining == 0
+end
+
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
@@ -536,16 +546,17 @@ function DEPLS.Start(argv)
 	EffectPlayer.Clear()
 	
 	-- Load tap sound. High priority
+	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008
 	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData("sound/SE_306.ogg", love.audio.newSource, "sound/SE_306.ogg", "static")
-	DEPLS.Sound.PerfectTap:setVolume(0.64)
+	DEPLS.Sound.PerfectTap:setVolume(se_volume)
 	DEPLS.Sound.GreatTap = AquaShine.GetCachedData("sound/SE_307.ogg", love.audio.newSource, "sound/SE_307.ogg", "static")
-	DEPLS.Sound.GreatTap:setVolume(0.64)
+	DEPLS.Sound.GreatTap:setVolume(se_volume)
 	DEPLS.Sound.GoodTap = AquaShine.GetCachedData("sound/SE_308.ogg", love.audio.newSource, "sound/SE_308.ogg", "static")
-	DEPLS.Sound.GoodTap:setVolume(0.64)
+	DEPLS.Sound.GoodTap:setVolume(se_volume)
 	DEPLS.Sound.BadTap = AquaShine.GetCachedData("sound/SE_309.ogg", love.audio.newSource, "sound/SE_309.ogg", "static")
-	DEPLS.Sound.BadTap:setVolume(0.64)
+	DEPLS.Sound.BadTap:setVolume(se_volume)
 	DEPLS.Sound.StarExplode = AquaShine.GetCachedData("sound/SE_326.ogg", love.audio.newSource, "sound/SE_326.ogg", "static")
-	DEPLS.Sound.StarExplode:setVolume(0.64)
+	DEPLS.Sound.StarExplode:setVolume(se_volume)
 	
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
@@ -872,10 +883,7 @@ function DEPLS.Update(deltaT)
 		-- Update effect player
 		EffectPlayer.Update(deltaT)
 		
-		if
-			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
-			DEPLS.NoteManager.NoteRemaining == 0
-		then
+		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Update(deltaT)
 		end
 		
@@ -957,7 +965,6 @@ function DEPLS.Draw(deltaT)
 		setColor(255, 255, 255, DEPLS.LiveOpacity)
 		draw(Images.Header, 0, 0)
 		draw(Images.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
-		draw(Images.Pause, 916, 5, 0, 0.6)
 		
 		draw(Images.StaminaRelated.Bar, 14, 60)
 		for i = 1, #Images.StaminaRelated.DrawTarget do
@@ -988,11 +995,10 @@ function DEPLS.Draw(deltaT)
 		EffectPlayer.Draw()
 
 		-- Live clear animation
-		if
-			(not(DEPLS.Sound.LiveAudio) or DEPLS.Sound.LiveAudio:isPlaying() == false) and
-			DEPLS.NoteManager.NoteRemaining == 0
-		then
+		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Draw()
+		else
+			draw(Images.Pause, 916, 5, 0, 0.6)
 		end
 		
 		-- Pause overlay
@@ -1083,7 +1089,7 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
 	end
 	
-	if x >= 916 and y >= 6 and x < 952 and y < 42 then
+	if not(DEPLS.IsLiveEnded()) and x >= 916 and y >= 6 and x < 952 and y < 42 then
 		DEPLS.Pause()
 	end
 end

@@ -12,9 +12,9 @@ function DEPLS.Start(arg)
 	local beatmap = assert(arg[1], "Specify beatmap")
 	
 	if arg.Absolute then
-		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader(beatmap), "Beatmap not found: "..beatmap)})
+		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader(beatmap))})
 	else
-		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader("beatmap/"..beatmap), "Beatmap not found: "..beatmap)})
+		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader("beatmap/"..beatmap))})
 	end
 end
 

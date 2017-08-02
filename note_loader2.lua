@@ -182,6 +182,10 @@ function NoteLoader.NoteLoader(file, noproject)
 		-- File loading
 		local file_handle = love.filesystem.newFile(file, "r")
 		
+		if not(file_handle) then
+			return nil, file..": Beatmap doesn't exist"
+		end
+		
 		for i = 1, #NoteLoader.FileLoaders do
 			local ldr = NoteLoader.FileLoaders[i]
 			local success, nobj, noclose = pcall(ldr.LoadNoteFromFilename, file_handle, destination)
@@ -197,6 +201,8 @@ function NoteLoader.NoteLoader(file, noproject)
 		
 		file_handle:close()
 	end
+	
+	return nil, file..": No suitable beatmap format found"
 end
 
 function NoteLoader.Enumerate()
