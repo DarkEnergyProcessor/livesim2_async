@@ -146,7 +146,8 @@ local function NewNoteObject(note_data, offset)
 			DEPLS.NoteAccuracy[4] / 325 * note_speed_limit,
 			DEPLS.NoteAccuracy[5] / 325 * note_speed_limit,
 			InvV = note_speed_limit / 400
-		}
+		},
+		Opacity = 1
 	}
 	local idolpos = assert(DEPLS.IdolPosition[note_data.position], "Invalid idol position")
 	local note_effect = note_data.effect % 10
@@ -159,6 +160,10 @@ local function NewNoteObject(note_data, offset)
 	-- Swing note
 	noteobj.SlideNote = (note_data.effect - 1) / 10 >= 1 and note_effect < 4
 	
+	-- Hidden/sudden note
+	noteobj.HiddenType = note_data.vanish
+	
+	-- If it's swing note, add it to queue for later initialization
 	if noteobj.SlideNote then
 		local newnotedata = Yohane.CopyTable(note_data)
 		
@@ -195,10 +200,11 @@ local function NewNoteObject(note_data, offset)
 		noteobj.LongNoteMesh = love.graphics.newMesh(4, "strip", "stream")
 		noteobj.EndCircleScale = 0
 		
-		noteobj.Vert[1] = {40, 0, 1, 0.0625}
-		noteobj.Vert[2] = {40, 0, 1, 0.9375}
-		noteobj.Vert[3] = {-1, -1, 0, 0.9375}
-		noteobj.Vert[4] = {-1, -1, 0, 0.0625}
+		noteobj.Vert[1] = {40, 0, 1, 0.0625, 255, 255, 255, 255, 0}
+		noteobj.Vert[2] = {40, 0, 1, 0.9375, 255, 255, 255, 255, 0}
+		noteobj.Vert[3] = {-1, -1, 0, 0.9375, 255, 255, 255, 255, 0}
+		noteobj.Vert[4] = {-1, -1, 0, 0.0625, 255, 255, 255, 255, 0}
+		noteobj.Opacity2 = 1
 		
 		noteobj.LongNoteMesh:setTexture(DEPLS.Images.Note.LongNote)
 		
@@ -233,10 +239,21 @@ function SingleNoteObject.Update(this, deltaT)
 	this.FirstCircle[2] = this.NoteposDiff[2] * (ElapsedTime / NotesSpeed) + 160
 	this.CircleScale = math.min(ElapsedTime / NotesSpeed, 1)
 	
-	-- If it's not pressed, and it's beyond miss range, make it miss
-	local notedistance = this.NoteAccuracy.InvV * distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	-- Calculate note accuracy
+	local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+	local noteaccuracy = this.NoteAccuracy.InvV * notedistance
+	
+	-- Calculate hidden/sudden opacity
+	if this.HiddenType == 1 then
+		-- Hidden note
+		this.Opacity = math.max(math.min((264 - (400 - notedistance)) * 0.0125, 1), 0)
+	elseif this.HiddenType == 2 then
+		-- Sudden note
+		this.Opacity = math.max(math.min(((400 - notedistance) - 160) * 0.0125, 1), 0)
+	end
 
-	if ElapsedTime >= NotesSpeed and notedistance >= this.NoteAccuracy[5] then
+	-- If it's not pressed, and it's beyond miss range, make it miss
+	if ElapsedTime >= NotesSpeed and noteaccuracy >= this.NoteAccuracy[5] then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 		DEPLS.Routines.PerfectNode.Replay = true
 		DEPLS.Routines.ComboCounter.Reset = true
@@ -254,7 +271,7 @@ function SingleNoteObject.Update(this, deltaT)
 		storyboard_callback("NoteTap",
 			this.Position,					-- pos
 			0, 								-- accuracy (miss)
-			notedistance,					-- distance
+			noteaccuracy,					-- distance
 			this.Attribute,					-- attribute
 			this.StarNote,					-- is_star
 			this.SimulNote,					-- is_simul
@@ -272,7 +289,7 @@ function SingleNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	local setColor = love.graphics.setColor
 	
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity)
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	if DEPLS.DebugNoteDistance then
@@ -409,15 +426,32 @@ function LongNoteObject.Update(this, deltaT)
 		this.CircleScale = 1
 	end
 	
+	-- Calculate hidden/sudden opacity if necessary
+	if this.HiddenType then
+		-- Calculate note accuracy
+		local nd1 = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
+		local nd2 = distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
+		
+		if this.HiddenType == 1 then
+			-- Hidden note
+			this.Opacity = math.max(math.min((264 - (400 - nd1)) * 0.0125, 1), 0)
+			this.Opacity2 = math.max(math.min((264 - (400 - nd2)) * 0.0125, 1), 0)
+		elseif this.HiddenType == 2 then
+			-- Sudden note
+			this.Opacity = math.max(math.min(((400 - nd1) - 160) * 0.0125, 1), 0)
+			this.Opacity2 = math.max(math.min(((400 - nd2) - 160) * 0.0125, 1), 0)
+		end
+	end
+	
 	-- If it's not pressed/holded for long time, and it's beyond miss range, make it miss
 	do
 		local cmp = this.TouchID and this.SecondCircle or this.FirstCircle
 		local cmp2 = this.TouchID and NotesSpeed + this.ZeroAccuracyEndNote or NotesSpeed
 		
 		if ElapsedTime >= cmp2 then
-			local notedistance = this.NoteAccuracy.InvV * distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
+			local nd = this.NoteAccuracy.InvV * distance(cmp[1] - this.CenterIdol[1], cmp[2] - this.CenterIdol[2])
 			
-			if notedistance > this.NoteAccuracy[5] then
+			if nd > this.NoteAccuracy[5] then
 				DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Miss
 				DEPLS.Routines.PerfectNode.Replay = true
 				DEPLS.Routines.ComboCounter.Reset = true
@@ -430,7 +464,7 @@ function LongNoteObject.Update(this, deltaT)
 					cmp == this.SecondCircle,		-- release
 					this.Position,					-- pos
 					0, 								-- accuracy (miss)
-					notedistance,					-- distance
+					nd / NoteAccuracy.InvV,					-- distance
 					this.Attribute,					-- attribute
 					this.SimulNote,					-- is_simul
 					this.SlideNote					-- is_slide
@@ -449,18 +483,24 @@ function LongNoteObject.Update(this, deltaT)
 		this.EndCircleScale = math.min(EndNoteElapsedTime / NotesSpeed, 1)
 	end
 	
+	local alpha1 = this.Opacity * 255
+	local alpha2 = this.Opacity2 * 255
 	-- First position
 	this.Vert[4][1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
 	this.Vert[4][2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	this.Vert[4][8] = alpha1
 	-- Second position
 	this.Vert[3][1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
 	this.Vert[3][2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	this.Vert[3][8] = alpha1
 	-- Third position
 	this.Vert[1][1] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction - math.pi)) + 0.5)	-- x
 	this.Vert[1][2] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction - math.pi)) + 0.5)	-- y
+	this.Vert[1][8] = alpha2
 	-- Fourth position
 	this.Vert[2][1] = math.floor((this.SecondCircle[1] + (this.EndCircleScale * 62) * math.cos(direction)) + 0.5)		-- x
 	this.Vert[2][2] = math.floor((this.SecondCircle[2] + (this.EndCircleScale * 62) * math.sin(direction)) + 0.5)		-- y
+	this.Vert[2][8] = alpha2
 	
 	this.LongNoteMesh:setVertices(this.Vert)
 	
@@ -481,12 +521,11 @@ function LongNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	
 	-- Draw note trail
-	setBlendMode("add")
 	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
 	draw(this.LongNoteMesh)
 	
-	setBlendMode("alpha")
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	-- Draw note object
+	setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity)
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	-- Draw simultaneous note bar if it is
@@ -497,9 +536,11 @@ function LongNoteObject.Draw(this)
 	local draw_endcircle = this.EndCircleScale > 0
 	-- Draw end note trail if it is
 	if draw_endcircle then
+		setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity2)
 		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
 	end
 	
+	setColor(255, 255, 255)
 	if this.TouchID and not(DEPLS.MinimalEffect) then
 		love.graphics.push()
 		love.graphics.translate(this.FirstCircle[1], this.FirstCircle[2])

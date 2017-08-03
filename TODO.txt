@@ -18,10 +18,10 @@ v2.0
 - FFmpeg extension					OK
 - Unit creation						
 - NoteLoader2 (metadata loading, beatmap verification)	OK
-- Hidden note and sudden note				
+- Hidden note and sudden note				OK
 - Individual note speed					OK
 - Live Show! Failed					
-- Pause							WIP
+- Pause							OK
 - Adjustable combo display size				OK
 - Adjustable SE volume					OK
 - Download SIF beatmaps					WIP (with RayFirefist)

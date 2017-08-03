@@ -186,7 +186,6 @@ local TemporaryEntryPoint
 function AquaShine.LoadEntryPoint(name, arg)
 	local scriptdata, title
 	
-	AquaShine.AlwaysRunUnfocus = AquaShine.LoadConfig("UNFOCUSED_RUN", 1) == 1
 	AquaShine.SleepDisabled = false
 	
 	if AquaShine._TempTouchEffect and AquaShine.TouchEffect == nil then
@@ -568,35 +567,6 @@ function AquaShine.MainLoop()
 				end
 				
 				return a
-			elseif name == "focus" then
-				if a == false and not(AquaShine.AlwaysRunUnfocus) then
-					love.audio.pause()
-					love.window.setDisplaySleepEnabled(true)
-					love.handlers[name](a, b, c, d, e, f)
-					
-					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-						AquaShine.CurrentEntryPoint.Focus(false)
-					end
-					
-					repeat
-						name, a, b, c, d, e, f = love.event.wait()
-						
-						if name then
-							love.handlers[name](a, b, c, d, e, f)
-						end
-						love.timer.step()
-					until name == "focus" and a
-					
-					love.audio.resume()
-					
-					if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
-						AquaShine.CurrentEntryPoint.Focus(true)
-					end
-					
-					if AquaShine.SleepDisabled then
-						love.window.setDisplaySleepEnabled(false)
-					end
-				end
 			end
 			
 			love.handlers[name](a, b, c, d, e, f)
@@ -745,7 +715,7 @@ function love.keypressed(key, scancode, repeat_bit)
 end
 
 function love.keyreleased(key, scancode)
-	if key == "f12" then
+	if key == "f12" and love.thread then
 		love.thread.newThread(ScreenshotThreadCode):start(AquaShine.MainCanvas:newImageData())
 	elseif key == "f10" then
 		AquaShine.Log("AquaShine", "F10: collectgarbage")
@@ -755,6 +725,12 @@ function love.keyreleased(key, scancode)
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.KeyReleased then
 		AquaShine.CurrentEntryPoint.KeyReleased(key, scancode)
+	end
+end
+
+function love.focus(f)
+	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Focus then
+		AquaShine.CurrentEntryPoint.Focus(f)
 	end
 end
 

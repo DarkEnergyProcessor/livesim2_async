@@ -606,6 +606,7 @@ function DEPLS.Start(argv)
 	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
 	
+	-- Live Show! Cleared voice
 	if DEPLS.Sound.LiveClear then DEPLS.Sound.LiveClear = love.audio.newSource(DEPLS.Sound.LiveClear) end
 	
 	-- Normalize song volume
@@ -1176,7 +1177,7 @@ function DEPLS.Exit()
 end
 
 function DEPLS.Focus(focus)
-	if focus and DEPLS.Sound.LiveAudio and DEPLS.ElapsedTime >= 0 then
+	if not(AquaShine.IsDesktopSystem()) and focus and DEPLS.Sound.LiveAudio and DEPLS.ElapsedTime >= 0 then
 		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
 	end
 end
