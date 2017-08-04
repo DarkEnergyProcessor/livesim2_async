@@ -41,7 +41,7 @@ Sections:
     dword - Score needed for C score (or 0 if score info not available)
     dword - Score needed for B score (or 0 if score info not available)
     dword - Score needed for A score (or 0 if score info not available)
-    dword - Score needed for S score (or 0 if combo info not available)
+    dword - Score needed for S score (or 0 if score info not available)
     dword - Combo needed for C combo (or 0 if combo info not available)
     dword - Combo needed for B combo (or 0 if combo info not available)
     dword - Combo needed for A combo (or 0 if combo info not available)
@@ -67,6 +67,7 @@ Sections:
                             1 = Token note
                             2 = Long note (bit 6-23 is the length, max 262.143 seconds or 262143 ms length)
                             3 = Star note
+                 * bit 6-23: Long note length (or 0)
                  * bit 24-31: Swing note group (or 0)
                  * Note: There's no way to specify if notes is simultaneous, because it's determined at runtime
     End For

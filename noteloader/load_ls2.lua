@@ -104,7 +104,7 @@ function LS2Beatmap.GetName(this)
 end
 
 function LS2Beatmap.GetBeatmapTypename(this)
-	return string.format("Live Simulator: 2 Beatmap (v%s)", this.version_2 and "2.0" or "1.x")
+	return string.format("Live Simulator: 2 Beatmap (v%s)", this.ls2.version_2 and "2.0" or "1.x")
 end
 
 function LS2Beatmap.GetCoverArt(this)
@@ -187,7 +187,18 @@ end
 function LS2Beatmap.GetStoryboard(this)
 	if this.ls2.sections.SRYL then
 		this.file:seek(this.ls2.sections.SRYL[1])
-		local story = LuaStoryboard.LoadString(ls2.section_processor.SRYL[1](this.file))
+		local story_data = ls2.section_processor.SRYL[1](this.file)
+		
+		-- Attempt to decompress storyboard script
+		do
+			local status, new_story = pcall(love.math.decompress, story_data, "zlib")
+			
+			if status then
+				story_data = new_story
+			end
+		end
+		
+		local story = LuaStoryboard.LoadString(story_data)
 		
 		-- Enumerate all DATA
 		if this.ls2.sections.DATA then
@@ -259,6 +270,15 @@ function LS2Beatmap.GetBeatmapAudio(this)
 				this.audio = AquaShine.FFmpegExt.LoadAudio(data, true)
 			else
 				this.audio = love.sound.newSoundData(love.filesystem.newFileData(data, "_."..ext))
+			end
+		end
+		
+		if not(this.audio) then
+			-- Get from metadata
+			local meta = this:_GetMetadata()
+			
+			if meta.song_file then
+				this.audio = AquaShine.LoadAudio("audio/"..meta.song_file)
 			end
 		end
 		
