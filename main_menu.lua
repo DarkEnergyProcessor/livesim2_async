@@ -6,9 +6,9 @@ local AquaShine = ...
 
 local menu_select = {
 	-- Name, Func
-	{"Play", function() AquaShine.LoadEntryPoint("beatmap_select.lua") end},
-	{"Change Units", function() AquaShine.LoadEntryPoint("unit_editor.lua") end},
-	{"Settings", function() AquaShine.LoadEntryPoint("setting_view.lua") end}
+	{"Play", function() AquaShine.LoadEntryPoint(":beatmap_select") end},
+	{"Change Units", function() AquaShine.LoadEntryPoint(":unit_editor") end},
+	{"Settings", function() AquaShine.LoadEntryPoint(":settings") end}
 }
 
 -- We're not allowed to explicitly exit in iOS
@@ -80,7 +80,7 @@ local composition = AquaShine.Composition.Create({
 			love.graphics.print(versionText, 2, 1)
 		end,
 		click = function()
-			AquaShine.LoadEntryPoint("about_screen.lua")
+			AquaShine.LoadEntryPoint(":about")
 		end,
 	}
 })

@@ -636,7 +636,7 @@ function DEPLS.Start(argv)
 	local noteloader_background = noteloader_data:GetBackgroundID()
 	
 	if noteloader_background > 0 then
-		BackgroundID = noteloader_backgroundid
+		BackgroundID = noteloader_background
 	elseif noteloader_background == -1 then
 		local cbackground = noteloader_data:GetCustomBackground()
 		DEPLS.BackgroundImage[0][1] = cbackground[0]
@@ -1087,7 +1087,7 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	
 	if DEPLS.Routines.ResultScreen.CanExit then
 		-- Back
-		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
+		AquaShine.LoadEntryPoint(":beatmap_select", {Random = DEPLS.Arg.Random})
 	end
 	
 	if not(DEPLS.IsLiveEnded()) and x >= 916 and y >= 6 and x < 952 and y < 42 then
@@ -1125,7 +1125,7 @@ end
 function DEPLS.KeyReleased(key)
 	if key == "escape" then
 		-- Back
-		AquaShine.LoadEntryPoint("beatmap_select.lua", {Random = DEPLS.Arg.Random})
+		AquaShine.LoadEntryPoint(":beatmap_select", {Random = DEPLS.Arg.Random})
 	elseif key == "backspace" then
 		-- Restart
 		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)

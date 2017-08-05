@@ -88,7 +88,6 @@ function AquaShine.MountZip(path, target)
 	if target == nil then
 		if mount_target[path] then
 			mount_target[path] = mount_target[path] - 1
-			AquaShine.Log("AquaShine", "Mount counter %d", mount_target[path])
 			
 			if mount_target[path] == 0 then
 				mount_target[path] = nil
@@ -106,13 +105,12 @@ function AquaShine.MountZip(path, target)
 			
 			if r then
 				mount_target[path] = 1
+				AquaShine.Log("AquaShine", "New mount %s", path)
 			end
 			
-			AquaShine.Log("AquaShine", "New mount %s", path)
 			return r
 		else
 			mount_target[path] = mount_target[path] + 1
-			AquaShine.Log("AquaShine", "Mount counter %d", mount_target[path])
 			return true
 		end
 	end
@@ -194,10 +192,17 @@ function AquaShine.LoadEntryPoint(name, arg)
 	
 	love.window.setDisplaySleepEnabled(true)
 	
-	if AquaShine.PreloadedEntryPoint[name] then
-		scriptdata, title = AquaShine.PreloadedEntryPoint[name](AquaShine)
+	if name:sub(1, 1) == ":" then
+		-- Predefined entry point
+		if AquaShine.AllowEntryPointPreload then
+			scriptdata, title = assert(assert(AquaShine.PreloadedEntryPoint[name:sub(2)], "Entry point not found")(AquaShine))
+		else
+			scriptdata, title = assert(assert(love.filesystem.load(
+				assert(ASArg.Entries[name:sub(2)], "Entry point not found")[2]
+			))(AquaShine))
+		end
 	else
-		scriptdata, title = assert(love.filesystem.load(name))(AquaShine)
+		scriptdata, title = assert(assert(love.filesystem.load(name))(AquaShine))
 	end
 	
 	scriptdata.Start(arg or {})
@@ -819,17 +824,17 @@ function love.load(arg)
 	-- Preload entry points
 	if AquaShine.AllowEntryPointPreload then
 		for n, v in pairs(ASArg.Entries) do
-			AquaShine.PreloadedEntryPoint[v[2]] = assert(love.filesystem.load(v[2]))
+			AquaShine.PreloadedEntryPoint[n] = assert(love.filesystem.load(v[2]))
 		end
 	end
 	
 	-- Load entry point
-	if arg[1] and ASArg.Entries[arg[1]] and #arg > ASArg.Entries[arg[1]][1] then
+	if arg[1] and ASArg.Entries[arg[1]] and ASArg.Entries[arg[1]][1] >= 0 and #arg > ASArg.Entries[arg[1]][1] then
 		local entry = table.remove(arg, 1)
 		
 		AquaShine.LoadEntryPoint(ASArg.Entries[entry][2], arg)
 	elseif ASArg.DefaultEntry then
-		AquaShine.LoadEntryPoint(ASArg.Entries[ASArg.DefaultEntry][2], arg)
+		AquaShine.LoadEntryPoint(":"..ASArg.DefaultEntry, arg)
 	end
 end
 

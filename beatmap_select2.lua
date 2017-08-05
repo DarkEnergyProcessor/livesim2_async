@@ -5,27 +5,8 @@
 local AquaShine = ...
 local love = love
 local NoteLoader = AquaShine.LoadModule("note_loader2")
-local BeatmapSelect = {
-	BeatmapTypeFont = AquaShine.LoadFont("MTLmr3m.ttf", 11),
-	SongNameFont = AquaShine.LoadFont("MTLmr3m.ttf", 22),
-	Page = 1,
-	SwipeData = {nil, nil},	-- Touch handle (or 0 for mouse click), x1
-	SwipeThreshold = 75,
-}
+local BeatmapSelect = assert(love.filesystem.load("beatmap_select_common.lua"))(AquaShine)
 
-BeatmapSelect.CompositionList = {}
-BeatmapSelect.PageCompositionTable = {
-	x = 64, y = 560, text = "Page 1",
-	font = BeatmapSelect.SongNameFont,
-	draw = function(this)
-		love.graphics.setFont(this.font)
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.print(this.text, 1, 1)
-		love.graphics.print(this.text, -1, -1)
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.print(this.text)
-	end
-}
 BeatmapSelect.BeatmapInfoData = {
 	x = 0, y = 0,
 	title = AquaShine.LoadFont("MTLmr3m.ttf", 30),
@@ -38,7 +19,6 @@ BeatmapSelect.BeatmapInfoData = {
 		love.graphics.print("S\nA\nB\nC", 604, 152)
 		love.graphics.print("Beatmap Type:", 440, 330)
 		love.graphics.print("Difficulty:", 440, 380)
-		love.graphics.print("Audio Preview", 440, 480)
 		
 		if this.beatmap then
 			local si = this.beatmap.score_data
@@ -73,51 +53,7 @@ BeatmapSelect.BeatmapInfoData = {
 		end
 	end
 }
-BeatmapSelect.AutoplayTick = {
-	x = 440, y = 520,
-	w = 24, h = 24,
-	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
-	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
-	is_ticked = AquaShine.LoadConfig("AUTOPLAY", 0) == 1,
-	draw = function(this)
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(this.default)
-		
-		if this.is_ticked then
-			love.graphics.draw(this.tick, -2, 0)
-		end
-		
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.setFont(BeatmapSelect.SongNameFont)
-		love.graphics.print("Autoplay", 33, 2)
-	end,
-	click = function(this)
-		this.is_ticked = not(this.is_ticked)
-		AquaShine.SaveConfig("AUTOPLAY", this.is_ticked and "1" or "0")
-	end
-}
-BeatmapSelect.RandomTick = {
-	x = 440, y = 556,
-	w = 24, h = 24,
-	tick = AquaShine.LoadImage("assets/image/ui/com_etc_293.png"),
-	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
-	is_ticked = false,
-	draw = function(this)
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(this.default)
-		
-		if this.is_ticked then
-			love.graphics.draw(this.tick, -2, 0)
-		end
-		
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.setFont(BeatmapSelect.SongNameFont)
-		love.graphics.print("Random", 33, 2)
-	end,
-	click = function(this)
-		this.is_ticked = not(this.is_ticked)
-	end
-}
+
 BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 	{
 		-- Background
@@ -155,10 +91,26 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 				love.graphics.draw(this.image_se)
 			end,
 			click = function()
-				AquaShine.LoadEntryPoint("main_menu.lua")
+				AquaShine.LoadEntryPoint(":main_menu")
 			end
 		}
 	),
+	-- Insert beatmap
+	BeatmapSelect._Button50ScaleTemplate(736, 8, "Insert Beatmap", function()
+		if AquaShine.FileSelection then
+			local list = AquaShine.FileSelection("Insert Beatmap(s)", nil, nil, true)
+		end
+	end),
+	-- Download beatmap
+	BeatmapSelect._Button50ScaleTemplate(512, 8, "Download Beatmaps", function()
+		if love.filesystem.isFile("external/download_beatmap.lua") then
+			AquaShine.LoadEntryPoint("external/download_beatmap.lua")
+		end
+	end),
+	-- Open beatmap directory
+	BeatmapSelect._Button50ScaleTemplate(64, 592, "Open Beatmap Directory", function()
+		love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
+	end),
 	BeatmapSelect.PageCompositionTable,
 	{
 		image = AquaShine.LoadImage("assets/image/ui/com_win_40.png"),
@@ -173,51 +125,6 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 	BeatmapSelect.AutoplayTick,
 	BeatmapSelect.RandomTick,
 	{
-		x = 596, y = 470, w = 108, h = 43.5,
-		buttons = {AquaShine.LoadImage(
-			"assets/image/ui/button_play.png",
-			"assets/image/ui/button_play_se.png",
-			"assets/image/ui/button_play_di.png",
-			"assets/image/ui/button_stop.png",
-			"assets/image/ui/button_stop_se.png"
-		)},
-		draw = function(this)
-			love.graphics.setColor(255, 255, 255)
-			
-			if not(BeatmapSelect.BeatmapInfoData.beatmap_song) then
-				love.graphics.draw(this.buttons[3], 0, 0, 0, 0.75)
-				return
-			end
-			
-			love.graphics.draw(
-				BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() and this.buttons[4] or this.buttons[1],
-				0, 0, 0, 0.75
-			)
-		end,
-		draw_se = function(this)
-			love.graphics.setColor(255, 255, 255)
-			
-			if not(BeatmapSelect.BeatmapInfoData.beatmap_song) then
-				love.graphics.draw(this.buttons[3], 0, 0, 0, 0.75)
-				return
-			end
-			
-			love.graphics.draw(
-				BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() and this.buttons[5] or this.buttons[2],
-				0, 0, 0, 0.75
-			)
-		end,
-		click = function(this)
-			if BeatmapSelect.BeatmapInfoData.beatmap_song then
-				if BeatmapSelect.BeatmapInfoData.beatmap_song:isPlaying() then
-					BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
-				else
-					BeatmapSelect.BeatmapInfoData.beatmap_song:play()
-				end
-			end
-		end
-	},
-	{
 		x = 768, y = 529, w = 144, h = 58,
 		buttons = {AquaShine.LoadImage(
 			"assets/image/ui/com_button_14.png",
@@ -225,9 +132,11 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 			"assets/image/ui/com_button_14se.png"
 		)},
 		draw = function(this)
+			love.graphics.setColor(255, 255, 255)
 			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[1] or this.buttons[2])
 		end,
 		draw_se = function(this)
+			love.graphics.setColor(255, 255, 255)
 			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[3] or this.buttons[2])
 		end,
 		click = function(this)
@@ -236,7 +145,7 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 					BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
 				end
 				
-				AquaShine.LoadEntryPoint("livesim2_cliwrap.lua", {
+				AquaShine.LoadEntryPoint(":livesim", {
 					BeatmapSelect.BeatmapInfoData.beatmap.filename,
 					Random = BeatmapSelect.RandomTick.is_ticked,
 					Absolute = true
@@ -298,65 +207,6 @@ function BeatmapSelect.Start(arg)
 	end
 	
 	BeatmapSelect.PageCompositionTable.text = "Page "..BeatmapSelect.Page.."/"..#BeatmapSelect.CompositionList
-end
-
-function BeatmapSelect.Update(deltaT)
-end
-
-function BeatmapSelect.Draw()
-	BeatmapSelect.MainUIComposition:Draw()
-	
-	if #BeatmapSelect.CompositionList > 0 then
-		BeatmapSelect.CompositionList[BeatmapSelect.Page]:Draw()
-	end
-end
-
-function BeatmapSelect.Exit()
-	if BeatmapSelect.BeatmapInfoData.beatmap_song then
-		BeatmapSelect.BeatmapInfoData.beatmap_song:stop()
-	end
-end
-
-function BeatmapSelect.MousePressed(x, y, k, tid)
-	if not(BeatmapSelect.SwipeData[1]) then
-		BeatmapSelect.SwipeData[1] = tid or 0
-		BeatmapSelect.SwipeData[2] = x
-	end
-	
-	BeatmapSelect.MainUIComposition:MousePressed(x, y)
-	BeatmapSelect.CompositionList[BeatmapSelect.Page]:MousePressed(x, y)
-end
-
-function BeatmapSelect.MouseMoved(x, y)
-	BeatmapSelect.MainUIComposition:MouseMoved(x, y)
-	
-	if BeatmapSelect.SwipeData[1] and math.abs(BeatmapSelect.SwipeData[2] - x) >= BeatmapSelect.SwipeThreshold then
-		BeatmapSelect.CompositionList[BeatmapSelect.Page]:MouseMoved(-100, -100)	-- Guaranteed to abort it
-	end
-end
-
-function BeatmapSelect.MouseReleased(x, y, k, tid)
-	BeatmapSelect.MainUIComposition:MouseReleased(x, y)
-	BeatmapSelect.CompositionList[BeatmapSelect.Page]:MouseReleased(x, y)
-	
-	if BeatmapSelect.SwipeData[1] then
-		if math.abs(BeatmapSelect.SwipeData[2] - x) >= BeatmapSelect.SwipeThreshold then
-			-- Switch page
-			local is_left = BeatmapSelect.SwipeData[2] - x < 0
-			
-			BeatmapSelect.Page = ((BeatmapSelect.Page + (is_left and -2 or 0)) % #BeatmapSelect.CompositionList) + 1
-			BeatmapSelect.SwipeData[2] = nil
-			BeatmapSelect.PageCompositionTable.text = "Page "..BeatmapSelect.Page.."/"..#BeatmapSelect.CompositionList
-		end
-		
-		BeatmapSelect.SwipeData[1] = nil
-	end
-end
-
-function BeatmapSelect.KeyReleased(key)
-	if key == "escape" then
-		AquaShine.LoadEntryPoint("main_menu.lua")
-	end
 end
 
 return BeatmapSelect, "Select Beatmap"

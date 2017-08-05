@@ -8,7 +8,13 @@ local AboutScreen = {}
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
 local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
-local Background = AquaShine.LoadImage("assets/image/background/liveback_12.png")
+local Background = {AquaShine.LoadImage(
+	"assets/image/background/liveback_12.png",
+	"assets/image/background/b_liveback_012_01.png",
+	"assets/image/background/b_liveback_012_02.png",
+	"assets/image/background/b_liveback_012_03.png",
+	"assets/image/background/b_liveback_012_04.png"
+)}
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
 Written By:     AuahDark
@@ -54,7 +60,11 @@ function AboutScreen.Draw()
 	
 	-- Background
 	love.graphics.setColor(64, 64, 64)
-	love.graphics.draw(Background)
+	love.graphics.draw(Background[1])
+	love.graphics.draw(Background[2], -88, 0)
+	love.graphics.draw(Background[3], 960, 0)
+	love.graphics.draw(Background[4], 0, -43)
+	love.graphics.draw(Background[5], 0, 640)
 	love.graphics.setColor(255, 255, 255)
 	
 	-- Title

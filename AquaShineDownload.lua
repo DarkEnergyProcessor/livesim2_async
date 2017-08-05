@@ -17,14 +17,22 @@ local chunk_handler = {
 	RECV = function(this, data)
 		this:recv(data)
 	end,
+	HEDR = function(this, headers)
+		this.HeaderData = headers
+	end,
 	DONE = function(this, data)
 		this:ok()
 		this.downloading = false
 		this.StatusCode = nil
 		this.ContentLength = nil
+		this.HeaderData = nil
 	end,
 	["ERR "] = function(this, data)
 		this:err(data)
+		this.downloading = false
+		this.StatusCode = nil
+		this.ContentLength = nil
+		this.HeaderData = nil
 	end
 }
 
@@ -63,10 +71,11 @@ function Download.Update(this)
 	end
 end
 
-function Download.Download(this, url)
+function Download.Download(this, url, additional_headers)
 	assert(not(this.downloading), "Download is in progress")
 	
 	this.channelin:push(assert(url))
+	this.channelin:push(additional_headers or {})
 	this.downloading = true
 end
 

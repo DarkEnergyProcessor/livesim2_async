@@ -77,7 +77,7 @@ local function custom_sink(chunk, err)
 end
 
 -- HTTP request function
-local request_http = socket.protect(function(url)
+local request_http = socket.protect(function(url, headers)
 	-- Build request table
 	local req = {}
 	req.url = url
@@ -87,6 +87,11 @@ local request_http = socket.protect(function(url)
 	local nreqt = adjustrequest(req)
 	local h = http.open(nreqt.host, nreqt.port, nreqt.create)
 	h:sendrequestline(nreqt.method, nreqt.uri)
+	
+	-- Override headers
+	for n, v in pairs(headers) do
+		nreqt.headers[n:lower()] = tostring(v)
+	end
 	h:sendheaders(nreqt.headers)
 	
 	local code, status = h:receivestatusline()
@@ -115,6 +120,8 @@ local request_http = socket.protect(function(url)
 	cout:push(code)
 	cout:push("SIZE")
 	cout:push(headers['content-length'] and tonumber(headers['content-length']) or -1)
+	cout:push("HEDR")
+	cout:push(headers)
 	
 	h:receivebody(headers, nreqt.sink, nreqt.step)
 	h:close()
@@ -125,7 +132,8 @@ end)
 
 local command = cin:demand()
 while command ~= "QUIT" do
-	local a, b = pcall(request_http, command)
+	local headers = cin:pop()
+	local a, b = pcall(request_http, command, headers)
 	
 	if not(a) then
 		cout:push("ERR ")

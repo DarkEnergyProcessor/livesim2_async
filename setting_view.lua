@@ -31,13 +31,6 @@ local SettingSelection = {
 		Off = 0
 	},
 	{
-		Name = "UNFOCUSED_RUN", Default = 1,
-		Caption = "Run in Background",
-		Type = "switch",
-		On = 1,
-		Off = 0
-	},
-	{
 		Name = "MINIMAL_EFFECT", Default = 0,
 		Caption = "Minimal Effect",
 		Type = "switch",
@@ -83,9 +76,6 @@ local SettingSelection = {
 		On = "on",
 		Off = "off"
 	},
-	------------------
-	-- Another page --
-	------------------
 	{
 		Name = "NS_ACCUMULATION", Default = 0,
 		Caption = "N.S. Accumulation",
@@ -93,6 +83,9 @@ local SettingSelection = {
 		On = 1,
 		Off = 0
 	},
+	------------------
+	-- Another page --
+	------------------
 	{
 		Name = "AUTO_BACKGROUND", Default = 1,
 		Caption = "Custom Background",
@@ -123,6 +116,13 @@ local SettingSelection = {
 		Min = 0,
 		Max = 100,
 		Increment = 10
+	},
+	{
+		Name = "BEATMAP_SELECT_CACHED", Default = 0,
+		Caption = "Fast Beatmap List",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	}
 }
 
@@ -316,7 +316,7 @@ end
 
 function Settings.KeyReleased(key)
 	if key == "escape" then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	end
 end
 

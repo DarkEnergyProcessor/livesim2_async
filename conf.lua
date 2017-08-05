@@ -7,16 +7,18 @@
 ----------------------
 local AquaShine = assert(love.filesystem.load("AquaShine.lua"))({
 	Entries = {
+		-- name = {minarg, "scriptfile.lua"}
 		livesim = {1, "livesim2_cliwrap.lua"},
+		livesim_main = {-1, "livesim.lua"},		-- -1 argument means can't be invoked from command-line
 		settings = {0, "setting_view.lua"},
 		main_menu = {0, "main_menu.lua"},
-		beatmap_select = {0, "beatmap_select.lua"},
+		beatmap_select = {0, "beatmap_select_wrapper.lua"},
 		unit_editor = {0, "unit_editor.lua"},
+		unit_selection = {-1, "unit_selection.lua"},
 		about = {0, "about_screen.lua"},
 		render = {3, "render_livesim.lua"},
 		noteloader = {1, "invoke_noteloader.lua"},
 		unit_create = {0, "unit_create.lua"},
-		beatmap_select2 = {0, "beatmap_select2.lua"}
 	},
 	DefaultEntry = "main_menu",
 	Width = 960,	-- Letterboxing

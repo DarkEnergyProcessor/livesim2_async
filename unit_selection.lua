@@ -46,7 +46,13 @@ function UnitSelect.Start(arg)
 		end
 	end
 	
-	background_5 = AquaShine.LoadImage("assets/image/background/liveback_5.png")
+	background_5 = {AquaShine.LoadImage(
+		"assets/image/background/liveback_5.png",
+		"assets/image/background/b_liveback_005_01.png",
+		"assets/image/background/b_liveback_005_02.png",
+		"assets/image/background/b_liveback_005_03.png",
+		"assets/image/background/b_liveback_005_04.png"
+	)}
 	com_etc_117 = AquaShine.LoadImage("assets/image/ui/com_etc_117.png")
 	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
@@ -71,20 +77,22 @@ function UnitSelect.Update(deltaT)
 			SelIdx = assert(UnitSelect.UnitList[CurrentSelectedCardIdx]).Filename
 		end
 		
-		AquaShine.LoadEntryPoint("unit_selection.lua", {SelIdx})
+		AquaShine.LoadEntryPoint(":unit_selection", {SelIdx})
 	end
 end
 
 function UnitSelect.Draw()
-	AquaShine.SetScissor(0, 0, 960, 640)
 	love.graphics.setColor(255, 255, 255)
-	love.graphics.draw(background_5)
+	love.graphics.draw(background_5[1])
+	love.graphics.draw(background_5[2], -88, 0)
+	love.graphics.draw(background_5[3], 960, 0)
+	love.graphics.draw(background_5[4], 0, -43)
+	love.graphics.draw(background_5[5], 0, 640)
 	love.graphics.draw(com_win_02, -98, 0)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Unit Select", 95, 13)
 	love.graphics.print(string.format("Page %d", UnitSelect.CurrentPage + 1), 34, 576)
 	love.graphics.setColor(255, 255, 255)
-	AquaShine.ClearScissor()
 	
 	if MouseState[3] then
 		if
