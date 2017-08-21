@@ -13,6 +13,30 @@ local BSCommon = {
 	CompositionList = {}
 }
 
+local function _Button50ScaleTemplate(x, y, text, action)
+	local select = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
+	local select_se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
+	local font = AquaShine.LoadFont("MTLmr3m.ttf", 18)
+	return {
+		x = x, y = y, w = 216, h = 40,
+		_drawtext = function(this)
+			love.graphics.setFont(font)
+			love.graphics.print(text, 8, 6)
+		end,
+		draw = function(this)
+			love.graphics.setColor(255, 255, 255)
+			love.graphics.draw(select, 0, 0, 0, 0.5)
+			return this:_drawtext()
+		end,
+		draw_se = function(this)
+			love.graphics.setColor(255, 255, 255)
+			love.graphics.draw(select_se, 0, 0, 0, 0.5)
+			return this:_drawtext()
+		end,
+		click = action
+	}
+end
+
 BSCommon.PageCompositionTable = {
 	x = 64, y = 560, text = "Page 1",
 	font = BSCommon.SongNameFont,
@@ -73,6 +97,25 @@ BSCommon.RandomTick = {
 	end
 }
 
+-- Insert beatmap
+BSCommon.InsertBeatmapButton = _Button50ScaleTemplate(736, 8, "Insert Beatmap", function()
+	if AquaShine.FileSelection then
+		local list = AquaShine.FileSelection("Insert Beatmap(s)", nil, nil, true)
+	end
+end)
+
+-- Download beatmap
+BSCommon.DownloadBeatmapButton = _Button50ScaleTemplate(512, 8, "Download Beatmaps", function()
+	if love.filesystem.isFile("external/download_beatmap.lua") then
+		AquaShine.LoadEntryPoint("external/download_beatmap.lua")
+	end
+end)
+
+-- Open beatmap directory
+BSCommon.OpenBeatmapButton = _Button50ScaleTemplate(64, 592, "Open Beatmap Directory", function()
+	love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
+end)
+
 function BSCommon.Update(deltaT)
 end
 
@@ -124,30 +167,6 @@ function BSCommon.KeyReleased(key)
 	if key == "escape" then
 		AquaShine.LoadEntryPoint(":main_menu")
 	end
-end
-
-function BSCommon._Button50ScaleTemplate(x, y, text, action)
-	local select = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
-	local select_se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
-	local font = AquaShine.LoadFont("MTLmr3m.ttf", 18)
-	return {
-		x = x, y = y, w = 216, h = 40,
-		_drawtext = function(this)
-			love.graphics.setFont(font)
-			love.graphics.print(text, 8, 6)
-		end,
-		draw = function(this)
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(select, 0, 0, 0, 0.5)
-			return this:_drawtext()
-		end,
-		draw_se = function(this)
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.draw(select_se, 0, 0, 0, 0.5)
-			return this:_drawtext()
-		end,
-		click = action
-	}
 end
 
 return BSCommon

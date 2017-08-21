@@ -4,7 +4,7 @@
 
 local AquaShine = ...
 local NoteLoader = AquaShine.LoadModule("note_loader2")
-local DEPLS, a = assert(love.filesystem.load(":livesim_main"))(AquaShine)
+local DEPLS, a = assert(love.filesystem.load("livesim.lua"))(AquaShine)
 local DEPLS_Start = DEPLS.Start
 
 function DEPLS.Start(arg)

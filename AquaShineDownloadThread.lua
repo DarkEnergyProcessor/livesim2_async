@@ -133,11 +133,11 @@ end)
 local command = cin:demand()
 while command ~= "QUIT" do
 	local headers = cin:pop()
-	local a, b = pcall(request_http, command, headers)
+	local a, b, c = pcall(request_http, command, headers)
 	
-	if not(a) then
+	if not(a) or (a and not(b)) then
 		cout:push("ERR ")
-		cout:push(b)
+		cout:push(a and c or b)
 	end
 	
 	command = cin:demand()

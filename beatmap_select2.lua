@@ -95,22 +95,9 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 			end
 		}
 	),
-	-- Insert beatmap
-	BeatmapSelect._Button50ScaleTemplate(736, 8, "Insert Beatmap", function()
-		if AquaShine.FileSelection then
-			local list = AquaShine.FileSelection("Insert Beatmap(s)", nil, nil, true)
-		end
-	end),
-	-- Download beatmap
-	BeatmapSelect._Button50ScaleTemplate(512, 8, "Download Beatmaps", function()
-		if love.filesystem.isFile("external/download_beatmap.lua") then
-			AquaShine.LoadEntryPoint("external/download_beatmap.lua")
-		end
-	end),
-	-- Open beatmap directory
-	BeatmapSelect._Button50ScaleTemplate(64, 592, "Open Beatmap Directory", function()
-		love.system.openURL("file://"..love.filesystem.getSaveDirectory().."/beatmap")
-	end),
+	BeatmapSelect.InsertBeatmapButton,
+	BeatmapSelect.DownloadBeatmapButton,
+	BeatmapSelect.OpenBeatmapButton,
 	BeatmapSelect.PageCompositionTable,
 	{
 		image = AquaShine.LoadImage("assets/image/ui/com_win_40.png"),

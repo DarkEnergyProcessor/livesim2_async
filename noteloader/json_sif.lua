@@ -39,23 +39,26 @@ return function(sif, file)
 	local this = setmetatable({}, SIFBeatmap)
 	assert(not(sif.song_info), "Not a valid SIF beatmap")
 	
-	if sif.response_data and sif.response_data.live_info and sif.response_data.rank_info then
+	if sif.response_data and sif.response_data.live_info then
 		sif = sif.response_data
 		
-		if sif.live_info and sif.rank_info then
+		if sif.live_info then
 			-- Captured version
-			table.sort(sif.rank_info, function(a, b) return a.rank > b.rank end)
 			table.sort(sif.live_info[1].notes_list, function(a, b)
 				return a.timing_sec < b.timing_sec
 			end)
 			
 			this.notes_list = sif.live_info[1].notes_list
-			this.score = {
-				sif.rank_info[2].rank_min,
-				sif.rank_info[3].rank_min,
-				sif.rank_info[4].rank_min,
-				sif.rank_info[5].rank_min
-			}
+			
+			if sif.rank_info then
+				table.sort(sif.rank_info, function(a, b) return a.rank > b.rank end)
+				this.score = {
+					sif.rank_info[2].rank_min,
+					sif.rank_info[3].rank_min,
+					sif.rank_info[4].rank_min,
+					sif.rank_info[5].rank_min
+				}
+			end
 		end
 	elseif #sif > 0 then
 		this.notes_list = sif
