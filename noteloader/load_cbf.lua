@@ -273,6 +273,26 @@ end
 -- CBF Beatmap Object --
 ------------------------
 
+local function parse_note(str)
+	local values = {}
+	local curidx = 1
+	local nextidx = str:find("/", 1, true)
+	
+	while nextidx do
+		values[#values + 1] = str:sub(curidx, nextidx - 1)
+		curidx = nextidx + 1
+		nextidx = str:find("/", curidx, true)
+	end
+	
+	local lastval = str:sub(curidx)
+	if lastval:sub(-1) == ";" then
+		lastval = lastval:sub(1, -2)
+	end
+	values[#values + 1] = lastval
+	
+	return unpack(values)
+end
+
 function CBFBeatmap.GetNotesList(this)
 	if not(this.notes_data) then
 		local f = assert(love.filesystem.newFile(this.beatmap_filename, "r"))
@@ -309,7 +329,9 @@ function CBFBeatmap.GetNotesList(this)
 		
 		-- Parse
 		for _, line in ipairs(readed_notes_data) do
-			local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+);")
+			--local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+)")
+			local time, pos, _u, is_hold, is_release, release_time, hold_time, is_star, colinfo = parse_note(line)
+			local r, g, b, is_customcol = colinfo:match("([^,]+),([^,]+),([^,]+),([True|False]+)")
 			
 			if time and pos and is_hold and is_release and release_time and hold_time and is_star and r and g and b and is_customcol then
 				local num_pos = position_translation[pos]
@@ -566,7 +588,12 @@ function CBFBeatmap.GetVideoBackground(this)
 	return this.video
 end
 
+function CBFBeatmap.GetNotesStyle(this)
+	return this.cbf_conf.PROJECT_NOTE_SPRITES and (this.cbf_conf.PROJECT_NOTE_SPRITES + 1) or 0
+end
+
 -- In CBF, only  WAV and OGG were supported
+-- But actually Live Simulator: 2 also supports MP3
 local supported_audio_fmts = {".wav", ".ogg"}
 function CBFBeatmap.GetBeatmapAudio(this)
 	if not(this.audio_loaded) then

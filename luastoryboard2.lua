@@ -94,10 +94,14 @@ local function setup_env(story, lua)
 				return AquaShine.LoadFont("MTLmr3m.ttf", size or 14)
 			end
 			
+			if story.AdditionalData[path] then
+				return love.graphics.newFont(story.AdditionalData[path], size or 14)
+			end
+			
 			if story.BeatmapDir then
-				local _, x = pcall(love.graphics.newFont, story.BeatmapDir..path, size or 12)
+				local s, x = pcall(love.graphics.newFont, story.BeatmapDir..path, size or 14)
 				
-				if _ then
+				if s then
 					return x
 				end
 				

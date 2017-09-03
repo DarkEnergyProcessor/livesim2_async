@@ -108,6 +108,7 @@ function PauseScreen.Draw()
 		
 		if PauseScreen.Paused <= 3000 then
 			-- Draw pause counter
+			love.graphics.setColor(255, 255, 255)
 			love.graphics.draw(
 				PauseScreen.Counter[math.max(math.ceil(PauseScreen.Paused * 0.001), 1)],
 				480, 320, 0, 1.5, 1.5, 18, 19.5

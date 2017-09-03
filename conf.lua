@@ -29,25 +29,31 @@ AquaShine.ParseCommandLineConfig(assert(arg))
 ------------------
 -- /gles switch --
 ------------------
+local enabledpiaware
 if AquaShine.GetCommandLineConfig("gles") then
 	local _, ffi = pcall(require, "ffi")
 
 	if _ then
 		local setenv_load = assert(loadstring("local x=... return x.setenv"))
 		local putenv_load = assert(loadstring("local x=... return x.SetEnvironmentVariableA"))
+		local dpiaware = assert(loadstring("local x = ... return x.SetProcessDPIAware"))
 		ffi.cdef [[
 			int setenv(const char *envname, const char *envval, int overwrite);
 			int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
+			int __stdcall SetProcessDPIAware();
 		]]
 		
 		local ss, setenv = pcall(setenv_load, ffi.C)
 		local ps, putenv = pcall(putenv_load, ffi.C)
+		local dp, setdpiaware = pcall(dpiaware, ffi.C)
 		
 		if ss then
 			setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1)
 		elseif ps then
 			putenv("LOVE_GRAPHICS_USE_OPENGLES", "1")
 		end
+		
+		if dp then enabledpiaware = setdpiaware end
 	end
 end
 
@@ -104,4 +110,6 @@ function love.conf(t)
 	t.modules.video = true                        -- Enable the video module (boolean)
 	t.modules.window = true                       -- Enable the window module (boolean)
 	t.modules.thread = true                       -- Enable the thread module (boolean)
+	
+	if t.window.highdpi and enabledpiaware then enabledpiaware() end
 end

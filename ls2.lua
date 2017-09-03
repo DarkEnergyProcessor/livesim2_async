@@ -176,7 +176,7 @@ local function process_BMPM(stream, v2)
 		local timing_sec = string2dwordu(fsw.read(stream, 4)) / 1000
 		local attribute = string2dwordu(fsw.read(stream, 4))
 		local note_effect = string2dwordu(fsw.read(stream, 4))
-		local position = bit.band(note_effect, 15)
+		local position = bit.band(note_effect, 0xF)
 		
 		assert(position > 0 and position < 10, "Invalid note position")
 		
@@ -184,12 +184,12 @@ local function process_BMPM(stream, v2)
 			effect_new = bit.band(bit.rshift(note_effect, 4), 3) + 1
 			
 			if effect_new == 3 then
-				effect_new_val = bit.band(bit.rshift(note_effect, 6), 262143) * 0.001
+				effect_new_val = bit.band(bit.rshift(note_effect, 6), 0x3FFFF) * 0.001
 			end
 			
 			-- Swing note
 			if bit.band(attribute, 16) > 0 then
-				notes_level = bit.band(note_effect, 24) + 1
+				notes_level = bit.rshift(note_effect, 24) + 1
 				effect_new = effect_new + 10
 				attribute = attribute - 16	-- Strip swing note flag
 			end
@@ -508,7 +508,7 @@ end
 
 ls2.section_processor = {
 	ADIO = {process_ADIO, skip_ADIO},
-	BIMG = {process_UNIT, skip_UNIT},
+	BIMG = {process_UIMG, skip_UIMG},
 	BMPM = {process_BMPM, skip_BMPM},
 	BMPT = {process_BMPT, skip_BMPT},
 	COVR = {process_COVR, skip_COVR},
@@ -621,14 +621,14 @@ local function write_BMPM(stream, sif_beatmap)
 		
 		-- Note effect bits
 		local note_effect = note.position
-		note_effect = note_effect + bit.lshift(actual_effect - 1, 4)
+		note_effect = note_effect + bit.lshift(bit.band(actual_effect - 1, 3), 4)
 		
 		if actual_effect == 3 then
-			note_effect = actual_effect + bit.lshift(bit.band(math.floor(effect_value * 1000), 0x3FFFF), 6)
+			note_effect = note_effect + bit.lshift(bit.band(math.floor(note.effect_value * 1000), 0x3FFFF), 6)
 		end
 		
-		if swing_note then
-			note_effect = note_effect + ((note.notes_level % 254) + 2) * 16777216
+		if swing_note and note.notes_level > 1 then
+			note_effect = note_effect + (((note.notes_level - 1) % 254) + 2) * 16777216
 		end
 		
 		fsw.write(stream, dwordu2string(math.floor(note.timing_sec * 1000)))
@@ -638,12 +638,12 @@ local function write_BMPM(stream, sif_beatmap)
 end
 
 local function write_SRYL(stream, story)
-	fsw.write(stream, story)
+	writestring(stream, story)
 end
 
 local function write_UIMG(stream, uimg)
 	fsw.write(stream, string.char(assert(uimg.index)))
-	writestring(assert(uimg.image))
+	writestring(stream, assert(uimg.image))
 end
 
 local function write_UNIT(stream, unit_info)
@@ -663,7 +663,7 @@ local function write_DATA(stream, data)
 end
 
 local function write_ADIO(stream, adio_data)
-	fsw.write(stream, string.char(assert(adio_data.byte_type)))
+	fsw.write(stream, string.char(assert(adio_data.audio_type)))
 	
 	if adio_data.extension then
 		writestring(stream, adio_data.extension .. adio_data.audio_data)
@@ -688,7 +688,7 @@ ls2enc.section_processor = {
 	DATA = write_DATA,
 	ADIO = write_ADIO,
 	COVR = write_COVR,
-	LCLR = write_LCLR
+	LCLR = write_ADIO
 }
 
 function ls2enc.new(dest, metadata)
@@ -855,7 +855,7 @@ function ls2enc.add_audio(this, at, ad)
 	return this:_internal_add_audio("ADIO", at, ad, "Beatmap audio already added")
 end
 
-function ls2enc.add_cover_Art(this, cover)
+function ls2enc.add_cover_art(this, cover)
 	assert(this:_count_section(section) == 0, "Cover art already added")
 	return this:_add_section("COVR", cover)
 end

@@ -58,6 +58,26 @@ precision mediump vec2;
     #define FXAA_SPAN_MAX     8.0
 #endif
 
+varying vec2 v_rgbNW;
+varying vec2 v_rgbNE;
+varying vec2 v_rgbSW;
+varying vec2 v_rgbSE;
+varying vec2 v_rgbM;
+
+void texcoords(vec2 fragCoord, vec2 resolution,
+			out vec2 v_rgbNW, out vec2 v_rgbNE,
+			out vec2 v_rgbSW, out vec2 v_rgbSE,
+			out vec2 v_rgbM) {
+	vec2 inverseVP = 1.0 / resolution.xy;
+	v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
+	v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
+	v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
+	v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
+	v_rgbM = vec2(fragCoord * inverseVP);
+}
+
+#if defined(PIXEL)
+
 //optimized version for mobile, where dependent 
 //texture reads can be a bottleneck
 vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
@@ -108,29 +128,23 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
     return color;
 }
 
-void texcoords(vec2 fragCoord, vec2 resolution,
-			out vec2 v_rgbNW, out vec2 v_rgbNE,
-			out vec2 v_rgbSW, out vec2 v_rgbSE,
-			out vec2 v_rgbM) {
-	vec2 inverseVP = 1.0 / resolution.xy;
-	v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
-	v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
-	v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
-	v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
-	v_rgbM = vec2(fragCoord * inverseVP);
-}
-
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
-	vec2 v_rgbNW;
-	vec2 v_rgbNE;
-	vec2 v_rgbSW;
-	vec2 v_rgbSE;
-	vec2 v_rgbM;
-	
 	vec2 resolution = vec2(love_ScreenSize.xy);
 	vec2 fragCoord = texture_coords * resolution;
-	texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+	/*texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);*/
 	return color * fxaa(texture, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 }
+
+#elif defined(VERTEX)
+
+vec4 position(mat4 clipSpaceFromLocal, vec4 localPosition) {
+	vec2 resolution = love_ScreenSize.xy;
+    vec2 fragCoord = VaryingTexCoord.xy * resolution;
+    texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+
+    return clipSpaceFromLocal * localPosition;
+}
+
+#endif
 ]]

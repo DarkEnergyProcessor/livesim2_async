@@ -4,14 +4,14 @@ Lua Storyboard
 Lua storyboard is simply a Lua script which controls how objects shown behind the simulator,
 hence it's named Lua storyboard. Please note that Lua script running as Lua storyboard is
 sandboxed, which means most of `love` functions doesn't exist in here or modified to prevent
-alteration of the rendering state, and to prevent malicious Lua storyboard from running.
+alteration of the rendering state, and to prevent malicious Lua script from running.
 
 Storyboard Entry Points
 =======================
 
 Lua storyboard needs to create this function in global namespace. Although there's way to use
 it without this entry points by using coroutines, but it's usage is discouraged and only
-provided for legacy DEPLS storyboard lua script.
+provided for legacy DEPLS storyboard Lua script.
 
 *************************************************
 
@@ -29,6 +29,34 @@ Storyboard frame update. Draw and calculate everything for the storyboard in her
 Parameters:
 
 * deltaT - The delta-time, in milliseconds
+
+*************************************************
+
+### `void Jump(number elapsed_time)`
+
+Storyboard seek. This function is called when user resumes Live Show!
+
+> This function is not available in current release.
+
+> If this function is not implemented, the beatmap is assumed not to support resumeable live.
+
+Parameters:
+
+* elapsed_time - Last elapsed time when the live show state is saved
+
+*************************************************
+
+### `void Pause(bool pausing)`
+
+Storyboard pause. This function is called when user pressed the pause button.
+
+> This function is not available in current release.
+
+> If this function is not implemented, the storyboard is assumed not to support pause, and all drawing operation will be emulated in 1136x726 canvas
+
+Parameters:
+
+* pausing - `true` if the game is paused, `false` if the game is unpaused.
 
 Storyboard Functions
 ====================
@@ -104,23 +132,37 @@ Parameters:
 
 * `path` - Video filename
 
-Returns: love2d `Video` object or `nil` on failure
+Returns: LOVE `Video` object or `AquaShineVideoObject` or `nil` on failure
 
-> For additional sandboxing and compatibility, this is synonym of `love.graphics.newVideo`
+> Unlike `love.graphics.newVideo`, this function allows loading of many video formats if system supports it (see `MultiVideoFormatSupported()`)
 
 *************************************************
 
 ### `Image|nil LoadImage(string path)`
 
-Load image. Directory is relative to current beatmap folder
+Load image. Directory is relative to current beatmap folder.
 
 Parameters:
 
 * `path` - Image filename
 
-Returns: love2d `Image` object or `nil` on failure
+Returns: LOVE `Image` object or `nil` on failure
 
 > For additional sandboxing and compatibility, this is synonym of `love.graphics.newImage`
+
+*************************************************
+
+### `Font|nil LoadFont([string path [, number size = 14]])`
+
+Load font. Directory is relative to current beatmap folder.
+
+Parameters:
+
+* `path` - Font path or nil to use default, Motoya L Maru font `MTLmr3m.ttf`
+
+* `size` - The font size. Defaults to 14.
+
+Returns: LOVE `Font` object or `nil` on failure
 
 *************************************************
 
@@ -208,6 +250,8 @@ Parameters:
 
 Check for current rendering type.
 
+> This function can be useful to determine quality of storyboard
+
 Returns: `true` if currently in rendering mode (offline drawing), `false` if currently in live mode (online drawing).
 
 *************************************************
@@ -245,12 +289,12 @@ drawn by default.
 
 ### `bool IsOpenGLES()`
 
-Check if current renderer is OpenGL ES. This can be used to select shader code to be used because Desktop GL shader and GLES shader  
+Check if current renderer is OpenGL ES. This can be used to select shader code to use because Desktop GL shader and GLES shader code  
 were bit different each other
 
 Returns: `true` if running under OpenGLES, `false` otherwise
 
-> This function returns `true` when running LOVE2D under desktop with [ANGLE](http://angleproject.org) renderer.
+> This function also returns `true` when running LOVE under desktop with [ANGLE](http://angleproject.org) renderer.
 
 *************************************************
 
@@ -259,6 +303,30 @@ Returns: `true` if running under OpenGLES, `false` otherwise
 Check if FFmpeg extension is available.
 
 Returns: `true` if FFmpeg extension is available (allow loading video other than Theora .ogg/.ogv), `false` otherwise.
+
+*************************************************
+
+### `table|Image|nil GetCurrentBackgroundImage([number index = 0])`
+
+Get the current beatmap background.
+
+Parameters:
+
+* `idx` - The index to retrieve it's background image or nil for all index
+
+Returns: LOVE `Image` object of specificed index, or nil, or table containing all of background image in LOVE `Image` object (index 0-4)
+
+*************************************************
+
+### `Image GetCurrentUnitImage(number index)`
+
+Get the current unit image.
+
+Parameters:
+
+* `idx` - The unit index to retrieve it's image. 1 is rightmost, 9 is leftmost.
+
+Returns: LOVE `Image` object
 
 Storyboard Callback Functions
 =============================

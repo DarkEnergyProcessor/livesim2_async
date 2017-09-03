@@ -236,7 +236,7 @@ function LS2Beatmap.GetCustomBackground(this)
 			this.file:seek(v)
 			local idx, img = ls2.section_processor.BIMG[1](this.file, this.ls2.version_2)
 			
-			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img))
+			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img, ""))
 		end
 		
 		this.background_loaded = true

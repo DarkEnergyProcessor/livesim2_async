@@ -54,6 +54,7 @@ Sections:
     For Every amount of notes above:
         dwordu - Timing milliseconds
         dwordu - Attribute. Some possible values:
+                 * bit layout: rrrrrrrr rggggggg ggbbbbbb bbbscccc
                  * bit 0-3: Note images following Sukufesu simulator note colors in order. Ask yuyu for it, lol.
                             * If it's 15 - CBF extension colored note
                                 * bit 23-31 - R color (9 bits, unsigned)
@@ -61,6 +62,7 @@ Sections:
                                 * bit 5-13  - B color (9 bits, unsigned)
                  * bit 4: Is swing note?
         dwordu - Note effect
+                 * bit layout: ssssssss llllllll llllllll llffpppp
                  * bit 0-3 - Note position. 9 is leftmost, 1 is rightmost
                  * bit 4-5: Note effect.
                             0 = Normal note

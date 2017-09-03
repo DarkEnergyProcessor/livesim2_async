@@ -171,7 +171,7 @@ local function midi2sif(stream)
 				tempo = tempo * 256 + tempo_num[i]
 			end
 			
-			tempo = math.floor(600000000 / tempo) / 10
+			tempo = math.floor((60000000000 / tempo) + 0.5) / 1000
 		elseif type(v.note) == "boolean" then
 			local position = v.pos - bottom_index + 1
 			local attribute = math.floor(v.channel / 4)

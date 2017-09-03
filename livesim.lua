@@ -449,6 +449,29 @@ function DEPLS.StoryboardFunctions.MultiVideoFormatSupported()
 	return not(not(AquaShine.FFmpegExt))
 end
 
+--! @brief Get the current beatmap background
+--! @param idx The index to retrieve it's background image or nil for all index
+--! @returns LOVE `Image` object of specificed index, or nil, or table containing
+--!          all of background image in LOVE `Image` object (index 0-4)
+function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
+	if idx then
+		assert(idx >= 0 and idx < 5, "Invalid index")
+		return DEPLS.BackgroundImage[idx][1]
+	else
+		local a = {}
+		for i = 0, 4 do
+			a[i] = DEPLS.BackgroundImage[i][1]
+		end
+		
+		return a
+	end
+end
+
+function DEPLS.StoryboardFunctions.GetCurrentUnitImage(idx)
+	assert(idx > 0 and idx < 10, "Invalid index")
+	return DEPLS.IdolImageData[idx][1]
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -532,7 +555,8 @@ function DEPLS.Resume()
 end
 
 function DEPLS.IsLiveEnded()
-	return (not(DEPLS.Sound.LiveAudio) or
+	return  not(DEPLS.Routines.PauseScreen.IsPaused()) and
+			(not(DEPLS.Sound.LiveAudio) or
 			DEPLS.Sound.LiveAudio:isPlaying() == false) and
 			DEPLS.NoteManager.NoteRemaining == 0
 end
@@ -602,7 +626,6 @@ function DEPLS.Start(argv)
 	local noteloader_data = argv.Beatmap
 	local notes_list = noteloader_data:GetNotesList()
 	local custom_background = false
-	DEPLS.StoryboardHandle = noteloader_data:GetStoryboard()
 	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
 	
@@ -649,9 +672,27 @@ function DEPLS.Start(argv)
 		custom_background = true
 	end
 	
+	-- Load unit icons
+	local noteloader_units = noteloader_data:GetCustomUnitInformation()
+	local IdolImagePath = {}
+	do
+		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
+		
+		for w in idol_img:gmatch("[^\t]+") do
+			IdolImagePath[#IdolImagePath + 1] = w
+		end
+	end
+	for i = 1, 9 do
+		DEPLS.IdolImageData[i][1] = noteloader_units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
+	end
+	
+	-- Load storyboard
+	DEPLS.StoryboardHandle = noteloader_data:GetStoryboard()
+	
 	DEPLS.ScoreBase = noteloader_data.scoretap or DEPLS.ScoreBase
 	DEPLS.Stamina = noteloader_data.staminadisp or DEPLS.Stamina
 	
+	-- Load cover art
 	local noteloader_coverdata = noteloader_data:GetCoverArt()
 	if noteloader_coverdata then
 		local new_coverdata = {}
@@ -745,20 +786,6 @@ function DEPLS.Start(argv)
 	DEPLS.Images.Header = AquaShine.LoadImage("assets/image/live/live_header.png")
 	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
 	DEPLS.Images.Pause = AquaShine.LoadImage("assets/image/live/live_pause.png")
-	
-	-- Load unit icons
-	local noteloader_units = noteloader_data:GetCustomUnitInformation()
-	local IdolImagePath = {}
-	do
-		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
-		
-		for w in idol_img:gmatch("[^\t]+") do
-			IdolImagePath[#IdolImagePath + 1] = w
-		end
-	end
-	for i = 1, 9 do
-		DEPLS.IdolImageData[i][1] = noteloader_units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
-	end
 	
 	-- Load stamina image (bar and number)
 	DEPLS.Images.StaminaRelated = {
@@ -999,6 +1026,7 @@ function DEPLS.Draw(deltaT)
 		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Draw()
 		else
+			setColor(255, 255, 255, DEPLS.LiveOpacity)
 			draw(Images.Pause, 916, 5, 0, 0.6)
 		end
 		
@@ -1110,7 +1138,7 @@ function DEPLS.KeyPressed(key, scancode, repeat_bit)
 	elseif key == "f5" then
 		DEPLS.BeatmapAudioVolume = math.max(DEPLS.BeatmapAudioVolume - 0.05, 0)
 		update_audio_volume()
-	elseif key == "pause" and DEPLS.ElapsedTime > 0 then
+	elseif key == "pause" and DEPLS.ElapsedTime > 0 and not(DEPLS.IsLiveEnded()) then
 		DEPLS.Pause()
 	elseif DEPLS.ElapsedTime >= 0 then
 		for i = 1, 9 do
@@ -1177,7 +1205,13 @@ function DEPLS.Exit()
 end
 
 function DEPLS.Focus(focus)
-	if not(AquaShine.IsDesktopSystem()) and focus and DEPLS.Sound.LiveAudio and DEPLS.ElapsedTime >= 0 then
+	if
+		not(AquaShine.IsDesktopSystem()) and
+		not(DEPLS.Routines.PauseScreen.IsPaused()) and
+		focus and
+		DEPLS.Sound.LiveAudio and
+		DEPLS.ElapsedTime >= 0
+	then
 		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
 	end
 end

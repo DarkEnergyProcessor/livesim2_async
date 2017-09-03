@@ -464,7 +464,7 @@ function LongNoteObject.Update(this, deltaT)
 					cmp == this.SecondCircle,		-- release
 					this.Position,					-- pos
 					0, 								-- accuracy (miss)
-					nd / NoteAccuracy.InvV,					-- distance
+					nd / this.NoteAccuracy.InvV,	-- distance
 					this.Attribute,					-- attribute
 					this.SimulNote,					-- is_simul
 					this.SlideNote					-- is_slide
