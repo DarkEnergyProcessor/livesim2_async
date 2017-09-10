@@ -91,7 +91,7 @@ local function setup_env(story, lua)
 		LoadShader = love.graphics.newShader,
 		LoadFont = function(path, size)
 			if not(path) then
-				return AquaShine.LoadFont("MTLmr3m.ttf", size or 14)
+				return love.graphics.newFont("MTLmr3m.ttf", size or 14)
 			end
 			
 			if story.AdditionalData[path] then

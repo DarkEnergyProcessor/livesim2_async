@@ -719,6 +719,7 @@ function DEPLS.Start(argv)
 		if video then
 			-- We have video. Letterbox the video accordingly
 			local w, h = video:getDimensions()
+			video:rewind()
 			DEPLS.VideoBackgroundData = {video, w * 0.5, h * 0.5, math.max(960 / w, 640 / h)}
 		end
 	end
@@ -886,6 +887,7 @@ function DEPLS.Update(deltaT)
 		end
 		
 		if DEPLS.VideoBackgroundData and not(DEPLS.VideoBackgroundData[5]) then
+			DEPLS.VideoBackgroundData[5] = true
 			DEPLS.VideoBackgroundData[1]:play()
 		end
 		

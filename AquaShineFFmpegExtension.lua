@@ -136,6 +136,7 @@ AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized", libname, ver)
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
 local function make_read_callback(file)
 	local x = function(_unused, buf, buf_size)
+		jit.off(true, true)
 		local readed = file:read(buf_size)
 		
 		ffi.copy(buf, readed, #readed)
@@ -143,7 +144,6 @@ local function make_read_callback(file)
 	end
 	local y = ffi.cast(read_callback, x)
 	
-	jit.off(x)
 	return y, x
 end
 
@@ -151,6 +151,7 @@ local seek_callback = ffi.typeof("int64_t(*)(void *opaque, int64_t offset, int w
 local function make_seek_callback(file)
 	local filestreamsize = nil 
 	local x = function(_unused, pos, whence)
+		jit.off(true, true)
 		local success = false
 		if whence == 0x10000 then
 			-- AVSEEK_SIZE
@@ -178,7 +179,6 @@ local function make_seek_callback(file)
 	end
 	local y = ffi.cast(seek_callback, x)
 	
-	jit.off(x)
 	return y, x
 end
 
@@ -433,8 +433,6 @@ function FFmpegExtMt.__index.play(this)
 	this.FFmpegData.IOContext.read_packet = this.ReadType
 	this.FFmpegData.IOContext.seek = this.SeekType
 	this.Playing = true
-	jit.off(this.ReadFunc)
-	jit.off(this.SeekFunc)
 	
 	-- Insert to playing queue
 	FFmpegExt._playing[#FFmpegExt._playing + 1] = this
@@ -459,9 +457,22 @@ function FFmpegExtMt.__index.pause(this)
 	end
 end
 
+--! @brief Seek video
+--! @param this AquaShineVideo object
+--! @param second Time in seconds
+function FFmpegExtMt.__index.seek(this, sec)
+	local ts = sec * this.TimeBase.den / this.TimeBase.num
+	avcodec.avcodec_flush_buffers(this.FFmpegData.CodecContext)
+	this.CurrentTimer = -this.Delay + sec
+	this.PresentationTS = 0
+	return avformat.av_seek_frame(this.FFmpegData.FmtContext, --[[this.VideoStreamIndex]]-1, ts, 1) >= 0
+end
+
 --! @brief Rewind video
 --! @param this AquaShineVideo object
 function FFmpegExtMt.__index.rewind(this)
+	this.CurrentTimer = -this.Delay
+	this.PresentationTS = 0
 	assert(avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, 0, 1) >= 0, "Failed to rewind")
 end
 

@@ -37,8 +37,12 @@ local VideoManager = {
 	VideoList = {}
 }
 local RenderManager = {
-	Threads = {}
+	Threads = {},
+	-- [1] canvas is the newst canvas, the [2..n] canvas is the old canvas
+	CanvasCycle = {},
+	CCCount = 3
 }
+RenderMode.Frame = -RenderManager.CCCount + 1
 
 do
 	local c = lsys.getProcessorCount()
@@ -309,6 +313,17 @@ function RenderManager.EncodeFrame(id, frame)
 	assert(false, "No free threads")
 end
 
+function RenderManager.InitializeCanvasCycle()
+	for i = 1, RenderManager.CCCount do
+		RenderManager.CanvasCycle[i] = love.graphics.newCanvas()
+	end
+end
+
+function RenderManager.CycleCanvas()
+	local c = table.remove(RenderManager.CanvasCycle, 1)
+	RenderManager.CanvasCycle[#RenderManager.CanvasCycle + 1] = c
+end
+
 -- Render mode
 function RenderMode.Start(arg)
 	RenderMode.Destination = arg[1]
@@ -319,7 +334,6 @@ function RenderMode.Start(arg)
 		local w, h, flgs = love.window.getMode()
 		
 		flgs.resizable = false
-		flgs.vsync = false
 		if flgs.fullscreen then
 			w, h = 960, 640
 			flgs.fullscreen = false
@@ -348,7 +362,7 @@ function RenderMode.Start(arg)
 	-- FXAA Shader
 	if AquaShine.GetCommandLineConfig("fxaa") then
 		RenderMode.FXAAShader = require("render_livesim_fxaa")
-		RenderMode.Canvas2 = love.graphics.newCanvas()
+		RenderMode.FXAACanvas = love.graphics.newCanvas()
 	end
 	
 	-- Set audio
@@ -357,6 +371,7 @@ function RenderMode.Start(arg)
 	-- Post-init
 	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
 	AquaShine.RunUnfocused(true)
+	RenderManager.InitializeCanvasCycle()
 	
 	-- Sound data buffer post-init
 	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
@@ -371,6 +386,17 @@ end
 function RenderMode.Update(deltaT)
 	if RenderMode.ElapsedTime >= RenderMode.Duration or RenderManager.HasFreeThreads() == false then
 		if RenderManager.IsIdle() then
+			-- Render the rest of the frame
+			for i = 2, RenderManager.CCCount do
+				RenderMode.Frame = RenderMode.Frame + 1
+				RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
+				print("Rendering Frame", RenderMode.Frame)
+			end
+			
+			repeat
+				love.timer.sleep(0.05)
+			until RenderManager.IsIdle()
+			
 			love.event.quit()
 		end
 		
@@ -419,43 +445,45 @@ end
 
 function RenderMode.Draw(deltaT)
 	if RenderManager.HasFreeThreads() and RenderMode.ElapsedTime < RenderMode.Duration then
+		local canvas = RenderManager.CanvasCycle[1]
+		
 		love.graphics.push("all")
-		love.graphics.setCanvas(RenderMode.Canvas)
-		love.graphics.clear(0, 0, 0, 255)
-		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
 		
 		if RenderMode.FXAAShader then
-			love.graphics.setCanvas(RenderMode.Canvas2)
+			love.graphics.setCanvas(RenderMode.FXAACanvas)
+			love.graphics.clear(0, 0, 0, 255)
+			RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
+			love.graphics.setCanvas(canvas)
 			love.graphics.clear(0, 0, 0, 255)
 			love.graphics.setShader(RenderMode.FXAAShader)
 			love.graphics.setBlendMode("alpha", "premultiplied")
-			love.graphics.draw(RenderMode.Canvas,
-				-AquaShine.LogicalScale.OffX / AquaShine.LogicalScale.ScaleOverall,
-				-AquaShine.LogicalScale.OffY / AquaShine.LogicalScale.ScaleOverall,
-				0, 1 / AquaShine.LogicalScale.ScaleOverall
-			)
+			love.graphics.origin()
+			love.graphics.draw(RenderMode.FXAACanvas)
 			love.graphics.setBlendMode("alpha")
 			love.graphics.setShader()
-			
-			RenderMode.Canvas, RenderMode.Canvas2 = RenderMode.Canvas2, RenderMode.Canvas
+		else
+			love.graphics.setCanvas(canvas)
+			love.graphics.clear(0, 0, 0, 255)
+			RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
 		end
 		
 		love.graphics.pop()
 		RenderMode.Frame = RenderMode.Frame + 1
 		
-		RenderManager.EncodeFrame(RenderMode.Canvas:newImageData(), RenderMode.Frame)
+		if RenderMode.Frame >0 then
+			RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
+			print("Rendering Frame", RenderMode.Frame)
+		end
 		
-		print("Rendering Frame", RenderMode.Frame)
+		RenderManager.CycleCanvas()
 	end
 	
+	love.graphics.push()
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(
-		RenderMode.Canvas,
-		-AquaShine.LogicalScale.OffX / AquaShine.LogicalScale.ScaleOverall,
-		-AquaShine.LogicalScale.OffY / AquaShine.LogicalScale.ScaleOverall,
-		0, 1 / AquaShine.LogicalScale.ScaleOverall
-	)
+	love.graphics.origin()
+	love.graphics.draw(RenderManager.CanvasCycle[RenderManager.CCCount])
 	love.graphics.setBlendMode("alpha")
+	love.graphics.pop()
 	
 	RenderMode.DEPLS.DrawDebugInfo()
 end

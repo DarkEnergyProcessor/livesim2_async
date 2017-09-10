@@ -187,12 +187,12 @@ function DEPLSBeatmap.GetCustomBackground(this)
 					end
 				end
 				
-				if not(this.background[1] and this.background[2]) then
+				if not(this.background[1]) or not(this.background[2]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain left or right part). Removed")
 					this.background[1], this.background[2] = nil, nil
 				end
 				
-				if not(this.background[3] and this.background[4]) then
+				if not(this.background[3]) or not(this.background[4]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain top or bottom part). Removed")
 					this.background[3], this.background[4] = nil, nil
 				end
@@ -215,26 +215,19 @@ if AquaShine.FFmpegExt then
 	supported_video_fmts[#supported_video_fmts + 1] = ".flv"
 end
 function DEPLSBeatmap.GetVideoBackground(this)
-	if not(this.video_loaded) then
-		for _, v in ipairs(supported_video_fmts) do
-			local name = this.project_dir.."/video_background"..v
-			
-			if love.filesystem.isFile(name) then
-				local message
-				this.video, message = AquaShine.LoadVideo(name)
-				
-				if not(this.video) then
-					AquaShine.Log("NoteLoader2/load_depls", "Failed to load video: %s", message)
-				end
-				
-				break
-			end
-		end
+	for _, v in ipairs(supported_video_fmts) do
+		local name = this.project_dir.."/video_background"..v
 		
-		this.video_loaded = true
+		if love.filesystem.isFile(name) then
+			local video, message = AquaShine.LoadVideo(name)
+			
+			if not(video) then
+				AquaShine.Log("NoteLoader2/load_depls", "Failed to load video: %s", message)
+			end
+			
+			return video
+		end
 	end
-	
-	return this.video
 end
 
 function DEPLSBeatmap.GetScorePerTap(this)

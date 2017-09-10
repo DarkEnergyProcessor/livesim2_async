@@ -525,7 +525,6 @@ function AquaShine.MainLoop()
 	local dt
 	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	local RenderToCanvasFunc = function()
-		local a
 		love.graphics.clear()
 		
 		if AquaShine.CurrentEntryPoint then
@@ -583,7 +582,35 @@ function AquaShine.MainLoop()
 		
 		if love.graphics.isActive() then
 			love.graphics.clear()
-			AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
+			--AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
+			do
+				love.graphics.setCanvas(AquaShine.MainCanvas)
+				love.graphics.clear()
+				
+				if AquaShine.CurrentEntryPoint then
+					if AquaShine.TouchEffect then
+						AquaShine.TouchEffect.Update(dt)
+					end
+					dt = dt * 1000
+					AquaShine.CurrentEntryPoint.Update(dt)
+					
+					love.graphics.push()
+					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+					AquaShine.CurrentEntryPoint.Draw(dt)
+					
+					if AquaShine.TouchEffect then
+						AquaShine.TouchEffect.Draw()
+					end
+					
+					love.graphics.pop()
+					love.graphics.setColor(255, 255, 255)
+				else
+					love.graphics.setFont(font)
+					love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
+				end
+				love.graphics.setCanvas()
+			end
 			love.graphics.draw(AquaShine.MainCanvas)
 			love.graphics.present()
 		end
