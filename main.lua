@@ -24,8 +24,8 @@
 --]]---------------------------------------------------------------------------
 
 -- Version
-DEPLS_VERSION = "2.0-beta2"
-DEPLS_VERSION_NUMBER = 01010501	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-beta3"
+DEPLS_VERSION_NUMBER = 01010502	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
 

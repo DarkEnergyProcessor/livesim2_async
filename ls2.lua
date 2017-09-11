@@ -673,9 +673,9 @@ local function write_ADIO(stream, adio_data)
 end
 
 local function write_COVR(stream, cover)
-	fsw.write(stream, assert(cover.image))
-	fsw.write(stream, cover.title or "")
-	fsw.write(stream, cover.arrangement or "")
+	writestring(stream, assert(cover.image))
+	writestring(stream, cover.title or "")
+	writestring(stream, cover.arrangement or "")
 end
 
 ls2enc.section_processor = {
@@ -856,7 +856,7 @@ function ls2enc.add_audio(this, at, ad)
 end
 
 function ls2enc.add_cover_art(this, cover)
-	assert(this:_count_section(section) == 0, "Cover art already added")
+	assert(this:_count_section("COVR") == 0, "Cover art already added")
 	return this:_add_section("COVR", cover)
 end
 
