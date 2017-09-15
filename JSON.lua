@@ -14,8 +14,8 @@
 --    2) the web-page links above are maintained
 --    3) the 'AUTHOR_NOTE' string below is maintained
 --
-local VERSION = '20170416.23' -- version history at end of file
-local AUTHOR_NOTE = "-[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170416.23 ]-"
+local VERSION = '20170823.25' -- version history at end of file
+local AUTHOR_NOTE = "-[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170823.25 ]-"
 
 --
 -- The 'AUTHOR_NOTE' variable exists so that information about the source
@@ -66,7 +66,7 @@ local OBJDEF = {
 --
 --
 --
--- ERROR HANDLING
+-- ERROR HANDLING DURING DECODE
 --
 --   With most errors during decoding, this code calls
 --
@@ -77,10 +77,10 @@ local OBJDEF = {
 --   replace the default JSON:onDecodeError() with your own function.
 --
 --   The default onDecodeError() merely augments the message with data
---   about the text and the location if known (and if a second 'etc'
---   argument had been provided to decode(), its value is tacked onto the
---   message as well), and then calls JSON.assert(), which itself defaults
---   to Lua's built-in assert(), and can also be overridden.
+--   about the text and the location (and, an 'etc' argument had been
+--   provided to decode(), its value is tacked onto the message as well),
+--   and then calls JSON.assert(), which itself defaults to Lua's built-in
+--   assert(), and can also be overridden.
 --
 --   For example, in an Adobe Lightroom plugin, you might use something like
 --
@@ -102,9 +102,9 @@ local OBJDEF = {
 --
 --      JSON:onDecodeOfHTMLError(message, text, nil, etc)
 --
---   The use of the fourth 'etc' argument allows stronger coordination
---   between decoding and error reporting, especially when you provide your
---   own error-handling routines. Continuing with the the Adobe Lightroom
+--   The use of the 'etc' argument allows stronger coordination between
+--   decoding and error reporting, especially when you provide your own
+--   error-handling routines. Continuing with the the Adobe Lightroom
 --   plugin example:
 --
 --          function JSON:onDecodeError(message, text, location, etc)
@@ -135,18 +135,18 @@ local OBJDEF = {
 --
 --   is invoked, where:
 --
---       json_text is the original JSON text being parsed,
---       location is the count of bytes into json_text where the garbage starts (6 in the example),
---       parsed_value is the Lua result of what was successfully parsed ({123} in the example),
---       etc is as above.
+--       'json_text' is the original JSON text being parsed,
+--       'location' is the count of bytes into 'json_text' where the garbage starts (6 in the example),
+--       'parsed_value' is the Lua result of what was successfully parsed ({123} in the example),
+--       'etc' is as above.
 --
 --   If JSON:onTrailingGarbage() does not abort, it should return the value decode() should return,
 --   or nil + an error message.
 --
 --     local new_value, error_message = JSON:onTrailingGarbage()
 --
---   The default handler just invokes JSON:onDecodeError("trailing garbage"...), but you can have
---   this package ignore trailing garbage via
+--   The default JSON:onTrailingGarbage() simply invokes JSON:onDecodeError("trailing garbage"...),
+--   but you can have this package ignore trailing garbage via
 --
 --      function JSON:onTrailingGarbage(json_text, location, parsed_value, etc)
 --         return parsed_value
@@ -185,10 +185,11 @@ local OBJDEF = {
 --
 --     JSON:onEncodeError(message, etc)
 --
---   which you can override in your local JSON object.
+--   which you can override in your local JSON object. Also see "HANDLING UNSUPPORTED VALUE TYPES" below.
 --
---   The 'etc' in the error call is the second argument to encode()
---   and encode_pretty(), or nil if it wasn't provided.
+--   The 'etc' in the error call is the second argument to encode() and encode_pretty(), or nil if it wasn't provided.
+--
+--
 --
 --
 -- ENCODING OPTIONS
@@ -528,7 +529,40 @@ local OBJDEF = {
 --      precise:        string  9876.67890123456789012345
 --
 --
+--  HANDLING UNSUPPORTED VALUE TYPES
 --
+--   Among the encoding errors that might be raised is an attempt to convert a table value that has a type
+--   that this package hasn't accounted for: a function, userdata, or a thread. You can handle these types as table
+--   values (but not as table keys) if you supply a JSON:unsupportedTypeEncoder() method along the lines of the
+--   following example:
+--        
+--        function JSON:unsupportedTypeEncoder(value_of_unsupported_type)
+--           if type(value_of_unsupported_type) == 'function' then
+--              return "a function value"
+--           else
+--              return nil
+--           end
+--        end
+--        
+--   Your unsupportedTypeEncoder() method is actually called with a bunch of arguments:
+--
+--      self:unsupportedTypeEncoder(value, parents, etc, options, indent, for_key)
+--
+--   The 'value' is the function, thread, or userdata to be converted to JSON.
+--
+--   The 'etc' and 'options' arguments are those passed to the original encode(). The other arguments are
+--   probably of little interest; see the source code. (Note that 'for_key' is never true, as this function
+--   is invoked only on table values; table keys of these types still trigger the onEncodeError method.)
+--
+--   If your unsupportedTypeEncoder() method returns a string, it's inserted into the JSON as is.
+--   If it returns nil plus an error message, that error message is passed through to an onEncodeError invocation.
+--   If it returns only nil, processing falls through to a default onEncodeError invocation.
+--
+--   If you want to handle everything in a simple way:
+--
+--        function JSON:unsupportedTypeEncoder(value)
+--           return tostring(value)
+--        end
 --
 --
 -- SUMMARY OF METHODS YOU CAN OVERRIDE IN YOUR LOCAL LUA JSON OBJECT
@@ -539,6 +573,7 @@ local OBJDEF = {
 --    onDecodeOfHTMLError
 --    onTrailingGarbage
 --    onEncodeError
+--    unsupportedTypeEncoder
 --
 --  If you want to create a separate Lua JSON object with its own error handlers,
 --  you can reload JSON.lua or use the :new() method.
@@ -1237,6 +1272,8 @@ local function object_or_array(self, T, etc)
          elseif not maximum_number_key or key > maximum_number_key then
             maximum_number_key = key
          end
+      elseif type(key) == 'boolean' then
+         table.insert(string_keys, tostring(key))
       else
          self:onEncodeError("can't encode table with a key of type " .. type(key), etc)
       end
@@ -1322,8 +1359,7 @@ end
 --                       to also be valid Java.)
 --
 --
-local encode_value -- must predeclare because it calls itself
-function encode_value(self, value, parents, etc, options, indent, for_key)
+local function encode_value(self, value, parents, etc, options, indent, for_key)
 
    --
    -- keys in a JSON object can never be null, so we don't even consider options.null when converting a key value
@@ -1364,6 +1400,20 @@ function encode_value(self, value, parents, etc, options, indent, for_key)
       return tostring(value)
 
    elseif type(value) ~= 'table' then
+
+      if self.unsupportedTypeEncoder then
+         local user_value, user_error = self:unsupportedTypeEncoder(value, parents, etc, options, indent, for_key)
+         -- If the user's handler returns a string, use that. If it returns nil plus an error message, bail with that.
+         -- If only nil returned, fall through to the default error handler.
+         if type(user_value) == 'string' then
+            return user_value
+         elseif user_value ~= nil then
+            self:onEncodeError("unsupportedTypeEncoder method returned a " .. type(user_value), etc)
+         elseif user_error then
+            self:onEncodeError(tostring(user_error), etc)
+         end
+      end
+
       self:onEncodeError("can't convert " .. type(value) .. " to JSON", etc)
 
    elseif getmetatable(value) == isNumber then
@@ -1527,6 +1577,11 @@ return OBJDEF:new()
 
 --
 -- Version history:
+--
+--   20170823.25   Added support for JSON:unsupportedTypeEncoder().
+--                 Thanks to Chronos Phaenon Eosphoros (https://github.com/cpeosphoros) for the idea.
+--
+--   20170819.24   Added support for boolean keys in tables.
 --
 --   20170416.23   Added the "array_newline" formatting option suggested by yurenchen (http://www.yurenchen.com/)
 --
