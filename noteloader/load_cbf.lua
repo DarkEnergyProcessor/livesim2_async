@@ -265,6 +265,10 @@ function CBFLoader.LoadNoteFromFilename(file)
 		this.cbf_conf[key] = tonumber(value) or value
 	end
 	
+	if this.cbf_conf.SONG_NAME then
+		this.cbf_conf.SONG_NAME = tostring(this.cbf_conf.SONG_NAME)
+	end
+	
 	project_config:close()
 	return this
 end
