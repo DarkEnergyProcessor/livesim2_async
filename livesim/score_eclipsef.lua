@@ -34,7 +34,7 @@ function ScoreEclipseF.Draw()
 		draw(ScoreEclipseF.Img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
 	end
 	
-	if ScoreEclipseF.EclipseStats then
+	if ScoreEclipseF.EclipseStats and ScoreEclipseF.ScoreBar.BarTapFlash then
 		setColor(255, 255, 255, bar_data.opacity * DEPLS.LiveOpacity / 255)
 		draw(ScoreEclipseF.Img2, 5, 8)
 	end

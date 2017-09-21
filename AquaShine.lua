@@ -832,11 +832,11 @@ function love.load(arg)
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	
 	-- Load additional AquaShine files
-	assert(love.filesystem.load("AquaShineComposition.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineDownload.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineFileDialog.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineFFmpegExtension.lua"))(AquaShine)
-	assert(love.filesystem.load("AquaShineTempDirectory.lua"))(AquaShine)
+	AquaShine.LoadModule("AquaShineComposition")
+	AquaShine.LoadModule("AquaShineDownload")
+	AquaShine.LoadModule("AquaShineFileDialog")
+	AquaShine.LoadModule("AquaShineFFmpegExtension")
+	AquaShine.LoadModule("AquaShineTempDirectory")
 	
 	love.resize(wx, wy)
 	

@@ -132,6 +132,8 @@ DEPLS.Routines.ResultScreen = assert(love.filesystem.load("livesim/reward.lua"))
 -- Pause info
 DEPLS.Routines.PauseScreen = assert(love.filesystem.load("livesim/pause.lua"))(DEPLS, AquaShine)
 
+DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
+
 --------------------------------
 -- Another public functions   --
 -- Some is part of storyboard --
@@ -640,7 +642,7 @@ function DEPLS.Start(argv)
 	
 	-- Randomize note
 	if argv.Random or AquaShine.GetCommandLineConfig("random") then
-		local new_notes_list, msg = (require("randomizer2"))(notes_list)
+		local new_notes_list, msg = (require("randomizer3"))(notes_list)
 		
 		if not(new_notes_list) then
 			AquaShine.Log("livesim2", "Can't be randomized: %s", msg)

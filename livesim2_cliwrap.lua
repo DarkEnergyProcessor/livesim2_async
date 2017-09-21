@@ -12,9 +12,9 @@ function DEPLS.Start(arg)
 	local beatmap = assert(arg[1], "Specify beatmap")
 	
 	if arg.Absolute then
-		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader(beatmap))})
+		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader(beatmap)), Random = arg.Random})
 	else
-		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader("beatmap/"..beatmap))})
+		return DEPLS_Start({Beatmap = assert(NoteLoader.NoteLoader("beatmap/"..beatmap)), Random = arg.Random})
 	end
 end
 

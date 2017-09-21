@@ -2,8 +2,9 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local tween = require("tween")
 local DEPLS, AquaShine = ...
-local ScoreBar = {}
+local ScoreBar = {BarTapFlash = true}
 
 local ScoreUpdate = DEPLS.Routines.ScoreUpdate
 local ScoreData = DEPLS.ScoreData
@@ -16,14 +17,23 @@ local c_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_04.png")
 local b_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_05.png")
 local a_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_06.png")
 local s_score = AquaShine.LoadImage("assets/image/live/live_gauge_03_07.png")
+local s_flash = AquaShine.LoadImage("assets/flash/ui/live/img/ef_318_000.png")
 local draw_area = 960
 local used_score = nil
+
+local flash_data = {s = 0.9}
+local flash_tween = tween.new(1000, flash_data, {s = 0.7})
 
 function ScoreBar.Update(deltaT)
 	if ScoreUpdate.CurrentScore >= ScoreData[4] then
 		-- S score
 		used_score = s_score
 		draw_area = 960
+		ScoreBar.BarTapFlash = false
+		
+		if flash_tween:update(deltaT) then
+			flash_tween:reset()
+		end
 	elseif ScoreUpdate.CurrentScore >= ScoreData[3] then
 		-- A score
 		used_score = a_score
@@ -47,6 +57,12 @@ function ScoreBar.Draw()
 	AquaShine.SetScissor(0, 0, draw_area, 640)
 	setColor(255, 255, 255, DEPLS.LiveOpacity)
 	draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
+	
+	if used_score == s_score then
+		setColor(255, 255, 255, DEPLS.LiveOpacity * flash_data.s)
+		draw(s_flash, 36, 3)
+	end
+	
 	setColor(255, 255, 255, 255)
 	AquaShine.ClearScissor()
 end
