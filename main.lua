@@ -28,6 +28,13 @@ DEPLS_VERSION = "2.0-beta3"
 DEPLS_VERSION_NUMBER = 01010502	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
+local ffi = require("ffi")
+
+ffi.cdef [[
+int WrapCached_HasFeatureLowLatency();
+int WrapCached_GetFrequency();
+int WrapCached_GetBufferSize();
+]]
 
 --------------------------------
 -- Yohane Initialization Code --

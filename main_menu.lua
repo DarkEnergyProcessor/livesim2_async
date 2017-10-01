@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
+local ffi = require("ffi")
 
 local menu_select = {
 	-- Name, Func
@@ -21,6 +22,7 @@ local background
 local MTLMr3m, TitleFont, ReleaseFont
 local versionText = AquaShine.GetCachedData("versionText", function()
 	local bld = {}
+	
 	bld[#bld + 1] = "Live Simulator: 2 v"
 	bld[#bld + 1] = DEPLS_VERSION
 	bld[#bld + 1] = " ("
@@ -30,11 +32,21 @@ local versionText = AquaShine.GetCachedData("versionText", function()
 	bld[#bld + 1] = ") "
 	
 	if AquaShine.FileSelection then
-		bld[#bld + 1] = "FileSelection "
+		bld[#bld + 1] = "fselect "
 	end
 	
 	if AquaShine.FFmpegExt then
-		bld[#bld + 1] = "FFmpegExt"
+		bld[#bld + 1] = "FFX "
+	end
+	
+	if AquaShine.OperatingSystem == "Android" then
+		local getter = function(a) return ffi.C[a] end
+		local a, b = pcall(getter, "WrapCached_HasFeatureLowLatency")
+		
+		if a and b() > 0 then
+			-- Hardcoded in livesim2 libopenal.so
+			bld[#bld + 1] = "LLA_"..ffi.C.WrapCached_GetFrequency()..":"..ffi.C.WrapCached_GetBufferSize().." "
+		end
 	end
 	
 	bld[#bld + 1] = "\nUses AquaShine loader & LOVE2D game framework\nR/W Directory: "
