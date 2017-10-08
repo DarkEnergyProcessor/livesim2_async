@@ -3,9 +3,9 @@
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
+local class = require("30log")
 local love = require("love")
-local Download = {}
-local dl_mt = {__index = Download}
+local Download = class("AquaShine.Download")
 
 local chunk_handler = {
 	RESP = function(this, data)
@@ -37,10 +37,13 @@ local chunk_handler = {
 }
 
 function Download.Create()
-	local this = {}
+	return Download()
+end
+
+function Download.init(this)
 	local fmt
 	
-	this.thread = love.thread.newThread("AquaShineDownloadThread.lua")
+	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
 	this.channelin = love.thread.newChannel()
 	this.channelout = love.thread.newChannel()
 	this.finalizer = newproxy(true)
@@ -53,7 +56,6 @@ function Download.Create()
 	end
 	
 	this.thread:start(this.channelin, this.channelout)
-	return setmetatable(this, dl_mt)
 end
 
 function Download.SetCallback(this, t)

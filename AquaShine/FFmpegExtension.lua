@@ -143,6 +143,7 @@ local function make_read_callback(file)
 		return #readed
 	end
 	local y = ffi.cast(read_callback, x)
+	jit.off(x)
 	
 	return y, x
 end
@@ -178,6 +179,7 @@ local function make_seek_callback(file)
 		return success and file:tell() or -1
 	end
 	local y = ffi.cast(seek_callback, x)
+	jit.off(x)
 	
 	return y, x
 end
@@ -433,6 +435,8 @@ function FFmpegExtMt.__index.play(this)
 	this.FFmpegData.IOContext.read_packet = this.ReadType
 	this.FFmpegData.IOContext.seek = this.SeekType
 	this.Playing = true
+	jit.off(this.ReadFunc)
+	jit.off(this.SeekFunc)
 	
 	-- Insert to playing queue
 	FFmpegExt._playing[#FFmpegExt._playing + 1] = this
@@ -465,7 +469,10 @@ function FFmpegExtMt.__index.seek(this, sec)
 	avcodec.avcodec_flush_buffers(this.FFmpegData.CodecContext)
 	this.CurrentTimer = -this.Delay + sec
 	this.PresentationTS = 0
-	return avformat.av_seek_frame(this.FFmpegData.FmtContext, --[[this.VideoStreamIndex]]-1, ts, 1) >= 0
+	
+	jit.off(this.ReadFunc)
+	jit.off(this.SeekFunc)
+	return avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, ts, 1) >= 0
 end
 
 --! @brief Rewind video

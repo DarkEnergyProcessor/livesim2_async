@@ -380,7 +380,7 @@ return function(x)
 		a[i] = copyBeatmap(x[i])
 	end
 	
-	local s, m = pcall(randomizer3, a)	-- Tail call
+	local s, m = pcall(randomizer3, a)
 	
 	if not(s) then
 		return nil, m

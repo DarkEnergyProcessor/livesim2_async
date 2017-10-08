@@ -385,6 +385,7 @@ end
 -- Fo module that requires AquaShine parameter to be passed as 1st argument
 local modules = {}
 function AquaShine.LoadModule(name, ...)
+	name = name:gsub("%.", "/")
 	local x = modules[name]
 	
 	if x == nil then
@@ -668,7 +669,6 @@ function love.errhand(msg)
 	local err = {}
  
 	table.insert(err, "AquaShine Error Handler. An error has occured during execution")
-	table.insert(err, "Press ESC to exit, Backspace to reload\n")
 	table.insert(err, msg.."\n\n")
  
 	for l in string.gmatch(trace, "(.-)\n") do
@@ -683,7 +683,7 @@ function love.errhand(msg)
 	p = string.gsub(p, "\t", "")
 	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
 	
-	AquaShine.LoadEntryPoint("AquaShineErrorHandler.lua", {p})
+	AquaShine.LoadEntryPoint("AquaShine.ErrorHandler.lua", {p})
 	AquaShine.MainLoop()
 end
 
@@ -830,13 +830,7 @@ function love.load(arg)
 	
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
-	
-	-- Load additional AquaShine files
-	AquaShine.LoadModule("AquaShineComposition")
-	AquaShine.LoadModule("AquaShineDownload")
-	AquaShine.LoadModule("AquaShineFileDialog")
-	AquaShine.LoadModule("AquaShineFFmpegExtension")
-	AquaShine.LoadModule("AquaShineTempDirectory")
+	AquaShine.LoadModule("AquaShine.init")
 	
 	love.resize(wx, wy)
 	
