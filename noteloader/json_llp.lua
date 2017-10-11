@@ -3,8 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local LLPBeatmap = {}
-LLPBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(LLPBeatmap)
+local LLPBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.LLPBeatmap")
 
 ------------------------------------
 -- LLPractice Beatmap Note Object --
@@ -65,8 +64,8 @@ function LLPBeatmap.GetBeatmapAudio(this)
 end
 
 return function(json, filename)
-	local this = setmetatable({}, LLPBeatmap)
 	assert(json.audiofile and json.lane)
+	local this = LLPBeatmap()
 	
 	this.name = NoteLoader._GetBasenameWOExt(filename)
 	this.llp = json

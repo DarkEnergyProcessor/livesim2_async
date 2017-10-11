@@ -6,9 +6,8 @@ local AquaShine, NoteLoader = ...
 local love = love
 local bit = require("bit")
 
-local CBFLoader = {ProjectLoader = true}
-local CBFBeatmap = {}
-CBFBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(CBFBeatmap)
+local CBFLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.CBFLoader", {ProjectLoader = true})
+local CBFBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.CBFBeatmap")
 
 ---------------------------
 -- Pre-CBF beatmap setup --
@@ -246,7 +245,7 @@ function CBFLoader.GetLoaderName()
 end
 
 function CBFLoader.LoadNoteFromFilename(file)
-	local this = setmetatable({}, CBFBeatmap)
+	local this = CBFBeatmap()
 	local project_config = file.."/projectConfig.txt"
 	this.beatmap_filename = file.."/beatmap.txt"
 	this.project_folder = file

@@ -3,8 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local SIFBeatmap = {}
-SIFBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(SIFBeatmap)
+local SIFBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.SIFBeatmap")
 
 -----------------------------
 -- SIF Beatmap Note Object --
@@ -36,8 +35,8 @@ function SIFBeatmap.GetBeatmapAudio(this)
 end
 
 return function(sif, file)
-	local this = setmetatable({}, SIFBeatmap)
 	assert(not(sif.song_info), "Not a valid SIF beatmap")
+	local this = SIFBeatmap()
 	
 	if sif.response_data and sif.response_data.live_info then
 		sif = sif.response_data

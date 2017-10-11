@@ -5,9 +5,8 @@
 
 local AquaShine, NoteLoader = ...
 local love = love
-local SIFSLoader = {ProjectLoader = false}
-local SIFSBeatmap = {}
-SIFSBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(SIFSBeatmap)
+local SIFSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.SIFSLoader", {ProjectLoader = false})
+local SIFSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.SIFSBeatmap")
 
 -------------------------
 -- SIFS Beatmap Loader --
@@ -23,7 +22,7 @@ end
 
 function SIFSLoader.LoadNoteFromFilename(f)
 	local lines = f:lines()
-	local this = {}
+	local this = SIFSBeatmap()
 	
 	this.bpm = sifs_fetch_number(lines, "BPM") or 120
 	this.offset = (sifs_fetch_number(lines, "OFFSET") or 0) * 1250 / this.bpm
@@ -39,7 +38,7 @@ function SIFSLoader.LoadNoteFromFilename(f)
 	this.beatmap_data = lines()
 	
 	lines = nil
-	return setmetatable(this, SIFSBeatmap)
+	return this
 end
 
 -------------------------

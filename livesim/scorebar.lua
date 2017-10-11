@@ -21,8 +21,8 @@ local s_flash = AquaShine.LoadImage("assets/flash/ui/live/img/ef_318_000.png")
 local draw_area = 960
 local used_score = nil
 
-local flash_data = {s = 0.9}
-local flash_tween = tween.new(1000, flash_data, {s = 0.7})
+local flash_data = {s = 0.75}
+local flash_tween = tween.new(1000, flash_data, {s = 0.5})
 
 function ScoreBar.Update(deltaT)
 	if ScoreUpdate.CurrentScore >= ScoreData[4] then

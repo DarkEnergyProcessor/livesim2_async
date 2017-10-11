@@ -4,8 +4,7 @@
 
 local AquaShine, NoteLoader = ...
 local bit = require("bit")
-local SIFTBeatmap = {}
-SIFTBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(SIFTBeatmap)
+local SIFTBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.SIFTBeatmap")
 
 ----------------------------------
 -- SIFTrain Beatmap Note Object --
@@ -169,8 +168,8 @@ function SIFTBeatmap.GetStarDifficultyInfo(this, random)
 end
 
 return function(json, filename)
-	local this = setmetatable({}, SIFTBeatmap)
 	assert(assert(json.song_info[1]).notes)
+	local this = SIFTBeatmap()
 	
 	this.filename = filename
 	this.sift = json

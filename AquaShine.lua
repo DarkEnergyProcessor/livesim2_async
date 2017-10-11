@@ -683,7 +683,7 @@ function love.errhand(msg)
 	p = string.gsub(p, "\t", "")
 	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
 	
-	AquaShine.LoadEntryPoint("AquaShine.ErrorHandler.lua", {p})
+	AquaShine.LoadEntryPoint("AquaShine/ErrorHandler.lua", {p})
 	AquaShine.MainLoop()
 end
 

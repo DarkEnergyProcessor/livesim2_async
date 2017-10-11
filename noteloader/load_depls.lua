@@ -5,9 +5,8 @@
 local AquaShine, NoteLoader = ...
 local love = love
 local LuaStoryboard = require("luastoryboard2")
-local DEPLSLoader = {ProjectLoader = true}
-local DEPLSBeatmap = {}
-DEPLSBeatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(DEPLSBeatmap)
+local DEPLSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.DEPLSLoader", {ProjectLoader = true})
+local DEPLSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.DEPLSBeatmap")
 
 ------------------
 -- DEPLS Loader --
@@ -18,7 +17,7 @@ function DEPLSLoader.GetLoaderName()
 end
 
 function DEPLSLoader.LoadNoteFromFilename(file)
-	local this = {}
+	local this = DEPLSBeatmap()
 	this.project_dir = file
 	
 	-- At least one DEPLS beatmap project must have "beatmap.*"
@@ -34,7 +33,7 @@ function DEPLSLoader.LoadNoteFromFilename(file)
 	end
 	
 	assert(this.note_object, "No beatmap file found")
-	return setmetatable(this, DEPLSBeatmap)
+	return this
 end
 
 --------------------------
@@ -49,8 +48,8 @@ function DEPLSBeatmap.GetName(this)
 	if not(this.name) then
 		this.name = this.note_object:GetName()
 		
-		-- If it's named "beatmap", then it should take it from
-		-- NoteLoader argument. In that case, don't use that name
+		-- If it's named "beatmap", then it should be taken from
+		-- the filename argument. In that case, don't use that name
 		if this.name == "beatmap" then
 			local cover_info = this:GetCoverArt()
 			

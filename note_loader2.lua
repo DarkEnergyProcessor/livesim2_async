@@ -96,14 +96,13 @@ For file-based loaders: LoadNoteFromFilename(handle, path) returns 2 values:
 local AquaShine = ...
 local love = love
 local JSON = require("JSON")
+local class = require("30log")
 local NoteLoader = {}
-local NoteLoaderLoader = {}
-local NoteLoaderNoteObject = {}
+local NoteLoaderLoader = class("NoteLoader.NoteLoaderLoader")
+local NoteLoaderNoteObject = class("NoteLoader.NoteLoaderNoteObject")
 local NCache = assert(love.filesystem.load("noteloader_cache.lua"))(AquaShine, NoteLoader)
 
-NoteLoaderLoader.__index = NoteLoaderLoader
-NoteLoaderNoteObject.__index = NoteLoaderNoteObject
-
+NoteLoader.NoteLoaderLoader = NoteLoaderLoader
 NoteLoader.NoteLoaderNoteObject = NoteLoaderNoteObject
 NoteLoader.FileLoaders = {}
 NoteLoader.ProjectLoaders = {}
@@ -237,11 +236,11 @@ end
 -- NoteLoader Loaders --
 ------------------------
 function NoteLoaderLoader.LoadNoteFromFilename()
-	assert(false, "Derive NoteLoaderLoader then implement LoadNoteFromFilename")
+	error("Pure virtual method NoteLoaderLoader:LoadNoteFromFilename", 2)
 end
 
 function NoteLoaderLoader.GetLoaderName()
-	assert(false, "Derive NoteLoaderLoader then implement GetLoaderName")
+	error("Pure virtual method NoteLoaderLoader:GetLoaderName", 2)
 end
 
 ----------------------------
@@ -250,21 +249,16 @@ end
 local function nilret() return nil end
 local function zeroret() return 0 end
 
--- Derive function
-function NoteLoaderNoteObject._derive(tbl)
-	return setmetatable(tbl, NoteLoaderNoteObject)
-end
-
 function NoteLoaderNoteObject.GetNotesList()
-	assert(false, "Derive NoteLoaderNoteObject then implement GetNotesList")
+	error("Pure virtual method NoteLoaderNoteObject:GetNotesList", 2)
 end
 
 function NoteLoaderNoteObject.GetName()
-	assert(false, "Derive NoteLoaderNoteObject then implement GetName")
+	error("Pure virtual method NoteLoaderNoteObject:GetName", 2)
 end
 
 function NoteLoaderNoteObject.GetBeatmapTypename()
-	assert(false, "Derive NoteLoaderNoteObject then implement GetBeatmapTypename")
+	error("Pure virtual method NoteLoaderNoteObject:GetBeatmapTypename", 2)
 end
 
 function NoteLoaderNoteObject.GetCustomUnitInformation()
@@ -299,7 +293,7 @@ NoteLoaderNoteObject.Release = nilret
 -- Load any note loaders with this glob: noteloader/load_*.lua
 for _, f in ipairs(love.filesystem.getDirectoryItems("noteloader/")) do
 	if f:find("load_", 1, true) == 1 and select(2, f:find(".lua", 4, true)) == #f then
-		local loader = assert(love.filesystem.load("noteloader/"..f))(AquaShine, NoteLoader)
+		local loader = assert(love.filesystem.load("noteloader/"..f))(AquaShine, NoteLoader, class)
 		local dest = loader.ProjectLoader and NoteLoader.ProjectLoaders or NoteLoader.FileLoaders
 		
 		dest[#dest + 1] = loader

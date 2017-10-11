@@ -8,9 +8,8 @@ local ls2 = require("ls2")
 local LuaStoryboard = require("luastoryboard2")
 ls2.has_ffmpegext = AquaShine.FFmpegExt
 
-local LS2Loader = {ProjectLoader = false}
-local LS2Beatmap = {}
-LS2Beatmap.__index = NoteLoader.NoteLoaderNoteObject._derive(LS2Beatmap)
+local LS2Loader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.LS2Loader", {ProjectLoader = false})
+local LS2Beatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.LS2Beatmap")
 
 ------------------------
 -- LS2 Beatmap Loader --
@@ -21,7 +20,7 @@ function LS2Loader.GetLoaderName()
 end
 
 function LS2Loader.LoadNoteFromFilename(f, file)
-	local this = setmetatable({}, LS2Beatmap)
+	local this = LS2Beatmap()
 	
 	this.name = NoteLoader._GetBasenameWOExt(file)
 	this.file = f

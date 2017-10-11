@@ -6,16 +6,16 @@ local AquaShine, NoteLoader = ...
 local love = love
 local JSON = require("JSON")
 
-local JSONLoader = {ProjectLoader = false}
+local JSONLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.JSONLoader", {ProjectLoader = false})
 
 --------------------------
 -- JSON Beatmap Loaders --
 --------------------------
 
 local Loaders = {
-	SIF = assert(love.filesystem.load("noteloader/json_sif.lua"))(AquaShine, NoteLoader),
-	SIFT = assert(love.filesystem.load("noteloader/json_sift.lua"))(AquaShine, NoteLoader),
-	LLP = assert(love.filesystem.load("noteloader/json_llp.lua"))(AquaShine, NoteLoader),
+	SIF = assert(love.filesystem.load("noteloader/json_sif.lua"))(AquaShine, NoteLoader, class),
+	SIFT = assert(love.filesystem.load("noteloader/json_sift.lua"))(AquaShine, NoteLoader, class),
+	LLP = assert(love.filesystem.load("noteloader/json_llp.lua"))(AquaShine, NoteLoader, class),
 }
 
 function JSONLoader.GetLoaderName()

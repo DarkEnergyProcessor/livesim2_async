@@ -521,7 +521,7 @@ function LongNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	
 	-- Draw note trail
-	setColor(255, 255, this.TouchID and 64 or 255, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
+	setColor(255, 255, this.TouchID and 127 or 255, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
 	draw(this.LongNoteMesh)
 	
 	-- Draw note object
