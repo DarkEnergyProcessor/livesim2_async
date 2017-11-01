@@ -4,6 +4,11 @@
 
 local AquaShine = ...
 local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
+local has_shell = os.execute() == 1
+
+if not(has_shell) then
+	AquaShine.Log("AquaShineFileDialog", "Possible file dialog backend detection fail")
+end
 
 if not(AquaShine.IsDesktopSystem()) or AquaShine.OperatingSystem == "OS X" then
 	AquaShine.Log("AquaShineFileDialog", "Platform not supported for file dialog")
@@ -151,7 +156,7 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 	
 	AquaShine.Log("AquaShineFileDialog", "Using WinAPI as file selection dialog backend")
 	return
-elseif AquaShine.OperatingSystem == "Linux" then
+elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 	if os.execute("command -v zenity >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] zenity not found.\"; exit 1; }") == 0 then
 		function AquaShine.FileSelection(title, directory, filter, multiple)
 			local cmdbuild = {}
@@ -212,7 +217,7 @@ elseif AquaShine.OperatingSystem == "Linux" then
 			if directory then
 				cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
 			else
-				cmdbuild[#cmdbuild + 1] = ":livesim2select"
+				cmdbuild[#cmdbuild + 1] = ":aqsselect"
 			end
 			
 			if filter then

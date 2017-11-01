@@ -28,13 +28,7 @@ DEPLS_VERSION = "2.0-beta3"
 DEPLS_VERSION_NUMBER = 01010502	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
-local ffi = require("ffi")
-
-ffi.cdef [[
-int WrapCached_HasFeatureLowLatency();
-int WrapCached_GetFrequency();
-int WrapCached_GetBufferSize();
-]]
+love._getAquaShineHandle = nil
 
 --------------------------------
 -- Yohane Initialization Code --
@@ -91,6 +85,7 @@ Yohane.Init(love.filesystem.load)
 -- Touch Effect --
 ------------------
 -- TODO: Support multitouch
+--[[
 local ps = love.graphics.newParticleSystem(AquaShine.LoadImage("assets/flash/ui/live/img/ef_326_003.png"), 1000)
 ps:setSpeed(4, 20)
 ps:setParticleLifetime(0.25, 1)
@@ -122,6 +117,7 @@ AquaShine.SetTouchEffectCallback {
 		love.graphics.draw(ps)
 	end
 }
+]]
 
 -------------------------------------------
 -- Live Simulator: 2 binary beatmap init --

@@ -4,28 +4,35 @@
 
 local AquaShine = ...
 local love = love
-local has_ffi, ffi = pcall(require, "ffi")
+local ffi = require("ffi")
+local bit = require("bit")
 local stringstream = require("stringstream")
 local load_ffmpeg_library
 
 -- iOS, or using Lua 5.1 is not supported
-if AquaShine.OperatingSystem == "iOS" or has_ffi == false then
+if AquaShine.OperatingSystem == "iOS" then
 	AquaShine.Log("AquaShineFFmpeg", "AquaShine FFmpeg extension is not supported")
 	return
 elseif AquaShine.OperatingSystem == "Android" then
+	local conf = {window = {}}
+	love.conf(conf)
+	
 	-- We have to find our "internal" save directory at first
 	-- so we can determine our "lib" dir
-	-- This assume external storage mode is enabled. If not, edit accordingly
 	
 	if not(AquaShine._AndroidAppDir) then
-		love.filesystem._setAndroidSaveExternal(false)
-		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		if conf.externalstorage then
+			love.filesystem._setAndroidSaveExternal(false)
+			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		end
 		
 		AquaShine._AndroidAppDir = love.filesystem.getSaveDirectory().."/../../.."
 		
 		-- Reset back to external storage mode
-		love.filesystem._setAndroidSaveExternal(true)
-		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		if conf.externalstorage then
+			love.filesystem._setAndroidSaveExternal(true)
+			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		end
 	end
 	local lib_dir = AquaShine._AndroidAppDir.."/lib"
 	
@@ -72,9 +79,6 @@ end
 -- AquaShine FFmpeg video extension --
 --------------------------------------
 
-local FFmpegExt = {_playing = setmetatable({}, {__mode = "v"})}
-local FFmpegExtMt = {__index = {}}
-
 -- The order is important, especially in Android
 local avutil = load_ffmpeg_library("avutil", 55)
 local swresample = load_ffmpeg_library("swresample", 2)
@@ -88,8 +92,7 @@ if not(avutil and swresample and avcodec and avformat and swscale) then
 	return
 end
 
-AquaShine.Log("AquaShineFFmpeg", "Loading include files", libname, ver)
-
+AquaShine.Log("AquaShineFFmpeg", "Loading include files")
 local include = love.math.decompress(love.filesystem.read("ffmpeg_include_compressed"), "zlib")
 
 ffi.cdef(include)
@@ -129,9 +132,33 @@ typedef struct AquaShineMemoryStream
 	size_t pos;
 } AquaShineMemoryStream;
 ]]
-avformat.av_register_all()
-avcodec.avcodec_register_all()
-AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized", libname, ver)
+
+local function av_version(int)
+	return bit.rshift(int, 16), bit.rshift(bit.band(int, 0xFF00), 8), bit.band(int, 0xFF)
+end
+
+if
+	select(1, av_version(avcodec.avcodec_version())) == 57 and
+	select(1, av_version(avformat.avformat_version())) == 57 and
+	select(1, av_version(avutil.avutil_version())) == 55
+then
+	avformat.av_register_all()
+	avcodec.avcodec_register_all()
+	AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized")
+else
+	AquaShine.Log("AquaShineFFmpeg", "FFmpeg version not supported")
+	return
+end
+
+local FFmpegExt = {
+	_playing = setmetatable({}, {__mode = "v"}),
+	avutil = avutil,
+	swresample = swresample,
+	avcodec = avcodec,
+	avformat = avformat,
+	swscale = swscale
+}
+local FFmpegExtMt = {__index = {}}
 
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
 local function make_read_callback(file)
@@ -242,7 +269,7 @@ local function ffmpeg_data_cleanup(this)
 		avutil.av_free(this.IOContext)
 	end
 	
-	return avutil.av_free(this)
+	--return avutil.av_free(this)
 end
 
 --! @brief Load audio in the specificed path with FFmpeg
@@ -252,19 +279,19 @@ end
 function FFmpegExt.LoadVideo(path)
 	local this = {}
 	
-	this.FFmpegData = ffi.gc(
-		ffi.cast(
-			"AquaShineFFmpegData*",
-			avutil.av_mallocz(ffi.sizeof("AquaShineFFmpegData"))
-		),
-		ffmpeg_data_cleanup
-	)
-	
-	AquaShine.Log("AquaShineFFmpeg", "LoadVideo %s", path)
 	-- Load the file with love.filesystem API
 	this.FileStream = assert(love.filesystem.newFile(path, "r"))
 	this.ReadType, this.ReadFunc = make_read_callback(this.FileStream)
 	this.SeekType, this.SeekFunc = make_seek_callback(this.FileStream)
+	local rt, st = this.ReadType, this.SeekType
+	
+	this.FFmpegData = ffi.gc(
+		ffi.new("AquaShineFFmpegData"),
+		function(this)
+			rt:free() st:free()
+			return ffmpeg_data_cleanup(this)
+		end
+	)
 	
 	-- Create AVIOContext
 	this.FFmpegData.IOContext = avformat.avio_alloc_context(
@@ -305,9 +332,6 @@ function FFmpegExt.LoadVideo(path)
 		assert(false, "Video stream not found")
 	end
 	local videostream = tempfmtctx[0].streams[this.VideoStreamIndex]
-	
-	this.ReadType:free()
-	this.SeekType:free()
 	
 	-- Find video decoder
 	local codec = avcodec.avcodec_find_decoder(videostream.codec.codec_id)
@@ -429,14 +453,7 @@ end
 function FFmpegExtMt.__index.play(this)
 	if this.Playing then return end
 	
-	-- Set up callback
-	this.ReadType = read_callback(this.ReadFunc)
-	this.SeekType = seek_callback(this.SeekFunc)
-	this.FFmpegData.IOContext.read_packet = this.ReadType
-	this.FFmpegData.IOContext.seek = this.SeekType
 	this.Playing = true
-	jit.off(this.ReadFunc)
-	jit.off(this.SeekFunc)
 	
 	-- Insert to playing queue
 	FFmpegExt._playing[#FFmpegExt._playing + 1] = this
@@ -452,10 +469,6 @@ function FFmpegExtMt.__index.pause(this)
 			this.Playing = false
 			table.remove(FFmpegExt._playing, i)
 			
-			-- Cleanup callback
-			this.ReadType:free()
-			this.SeekType:free()
-			
 			return
 		end
 	end
@@ -470,8 +483,6 @@ function FFmpegExtMt.__index.seek(this, sec)
 	this.CurrentTimer = -this.Delay + sec
 	this.PresentationTS = 0
 	
-	jit.off(this.ReadFunc)
-	jit.off(this.SeekFunc)
 	return avformat.av_seek_frame(this.FFmpegData.FmtContext, -1, ts, 1) >= 0
 end
 
