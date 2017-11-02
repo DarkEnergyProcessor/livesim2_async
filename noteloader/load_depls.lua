@@ -214,19 +214,24 @@ if AquaShine.FFmpegExt then
 	supported_video_fmts[#supported_video_fmts + 1] = ".flv"
 end
 function DEPLSBeatmap.GetVideoBackground(this)
-	for _, v in ipairs(supported_video_fmts) do
-		local name = this.project_dir.."/video_background"..v
-		
-		if love.filesystem.isFile(name) then
-			local video, message = AquaShine.LoadVideo(name)
+	if not(this.video_loaded) then
+		for _, v in ipairs(supported_video_fmts) do
+			local name = this.project_dir.."/video_background"..v
 			
-			if not(video) then
-				AquaShine.Log("NoteLoader2/load_depls", "Failed to load video: %s", message)
+			if love.filesystem.isFile(name) then
+				local message
+				this.video, message = AquaShine.LoadVideo(name)
+				
+				if not(this.video) then
+					AquaShine.Log("NoteLoader2/load_depls", "Failed to load video: %s", message)
+				end
 			end
-			
-			return video
 		end
+		
+		this.video_loaded = true
 	end
+	
+	return this.video
 end
 
 function DEPLSBeatmap.GetScorePerTap(this)

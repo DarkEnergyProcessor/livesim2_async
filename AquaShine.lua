@@ -285,7 +285,6 @@ function AquaShine.LoadVideo(path)
 		end
 	end
 	
-	print(a)
 	return nil, a
 end
 
@@ -417,12 +416,16 @@ local FontList = setmetatable({}, weak_table)
 function AquaShine.LoadFont(name, size)
 	size = size or 12
 	
-	local cache_name = string.format("%s_%d", name, size)
+	name = name or AquaShine.DefaultFont
+	local cache_name = string.format("%s_%d", name or "LOVE default font", size)
 	
 	if not(FontList[cache_name]) then
-		local _, a = pcall(love.graphics.newFont, name, size)
+		local s, a
 		
-		if _ then
+		if name then s, a = pcall(love.graphics.newFont, name or AquaShine.DefaultFont, size)
+		else s = true a = love.graphics.newFont(size) end
+		
+		if s then
 			FontList[cache_name] = a
 		else
 			return nil, a
@@ -430,6 +433,15 @@ function AquaShine.LoadFont(name, size)
 	end
 	
 	return FontList[cache_name]
+end
+
+--! @brief Set default font to be used for AquaShine
+--! @param name The font name
+--! @returns Previous default font name
+function AquaShine.SetDefaultFont(name)
+	local a = AquaShine.DefaultFont
+	AquaShine.DefaultFont = assert(type(name) == "string") and name
+	return a
 end
 
 --------------------------------------
@@ -524,39 +536,13 @@ end
 ------------------------------
 function AquaShine.MainLoop()
 	local dt
-	local font = AquaShine.LoadFont("MTLmr3m.ttf", 14)
-	local RenderToCanvasFunc = function()
-		love.graphics.clear()
-		
-		if AquaShine.CurrentEntryPoint then
-			if AquaShine.TouchEffect then
-				AquaShine.TouchEffect.Update(dt)
-			end
-			dt = dt * 1000
-			AquaShine.CurrentEntryPoint.Update(dt)
-			
-			love.graphics.push()
-			love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-			love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-			AquaShine.CurrentEntryPoint.Draw(dt)
-			
-			if AquaShine.TouchEffect then
-				AquaShine.TouchEffect.Draw()
-			end
-			
-			love.graphics.pop()
-			love.graphics.setColor(255, 255, 255)
-		else
-			love.graphics.setFont(font)
-			love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
-		end
-	end
+	local font = AquaShine.LoadFont(nil, 14)
 	
 	while true do
 		-- Switch entry point
 		if TemporaryEntryPoint then
 			if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
-				AquaShine.CurrentEntryPoint.Exit()
+				pcall(AquaShine.CurrentEntryPoint.Exit)
 			end
 			
 			AquaShine.CurrentEntryPoint = TemporaryEntryPoint
@@ -589,21 +575,13 @@ function AquaShine.MainLoop()
 				love.graphics.clear()
 				
 				if AquaShine.CurrentEntryPoint then
-					if AquaShine.TouchEffect then
-						AquaShine.TouchEffect.Update(dt)
-					end
 					dt = dt * 1000
 					AquaShine.CurrentEntryPoint.Update(dt)
 					
-					love.graphics.push()
+					love.graphics.push("all")
 					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
 					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
 					AquaShine.CurrentEntryPoint.Draw(dt)
-					
-					if AquaShine.TouchEffect then
-						AquaShine.TouchEffect.Draw()
-					end
-					
 					love.graphics.pop()
 					love.graphics.setColor(255, 255, 255)
 				else
