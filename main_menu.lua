@@ -38,7 +38,17 @@ local versionText = AquaShine.GetCachedData("versionText", function()
 		bld[#bld + 1] = "FFX "
 	end
 	
-	bld[#bld + 1] = "\nUses AquaShine loader & LOVE2D game framework\nR/W Directory: "
+	bld[#bld + 1] = "\nRenderer: "
+	bld[#bld + 1] = AquaShine.RendererInfo[1]
+	
+	for i = 2, 4 do
+		if AquaShine.RendererInfo[i] then
+			bld[#bld + 1] = " "
+			bld[#bld + 1] = AquaShine.RendererInfo[i]
+		end
+	end
+	
+	bld[#bld + 1] = "\nR/W Directory: "
 	bld[#bld + 1] = love.filesystem.getSaveDirectory()
 	
 	return table.concat(bld)

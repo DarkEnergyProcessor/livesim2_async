@@ -554,6 +554,11 @@ function DEPLS.Resume()
 		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
 		DEPLS.Sound.LiveAudio:play()
 	end
+	
+	if DEPLS.VideoBackgroundData then
+		DEPLS.VideoBackgroundData[1]:seek(DEPLS.ElapsedTime * 0.001)
+		DEPLS.VideoBackgroundData[1]:play()
+	end
 end
 
 function DEPLS.IsLiveEnded()
@@ -876,9 +881,7 @@ function DEPLS.Update(deltaT)
 		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
 	end
 	
-	if ElapsedTime <= 0 then
-		persistent_bg_opacity = (ElapsedTime + DEPLS.LiveDelay) / DEPLS.LiveDelay * 191
-	end
+	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 191
 	
 	if ElapsedTime > 0 then
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
@@ -891,6 +894,19 @@ function DEPLS.Update(deltaT)
 		if DEPLS.VideoBackgroundData and not(DEPLS.VideoBackgroundData[5]) then
 			DEPLS.VideoBackgroundData[5] = true
 			DEPLS.VideoBackgroundData[1]:play()
+		end
+		
+		if deltaT > 500 then
+			-- We can get out of sync when the dT is very high
+			if DEPLS.Sound.LiveAudio and audioplaying then
+				DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
+				DEPLS.Sound.LiveAudio:play()
+			end
+			
+			if DEPLS.VideoBackgroundData and DEPLS.VideoBackgroundData[5] then
+				DEPLS.VideoBackgroundData[1]:seek(ElapsedTime * 0.001)
+				DEPLS.VideoBackgroundData[1]:play()
+			end
 		end
 		
 		-- Update note if it's not paused

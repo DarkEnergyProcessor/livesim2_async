@@ -94,7 +94,7 @@ end
 
 AquaShine.Log("AquaShineFFmpeg", "Loading include files")
 local include = love.math.decompress(love.filesystem.read("ffmpeg_include_compressed"), "zlib")
-local vidshader = love.graphics.newShader[[
+local vidshader_code = [[
 vec4 effect(mediump vec4 vcolor, Image tex, vec2 texcoord, vec2 pixcoord) {
 	return VideoTexel(texcoord) * vcolor;
 }
@@ -160,14 +160,13 @@ end
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
 local function make_read_callback(file)
 	local x = function(_unused, buf, buf_size)
-		jit.off(true, true)
+		jit.off(true)
 		local readed = file:read(buf_size)
 		
 		ffi.copy(buf, readed, #readed)
 		return #readed
 	end
 	local y = ffi.cast(read_callback, x)
-	jit.off(x)
 	
 	return y, x
 end
@@ -177,7 +176,7 @@ local seek_callback = ffi.typeof("int64_t(*)(void *opaque, int64_t offset, int w
 local function make_seek_callback(file)
 	local filestreamsize = nil 
 	local x = function(_unused, pos, whence)
-		jit.off(true, true)
+		jit.off(true)
 		local success = false
 		if whence == 0x10000 then
 			-- AVSEEK_SIZE
@@ -204,7 +203,6 @@ local function make_seek_callback(file)
 		return success and file:tell() or -1
 	end
 	local y = ffi.cast(seek_callback, x)
-	jit.off(x)
 	
 	return y, x
 end
@@ -297,6 +295,7 @@ local FFX = {
 
 local class = require("30log")
 local AquaShineVideo = class("AquaShineVideo")
+local AV_PIX_FMT_YUV420P = tonumber(ffi.cast("enum AVPixelFormat", "AV_PIX_FMT_YUV420P"))
 
 function AquaShineVideo.init(this, path)
 	-- Load the file with love.filesystem API
@@ -367,7 +366,7 @@ function AquaShineVideo.init(this, path)
 		"AV_PIX_FMT_YUV420P",
 		this.FFXData.CodecContext.width,
 		this.FFXData.CodecContext.height,
-		32
+		64
 	))
 	
 	-- Create 3 ImageData consist of Y, U, and V channel
@@ -391,7 +390,7 @@ function AquaShineVideo.init(this, path)
 		this.YUV420Image,
 		"AV_PIX_FMT_YUV420P",
 		this.FFXData.CodecContext.width,
-		this.FFXData.CodecContext.height, 1
+		this.FFXData.CodecContext.height, 32
 	)
 	
 	-- Create our SwsContext
@@ -408,34 +407,39 @@ function AquaShineVideo.init(this, path)
 	
 	-- Post init
 	this.Packet = ffi.new("AVPacket[1]")
+	this.GotFrame = ffi.new("int[1]")
 	this.TimeBase = videostream.time_base
 	this.PresentationTS = 0
 	this.CurrentTime = 0
 	this.EOS = false
 	this.ImgRes = this.FFXData.CodecContext.width * this.FFXData.CodecContext.height
 	this.HalfImgRes = this.ImgRes * 0.25
+	this.Shader = love.graphics.newShader(vidshader_code)
+	this.Shader:send("love_VideoYChannel", this.ImageData[1][2])
+	this.Shader:send("love_VideoCbChannel", this.ImageData[2][2])
+	this.Shader:send("love_VideoCrChannel", this.ImageData[3][2])
 end
 
 function AquaShineVideo._readPacket(this)
-	repeat
-		if avformat.av_read_frame(this.FFXData.FmtContext, this.Packet) < 0 then
-			return false
+	while avformat.av_read_frame(this.FFXData.FmtContext, this.Packet) >= 0 do
+		if this.Packet[0].stream_index == this.VideoStreamIndex then
+			return true
 		end
-	until this.Packet[0].stream_index == this.VideoStreamIndex
+	end
 	
-	return true
+	return false
 end
+jit.off(AquaShineVideo._readPacket)
 
 function AquaShineVideo._readFrame(this)
-	local got_frame = ffi.new("int[1]")
-	got_frame[0] = 0
+	this.GotFrame[0] = 0
 	
-	while got_frame[0] == 0 do
-		if not(this:_readPacket()) then
-			return false
-		end
-		
-		if avcodec.avcodec_decode_video2(this.FFXData.CodecContext, this.FFXData.FrameVideo, got_frame, this.Packet) < 0 then
+	while this.GotFrame[0] == 0 do
+		if this:_readPacket() then
+			if avcodec.avcodec_decode_video2(this.FFXData.CodecContext, this.FFXData.FrameVideo, this.GotFrame, this.Packet) < 0 then
+				return false
+			end
+		else
 			return false
 		end
 	end
@@ -450,6 +454,19 @@ end
 function AquaShineVideo._tinySeek(this, target)
 	while target > this:_translateTS(this.FFXData.FrameVideo.pkt_pts + this.FFXData.FrameVideo.pkt_duration) do
 		this:_readFrame()
+	end
+end
+
+function AquaShineVideo._selectUsedFrameData(this)
+	if this.FFXData.FrameVideo.format == AV_PIX_FMT_YUV420P then
+		return this.FFXData.FrameVideo
+	else
+		swscale.sws_scale(this.FFXData.SwsCtx,
+			ffi.cast("const uint8_t *const *", this.FFXData.FrameVideo.data),
+			this.FFXData.FrameVideo.linesize, 0, this.FFXData.CodecContext.height,
+			this.FFXData.FrameYUV420P.data, this.FFXData.FrameYUV420P.linesize
+		)
+		return this.FFXData.FrameYUV420P
 	end
 end
 
@@ -489,50 +506,76 @@ function AquaShineVideo._stepVideo(this, dt)
 	
 	-- Refresh the image buffer
 	-- Don't forget to do sws_scale first
-	swscale.sws_scale(this.FFXData.SwsCtx,
-		ffi.cast("const uint8_t *const *", this.FFXData.FrameVideo.data),
-		this.FFXData.FrameVideo.linesize, 0, this.FFXData.CodecContext.height,
-		this.FFXData.FrameYUV420P.data, this.FFXData.FrameYUV420P.linesize
-	)
+	local usedFrame = this:_selectUsedFrameData()
 	
+	--[[
 	for i = 0, this.ImgRes - 1 do
-		local iy, iu, iv = this.ImageData[1][3], this.ImageData[2][3], this.ImageData[3][3]
 		if i < this.HalfImgRes then
 			-- Copy U and V first
-			iu[i * 4] = this.FFXData.FrameYUV420P.data[1][i]
-			iv[i * 4] = this.FFXData.FrameYUV420P.data[2][i]
+			iu[i * 4] = usedFrame.data[1][i]
+			iv[i * 4] = usedFrame.data[2][i]
 		end
 		
-		iy[i * 4] = this.FFXData.FrameYUV420P.data[0][i]
+		-- Copy Y
+		iy[i * 4] = usedFrame.data[0][i]
+	end
+	--]]
+	local idx = 0
+	local idx2 = 0
+	local iy, iu, iv = this.ImageData[1][3], this.ImageData[2][3], this.ImageData[3][3]
+	-- Y first
+	for y = 0, this.FFXData.CodecContext.height - 1 do
+		for x = 0, usedFrame.linesize[0] - 1 do
+			if x < this.FFXData.CodecContext.width then
+				iy[idx2 * 4] = usedFrame.data[0][idx]
+				idx2 = idx2 + 1
+			end
+			
+			idx = idx + 1
+		end
+	end
+	-- Same for U and V
+	idx = 0
+	idx2 = 0
+	for y = 0, this.FFXData.CodecContext.height * 0.5 - 1 do
+		for x = 0, usedFrame.linesize[1] - 1 do
+			if x < this.FFXData.CodecContext.width * 0.5 then
+				iu[idx2 * 4] = usedFrame.data[1][idx]
+				iv[idx2 * 4] = usedFrame.data[2][idx]
+				idx2 = idx2 + 1
+			end
+			
+			idx = idx + 1
+		end
 	end
 	
 	-- Reload Image object
-	do
-		for i = 1, 3 do
-			this.ImageData[i][2]:refresh()
-		end
-	end
+	this.ImageData[1][2]:refresh()
+	this.ImageData[2][2]:refresh()
+	this.ImageData[3][2]:refresh()
 	
-	if not(this:_readFrame()) then
+	if this:_readFrame() == false then
 		this.EOS = true
 	end
 end
 
-function AquaShineVideo._draw(this, ...)
+function AquaShineVideo._draw(this, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 	local prevshdr = love.graphics.getShader()
-	vidshader:send("love_VideoYChannel", this.ImageData[1][2])
-	vidshader:send("love_VideoCbChannel", this.ImageData[2][2])
-	vidshader:send("love_VideoCrChannel", this.ImageData[3][2])
-	love.graphics.setShader(vidshader)
-	love.graphics.draw(this.ImageData[1][2], ...)
-	love.graphics.setShader(prevshdr)
+	
+	if not(prevshdr) then
+		love.graphics.setShader(this.Shader)
+		love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
+		love.graphics.setShader(prevshdr)
+	else
+		love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
+	end
 end
 
 
 --! @brief Play video
 --! @param this AquaShineVideo object
 function AquaShineVideo.play(this)
-	if this.EOS then return end
+	if this.EOS or this:isPlaying() then return end
 	
 	-- Insert to playing queue
 	FFX._playing[#FFX._playing + 1] = this
@@ -625,7 +668,6 @@ function FFX.Update(deltaT)
 	
 	for i = #FFX._playing, 1, -1 do
 		local obj = FFX._playing[i]
-		
 		obj:_stepVideo(deltaT)
 		
 		if obj.EOS then
@@ -851,11 +893,11 @@ end
 
 -- Inject our proxy to love.graphics.draw
 local graphics_draw = love.graphics.draw
-function love.graphics.draw(obj, ...)
+function love.graphics.draw(obj, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 	if type(obj) == "table" and obj.FFXData then
-		return obj:_draw(...)
+		return obj:_draw(quad, x, y, r, sx, sy, ox, oy, kx, ky)
 	else
-		graphics_draw(obj, ...)
+		graphics_draw(obj, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 	end
 end
 

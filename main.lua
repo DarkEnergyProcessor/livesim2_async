@@ -28,8 +28,11 @@ DEPLS_VERSION = "2.0-beta3"
 DEPLS_VERSION_NUMBER = 01010502	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
-love._getAquaShineHandle = nil
 AquaShine.SetDefaultFont("MTLmr3m.ttf")
+
+if love.filesystem.isFused() then
+	love._getAquaShineHandle = nil
+end
 
 --------------------------------
 -- Yohane Initialization Code --

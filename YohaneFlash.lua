@@ -267,7 +267,7 @@ function YohaneFlash._internal._mt.clone(this)
 		}
 	end
 	
-	return setmetatable({}, flsh)
+	return (setmetatable({}, flsh))
 end
 
 -- Get image object from specificed name

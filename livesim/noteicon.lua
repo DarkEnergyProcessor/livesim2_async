@@ -27,6 +27,15 @@ end
 local setColor = love.graphics.setColor
 local draw = love.graphics.draw
 
+local function noteicon_draw(i)
+	local ni = noteicon_circle[i]
+	
+	if ni.time <= 0 then
+		setColor(255, 255, 255, ni.data.opacity * DEPLS.LiveOpacity / 255)
+		draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
+	end
+end
+
 function NoteIcon.Update(deltaT)
 	et = et + deltaT
 	
@@ -59,16 +68,7 @@ function NoteIcon.Update(deltaT)
 	end
 end
 
-local function noteicon_draw(i)
-	local ni = noteicon_circle[i]
-	
-	if ni.time <= 0 then
-		setColor(255, 255, 255, ni.data.opacity * DEPLS.LiveOpacity / 255)
-		draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
-	end
-end
-
-function NoteIcon.Draw(deltaT)
+function NoteIcon.Draw()
 	noteicon_draw(1)
 	noteicon_draw(2)
 	noteicon_draw(3)

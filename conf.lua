@@ -30,14 +30,18 @@ AquaShine.ParseCommandLineConfig(assert(arg))
 -- /gles switch --
 ------------------
 local enabledpiaware
-if AquaShine.GetCommandLineConfig("gles") then
-	local _, ffi = pcall(require, "ffi")
+local gles = AquaShine.GetCommandLineConfig("gles")
+local integrated = AquaShine.GetCommandLineConfig("integrated") or AquaShine.GetCommandLineConfig("igpu")
+do
+	local s, ffi = pcall(require, "ffi")
 
-	if _ then
-		local setenv_load = assert(loadstring("local x=... return x.setenv"))
-		local putenv_load = assert(loadstring("local x=... return x.SetEnvironmentVariableA"))
-		local dpiaware = assert(loadstring("local x = ... return x.SetProcessDPIAware"))
+	if s then
+		local setenv_load = function(x) return x.setenv end
+		local putenv_load = function(x) return x.SetEnvironmentVariableA end
+		local dpiaware = function(x) return x.SetProcessDPIAware end
 		ffi.cdef [[
+			int NvOptimusEnablement;
+			int AmdPowerXpressRequestHighPerformance;
 			int setenv(const char *envname, const char *envval, int overwrite);
 			int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
 			int __stdcall SetProcessDPIAware();
@@ -46,12 +50,16 @@ if AquaShine.GetCommandLineConfig("gles") then
 		local ss, setenv = pcall(setenv_load, ffi.C)
 		local ps, putenv = pcall(putenv_load, ffi.C)
 		local dp, setdpiaware = pcall(dpiaware, ffi.C)
-		
-		if ss then
-			setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1)
-		elseif ps then
-			putenv("LOVE_GRAPHICS_USE_OPENGLES", "1")
-		end
+        
+        if ss then
+            if gles then setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1) end
+            if integrated then setenv("SHIM_MCCOMPAT", "0x800000000", 1) setenv("DRI_PRIME", "0", 1) end
+        elseif ps then
+            if gles then putenv("LOVE_GRAPHICS_USE_OPENGLES", "1") end
+            if integrated then putenv("SHIM_MCCOMPAT", "0x800000000") end
+        end
+        
+        if dp then enabledpiaware = setdpiaware end
 		
 		if dp then enabledpiaware = setdpiaware end
 	end
