@@ -130,7 +130,7 @@ function AquaShine.ParseCommandLineConfig(argv)
 	local arglen = #arg
 	
 	for i = arglen, 1, -1 do
-		local k, v = arg[i]:match("^[/|%-](%w+)=?(.*)")
+		local k, v = arg[i]:match("^%-(%w+)=?(.*)")
 		
 		if k and v then
 			config_list[k:lower()] = #v == 0 and true or tonumber(v) or v

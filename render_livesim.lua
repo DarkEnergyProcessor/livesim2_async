@@ -63,6 +63,7 @@ f:close()
 	end
 end
 local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
+local encode_audio_only = true
 local benchmark_mode
 
 -- len is the sample length
@@ -355,6 +356,9 @@ function RenderMode.Start(arg)
 		RenderMode.EncodeType = "tga"
 	end
 	benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
+	encode_audio_only = not(AquaShine.GetCommandLineConfig("vn"))
+	
+	if not(encode_audio_only) then benchmark_mode = true end
 	
 	-- Create canvas
 	RenderMode.Canvas = love.graphics.newCanvas()
@@ -502,7 +506,7 @@ function RenderMode.Exit()
 	until RenderManager.IsIdle()
 	
 	print("Saving audio")
-	local audio_wav = assert(io.open(benchmark_mode and null_device or RenderMode.Destination.."/audio.wav", "wb"))
+	local audio_wav = assert(io.open((benchmark_mode and encode_audio_only) and null_device or RenderMode.Destination.."/audio.wav", "wb"))
 	local current_pos = (AudioMixer.SoundDataBuffer.Position + 1) * 4
 	
 	audio_wav:write("RIFF\0\0\0\0WAVEfmt \16\0\0\0\1\0\2\0\68\172\0\0\16\177\2\0\4\0\16\0data")

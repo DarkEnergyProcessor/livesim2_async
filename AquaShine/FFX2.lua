@@ -94,7 +94,7 @@ end
 
 AquaShine.Log("AquaShineFFmpeg", "Loading include files")
 local include = love.math.decompress(love.filesystem.read("ffmpeg_include_compressed"), "zlib")
-local vidshader_code = [[
+local vidshader = love.graphics.newShader [[
 vec4 effect(mediump vec4 vcolor, Image tex, vec2 texcoord, vec2 pixcoord) {
 	return VideoTexel(texcoord) * vcolor;
 }
@@ -236,8 +236,8 @@ local function DeleteAquaShineFFXData(this)
 		swscale.sws_freeContext(this.SwsCtx)
 	end
 	
-	if this.FFXData.FrameVideo ~= nil then
-		FreeAVFrame(this.FFXData.FrameVideo)
+	if this.FrameVideo ~= nil then
+		FreeAVFrame(this.FrameVideo)
 	end
 	
 	if this.FrameYUV420P ~= nil then
@@ -414,10 +414,7 @@ function AquaShineVideo.init(this, path)
 	this.EOS = false
 	this.ImgRes = this.FFXData.CodecContext.width * this.FFXData.CodecContext.height
 	this.HalfImgRes = this.ImgRes * 0.25
-	this.Shader = love.graphics.newShader(vidshader_code)
-	this.Shader:send("love_VideoYChannel", this.ImageData[1][2])
-	this.Shader:send("love_VideoCbChannel", this.ImageData[2][2])
-	this.Shader:send("love_VideoCrChannel", this.ImageData[3][2])
+	--this.Shader = love.graphics.newShader(vidshader_code)
 end
 
 function AquaShineVideo._readPacket(this)
@@ -561,14 +558,17 @@ end
 
 function AquaShineVideo._draw(this, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 	local prevshdr = love.graphics.getShader()
+	local curshader = prevshdr or vidshader
 	
 	if not(prevshdr) then
-		love.graphics.setShader(this.Shader)
-		love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
-		love.graphics.setShader(prevshdr)
-	else
-		love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
+		love.graphics.setShader(vidshader)
 	end
+	
+	curshader:send("love_VideoYChannel", this.ImageData[1][2])
+	curshader:send("love_VideoCbChannel", this.ImageData[2][2])
+	curshader:send("love_VideoCrChannel", this.ImageData[3][2])
+	love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
+	love.graphics.setShader(prevshdr)
 end
 
 

@@ -240,9 +240,9 @@ local function storyboard_draw(this, deltaT)
 		
 		local status, msg
 		if this.StoryboardLua[3] then
-			status, msg = pcall(this.StoryboardLua[2].Update, deltaT)
+			status, msg = xpcall(this.StoryboardLua[2].Update, debug.traceback, deltaT)
 		else
-			status, msg = pcall(this.StoryboardLua[1], deltaT)
+			status, msg = xpcall(this.StoryboardLua[1], debug.traceback, deltaT)
 		end
 		
 		-- Rebalance push/pop
