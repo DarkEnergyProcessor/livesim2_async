@@ -182,7 +182,7 @@ local function override(t1, t2)
 end
 
 local function draw_image(this)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	love.graphics.draw(this.image)
 end
 

@@ -19,10 +19,10 @@ local _common_meta = {__index = CircleTapEffect}
 function CircleTapEffect.Create(x, y, r, g, b)
 	local out = {r = r, g = g, b = b}
 	
-	out.stareff_data = {scale = 2, opacity = 255}
-	out.circle1_data = {scale = 2.427, opacity = 255}
-	out.circle2_data = {scale = 2.427, opacity = 255}
-	out.circle3_data = {scale = 2.427, opacity = 255}
+	out.stareff_data = {scale = 2, opacity = 1}
+	out.circle1_data = {scale = 2.427, opacity = 1}
+	out.circle2_data = {scale = 2.427, opacity = 1}
+	out.circle3_data = {scale = 2.427, opacity = 1}
 	out.spritebatch = love.graphics.newSpriteBatch(DEPLS.Images.ef_316_001, 10, "stream")
 	out.stareff_tween = tween.new(800, out.stareff_data, {scale = 2.6, opacity = 0}, "outQuint")
 	out.circle1_tween = tween.new(200, out.circle1_data, CircleDest, "outQuint")
@@ -62,7 +62,7 @@ end
 local setColor = love.graphics.setColor
 local draw = love.graphics.draw
 function CircleTapEffect.Draw(this)
-	love.graphics.setColor(this.r, this.g, this.b, this.stareff_data.opacity * DEPLS.LiveOpacity / 255)
+	love.graphics.setColor(this.r, this.g, this.b, this.stareff_data.opacity * DEPLS.LiveOpacity)
 	love.graphics.draw(DEPLS.Images.ef_316_000, this.pos[1], this.pos[2], 0, this.stareff_data.scale, this.stareff_data.scale, 50, 50)
 	love.graphics.setColor(this.r, this.g, this.b, DEPLS.LiveOpacity)
 	love.graphics.draw(this.spritebatch, this.pos[1], this.pos[2])

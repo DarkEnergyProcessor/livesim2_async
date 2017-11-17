@@ -534,64 +534,78 @@ end
 ------------------------------
 -- Other Internal Functions --
 ------------------------------
+function AquaShine.StepLoop()
+	AquaShine.ExitStatus = nil
+	
+	-- Switch entry point
+	if TemporaryEntryPoint then
+		if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
+			pcall(AquaShine.CurrentEntryPoint.Exit)
+		end
+		
+		AquaShine.CurrentEntryPoint = TemporaryEntryPoint
+		TemporaryEntryPoint = nil
+	end
+	
+	-- Process events.
+	love.event.pump()
+	for name, a, b, c, d, e, f in love.event.poll() do
+		if name == "quit" then
+			if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
+				AquaShine.CurrentEntryPoint.Exit(true)
+			end
+			
+			AquaShine.ExitStatus = a or 0
+			return AquaShine.ExitStatus
+		end
+		
+		love.handlers[name](a, b, c, d, e, f)
+	end
+	
+	-- Update dt, as we'll be passing it to update
+	love.timer.step()
+	local dt = love.timer.getDelta()
+	
+	if love.graphics.isActive() then
+		love.graphics.clear()
+		--AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
+		do
+			love.graphics.setCanvas(AquaShine.MainCanvas)
+			love.graphics.clear()
+			
+			if AquaShine.CurrentEntryPoint then
+				dt = dt * 1000
+				AquaShine.CurrentEntryPoint.Update(dt)
+				
+				love.graphics.push("all")
+				love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+				love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+				AquaShine.CurrentEntryPoint.Draw(dt)
+				love.graphics.pop()
+				love.graphics.setColor(1, 1, 1)
+			else
+				love.graphics.setFont(AquaShine.MainFont)
+				love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
+			end
+			love.graphics.setCanvas()
+		end
+		love.graphics.draw(AquaShine.MainCanvas)
+		love.graphics.present()
+	end
+end
+
 function AquaShine.MainLoop()
-	local dt
-	local font = AquaShine.LoadFont(nil, 14)
+	AquaShine.MainFont = AquaShine.LoadFont(nil, 14)
 	
 	while true do
-		-- Switch entry point
-		if TemporaryEntryPoint then
-			if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
-				pcall(AquaShine.CurrentEntryPoint.Exit)
-			end
+		if love._version_minor >= 11 then
+			return AquaShine.StepLoop
+		else
+			AquaShine.StepLoop()
 			
-			AquaShine.CurrentEntryPoint = TemporaryEntryPoint
-			TemporaryEntryPoint = nil
-		end
-		
-		-- Process events.
-		love.event.pump()
-		for name, a, b, c, d, e, f in love.event.poll() do
-			if name == "quit" then
-				if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
-					AquaShine.CurrentEntryPoint.Exit(true)
-				end
-				
-				return a
+			if AquaShine.ExitStatus then
+				return AquaShine.ExitStatus
 			end
-			
-			love.handlers[name](a, b, c, d, e, f)
-		end
-		
-		-- Update dt, as we'll be passing it to update
-		love.timer.step()
-		dt = love.timer.getDelta()
-		
-		if love.graphics.isActive() then
-			love.graphics.clear()
-			--AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
-			do
-				love.graphics.setCanvas(AquaShine.MainCanvas)
-				love.graphics.clear()
-				
-				if AquaShine.CurrentEntryPoint then
-					dt = dt * 1000
-					AquaShine.CurrentEntryPoint.Update(dt)
-					
-					love.graphics.push("all")
-					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-					AquaShine.CurrentEntryPoint.Draw(dt)
-					love.graphics.pop()
-					love.graphics.setColor(255, 255, 255)
-				else
-					love.graphics.setFont(font)
-					love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
-				end
-				love.graphics.setCanvas()
-			end
-			love.graphics.draw(AquaShine.MainCanvas)
-			love.graphics.present()
 		end
 	end
 end
@@ -613,7 +627,7 @@ function love.run()
 	love.timer.step()
  
 	-- Main loop time.
-	AquaShine.MainLoop()
+	return AquaShine.MainLoop()
 end
 
 local function error_printer(msg, layer)
@@ -646,8 +660,8 @@ function love.errhand(msg)
  
 	local err = {}
  
-	table.insert(err, "AquaShine Error Handler. An error has occured during execution")
-	table.insert(err, msg.."\n\n")
+	table.insert(err, "AquaShine Error Handler. An error has occured during execution\nPress Ctrl+C to copy error message to clipboard.")
+	table.insert(err, msg.."\n")
  
 	for l in string.gmatch(trace, "(.-)\n") do
 		if not string.match(l, "boot.lua") then
@@ -662,7 +676,7 @@ function love.errhand(msg)
 	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
 	
 	AquaShine.LoadEntryPoint("AquaShine/ErrorHandler.lua", {p})
-	AquaShine.MainLoop()
+	return AquaShine.MainLoop()
 end
 
 -- Inputs
@@ -787,6 +801,60 @@ end
 
 -- Initialization
 function love.load(arg)
+	-- LOVE 0.11.x compatibility
+	-- Game which uses AquaShine expects to use LOVE 0.11 API
+	if love._version_minor < 11 then
+		-- 0..1 range for love.graphics.setColor
+		local setColor = love.graphics.setColor
+		function love.graphics.setColor(r, g, b, a)
+			if type(r) == "table" then
+				return setColor(r[1] * 255, r[2] * 255, r[3] * 255, (r[4] or 1) * 255)
+			else
+				return setColor(r * 255, g * 255, b * 255, (a or 1) * 255)
+			end
+		end
+		
+		-- 0..1 range for love.graphics.getColor
+		local getColor = love.graphics.getColor
+		function love.graphics.getColor()
+			local r, g, b, a = getColor()
+			
+			return r / 255, g / 255, b / 255, a / 255
+		end
+		
+		-- 0..1 range for love.graphics.clear
+		local clear = love.graphics.clear
+		function love.graphics.clear(r, g, b, a, ...)
+			if type(r) == "table" then
+				local tablist = {r, g, b, a, ...}
+				
+				for i, v in ipairs(tablist) do
+					local t = {}
+					
+					t[1] = v[1] * 255
+					t[2] = v[2] * 255
+					t[3] = v[3] * 255
+					t[4] = (v[4] or 1) * 255
+					tablist[i] = t
+				end
+				
+				return clear(tablist)
+			elseif r then
+				return clear(r * 255, g * 255, b * 255, (a or 1) * 255)
+			else
+				return clear()
+			end
+		end
+		
+		love.data = {}
+		
+		-- love.math.decompress is deprecated, replaced by love.data.decompress
+		function love.data.decompress(fmt, data)
+			-- Notice the argument order
+			return love.math.decompress(data, fmt)
+		end
+	end
+	
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.OperatingSystem = love.system.getOS()

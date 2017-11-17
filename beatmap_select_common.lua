@@ -24,12 +24,12 @@ local function _Button50ScaleTemplate(x, y, text, action)
 			love.graphics.print(text, 8, 6)
 		end,
 		draw = function(this)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(select, 0, 0, 0, 0.5)
 			return this:_drawtext()
 		end,
 		draw_se = function(this)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(select_se, 0, 0, 0, 0.5)
 			return this:_drawtext()
 		end,
@@ -45,7 +45,7 @@ BSCommon.PageCompositionTable = {
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.print(this.text, 1, 1)
 		love.graphics.print(this.text, -1, -1)
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 		love.graphics.print(this.text)
 	end
 }
@@ -57,7 +57,7 @@ BSCommon.AutoplayTick = {
 	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
 	is_ticked = AquaShine.LoadConfig("AUTOPLAY", 0) == 1,
 	draw = function(this)
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 		love.graphics.draw(this.default)
 		
 		if this.is_ticked then
@@ -81,7 +81,7 @@ BSCommon.RandomTick = {
 	default = AquaShine.LoadImage("assets/image/ui/com_etc_292.png"),
 	is_ticked = false,
 	draw = function(this)
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 		love.graphics.draw(this.default)
 		
 		if this.is_ticked then

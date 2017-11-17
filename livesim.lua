@@ -19,7 +19,7 @@ local DEPLS = {
 	CoverShown = 0,             -- Cover shown if this value starts at 3167
 	CoverData = {},
 	
-	BackgroundOpacity = 255,    -- User background opacity set from storyboard
+	BackgroundOpacity = 1,    -- User background opacity set from storyboard
 	BackgroundImage = {         -- Index 0 is the main background
 		-- {handle, logical x, logical y, x size, y size}
 		{nil, -88, 0},
@@ -28,7 +28,7 @@ local DEPLS = {
 		{nil, 0, 640},
 		[0] = {nil, 0, 0}
 	},
-	LiveOpacity = 255,	-- Live opacity
+	LiveOpacity = 1,	-- Live opacity
 	AutoPlay = false,	-- Autoplay?
 	
 	LiveShowCleared = Yohane.newFlashFromFilename("flash/live_clear.flsh"),
@@ -43,9 +43,9 @@ local DEPLS = {
 		{133, 378}, {46 , 249}, {16 , 96 },
 	},
 	IdolImageData = {	-- [idol positon] = {image handle, opacity}
-		{nil, 255}, {nil, 255}, {nil, 255},
-		{nil, 255}, {nil, 255}, {nil, 255},
-		{nil, 255}, {nil, 255}, {nil, 255}
+		{nil, 1}, {nil, 1}, {nil, 1},
+		{nil, 1}, {nil, 1}, {nil, 1},
+		{nil, 1}, {nil, 1}, {nil, 1}
 	},
 	MinimalEffect = nil,		-- True means decreased dynamic effects
 	NoteAccuracy = {16, 40, 64, 112, 128},	-- Note accuracy
@@ -208,8 +208,7 @@ end
 --! @param opacity Transparency. 255 = opaque, 0 = invisible
 function DEPLS.StoryboardFunctions.SetLiveOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
-	
-	DEPLS.LiveOpacity = opacity
+	DEPLS.LiveOpacity = opacity / 255
 end
 
 --! @brief Sets background blackness
@@ -217,7 +216,7 @@ end
 function DEPLS.StoryboardFunctions.SetBackgroundDimOpacity(opacity)
 	opacity = math.max(math.min(opacity or 255, 255), 0)
 	
-	DEPLS.BackgroundOpacity = 255 - opacity
+	DEPLS.BackgroundOpacity = 1 - opacity / 255
 end
 
 --! @brief Gets current elapsed time
@@ -511,13 +510,13 @@ PERFECT = %d GREAT = %d GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
 ]]		, love.timer.getFPS(), AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls, status.texturememory
 		, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
-		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity
+		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity * 255
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
 		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 	love.graphics.setFont(DEPLS.MTLmr3m)
-	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(text, 1, 1)
-	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	love.graphics.print(text)
 end
 
@@ -881,7 +880,7 @@ function DEPLS.Update(deltaT)
 		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
 	end
 	
-	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 191
+	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 0.7451
 	
 	if ElapsedTime > 0 then
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
@@ -995,9 +994,9 @@ function DEPLS.Draw(deltaT)
 	if DEPLS.CoverShown > 0 then
 		DEPLS.Routines.CoverPreview.Draw()
 	else
-		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity / 255)
+		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity)
 		rectangle("fill", -88, -43, 1136, 726)
-		setColor(255, 255, 255, 255)
+		setColor(1, 1, 1)
 	end
 		
 	if AllowedDraw then
@@ -1010,7 +1009,7 @@ function DEPLS.Draw(deltaT)
 		Routines.SkillPopups.Draw()
 		
 		-- Draw header
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
+		setColor(1, 1, 1, DEPLS.LiveOpacity)
 		draw(Images.Header, 0, 0)
 		draw(Images.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
 		
@@ -1024,7 +1023,7 @@ function DEPLS.Draw(deltaT)
 		local IdolPos = DEPLS.IdolPosition
 		
 		for i = 1, 9 do
-			setColor(255, 255, 255, DEPLS.LiveOpacity * IdolData[i][2] / 255)
+			setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
 			draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 		end
 		
@@ -1046,7 +1045,7 @@ function DEPLS.Draw(deltaT)
 		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Draw()
 		else
-			setColor(255, 255, 255, DEPLS.LiveOpacity)
+			setColor(1, 1, 1, DEPLS.LiveOpacity)
 			draw(Images.Pause, 916, 5, 0, 0.6)
 		end
 		

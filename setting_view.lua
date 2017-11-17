@@ -208,9 +208,9 @@ function Settings.Draw(deltaT)
 
 	-- Draw label
 	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Settings", 95, 13)
-	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	
 	for i = settings_index_multipler * 8 + 1, (settings_index_multipler + 1) * 8 do
 		local idx = SettingSelection[i]
@@ -234,7 +234,7 @@ function Settings.Draw(deltaT)
 			end
 			
 			love.graphics.print(idx.Caption, 5, yp + 10)
-			love.graphics.setColor(255, 255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 		end
 	end
 	

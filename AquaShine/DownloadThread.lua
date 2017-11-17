@@ -2,9 +2,16 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in AquaShine.lua
 
-local cin, cout = ...
+local cin = ...
 local http = require("socket.http")
 local url = require("socket.url")
+
+-- AquaShine download event
+local le = require("love.event")
+
+local function push_event(name, data)
+	le.push("aqs_download", cin, name, data)
+end
 
 -- From Luasocket 2.0.2 with some modifications
 -- where proxy and authentication is removed
@@ -69,8 +76,7 @@ end
 local function custom_sink(chunk, err)
 	check_if_quit()
 	if chunk then
-		cout:push("RECV")
-		cout:push(chunk)
+		push_event("RECV", chunk)
 	end
 	
 	return 1
@@ -97,13 +103,10 @@ local request_http = socket.protect(function(url, headers)
 	local code, status = h:receivestatusline()
 	-- if it is an HTTP/0.9 server, simply get the body and we are done
 	if not code then
-		cout:push("RESP")
-		cout:push(200)
-		cout:push("SIZE")
-		cout:push(-1)
+		push_event("RESP", 200)
+		push_event("SIZE", -1)
 		h:receive09body(status, nreqt.sink, nreqt.step)
-		cout:push("DONE")
-		cout:push(0)
+		push_event("DONE", 0)
 		
 		return
 	end
@@ -116,18 +119,14 @@ local request_http = socket.protect(function(url, headers)
 	end
 	headers = h:receiveheaders()
 	
-	cout:push("RESP")
-	cout:push(code)
-	cout:push("SIZE")
-	cout:push(headers['content-length'] and tonumber(headers['content-length']) or -1)
-	cout:push("HEDR")
-	cout:push(headers)
+	push_event("RESP", code)
+	push_event("SIZE", headers['content-length'] and tonumber(headers['content-length']) or -1)
+	push_event("HEDR", headers)
 	
 	h:receivebody(headers, nreqt.sink, nreqt.step)
 	h:close()
 	
-	cout:push("DONE")
-	cout:push(0)
+	push_event("DONE", 0)
 end)
 
 local command = cin:demand()
@@ -136,8 +135,7 @@ while command ~= "QUIT" do
 	local a, b, c = pcall(request_http, command, headers)
 	
 	if not(a) or (a and not(b)) then
-		cout:push("ERR ")
-		cout:push(a and c or b)
+		push_event("ERR ", a and c or b)
 	end
 	
 	command = cin:demand()

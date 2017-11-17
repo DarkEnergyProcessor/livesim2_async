@@ -58,7 +58,7 @@ local composition = AquaShine.Composition.Create({
 	{
 		-- background
 		draw = function()
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(background[1])
 			love.graphics.draw(background[2], -88, 0)
 			love.graphics.draw(background[3], 960, 0)
@@ -72,10 +72,10 @@ local composition = AquaShine.Composition.Create({
 		draw = function()
 			love.graphics.draw(TitleIcon)
 			love.graphics.setFont(TitleFont)
-			love.graphics.setColor(0, 0, 0, 127)
+			love.graphics.setColor(0, 0, 0, 0.5)
 			love.graphics.print("Live Simulator: 2", 142, 34)
 			love.graphics.print("Live Simulator: 2", 139, 31)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.print("Live Simulator: 2", 140, 32)
 		end
 	},
@@ -87,7 +87,7 @@ local composition = AquaShine.Composition.Create({
 			love.graphics.setFont(ReleaseFont)
 			love.graphics.setColor(0, 0, 0)
 			love.graphics.print(versionText, 3, 2)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(versionText, 2, 1)
 		end,
 		click = function()
@@ -104,13 +104,13 @@ for i = 1, #menu_select do
 		w = 432, h = 80,
 		draw = function()
 			love.graphics.setFont(MTLMr3m)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(selection_image)
 			love.graphics.print(menu_select[i][1], 32, 16)
 		end,
 		draw_se = function()
 			love.graphics.setFont(MTLMr3m)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(selection_image_se)
 			love.graphics.print(menu_select[i][1], 32, 16)
 		end,

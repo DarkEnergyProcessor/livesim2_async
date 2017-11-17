@@ -30,7 +30,7 @@ function ScoreNode.Create(score)
 	end
 	
 	out.score_canvas.Used = true
-	out.score_info = {opacity = 255, scale = 1.125, x = 520}
+	out.score_info = {opacity = 1, scale = 1.125, x = 520}
 	out.main_tween = tween.new(100, out.score_info, {x = 570, scale = 1})
 	out.opacity_tween = tween.new(200, out.score_info, {opacity = 0})
 	out.elapsed_time = 0
@@ -40,7 +40,7 @@ function ScoreNode.Create(score)
 	graphics.setCanvas(out.score_canvas.Canvas)
 	graphics.clear()
 	graphics.setBlendMode("alpha", "premultiplied")
-	graphics.setColor(255, 255, 255, DEPLS.LiveOpacity)
+	graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
 	graphics.draw(Images.ScoreNode.Plus)
 	
 	do
@@ -72,9 +72,9 @@ function ScoreNode.Update(this, deltaT)
 end
 
 function ScoreNode.Draw(this)
-	graphics.setColor(255, 255, 255, this.score_info.opacity * DEPLS.LiveOpacity / 255)
+	graphics.setColor(1, 1, 1, this.score_info.opacity * DEPLS.LiveOpacity)
 	graphics.draw(this.score_canvas.Canvas, this.score_info.x, 72, 0, this.score_info.scale, this.score_info.scale, 0, 16)
-	graphics.setColor(255, 255, 255, 255)
+	graphics.setColor(1, 1, 1)
 end
 
 return ScoreNode

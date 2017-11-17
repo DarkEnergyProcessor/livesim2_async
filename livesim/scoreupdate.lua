@@ -15,7 +15,7 @@ function ScoreUpdate.Update(deltaT)
 end
 
 function ScoreUpdate.Draw()
-	love.graphics.setColor(255, 255, 255, DEPLS.LiveOpacity)
+	love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
 	love.graphics.setFont(score_images)
 	love.graphics.print(score_str, 476, 53, 0, 1, 1, #score_str * 16, 0)
 end

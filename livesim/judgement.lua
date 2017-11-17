@@ -10,7 +10,7 @@ local PerfectNode = {}
 local scaling = 2	-- Text size: FULL = 2, Small = 1.6, Mini = 1
 local et = 500
 local perfect_data = {opacity = 0, scale = 0}
-local perfect_tween = tween.new(50, perfect_data, {opacity = 255, scale = 1}, "outSine")
+local perfect_tween = tween.new(50, perfect_data, {opacity = 1, scale = 1}, "outSine")
 local perfect_tween_fadeout = tween.new(200, perfect_data, {opacity = 0})
 
 perfect_tween:update(50)
@@ -40,7 +40,7 @@ end
 
 function PerfectNode.Draw()
 	if et < 500 then
-		love.graphics.setColor(255, 255, 255, perfect_data.opacity * DEPLS.LiveOpacity / 255)
+		love.graphics.setColor(1, 1, 1, perfect_data.opacity * DEPLS.LiveOpacity)
 		love.graphics.draw(
 			PerfectNode.Image, 480, 320, 0,
 			perfect_data.scale * DEPLS.TextScaling,
@@ -48,7 +48,7 @@ function PerfectNode.Draw()
 			PerfectNode.Center[PerfectNode.Image][1],
 			PerfectNode.Center[PerfectNode.Image][2]
 		)
-		love.graphics.setColor(255, 255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 	end
 end
 

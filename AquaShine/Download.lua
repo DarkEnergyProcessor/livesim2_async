@@ -6,6 +6,7 @@ local AquaShine = ...
 local class = require("30log")
 local love = require("love")
 local Download = class("AquaShine.Download")
+local DownloadList = setmetatable({}, {__mode = "k"})
 
 local chunk_handler = {
 	RESP = function(this, data)
@@ -36,6 +37,10 @@ local chunk_handler = {
 	end
 }
 
+function Download.DefaultErrorCallback(this, data)
+	error(data)
+end
+
 function Download.Create()
 	return Download()
 end
@@ -45,17 +50,17 @@ function Download.init(this)
 	
 	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
 	this.channelin = love.thread.newChannel()
-	this.channelout = love.thread.newChannel()
 	this.finalizer = newproxy(true)
+	this.err = Download.DefaultErrorCallback
 	fmt = getmetatable(this.finalizer)
 	fmt.__gc = function()
 		local t = this.thread
-		local cin, cout = this.channelin, this.channelout
+		local cin = this.channelin
 		
 		cin:push("QUIT")
 	end
 	
-	this.thread:start(this.channelin, this.channelout)
+	this.thread:start(this.channelin)
 end
 
 function Download.SetCallback(this, t)
@@ -64,21 +69,22 @@ function Download.SetCallback(this, t)
 	return this
 end
 
-function Download.Update(this)
-	while this.downloading and math.floor(this.channelout:getCount() * 0.5) > 0 do
-		local chunk = this.channelout:pop()
-		local data = this.channelout:pop()
-		
-		assert(chunk_handler[chunk])(this, data)
-	end
-end
-
 function Download.Download(this, url, additional_headers)
 	assert(not(this.downloading), "Download is in progress")
 	
 	this.channelin:push(assert(url))
 	this.channelin:push(additional_headers or {})
 	this.downloading = true
+end
+
+function love.handlers.aqs_download(input, name, data)
+	if DownloadList[input] then
+		local dl = DownloadList[input]
+		
+		if dl.downloading then
+			assert(chunk_handler[name])(dl, data)
+		end
+	end
 end
 
 AquaShine.Download = Download

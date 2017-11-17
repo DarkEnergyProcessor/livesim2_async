@@ -289,19 +289,10 @@ function SingleNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	local setColor = love.graphics.setColor
 	
-	setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity)
+	setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity)
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
-	if DEPLS.DebugNoteDistance then
-		local dist = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
-		local printf = love.graphics.print
-		setColor(0, 0, 0, 255)
-		printf(("%.2f"):format(dist), this.FirstCircle[1], this.FirstCircle[2])
-		setColor(255, 255, 255, 255)
-		printf(("%.2f"):format(dist), this.FirstCircle[1] + 1, this.FirstCircle[2] + 1)
-	else
-		setColor(255, 255, 255)
-	end
+	setColor(1, 1, 1)
 end
 
 function SingleNoteObject.SetTouchID(this, touchid)
@@ -521,11 +512,11 @@ function LongNoteObject.Draw(this)
 	local draw = love.graphics.draw
 	
 	-- Draw note trail
-	setColor(255, 255, this.TouchID and 127 or 255, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
+	setColor(1, 1, this.TouchID and 0.5 or 1, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
 	draw(this.LongNoteMesh)
 	
 	-- Draw note object
-	setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity)
+	setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity)
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
 	-- Draw simultaneous note bar if it is
@@ -536,40 +527,22 @@ function LongNoteObject.Draw(this)
 	local draw_endcircle = this.EndCircleScale > 0
 	-- Draw end note trail if it is
 	if draw_endcircle then
-		setColor(255, 255, 255, DEPLS.LiveOpacity * this.Opacity2)
+		setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity2)
 		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
 	end
 	
-	setColor(255, 255, 255)
+	setColor(1, 1, 1)
 	if this.TouchID and not(DEPLS.MinimalEffect) then
 		love.graphics.push()
 		love.graphics.translate(this.FirstCircle[1], this.FirstCircle[2])
 		love.graphics.rotate(this.LNEffectRotation)
-		this.LNEffect:setOpacity(DEPLS.LiveOpacity)
+		-- Yohane needs the color range from 0..255
+		this.LNEffect:setOpacity(DEPLS.LiveOpacity * 255)
 		this.LNEffect:draw()
 		love.graphics.pop()
 	end
 	
-	if DEPLS.DebugNoteDistance then
-		local printf = love.graphics.print
-		local notedistance = distance(this.FirstCircle[1] - this.CenterIdol[1], this.FirstCircle[2] - this.CenterIdol[2])
-		
-		setColor(0, 0, 0, 255)
-		printf(("%.2f"):format(notedistance), this.FirstCircle[1], this.FirstCircle[2])
-		setColor(255, 255, 255, 255)
-		printf(("%.2f"):format(notedistance), this.FirstCircle[1] + 1, this.FirstCircle[2] + 1)
-		
-		if draw_endcircle then
-			notedistance = distance(this.SecondCircle[1] - this.CenterIdol[1], this.SecondCircle[2] - this.CenterIdol[2])
-			
-			setColor(0, 0, 0, 255)
-			printf(("%.2f"):format(notedistance), this.SecondCircle[1], this.SecondCircle[2])
-			setColor(255, 255, 255, 255)
-			printf(("%.2f"):format(notedistance), this.SecondCircle[1] + 1, this.SecondCircle[2] + 1)
-		end
-	else
-		setColor(255, 255, 255, 255)
-	end
+	setColor(1, 1, 1)
 end
 
 --! @brief LongNoteObject on hold note
@@ -720,7 +693,7 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 	DEPLS.Routines.PerfectNode.Replay = true
 	
 	if not(is_miss) then
-		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.SecondCircle[1], this.SecondCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.SecondCircle[1], this.SecondCircle[2], 1, 1, 1)
 		EffectPlayer.Spawn(AfterCircleTap)
 	end
 	

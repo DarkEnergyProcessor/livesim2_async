@@ -154,7 +154,13 @@ local function setup_env(story, lua)
 			setCanvas = function(canvas)
 				love.graphics.setCanvas(canvas or story.Canvas)
 			end,
-			setColor = love.graphics.setColor,
+			setColor = function(r, g, b, a)
+				if type(r) == "table" then
+					return love.graphics.setColor(r[1] / 255, r[2] / 255, r[3] / 255, (r[4] or 255) / 255)
+				else
+					return love.graphics.setColor(r / 255, g / 255, b / 255, (a or 255) / 255)
+				end
+			end,
 			setColorMask = love.graphics.setColorMask,
 			setLineStyle = love.graphics.setLineStyle,
 			setLineWidth = love.graphics.setLineWidth,
@@ -210,6 +216,9 @@ local function setup_env(story, lua)
 		end
 		
 		AquaShine.Log("storyboard", table.concat(a, "\t"))
+	end
+	env.UseZeroToOneColorRange = function()
+		env.love.graphics.setColor = love.graphics.setColor
 	end
 	
 	setfenv(lua, env)

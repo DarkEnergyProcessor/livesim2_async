@@ -25,7 +25,8 @@ function LiveClear.Update(deltaT)
 	end
 	
 	if ElapsedTime > 0 then
-		DEPLS.FullComboAnim:setOpacity(DEPLS.LiveOpacity)
+		-- Yohane needs the color range from 0..255
+		DEPLS.FullComboAnim:setOpacity(DEPLS.LiveOpacity * 255)
 		DEPLS.FullComboAnim:update(deltaT)
 	else
 		if DEPLS.Sound.LiveClear and not(isVoicePlayed) then
@@ -33,7 +34,8 @@ function LiveClear.Update(deltaT)
 			isVoicePlayed = true
 		end
 		
-		DEPLS.LiveShowCleared:setOpacity(DEPLS.LiveOpacity)
+		-- Yohane needs the color range from 0..255
+		DEPLS.LiveShowCleared:setOpacity(DEPLS.LiveOpacity * 255)
 		DEPLS.LiveShowCleared:update(deltaT)
 		
 		if ElapsedTime < -5000 then

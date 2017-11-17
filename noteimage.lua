@@ -17,7 +17,7 @@ local newstyle_opacitymul = love.graphics.newShader [[
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
 	vec4 c = Texel(texture, texture_coords);
-	return vec4(c.rgb, (c.a + log(1.0 + c.a)) * 0.75) * color;
+	return vec4(c.rgb * 1.08, (c.a + log(1.0 + c.a)) * 0.75) * color;
 }
 ]]
 
@@ -111,15 +111,15 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 	
 	if cbf_ext then
 		love.graphics.setColor(
-			bit.band(bit.rshift(attribute, 23), 511),
-			bit.band(bit.rshift(attribute, 14), 511),
-			bit.band(bit.rshift(attribute, 5), 511)
+			bit.band(bit.rshift(attribute, 23), 511) / 255,
+			bit.band(bit.rshift(attribute, 14), 511) / 255,
+			bit.band(bit.rshift(attribute, 5), 511) / 255
 		)
 		
 		if is_slide then
 			love.graphics.setShader(newstyle_opacitymul)
 			love.graphics.draw(new_style_slide[9], 64, 64, 0, 1, 1, 64, 64)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.setShader()
 			
 			if is_token then
@@ -133,7 +133,7 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 			love.graphics.setShader(newstyle_opacitymul)
 			love.graphics.draw(noteimg, 64, 64, new_style_rotation[idx], 1, 1, 64, 64)
 			love.graphics.setShader()
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			
 			if is_token then
 				love.graphics.draw(DEPLS.Images.Note.Token)
@@ -213,14 +213,14 @@ function NoteImageLoader.CreateNoteOldStyle(attribute, idx, is_token, is_simulta
 	
 	if cbf_ext then
 		love.graphics.setColor(
-			bit.band(bit.rshift(attribute, 23), 511),
-			bit.band(bit.rshift(attribute, 14), 511),
-			bit.band(bit.rshift(attribute, 5), 511)
+			bit.band(bit.rshift(attribute, 23), 511) / 255,
+			bit.band(bit.rshift(attribute, 14), 511) / 255,
+			bit.band(bit.rshift(attribute, 5), 511) / 255
 		)
 	end
 	
 	love.graphics.draw(noteimg, 64, 64, -rot, 1, 1, 64, 64)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	
 	if is_token then
 		love.graphics.draw(DEPLS.Images.Note.Token)

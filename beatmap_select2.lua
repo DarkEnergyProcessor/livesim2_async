@@ -38,7 +38,7 @@ BeatmapSelect.BeatmapInfoData = {
 			love.graphics.setFont(this.title)
 			love.graphics.print(this.beatmap.name, 419, 79)
 			love.graphics.print(this.beatmap.name, 421, 81)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(this.beatmap.name, 420, 80)
 			
 			if cart then
@@ -87,7 +87,7 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 		0, 0, true, {
 			image_se = AquaShine.LoadImage("assets/image/ui/com_button_01se.png"),
 			draw_se = function(this)
-				love.graphics.setColor(255, 255, 255)
+				love.graphics.setColor(1, 1, 1)
 				love.graphics.draw(this.image_se)
 			end,
 			click = function()
@@ -103,7 +103,7 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 		image = AquaShine.LoadImage("assets/image/ui/com_win_40.png"),
 		x = 420, y = 110,
 		draw = function(this)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(this.image, 0, 0, 0, 0.85)
 			love.graphics.rectangle("fill", 20, 20, 160, 160)
 		end
@@ -119,11 +119,11 @@ BeatmapSelect.MainUIComposition = AquaShine.Composition.Create {
 			"assets/image/ui/com_button_14se.png"
 		)},
 		draw = function(this)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[1] or this.buttons[2])
 		end,
 		draw_se = function(this)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(BeatmapSelect.BeatmapInfoData.beatmap and this.buttons[3] or this.buttons[2])
 		end,
 		click = function(this)
@@ -166,7 +166,7 @@ function BeatmapSelect.Start(arg)
 				select_se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
 				
 				draw_text = function(this)
-					love.graphics.setColor(255, 255, 255)
+					love.graphics.setColor(1, 1, 1)
 					love.graphics.setFont(BeatmapSelect.SongNameFont)
 					love.graphics.print(this.beatmap_info.name, 16, 10)
 					love.graphics.setColor(0, 0, 0)
@@ -174,12 +174,12 @@ function BeatmapSelect.Start(arg)
 					love.graphics.print(this.beatmap_info.type, 8, 40)
 				end,
 				draw = function(this)
-					love.graphics.setColor(255, 255, 255)
+					love.graphics.setColor(1, 1, 1)
 					love.graphics.draw(this.select, 0, 0, 0, 0.75)
 					this:draw_text()
 				end,
 				draw_se = function(this)
-					love.graphics.setColor(255, 255, 255)
+					love.graphics.setColor(1, 1, 1)
 					love.graphics.draw(this.select_se, 0, 0, 0, 0.75)
 					this:draw_text()
 				end,

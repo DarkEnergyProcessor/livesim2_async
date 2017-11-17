@@ -55,15 +55,15 @@ end
 
 function ScoreBar.Draw()
 	AquaShine.SetScissor(0, 0, draw_area, 640)
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	setColor(1, 1, 1, DEPLS.LiveOpacity)
 	draw(used_score, 5, 8, 0, 0.99545454, 0.86842105)
 	
 	if used_score == s_score then
-		setColor(255, 255, 255, DEPLS.LiveOpacity * flash_data.s)
+		setColor(1, 1, 1, DEPLS.LiveOpacity * flash_data.s)
 		draw(s_flash, 36, 3)
 	end
 	
-	setColor(255, 255, 255, 255)
+	setColor(1, 1, 1)
 	AquaShine.ClearScissor()
 end
 

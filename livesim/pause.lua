@@ -21,9 +21,9 @@ local PauseOverlay = AquaShine.Composition.Create {
 		draw = function(this)
 			local name = DEPLS.NoteLoaderObject:GetName()
 			
-			love.graphics.setColor(0, 0, 0, 190)
+			love.graphics.setColor(0, 0, 0, 190 / 255)
 			love.graphics.rectangle("fill", -88, -43, 1136, 726)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.setFont(PauseScreen.Font)
 			love.graphics.print(name, 480 - PauseScreen.Font:getWidth(name) * 0.5, 192)
 		end
@@ -35,19 +35,19 @@ local PauseOverlayButton = AquaShine.Composition.Create {
 	{
 		x = 416, y = 300, w = 128, h = 48,
 		_draw_text = function(this)
-			love.graphics.setColor(255, 255, 255, 127)
+			love.graphics.setColor(1, 1, 1, 0.5)
 			love.graphics.setFont(PauseScreen.Font)
 			love.graphics.print("Resume", 13, 6)
 		end,
 		draw = function(this)
-			love.graphics.setColor(0, 138, 255, 127)
+			love.graphics.setColor(0, 138 / 255, 1, 0.5)
 			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
 			return this:_draw_text()
 		end,
 		draw_se = function(this)
-			love.graphics.setColor(128, 197, 255, 127)
+			love.graphics.setColor(0.5, 197 / 255, 1, 0.5)
 			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
-			love.graphics.setColor(0, 138, 255, 127)
+			love.graphics.setColor(0, 138 / 255, 1, 0.5)
 			love.graphics.rectangle("line", 0, 0, this.w, this.h)
 			return this:_draw_text()
 		end,
@@ -59,19 +59,19 @@ local PauseOverlayButton = AquaShine.Composition.Create {
 	{
 		x = 416, y = 372, w = 128, h = 48,
 		_draw_text = function(this)
-			love.graphics.setColor(255, 255, 255, 127)
+			love.graphics.setColor(1, 1, 1, 0.5)
 			love.graphics.setFont(PauseScreen.Font)
 			love.graphics.print("Quit", 30, 6)
 		end,
 		draw = function(this)
-			love.graphics.setColor(251, 148, 0, 127)
+			love.graphics.setColor(251 / 255, 148 / 255, 0, 0.5)
 			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
 			return this:_draw_text()
 		end,
 		draw_se = function(this)
-			love.graphics.setColor(251, 199, 125, 127)
+			love.graphics.setColor(251 / 255, 199 / 255, 125 / 255, 0.5)
 			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
-			love.graphics.setColor(251, 148, 0, 127)
+			love.graphics.setColor(251 / 255, 148 / 255, 0, 0.5)
 			love.graphics.rectangle("line", 0, 0, this.w, this.h)
 			return this:_draw_text()
 		end,
@@ -108,7 +108,7 @@ function PauseScreen.Draw()
 		
 		if PauseScreen.Paused <= 3000 then
 			-- Draw pause counter
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.draw(
 				PauseScreen.Counter[math.max(math.ceil(PauseScreen.Paused * 0.001), 1)],
 				480, 320, 0, 1.5, 1.5, 18, 19.5

@@ -23,7 +23,7 @@ local liveClearLogo = AquaShine.LoadImage("assets/image/live/ef_330_000_1.png")
 local combo
 
 local Status = {Opacity = 0}
-Status.Tween = tween.new(1000, Status, {Opacity = 255})
+Status.Tween = tween.new(1000, Status, {Opacity = 1})
 
 function ResultScreen.Update(deltaT)
 	if not(combo) then
@@ -48,7 +48,7 @@ function ResultScreen.Draw()
 	love.graphics.setFont(Font)
 	love.graphics.setColor(0, 0, 0, Status.Opacity * 0.75)
 	love.graphics.rectangle("fill", -88, -43, 1136, 726)
-	love.graphics.setColor(255, 255, 255, Status.Opacity)
+	love.graphics.setColor(1, 1, 1, Status.Opacity)
 	love.graphics.draw(comboWin, 127, 400, 0, 1.25, 1.25)
 	love.graphics.draw(scoreLogo, 150, 555)
 	love.graphics.draw(comboLogo, 530, 555)
@@ -67,7 +67,7 @@ function ResultScreen.Draw()
 	love.graphics.print(combo.Miss, 700, 460)
 	love.graphics.print(DEPLS.Routines.ScoreUpdate.CurrentScore, 300, 550)
 	love.graphics.print(combo.MaxCombo, 700, 550)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 end
 
 return ResultScreen

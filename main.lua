@@ -25,7 +25,7 @@
 
 -- Version
 DEPLS_VERSION = "2.0-beta3"
-DEPLS_VERSION_NUMBER = 01010502	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION_NUMBER = 01010503	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
 AquaShine.SetDefaultFont("MTLmr3m.ttf")
@@ -71,7 +71,7 @@ function Yohane.Platform.Draw(drawdatalist)
 	
 	for _, drawdata in ipairs(drawdatalist) do
 		if drawdata.image then
-			love.graphics.setColor(drawdata.r, drawdata.g, drawdata.b, drawdata.a)
+			love.graphics.setColor(drawdata.r / 255, drawdata.g / 255, drawdata.b / 255, drawdata.a / 255)
 			love.graphics.draw(drawdata.image, drawdata.x, drawdata.y, drawdata.rotation, drawdata.scaleX, drawdata.scaleY)
 		end
 	end
@@ -84,44 +84,6 @@ function Yohane.Platform.OpenReadFile(fn)
 end
 
 Yohane.Init(love.filesystem.load)
-
-------------------
--- Touch Effect --
-------------------
--- TODO: Support multitouch
---[[
-local ps = love.graphics.newParticleSystem(AquaShine.LoadImage("assets/flash/ui/live/img/ef_326_003.png"), 1000)
-ps:setSpeed(4, 20)
-ps:setParticleLifetime(0.25, 1)
-ps:setLinearAcceleration(-30, -30, 30, 30)
-ps:setAreaSpread("normal", 5, 5)
-ps:setEmissionRate(25)
-ps:setColors(255, 255, 255, 255, 255, 255, 255, 0)
-ps:setRotation(0, math.pi * 2)
-ps:setSpin(0, math.pi * 2)
-ps:setSpinVariation(1)
-ps:setSizes(0.25, 0.8)
-ps:setSizeVariation(1)
-ps:pause()
-
-AquaShine.SetTouchEffectCallback {
-	Start = function()
-		ps:start()
-	end,
-	Pause = function()
-		ps:pause()
-	end,
-	SetPosition = function(x, y)
-		ps:setPosition(x, y)
-	end,
-	Update = function(deltaT)
-		ps:update(deltaT)
-	end,
-	Draw = function()
-		love.graphics.draw(ps)
-	end
-}
-]]
 
 -------------------------------------------
 -- Live Simulator: 2 binary beatmap init --

@@ -93,7 +93,7 @@ if not(avutil and swresample and avcodec and avformat and swscale) then
 end
 
 AquaShine.Log("AquaShineFFmpeg", "Loading include files")
-local include = love.math.decompress(love.filesystem.read("ffmpeg_include_compressed"), "zlib")
+local include = love.data.decompress("zlib", love.filesystem.read("ffmpeg_include_compressed"))
 local vidshader = love.graphics.newShader [[
 vec4 effect(mediump vec4 vcolor, Image tex, vec2 texcoord, vec2 pixcoord) {
 	return VideoTexel(texcoord) * vcolor;

@@ -75,7 +75,7 @@ function ComboCounter.Draw()
 		love.graphics.scale(DEPLS.TextScaling)
 		love.graphics.setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
 		love.graphics.draw(img.combo, 61, -54, 0, combo_boom.s, combo_boom.s, 61, 18)
-		love.graphics.setColor(255, 255, 255, DEPLS.LiveOpacity)
+		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
 		
 		for i = 1, #combo_str do
 			-- Draw numbers
@@ -83,7 +83,7 @@ function ComboCounter.Draw()
 		end
 		
 		love.graphics.draw(img.combo, 61, -54, 0, combo_scale.s, combo_scale.s, 61, 17)
-		love.graphics.setColor(255, 255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 		love.graphics.pop()
 	end
 end

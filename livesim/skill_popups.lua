@@ -35,18 +35,6 @@ SkillPopups.DirectionRarity.SSR = "ef_308"
 SkillPopups.DirectionRarity.SR = "ef_306"
 SkillPopups.DirectionRarity.R = "ef_305"
 
-local function make_idolcolor_tween()
-	local a = {}
-	local b = {}
-	
-	a.opacity = 255
-	a.scale = 0.2
-	b.opacity = 0
-	b.scale = 4
-	
-	return (tween.new(700, a, b))
-end
-
 -- Idol effect for effect player
 SkillPopups.IdolEffect.__index = SkillPopups.IdolEffect
 function SkillPopups.IdolEffect.Create(unit_pos, image)
