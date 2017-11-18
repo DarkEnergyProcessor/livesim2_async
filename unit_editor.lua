@@ -85,7 +85,7 @@ end
 function UnitEditor.Update() end
 
 function UnitEditor.Draw()
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	love.graphics.draw(background_5[1])
 	love.graphics.draw(background_5[2], -88, 0)
 	love.graphics.draw(background_5[3], 960, 0)
@@ -109,9 +109,9 @@ function UnitEditor.Draw()
 		love.graphics.draw((UnitEditor.State.Changed[i] or UnitEditor.State[i]).Image, IdolPosition[i][1], IdolPosition[i][2])
 			
 		if distance(MouseState[1] - a[1] - 64, MouseState[2] - a[2] - 64) <= 64 then
-			love.graphics.setColor(255, 255, 255, 96)
+			love.graphics.setColor(1, 1, 1, 96 / 255)
 			love.graphics.circle("fill", a[1] + 64, a[2] + 64, 64)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 		end
 	end
 	

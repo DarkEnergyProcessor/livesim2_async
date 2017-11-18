@@ -73,6 +73,14 @@ local function gcfgb(n)
 	return not(not(AquaShine.GetCommandLineConfig(n)))
 end
 
+local function vsync(v)
+	if AquaShine.NewLove then
+		return v == true and 1 or 0
+	end
+	
+	return v
+end
+
 ------------------------
 -- Configuration file --
 ------------------------
@@ -94,7 +102,7 @@ function love.conf(t)
 	t.window.minheight = 240                      -- Minimum window height if the window is resizable (number)
 	t.window.fullscreen = gcfgb("fullscreen")     -- Enable fullscreen (boolean)
 	t.window.fullscreentype = "desktop"           -- Choose between "desktop" fullscreen or "exclusive" fullscreen mode (string)
-	t.window.vsync = not(gcfgb("novsync"))        -- Enable vertical sync (boolean)
+	t.window.vsync = vsync(not(gcfgb("novsync"))) -- Enable vertical sync (boolean)
 	t.window.msaa = gcfgn("msaa", 0)              -- The number of samples to use with multi-sampled antialiasing (number)
 	t.window.display = 1                          -- Index of the monitor to show the window in (number)
 	t.window.highdpi = true                       -- Enable high-dpi mode for the window on a Retina display (boolean)
@@ -119,5 +127,5 @@ function love.conf(t)
 	t.modules.window = true                       -- Enable the window module (boolean)
 	t.modules.thread = true                       -- Enable the thread module (boolean)
 	
-	if t.window.highdpi and enabledpiaware then enabledpiaware() end
+	if AquaShine.NewLove and t.window.highdpi and enabledpiaware then enabledpiaware() end
 end

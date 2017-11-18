@@ -45,9 +45,10 @@ This Live Simulator uses these external libraries:
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
 	* FFmpeg (when available)  	License
-	* LuaBit				  	 License		(Used when running under Lua 5.1)
 
 
+
+LOVE Version:				  ]]..love._version..[[
 
 Repository:					https://github.com/MikuAuahDark/livesim2
 Live Simulator: 2 Version:	 ]].._G.DEPLS_VERSION
@@ -59,13 +60,13 @@ function AboutScreen.Draw()
 	local mx, my = AquaShine.CalculateTouchPosition(love.mouse.getPosition())
 	
 	-- Background
-	love.graphics.setColor(64, 64, 64)
+	love.graphics.setColor(0.25, 0.25, 0.25)
 	love.graphics.draw(Background[1])
 	love.graphics.draw(Background[2], -88, 0)
 	love.graphics.draw(Background[3], 960, 0)
 	love.graphics.draw(Background[4], 0, -43)
 	love.graphics.draw(Background[5], 0, 640)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	
 	-- Title
 	love.graphics.setFont(TitleFont)
@@ -80,9 +81,9 @@ function AboutScreen.Draw()
 		local a = ExternalLicenses[i]
 		
 		if mx >= a[1] and my >= a[2] and mx < a[1] + 56 and my < a[2] + 12 then
-			love.graphics.setColor(0, 0, 0, 192)
+			love.graphics.setColor(0, 0, 0, 0.75)
 			love.graphics.rectangle("fill", 0, 0, 960, 640)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(a[3], 5, 150)
 			
 			break

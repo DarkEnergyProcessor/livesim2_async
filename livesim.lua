@@ -312,7 +312,7 @@ do
 		end
 		
 		if not(channels) then
-			channels = audio:getChannels()
+			channels = audio:getChannelCount()
 		end
 		
 		local pos = DEPLS.Sound.LiveAudio:tell("samples")

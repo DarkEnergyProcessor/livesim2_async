@@ -547,9 +547,14 @@ function AquaShineVideo._stepVideo(this, dt)
 	end
 	
 	-- Reload Image object
+	--[[
 	this.ImageData[1][2]:refresh()
 	this.ImageData[2][2]:refresh()
 	this.ImageData[3][2]:refresh()
+	]]
+	this.ImageData[1][2]:replacePixels(this.ImageData[1][1])
+	this.ImageData[2][2]:replacePixels(this.ImageData[2][1])
+	this.ImageData[3][2]:replacePixels(this.ImageData[3][1])
 	
 	if this:_readFrame() == false then
 		this.EOS = true

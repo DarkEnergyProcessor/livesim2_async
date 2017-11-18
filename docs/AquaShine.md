@@ -6,9 +6,7 @@ is specially written for Live Simulator: 2, is not distributed as standalone
 LOVE2D library.
 
 However, you can simply take the `AquaShine.lua` and use it in your another
-game. I don't mind about it. Please note that AquaShine itself depends on
-Shelsha library. Well, of course you can edit the AquaShine code to not load
-Playground texture banks, thus removing dependency to Shelsha library.
+game. I don't mind about it.
 
 Origin of the Name
 ==================

@@ -45,6 +45,8 @@ local AquaShine = {
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
 	AllowEntryPointPreload = false,
+	-- LOVE 0.11 (NewLove) or LOVE 0.10
+	NewLove = love._version >= "0.11.0"
 }
 
 local hasffi, ffi = pcall(require, "ffi")
@@ -563,8 +565,7 @@ function AquaShine.StepLoop()
 	end
 	
 	-- Update dt, as we'll be passing it to update
-	love.timer.step()
-	local dt = love.timer.getDelta()
+	local dt = love.timer.step()
 	
 	if love.graphics.isActive() then
 		love.graphics.clear()
@@ -598,7 +599,7 @@ function AquaShine.MainLoop()
 	AquaShine.MainFont = AquaShine.LoadFont(nil, 14)
 	
 	while true do
-		if love._version_minor >= 11 then
+		if AquaShine.NewLove then
 			return AquaShine.StepLoop
 		else
 			AquaShine.StepLoop()
@@ -803,7 +804,54 @@ end
 function love.load(arg)
 	-- LOVE 0.11.x compatibility
 	-- Game which uses AquaShine expects to use LOVE 0.11 API
-	if love._version_minor < 11 then
+	if not(AquaShine.NewLove) then
+		local method = debug.getregistry()
+		
+		-- love.errorhandler is love.errhand
+		love.errorhandler = love.errhand
+		
+		-- love.timer.step returns deltaT
+		local step_time = love.timer.step
+		function love.timer.step()
+			step_time()
+			return love.timer.getDelta()
+		end
+		
+		-- love.filesystem.getInfo combines these:
+		-- * love.filesystem.exists
+		-- * love.filesystem.isDirectory
+		-- * love.filesystem.isFile
+		-- * love.filesystem.isSymlink
+		-- * love.filesystem.getSize
+		-- * love.filesystem.getLastModified
+		function love.filesystem.getInfo(dir, t)
+			if love.filesystem.exists(dir) then
+				t = t or {}
+				
+				-- Type
+				if love.filesystem.isFile(dir) then
+					t.type = "file"
+				elseif love.filesystem.isDirectory(dir) then
+					t.type = "directory"
+				elseif love.filesystem.isSymlink(dir) then
+					t.type = "symlink"
+				else
+					t.type = "other"
+				end
+				
+				if t.type == "directory" then
+					t.size = 0
+				else
+					t.size = love.filesystem.getSize(dir) or -1
+				end
+				
+				t.modtime = love.filesystem.getLastModified(dir) or -1
+				return t
+			end
+			
+			return nil
+		end
+		
 		-- 0..1 range for love.graphics.setColor
 		local setColor = love.graphics.setColor
 		function love.graphics.setColor(r, g, b, a)
@@ -845,6 +893,38 @@ function love.load(arg)
 				return clear()
 			end
 		end
+		
+		-- 0..1 range for SpriteBatch:set/getColor
+		local SpriteBatch = method.SpriteBatch
+		local SpriteBatch_getColor = SpriteBatch.getColor
+		local SpriteBatch_setColor = SpriteBatch.setColor
+		function SpriteBatch.getColor(this)
+			local r, g, b, a = SpriteBatch_getColor(this)
+			return r / 255, g / 255, b / 255, a / 255
+		end
+		
+		function SpriteBatch.setColor(this, r, g, b, a)
+			if r then
+				return SpriteBatch_setColor(this, r * 255, g * 255, b * 255, (a or 1) * 255)
+			else
+				return SpriteBatch_setColor(this)
+			end
+		end
+		
+		-- Image:replacePixels function
+		local Image = method.Image
+		function Image.replacePixels(this, imagedata)
+			local id = this:getData()
+			
+			if id ~= imagedata then
+				id:paste(imagedata, 0, 0)
+			end
+			
+			return this:refresh()
+		end
+		
+		-- SoundData:getChannelCount function
+		method.SoundData.getChannelCount = method.SoundData.getChannels
 		
 		love.data = {}
 		

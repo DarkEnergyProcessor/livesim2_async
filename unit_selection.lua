@@ -26,23 +26,26 @@ function UnitSelect.Start(arg)
 	
 	for i, v in ipairs(love.filesystem.getDirectoryItems("unit_icon")) do
 		local name = "unit_icon/"..v
-		if v:sub(-4) == ".png" and love.filesystem.isFile(name) then
-			local temp = {}
+		if v:sub(-4) == ".png" then
+			local name_info = love.filesystem.getInfo(name)
 			
-			-- Load image. Do not use AquaShine.LoadImage for images in R/W dir
-			-- Instead, use traditional love.graphics.newImage
-			temp.Image = love.graphics.newImage(name)
-			temp.Filename = v
-			
-			if temp.Image:getWidth() == 128 and temp.Image:getHeight() == 128 then
-				UnitSelect.UnitList[#UnitSelect.UnitList + 1] = temp
+			if name_info and name_info.type == "file" then
+				local temp = {}
 				
-				if temp.Filename == arg[1] then
-					CurrentSelectedCardIdx = #UnitSelect.UnitList
-					UnitSelect.CurrentPage = math.floor(CurrentSelectedCardIdx / 28)
+				-- Load image. Do not use AquaShine.LoadImage for images in R/W dir
+				-- Instead, use traditional love.graphics.newImage
+				temp.Image = love.graphics.newImage(name)
+				temp.Filename = v
+				
+				if temp.Image:getWidth() == 128 and temp.Image:getHeight() == 128 then
+					UnitSelect.UnitList[#UnitSelect.UnitList + 1] = temp
+					
+					if temp.Filename == arg[1] then
+						CurrentSelectedCardIdx = #UnitSelect.UnitList
+						UnitSelect.CurrentPage = math.floor(CurrentSelectedCardIdx / 28)
+					end
 				end
 			end
-			
 		end
 	end
 	
@@ -82,7 +85,7 @@ function UnitSelect.Update(deltaT)
 end
 
 function UnitSelect.Draw()
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	love.graphics.draw(background_5[1])
 	love.graphics.draw(background_5[2], -88, 0)
 	love.graphics.draw(background_5[3], 960, 0)
@@ -92,7 +95,7 @@ function UnitSelect.Draw()
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Unit Select", 95, 13)
 	love.graphics.print(string.format("Page %d", UnitSelect.CurrentPage + 1), 34, 576)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	
 	if MouseState[3] then
 		if
@@ -170,11 +173,11 @@ function UnitSelect.Draw()
 		
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.rectangle("line", math.floor(j * 0.25) * 128 + 32, (j % 4) * 128 + 60, 128, 128)
-		love.graphics.setColor(255, 56, 122)
+		love.graphics.setColor(1, 56 / 255, 122 / 255)
 		love.graphics.rectangle("fill", MouseState[1] + 8, MouseState[2] + 8, txtlen + 10, 26)
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.print(a.Filename, MouseState[1] + 14, MouseState[2] + 13)
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(1, 1, 1)
 		love.graphics.print(a.Filename, MouseState[1] + 13, MouseState[2] + 12)
 		love.graphics.setColor(0, 0, 0)
 	end

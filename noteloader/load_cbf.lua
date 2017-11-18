@@ -249,10 +249,12 @@ function CBFLoader.LoadNoteFromFilename(file)
 	local project_config = file.."/projectConfig.txt"
 	this.beatmap_filename = file.."/beatmap.txt"
 	this.project_folder = file
+	local info_beatmap = love.filesystem.getInfo(this.beatmap_filename)
+	local info_project = love.filesystem.getInfo(project_config)
 	
 	assert(
-		love.filesystem.isFile(this.beatmap_filename) and
-		love.filesystem.isFile(project_config),
+		info_beatmap and info_beatmap.type == "file" and
+		info_project and info_project.type == "file",
 		"Not a valid Custom Beatmap Festival project"
 	)
 	

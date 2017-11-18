@@ -76,8 +76,10 @@ function DEPLSBeatmap.GetCoverArt(this)
 	if not(this.cover_loaded) then
 		local cover_info = this.project_dir.."/cover.txt"
 		local cover_img = this.project_dir.."/cover.png"
+		local cover_info_file = love.filesystem.getInfo(cover_info)
+		local cover_img_file = love.filesystem.getInfo(cover_img)
 		
-		if love.filesystem.isFile(cover_info) and love.filesystem.isFile(cover_img) then
+		if cover_info_file and cover_info_file.type == "file" and cover_img_file and cover_img_file.type == "file" then
 			local f = assert(love.filesystem.newFile(cover_info, "r"))
 			local line = f:lines()
 			
@@ -173,8 +175,9 @@ function DEPLSBeatmap.GetCustomBackground(this)
 	if not(this.bg_loaded) then
 		for _, ext in ipairs(supported_img_fmts) do
 			local bgname = this.project_dir.."/background"..ext
+			local bgname_info = love.filesystem.getInfo(bgname)
 			
-			if love.filesystem.isFile(bgname) then
+			if bgname and bgname_info.type == "file" then
 				this.background = {}
 				this.background[0] = love.graphics.newImage(bgname)
 				

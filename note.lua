@@ -193,17 +193,19 @@ local function NewNoteObject(note_data, offset)
 		}
 		
 		-- Create trail mesh vertices
+		local mulcol = AquaShine.NewLove and 1 or 255
 		noteobj.Vert = {}
 		noteobj.SecondCircle = {480, 160}
 		noteobj.ZeroAccuracyEndNote = note_data.effect_value * 1000
 		noteobj.EndNoteImage = DEPLS.Images.Note.NoteEnd
 		noteobj.LongNoteMesh = love.graphics.newMesh(4, "strip", "stream")
 		noteobj.EndCircleScale = 0
+		noteobj.MulCol = mulcol
 		
-		noteobj.Vert[1] = {40, 0, 1, 0.0625, 255, 255, 255, 255, 0}
-		noteobj.Vert[2] = {40, 0, 1, 0.9375, 255, 255, 255, 255, 0}
-		noteobj.Vert[3] = {-1, -1, 0, 0.9375, 255, 255, 255, 255, 0}
-		noteobj.Vert[4] = {-1, -1, 0, 0.0625, 255, 255, 255, 255, 0}
+		noteobj.Vert[1] = {40, 0, 1, 0.0625, 1 * mulcol, 1 * mulcol, 1 * mulcol, 1 * mulcol, 0}
+		noteobj.Vert[2] = {40, 0, 1, 0.9375, 1 * mulcol, 1 * mulcol, 1 * mulcol, 1 * mulcol, 0}
+		noteobj.Vert[3] = {-1, -1, 0, 0.9375, 1 * mulcol, 1 * mulcol, 1 * mulcol, 1 * mulcol, 0}
+		noteobj.Vert[4] = {-1, -1, 0, 0.0625, 1 * mulcol, 1 * mulcol, 1 * mulcol, 1 * mulcol, 0}
 		noteobj.Opacity2 = 1
 		
 		noteobj.LongNoteMesh:setTexture(DEPLS.Images.Note.LongNote)
@@ -310,7 +312,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			NoteSoundAccumulationState[1] = true
 		end
 		
-		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 1, 1, 1)
 		EffectPlayer.Spawn(AfterCircleTap)
 		
 		-- Call storyboard callback
@@ -379,7 +381,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 			this.Audio.StarExplode:play()
 		end
 		
-		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 255, 255, 255)
+		local AfterCircleTap = DEPLS.Routines.CircleTapEffect.Create(this.FirstCircle[1], this.FirstCircle[2], 1, 1, 1)
 		EffectPlayer.Spawn(AfterCircleTap)
 		
 		this.Delete = true
@@ -474,8 +476,8 @@ function LongNoteObject.Update(this, deltaT)
 		this.EndCircleScale = math.min(EndNoteElapsedTime / NotesSpeed, 1)
 	end
 	
-	local alpha1 = this.Opacity * 255
-	local alpha2 = this.Opacity2 * 255
+	local alpha1 = this.Opacity * this.MulCol
+	local alpha2 = this.Opacity2 * this.MulCol
 	-- First position
 	this.Vert[4][1] = math.floor((this.FirstCircle[1] + (this.CircleScale * 62) * math.cos(direction)) + 0.5)		-- x
 	this.Vert[4][2] = math.floor((this.FirstCircle[2] + (this.CircleScale * 62) * math.sin(direction)) + 0.5)		-- y

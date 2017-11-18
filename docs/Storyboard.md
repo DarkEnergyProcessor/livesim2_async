@@ -328,6 +328,16 @@ Parameters:
 
 Returns: LOVE `Image` object
 
+*************************************************
+
+### `void UseZeroToOneColorRange()`
+
+Changes the behaviour of `love.graphics.setColor` inside storyboard to use 0-1 range instead of 0-255.
+0-255 color range is the default. This function exists for compatibility with older storyboard and doesn't
+take LOVE 0.11.x color range changes into account.
+
+> This function can only be called inside, or before `Initialize` function.
+
 Storyboard Callback Functions
 =============================
 
