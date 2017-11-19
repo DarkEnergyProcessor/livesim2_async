@@ -1,6 +1,9 @@
 How To Start
 ============
 
+Live Simulator: 2 requires minimum LOVE 0.10.1 (LOVE 0.11.0 is also supported). Most of the time this thing is already taken care
+by the distributed version, but you need to take this into account if you're under Linux.
+
 System Requirements
 -------------------
 

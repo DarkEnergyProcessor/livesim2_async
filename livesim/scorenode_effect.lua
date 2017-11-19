@@ -4,7 +4,7 @@
 
 local tween = require("tween")
 local DEPLS = ...
-local ScoreNode = {CanvasList = {}}
+local ScoreNode = {}
 
 local _common_meta = {__index = ScoreNode}
 local graphics = love.graphics
@@ -13,45 +13,22 @@ function ScoreNode.Create(score)
 	local out = {}
 	local Images = DEPLS.Images
 	
-	for i = 1, #ScoreNode.CanvasList do
-		if ScoreNode.CanvasList[i].Used == false then
-			out.score_canvas = ScoreNode.CanvasList[i]
-			break
-		end
-	end
-	
-	if not(out.score_canvas) then
-		local canvas = graphics.newCanvas(500, 32)
-		local temp = {}
-		
-		temp.Canvas = canvas
-		out.score_canvas = temp
-		ScoreNode.CanvasList[#ScoreNode.CanvasList + 1] = temp
-	end
-	
-	out.score_canvas.Used = true
 	out.score_info = {opacity = 1, scale = 1.125, x = 520}
 	out.main_tween = tween.new(100, out.score_info, {x = 570, scale = 1})
 	out.opacity_tween = tween.new(200, out.score_info, {opacity = 0})
 	out.elapsed_time = 0
-	
-	-- Draw all in canvas
-	graphics.push("all")
-	graphics.setCanvas(out.score_canvas.Canvas)
-	graphics.clear()
-	graphics.setBlendMode("alpha", "premultiplied")
-	graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-	graphics.draw(Images.ScoreNode.Plus)
+	out.elements = {}
+	out.elements[#out.elements + 1] = Images.ScoreNode.Plus
 	
 	do
 		local i = 1
 		for w in tostring(score):gmatch("%d") do
 			graphics.draw(Images.ScoreNode[tonumber(w)], i * 24, 0)
 			i = i + 1
+			out.elements[i] = Images.ScoreNode[tonumber(w)]
 		end
 	end
 	
-	graphics.pop()
 	return (setmetatable(out, _common_meta))
 end
 
@@ -63,17 +40,15 @@ function ScoreNode.Update(this, deltaT)
 		this.opacity_tween:update(deltaT)
 	end
 	
-	if this.elapsed_time >= 450 then
-		this.score_canvas.Used = false
-		return true
-	end
-	
-	return false
+	return this.elapsed_time >= 450
 end
 
 function ScoreNode.Draw(this)
 	graphics.setColor(1, 1, 1, this.score_info.opacity * DEPLS.LiveOpacity)
-	graphics.draw(this.score_canvas.Canvas, this.score_info.x, 72, 0, this.score_info.scale, this.score_info.scale, 0, 16)
+	for i = 1, #this.elements do
+		local j = i - 1
+		graphics.draw(this.elements[i], this.score_info.x + j * 24 * this.score_info.scale, 72, 0, this.score_info.scale, this.score_info.scale, 0, 16)
+	end
 	graphics.setColor(1, 1, 1)
 end
 

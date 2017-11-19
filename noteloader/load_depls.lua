@@ -162,7 +162,8 @@ function DEPLSBeatmap.GetBackgroundID(this)
 	end
 	
 	local bgidname = this.project_dir.."/background.txt"
-	if not(this.bgid_loaded) and love.filesystem.isFile(bgidname) then
+	local bgidname_info = love.filesystem.getInfo(bgidname)
+	if not(this.bgid_loaded) and bgidname_info and bgidname_info.type == "file" then
 		this.bgid = tonumber((love.filesystem.read(bgidname)))
 		this.bgid_loaded = true
 	end
@@ -177,7 +178,7 @@ function DEPLSBeatmap.GetCustomBackground(this)
 			local bgname = this.project_dir.."/background"..ext
 			local bgname_info = love.filesystem.getInfo(bgname)
 			
-			if bgname and bgname_info.type == "file" then
+			if bgname_info and bgname_info.type == "file" then
 				this.background = {}
 				this.background[0] = love.graphics.newImage(bgname)
 				

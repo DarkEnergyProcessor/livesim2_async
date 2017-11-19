@@ -25,8 +25,6 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [Yohane Playground Flash Abstraction](https://github.com/MikuAuahDark/Yohane)
 
-* [LuaBit](http://luaforge.net/projects/bit/) (when running under Lua 5.1)
-
 * [tween.lua](https://github.com/kikito/tween.lua)
 
 * [JSON.lua](http://regex.info/blog/lua/json)
@@ -74,7 +72,7 @@ Supported Beatmaps
 Screenshots
 ===========
 
-Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8) (example beatmap code `::2`)
+Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8)
 
 Note circle Pre-5.0
 

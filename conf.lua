@@ -54,9 +54,13 @@ do
         if ss then
             if gles then setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1) end
             if integrated then setenv("SHIM_MCCOMPAT", "0x800000000", 1) setenv("DRI_PRIME", "0", 1) end
+			-- Always request compatibility profile
+			--setenv("LOVE_GRAPHICS_USE_GL2", "1", 1)
         elseif ps then
             if gles then putenv("LOVE_GRAPHICS_USE_OPENGLES", "1") end
             if integrated then putenv("SHIM_MCCOMPAT", "0x800000000") end
+			-- Always request compatibility profile
+			--putenv("LOVE_GRAPHICS_USE_GL2", "1")
         end
         
         if dp then enabledpiaware = setdpiaware end

@@ -1,5 +1,8 @@
 AquaShine
 =========
+
+![AquaShine](https://i.imgur.com/kC7EF5J.jpg)
+
 AquaShine is the base layer which powers Live Simulator: 2. It contains useful
 utilities functions meant to be used for Live Simulator: 2. Because AquaShine
 is specially written for Live Simulator: 2, is not distributed as standalone
