@@ -3,6 +3,8 @@ AquaShine
 
 ![AquaShine](https://i.imgur.com/kC7EF5J.jpg)
 
+(image by [AquaShine](https://www.facebook.com/AquaShineBali)!)
+
 AquaShine is the base layer which powers Live Simulator: 2. It contains useful
 utilities functions meant to be used for Live Simulator: 2. Because AquaShine
 is specially written for Live Simulator: 2, is not distributed as standalone
@@ -43,7 +45,7 @@ stores the current entry point and call it's appropriate functions.
 A typical entry point Lua script as follows
 
 ```lua
-local AquaShine = AquaShine
+local AquaShine = select(1, ...)
 local MySection = {}
 
 function MySection.Start(arg)
@@ -66,3 +68,6 @@ return MySection, "Window title name"
 ```
 
 Please see `conf.lua` for example how to initialize AquaShine.
+
+TODO: Separate AquaShine and Live Simulator: 2 and make it standalone
+

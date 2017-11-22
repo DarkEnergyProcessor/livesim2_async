@@ -1,5 +1,5 @@
--- Aquashine loader. Base layer of Live Simulator: 2
--- Part of Live Simulator: 2
+-- Aquashine extension loader
+-- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...

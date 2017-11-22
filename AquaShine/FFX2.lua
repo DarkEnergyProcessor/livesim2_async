@@ -1,5 +1,5 @@
 -- AquaShine FFmpeg extension
--- Part of Live Simulator: 2
+-- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
@@ -11,17 +11,14 @@ local load_ffmpeg_library
 
 -- iOS, or using Lua 5.1 is not supported
 if AquaShine.OperatingSystem == "iOS" then
-	AquaShine.Log("AquaShineFFmpeg", "AquaShine FFmpeg extension is not supported")
+	AquaShine.Log("AquaShineFFmpeg", "AquaShine FFX is not supported")
 	return
 elseif AquaShine.OperatingSystem == "Android" then
-	local conf = {window = {}}
-	love.conf(conf)
-	
 	-- We have to find our "internal" save directory at first
 	-- so we can determine our "lib" dir
 	
 	if not(AquaShine._AndroidAppDir) then
-		if conf.externalstorage then
+		if AquaShine.Config.AndroidExternalStorage then
 			love.filesystem._setAndroidSaveExternal(false)
 			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 		end
@@ -29,7 +26,7 @@ elseif AquaShine.OperatingSystem == "Android" then
 		AquaShine._AndroidAppDir = love.filesystem.getSaveDirectory().."/../../.."
 		
 		-- Reset back to external storage mode
-		if conf.externalstorage then
+		if AquaShine.Config.AndroidExternalStorage then
 			love.filesystem._setAndroidSaveExternal(true)
 			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 		end

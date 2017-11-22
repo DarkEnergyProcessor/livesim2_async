@@ -1,5 +1,5 @@
 -- AquaShine error handler entry point
--- Part of Live Simulator: 2
+-- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...

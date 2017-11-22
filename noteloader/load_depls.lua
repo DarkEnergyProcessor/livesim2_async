@@ -108,8 +108,9 @@ function DEPLSBeatmap.GetCustomUnitInformation(this)
 		
 		for i = 1, 9 do
 			local filename = this.project_dir.."/unit_pos_"..i..".txt"
+			local filename_info = love.filesystem.getInfo(filename)
 			
-			if love.filesystem.isFile(filename) then
+			if filename_info and filename_info.type == "file" then
 				local image_name = love.filesystem.read(filename)
 				
 				if not(image_cache[image_name]) then
@@ -120,8 +121,9 @@ function DEPLSBeatmap.GetCustomUnitInformation(this)
 			else
 				local image_name = "unit_pos_"..i..".png"
 				filename = this.project_dir.."/"..image_name
+				filename_info = love.filesystem.getInfo(filename)
 				
-				if not(image_cache[image_name]) and love.filesystem.isFile(filename) then
+				if not(image_cache[image_name]) and filename_info and filename_info.type == "file" then
 					image_cache[image_name] = love.graphics.newImage(filename)
 				end
 				
@@ -146,8 +148,9 @@ end
 function DEPLSBeatmap.GetStoryboard(this)
 	-- 1. Get "storyboard.lua" file
 	local storyboard_file = this.project_dir.."/storyboard.lua"
+	local story_info = love.filesystem.getInfo(storyboard_file)
 	
-	if love.filesystem.isFile(storyboard_file) then
+	if story_info and story_info.type == "file" then
 		return LuaStoryboard.Load(storyboard_file)
 	end
 	
@@ -221,8 +224,9 @@ function DEPLSBeatmap.GetVideoBackground(this)
 	if not(this.video_loaded) then
 		for _, v in ipairs(supported_video_fmts) do
 			local name = this.project_dir.."/video_background"..v
+			local name_info = love.filesystem.getInfo(name)
 			
-			if love.filesystem.isFile(name) then
+			if name_info and name_info.type == "file" then
 				local message
 				this.video, message = AquaShine.LoadVideo(name)
 				

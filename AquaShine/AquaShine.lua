@@ -1,5 +1,4 @@
 -- Aquashine loader. Base layer of Live Simulator: 2
--- Part of Live Simulator: 2
 
 --[[---------------------------------------------------------------------------
 -- Copyright (c) 2038 Dark Energy Processor Corporation
@@ -24,17 +23,9 @@
 --]]---------------------------------------------------------------------------
 
 local weak_table = {__mode = "v"}
-local ASArg = ...	-- Must contain entry point lists
 local AquaShine = {
 	CurrentEntryPoint = nil,
 	Arguments = ASArg,
-	LogicalScale = {
-		ScreenX = ASArg.Width or 960,
-		ScreenY = ASArg.Height or 640,
-		OffX = 0,
-		OffY = 0,
-		ScaleOverall = 1
-	},
 	AlwaysRunUnfocus = false,
 	SleepDisabled = false,
 	
@@ -42,14 +33,11 @@ local AquaShine = {
 	CacheTable = setmetatable({}, weak_table),
 	-- Preload entry points
 	PreloadedEntryPoint = {},
-	-- Allow entry points to be preloaded?
-	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	AllowEntryPointPreload = false,
 	-- LOVE 0.11 (NewLove) or LOVE 0.10
 	NewLove = love._version >= "0.11.0"
 }
 
-local hasffi, ffi = pcall(require, "ffi")
+local ffi = require("ffi")
 local love = require("love")
 
 local ScreenshotThreadCode = [[
@@ -200,7 +188,7 @@ function AquaShine.LoadEntryPoint(name, arg)
 			scriptdata, title = assert(assert(AquaShine.PreloadedEntryPoint[name:sub(2)], "Entry point not found")(AquaShine))
 		else
 			scriptdata, title = assert(assert(love.filesystem.load(
-				assert(ASArg.Entries[name:sub(2)], "Entry point not found")[2]
+				assert(AquaShine.Config.Entries[name:sub(2)], "Entry point not found")[2]
 			))(AquaShine))
 		end
 	else
@@ -598,15 +586,15 @@ end
 function AquaShine.MainLoop()
 	AquaShine.MainFont = AquaShine.LoadFont(nil, 14)
 	
+	if AquaShine.NewLove then
+		return AquaShine.StepLoop
+	end
+	
 	while true do
-		if AquaShine.NewLove then
-			return AquaShine.StepLoop
-		else
-			AquaShine.StepLoop()
-			
-			if AquaShine.ExitStatus then
-				return AquaShine.ExitStatus
-			end
+		AquaShine.StepLoop()
+		
+		if AquaShine.ExitStatus then
+			return AquaShine.ExitStatus
 		end
 	end
 end
@@ -780,7 +768,7 @@ end
 
 -- Letterboxing recalculation
 function love.resize(w, h)
-	local lx, ly = ASArg.Width or 960, ASArg.Height or 640
+	local lx, ly = AquaShine.Config.LogicalWidth, AquaShine.Config.LogicalHeight
 	AquaShine.LogicalScale.ScreenX, AquaShine.LogicalScale.ScreenY = w, h
 	AquaShine.LogicalScale.ScaleOverall = math.min(AquaShine.LogicalScale.ScreenX / lx, AquaShine.LogicalScale.ScreenY / ly)
 	AquaShine.LogicalScale.OffX = (AquaShine.LogicalScale.ScreenX - AquaShine.LogicalScale.ScaleOverall * lx) / 2
@@ -802,8 +790,8 @@ end
 
 -- Initialization
 function love.load(arg)
-	-- LOVE 0.11.x compatibility
-	-- Game which uses AquaShine expects to use LOVE 0.11 API
+	-- Some LOVE 0.11.x functions in LOVE 0.10.x
+	-- Game which uses AquaShine expects to use LOVE 0.11 API at some degree
 	if not(AquaShine.NewLove) then
 		local method = debug.getregistry()
 		
@@ -874,7 +862,11 @@ function love.load(arg)
 		local clear = love.graphics.clear
 		function love.graphics.clear(r, g, b, a, ...)
 			if type(r) == "table" then
-				local tablist = {r, g, b, a, ...}
+				local tablist = {r, g, b, a}
+				
+				for i = 1, select("#", ...) do
+					tablist[i + 4] = select(i, ...)
+				end
 				
 				for i, v in ipairs(tablist) do
 					local t = {}
@@ -956,7 +948,7 @@ function love.load(arg)
 	
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
-	AquaShine.LoadModule("AquaShine.init")
+	AquaShine.LoadModule("AquaShine.InitExtensions")
 	
 	love.resize(wx, wy)
 	
@@ -970,23 +962,40 @@ function love.load(arg)
 	
 	-- Preload entry points
 	if AquaShine.AllowEntryPointPreload then
-		for n, v in pairs(ASArg.Entries) do
+		for n, v in pairs(AquaShine.Config.Entries) do
 			AquaShine.PreloadedEntryPoint[n] = assert(love.filesystem.load(v[2]))
 		end
 	end
 	
 	-- Load entry point
-	if arg[1] and ASArg.Entries[arg[1]] and ASArg.Entries[arg[1]][1] >= 0 and #arg > ASArg.Entries[arg[1]][1] then
+	if arg[1] and AquaShine.Config.Entries[arg[1]] and AquaShine.Config.Entries[arg[1]][1] >= 0 and #arg > AquaShine.Config.Entries[arg[1]][1] then
 		local entry = table.remove(arg, 1)
 		
-		AquaShine.LoadEntryPoint(ASArg.Entries[entry][2], arg)
-	elseif ASArg.DefaultEntry then
-		AquaShine.LoadEntryPoint(":"..ASArg.DefaultEntry, arg)
+		AquaShine.LoadEntryPoint(AquaShine.Config.Entries[entry][2], arg)
+	elseif AquaShine.Config.DefaultEntry then
+		AquaShine.LoadEntryPoint(":"..AquaShine.Config.DefaultEntry, arg)
 	end
 end
 
 function love._getAquaShineHandle()
 	return AquaShine
+end
+
+-----------------------------------
+-- AquaShine config loading code --
+-----------------------------------
+do
+	local conf = AquaShine.LoadModule("AquaShineConfig")
+	
+	AquaShine.AllowEntryPointPreload = conf.EntryPointPreload
+	AquaShine.Config = conf
+	AquaShine.LogicalScale = {
+		ScreenX = assert(conf.LogicalWidth),
+		ScreenY = assert(conf.LogicalHeight),
+		OffX = 0,
+		OffY = 0,
+		ScaleOverall = 1
+	}
 end
 
 return AquaShine
