@@ -338,6 +338,56 @@ take LOVE 0.11.x color range changes into account.
 
 > This function can only be called inside, or before `Initialize` function.
 
+*************************************************
+
+### `void AddScore(number score)`
+
+Add score.
+
+Parameters:
+
+* `score` - The score value (must be bigger than 0)
+
+*************************************************
+
+### `void SetRedTimingDuration(number duration)
+
+Activates or sets the Timing Window++ skill (Red) timer. This makes Good or Great to Perfect
+
+Parameters:
+
+* `dur` - The duration in milliseconds
+
+> If the current timing duration is higher than `dur`, this function has no effect
+
+*************************************************
+
+### `void SetYellowTimingDuration(number duration)
+
+Same as above, except this function is for Timing Window+ skill (Yellow) timer. This makes Great to Perfect
+
+Parameters:
+
+* `dur` - The duration in milliseconds
+
+> If the current timing duration is higher than `dur`, this function has no effect
+
+*************************************************
+
+### `bool IsLiveEnded()`
+
+Check whenever the live has cleared/ended.
+
+Returns: `true` if live has ended, `false` otherwise.
+
+*************************************************
+
+### `bool IsRandomMode()`
+
+Check whenever the notes is randomized.
+
+Returns: `false` if the notes is not randomized, `true` otherwise.
+
 Storyboard Callback Functions
 =============================
 

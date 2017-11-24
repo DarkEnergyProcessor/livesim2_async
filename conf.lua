@@ -11,7 +11,6 @@ AquaShine.ParseCommandLineConfig(assert(arg))
 ------------------
 -- /gles switch --
 ------------------
-local enabledpiaware
 local gles = AquaShine.GetCommandLineConfig("gles")
 local integrated = AquaShine.GetCommandLineConfig("integrated") or AquaShine.GetCommandLineConfig("igpu")
 do
@@ -43,9 +42,7 @@ do
 			putenv("LOVE_GRAPHICS_USE_GL2", "1")
         end
         
-        if dp then enabledpiaware = setdpiaware end
-		
-		if dp then enabledpiaware = setdpiaware end
+        if dp then setdpiaware() end
 	end
 end
 

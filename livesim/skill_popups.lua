@@ -39,7 +39,7 @@ SkillPopups.DirectionRarity.R = "ef_305"
 SkillPopups.IdolEffect.__index = SkillPopups.IdolEffect
 function SkillPopups.IdolEffect.Create(unit_pos, image)
 	local out = {}
-	local info = {Opacity = 255, Scale = 0.2}
+	local info = {Opacity = 1, Scale = 0.2}
 	
 	out.Status = info
 	out.Tween = tween.new(700, info, {Opacity = 0}, "inCubic")
@@ -56,7 +56,7 @@ function SkillPopups.IdolEffect.Update(out, deltaT)
 end
 
 function SkillPopups.IdolEffect.Draw(out)
-	love.graphics.setColor(255, 255, 255, out.Status.Opacity)
+	love.graphics.setColor(1, 1, 1, out.Status.Opacity)
 	love.graphics.draw(out.Image, out.X, out.Y, 0, out.Status.Scale, out.Status.Scale, 32, 32)
 end
 

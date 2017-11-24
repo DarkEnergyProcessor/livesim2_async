@@ -18,7 +18,7 @@ elseif AquaShine.OperatingSystem == "Android" then
 	-- so we can determine our "lib" dir
 	
 	if not(AquaShine._AndroidAppDir) then
-		if AquaShine.Config.AndroidExternalStorage then
+		if AquaShine.Config.LOVE.AndroidExternalStorage then
 			love.filesystem._setAndroidSaveExternal(false)
 			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 		end
@@ -26,7 +26,7 @@ elseif AquaShine.OperatingSystem == "Android" then
 		AquaShine._AndroidAppDir = love.filesystem.getSaveDirectory().."/../../.."
 		
 		-- Reset back to external storage mode
-		if AquaShine.Config.AndroidExternalStorage then
+		if AquaShine.Config.LOVE.AndroidExternalStorage then
 			love.filesystem._setAndroidSaveExternal(true)
 			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 		end

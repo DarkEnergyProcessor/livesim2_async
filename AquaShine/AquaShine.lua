@@ -557,7 +557,7 @@ function AquaShine.StepLoop()
 	
 	if love.graphics.isActive() then
 		love.graphics.clear()
-		--AquaShine.MainCanvas:renderTo(RenderToCanvasFunc)
+		
 		do
 			love.graphics.setCanvas(AquaShine.MainCanvas)
 			love.graphics.clear()
@@ -949,7 +949,6 @@ function love.load(arg)
 	AquaShine.WindowName = love.window.getTitle()
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	AquaShine.LoadModule("AquaShine.InitExtensions")
-	
 	love.resize(wx, wy)
 	
 	if AquaShine.OperatingSystem == "Android" then

@@ -209,13 +209,13 @@ local function compose_unit_icon(unit_cache, color_type, rarity, chara_name, r, 
 		da = cbf_icons.None
 		img = assert(da[rarity], "Invalid rarity")
 		
-		cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
+		cl[#cl + 1] = {love.graphics.setColor, r, g, b}
 		cl[#cl + 1] = {love.graphics.draw, img[2]}
 		
 		if chara_name and unit_cache[chara_name] then
-			cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
+			cl[#cl + 1] = {love.graphics.setColor, 1, 1, 1}
 			cl[#cl + 1] = {love.graphics.draw, unit_cache[chara_name]}
-			cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
+			cl[#cl + 1] = {love.graphics.setColor, r, g, b}
 		end
 		
 		cl[#cl + 1] = {love.graphics.draw, img[1]}
@@ -223,7 +223,7 @@ local function compose_unit_icon(unit_cache, color_type, rarity, chara_name, r, 
 		da = assert(cbf_icons[color_type], "Invalid attribute")
 		img = assert(da[rarity], "Invalid rarity")
 		
-		cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
+		cl[#cl + 1] = {love.graphics.setColor, 1, 1, 1}
 		cl[#cl + 1] = {love.graphics.draw, img[2]}
 		
 		if chara_name and unit_cache[chara_name] then
@@ -519,7 +519,7 @@ function CBFBeatmap.GetCustomBackground(this)
 					
 					love.graphics.push("all")
 					love.graphics.setCanvas(canvas)
-					love.graphics.setColor(255, 255, 255)
+					love.graphics.setColor(1, 1, 1)
 					love.graphics.clear(0, 0, 0)
 					love.graphics.draw(img, 568, 320, 0, scale, scale, w * 0.5, h * 0.5)
 					love.graphics.pop()
@@ -537,7 +537,7 @@ function CBFBeatmap.GetCustomBackground(this)
 					
 					love.graphics.push("all")
 					love.graphics.setCanvas(canvas)
-					love.graphics.setColor(255, 255, 255)
+					love.graphics.setColor(1, 1, 1)
 					love.graphics.clear(0, 0, 0)
 					love.graphics.draw(img, 480, 360, 0, scale, scale, w * 0.5, h * 0.5)
 					love.graphics.pop()

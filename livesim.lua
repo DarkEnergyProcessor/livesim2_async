@@ -468,9 +468,40 @@ function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
 	end
 end
 
+--! @brief Get the current unit image
+--! @param idx The unit index to retrieve it's image. 1 is rightmost, 9 is leftmost.
+--! @returns LOVE `Image` object
 function DEPLS.StoryboardFunctions.GetCurrentUnitImage(idx)
 	assert(idx > 0 and idx < 10, "Invalid index")
 	return DEPLS.IdolImageData[idx][1]
+end
+
+--! @brief Add score
+--! @param score The score value (must be bigger than 0)
+function DEPLS.StoryboardFunctions.AddScore(score)
+	return DEPLS.AddScore(assert(score > 0, "Score must be bigger than 0"))
+end
+
+--! @brief Activates or sets the Timing Window++ skill (Red) timer
+--! @param dur The duration in milliseconds
+--! @note If the current timing duration is higher than `dur`, this function has no effect
+function DEPLS.StoryboardFunctions.SetRedTimingDuration(dur)
+	return DEPLS.NoteManager.TimingRed(dur)
+end
+
+--! @brief Activates or sets the Timing Window+ skill (Yellow) timer
+--! @param dur The duration in milliseconds
+--! @note If the current duration is higher than `dur`, this function has no effect
+function DEPLS.StoryboardFunctions.SetYellowTimingDuration(dur)
+	return DEPLS.NoteManager.TimingYellow(dur)
+end
+
+DEPLS.StoryboardFunctions.IsLiveEnded = DEPLS.IsLiveEnded
+
+--! @brief Check whenever the notes is randomized
+--! @returns `false` if the notes is not randomized, `true` otherwise.
+function DEPLS.StoryboardFunctions.IsRandomMode()
+	return not(not(DEPLS.NoteRandomized))
 end
 
 -----------------------------
@@ -560,6 +591,8 @@ function DEPLS.Resume()
 	end
 end
 
+--! @brief Check whenever the live has cleared/ended
+--! @returns `true` if live has ended, `false` otherwise.
 function DEPLS.IsLiveEnded()
 	return  not(DEPLS.Routines.PauseScreen.IsPaused()) and
 			(not(DEPLS.Sound.LiveAudio) or
@@ -1026,6 +1059,9 @@ function DEPLS.Draw(deltaT)
 			setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
 			draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 		end
+		
+		-- Draw timing icon
+		DEPLS.NoteManager.TimingIconDraw()
 		
 		-- Update note
 		DEPLS.NoteManager.Draw()

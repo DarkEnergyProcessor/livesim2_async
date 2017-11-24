@@ -3,16 +3,46 @@
 -- See copyright notice in main.lua
 
 local DEPLS, AquaShine = ...
+local love = love
 local EffectPlayer = require("effect_player")
 local bit = require("bit")
 local Yohane = require("Yohane")
 local tween = require("tween")
-local Note = {{}, {}, {}, {}, {}, {}, {}, {}, {}, Perfect = 0, Great = 0, Good = 0, Bad = 0, Miss = 0, NoteRemaining = 0, HighestCombo = 0, TotalNotes = 0}
+local Note = {
+	-- Note queue
+	{}, {}, {}, {}, {}, {}, {}, {}, {},
+	
+	-- Judgement
+	Perfect = 0,
+	Great = 0,
+	Good = 0,
+	Bad = 0,
+	Miss = 0,
+	
+	-- Note info
+	NoteRemaining = 0,
+	HighestCombo = 0,
+	TotalNotes = 0,
+	
+	-- Timing system
+	YellowTiming = {
+		Image = AquaShine.LoadImage("assets/image/live/tl_skill_02.png"),
+		Duration = 0,
+		Rotation = 0
+	},
+	RedTiming = {
+		Image = AquaShine.LoadImage("assets/image/live/tl_skill_01.png"),
+		Duration = 0,
+		Rotation = 0
+	},
+	TimingRotation = math.random(0, 11)	-- Like clock
+}
 
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
 local AddScore = DEPLS.AddScore
 local NoteAccuracy = DEPLS.NoteAccuracy
+local ComboCounter = DEPLS.Routines.ComboCounter
 local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
@@ -332,7 +362,12 @@ function SingleNoteObject.SetTouchID(this, touchid)
 	
 	-- We don't want someone accidentally tap it while it's in long distance
 	if notedistance <= this.NoteAccuracy[5] then
-		if notedistance <= this.NoteAccuracy[1] or (this.SlideNote and notedistance <= this.NoteAccuracy[2]) then
+		local Idx = this.SlideNote and 1 or 0
+		
+		if notedistance <= this.NoteAccuracy[1 + Idx] or
+			(notedistance <= this.NoteAccuracy[2 + Idx] and Note.YellowTiming.Duration > 0) or
+			(notedistance <= this.NoteAccuracy[3 + Idx] and Note.RedTiming.Duration > 0)
+		then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -341,7 +376,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[2] or (this.SlideNote and notedistance <= this.NoteAccuracy[3]) then
+		elseif notedistance <= this.NoteAccuracy[2 + Idx] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -350,7 +385,7 @@ function SingleNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[3] or (this.SlideNote and notedistance <= this.NoteAccuracy[4]) then
+		elseif notedistance <= this.NoteAccuracy[3 + Idx] then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8
@@ -580,8 +615,13 @@ function LongNoteObject.SetTouchID(this, touchid)
 	end
 	
 	-- We don't want someone accidentally tap it while it's in long distance
-	if notedistance <= this.NoteAccuracy[5]then
-		if notedistance <= this.NoteAccuracy[1] or (this.SlideNote and notedistance <= this.NoteAccuracy[2]) then
+	if notedistance <= this.NoteAccuracy[5] then
+		local Idx = this.SlideNote and 1 or 0
+		
+		if notedistance <= this.NoteAccuracy[1 + Idx] or
+			(notedistance <= this.NoteAccuracy[2 + Idx] and Note.YellowTiming.Duration > 0) or
+			(notedistance <= this.NoteAccuracy[3 + Idx] and Note.RedTiming.Duration > 0)
+		then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 			this.ScoreMultipler = 1
 			Note.Perfect = Note.Perfect + 1
@@ -590,7 +630,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Perfect:play()
 				NoteSoundAccumulationState[1] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[2] or (this.SlideNote and notedistance <= this.NoteAccuracy[3]) then
+		elseif notedistance <= this.NoteAccuracy[2 + Idx] or (this.SlideNote and notedistance <= this.NoteAccuracy[3]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Great
 			this.ScoreMultipler = 0.88
 			Note.Great = Note.Great + 1
@@ -599,7 +639,7 @@ function LongNoteObject.SetTouchID(this, touchid)
 				this.Audio.Great:play()
 				NoteSoundAccumulationState[2] = true
 			end
-		elseif notedistance <= this.NoteAccuracy[3] or (this.SlideNote and notedistance <= this.NoteAccuracy[4]) then
+		elseif notedistance <= this.NoteAccuracy[3 + Idx] or (this.SlideNote and notedistance <= this.NoteAccuracy[4]) then
 			DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Good
 			DEPLS.Routines.ComboCounter.Reset = true
 			this.ScoreMultipler = 0.8
@@ -646,7 +686,12 @@ function LongNoteObject.UnsetTouchID(this, touchid)
 	local is_miss = false
 	
 	-- Check if perfect
-	if DEPLS.AutoPlay or notedistance <= this.NoteAccuracy[1] then
+	if
+		DEPLS.AutoPlay or
+		notedistance <= this.NoteAccuracy[1] or
+		(notedistance <= this.NoteAccuracy[2] and Note.YellowTiming.Duration > 0) or
+		(notedistance <= this.NoteAccuracy[3] and Note.RedTiming.Duration > 0)
+	then
 		DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
 		this.ScoreMultipler2 = 1
 		Note.Perfect = Note.Perfect + 1
@@ -796,7 +841,31 @@ function Note.InitializeImage()
 	end
 end
 
-local ComboCounter = DEPLS.Routines.ComboCounter
+--! @brief Set red timing (Timing Window++ skill) duration
+--! @param dur Duration in milliseconds
+--! @note If the current duration is higher than `dur`, this function has no effect
+function Note.TimingRed(dur)
+	if Note.RedTiming.Duration == 0 then
+		-- Retrieve new rotation sequence
+		Note.RedTiming.Rotation = Note.TimingRotation
+		Note.TimingRotation = (Note.TimingRotation + 1) % 12
+	end
+	
+	Note.RedTiming.Duration = math.max(Note.RedTiming.Duration, dur)
+end
+
+--! @brief Set yellow timing (Timing Window+ skill) duration
+--! @param dur Duration in milliseconds
+--! @note If the current duration is higher than `dur`, this function has no effect
+function Note.TimingYellow(dur)
+	if Note.YellowTiming.Duration == 0 then
+		-- Retrieve new rotation sequence
+		Note.YellowTiming.Rotation = Note.TimingRotation
+		Note.TimingRotation = (Note.TimingRotation + 1) % 12
+	end
+	
+	Note.YellowTiming.Duration = math.max(Note.YellowTiming.Duration, dur)
+end
 
 --! @brief Function to update the note
 --! @param deltaT The delta time
@@ -811,6 +880,10 @@ function Note.Update(deltaT)
 		NoteSoundAccumulationState[3] = false
 		NoteSoundAccumulationState[4] = false
 	end
+	
+	-- Timing window duration recalculate
+	Note.RedTiming.Duration = math.max(Note.RedTiming.Duration - deltaT, 0)
+	Note.YellowTiming.Duration = math.max(Note.YellowTiming.Duration - deltaT, 0)
 	
 	for i = 1, 9 do
 		local j = 1
@@ -830,7 +903,7 @@ function Note.Update(deltaT)
 			
 			if noteobj.Delete then
 				-- Calculate score and remove
-				score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1)
+				score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1) * (noteobj.SlideNote and 0.5 or 1)
 				table.remove(Note[i], j)
 				
 				if ComboCounter.Reset == true then
@@ -874,6 +947,46 @@ function Note.Draw()
 	end
 end
 
+--! Function to draw the timing icon
+function Note.TimingIconDraw()
+	-- In terms of simplicity, switching between red/yellow timing icon is
+	-- performance penalty in the GPU because the drawcalls aren't batched.
+	-- But does doing 2x loop will cause performance penalty in the CPU instead?
+	-- Well, I'm gonna do the second option anyway.
+	
+	love.graphics.setColor(1, 1, 1)
+	
+	-- Draw red icon
+	if Note.RedTiming.Duration > 0 then
+		local xp = math.sin(math.pi * Note.RedTiming.Rotation / 6) * 64
+		local yp = -math.cos(math.pi * Note.RedTiming.Rotation / 6) * 64
+		
+		for i = 1, 9 do
+			love.graphics.draw(
+				Note.RedTiming.Image,
+				DEPLS.IdolPosition[i][1] + 64 + xp,
+				DEPLS.IdolPosition[i][2] + 64 + yp,
+				0, 1, 1, 16, 16
+			)
+		end
+	end
+	
+	-- Draw yellow icon
+	if Note.YellowTiming.Duration > 0 then
+		local xp = math.sin(math.pi * Note.YellowTiming.Rotation / 6) * 64
+		local yp = math.cos(math.pi * Note.YellowTiming.Rotation / 6) * 64
+		
+		for i = 1, 9 do
+			love.graphics.draw(
+				Note.YellowTiming.Image,
+				DEPLS.IdolPosition[i][1] + 64 + xp,
+				DEPLS.IdolPosition[i][2] + 64 + yp,
+				0, 1, 1, 16, 16
+			)
+		end
+	end
+end
+
 --! @brief Set the note touch
 --! @param pos The idol position. nil if `release` is true
 --! @param touchid The touch ID
@@ -894,7 +1007,7 @@ function Note.SetTouch(pos, touchid, release, previous)
 				noteobj:UnsetTouchID(touchid)
 				
 				if noteobj.Delete then
-					score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1)
+					score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1) * (noteobj.SlideNote and 0.5 or 1)
 					table.remove(Note[i], 1)
 				
 					if ComboCounter.Reset == true then
@@ -930,7 +1043,7 @@ function Note.SetTouch(pos, touchid, release, previous)
 		noteobj:SetTouchID(touchid)
 		
 		if noteobj.Delete then
-			score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2
+			score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.SlideNote and 0.5 or 1)
 			table.remove(Note[pos], 1)
 			
 			-- Update combo counter
