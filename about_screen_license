@@ -33,7 +33,7 @@ It can be used for any purpose so long as:
    2) the web-page links above are maintained
    3) the 'AUTHOR_NOTE' string below is maintained
 
-AUTHOR_NOTE = -[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170823.25 ]-
+AUTHOR_NOTE = -[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170927.26 ]-
 ]]}
 
 ExternalLicenses[#ExternalLicenses + 1] = {285, 495, [[

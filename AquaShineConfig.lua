@@ -25,10 +25,14 @@ return {
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
 	EntryPointPreload = false,
 	
-	-- Logical screen width. Letterboxed if necessary.
-	LogicalWidth = 960,
-	-- Logical screen height. Letterboxed if necessary.
-	LogicalHeight = 640,
+	-- If this table present, letterboxing is enabled.
+	-- Otherwise, if it's not present, letterboxing is disabled.
+	Letterboxing = {
+		-- Logical screen width. Letterboxed if necessary.
+		LogicalWidth = 960,
+		-- Logical screen height. Letterboxed if necessary.
+		LogicalHeight = 640
+	},
 	
 	-- LOVE-specific configuration
 	LOVE = {

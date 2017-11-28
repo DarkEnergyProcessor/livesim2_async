@@ -139,7 +139,7 @@ DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
 -- Some is part of storyboard --
 --------------------------------
 
---! @brief Add score
+--! @brief Add score, additionally adding some bonus based on combo
 --! @param score The score value
 function DEPLS.AddScore(score)
 	local ComboCounter = DEPLS.Routines.ComboCounter
@@ -161,13 +161,20 @@ function DEPLS.AddScore(score)
 		added_score = added_score * 1.35
 	end
 	
-	added_score = math.floor(added_score)
+	return DEPLS.AddScoreDirect(math.floor(added_score))
+end
+
+--! @brief Add score, directly without additional calculation
+--! @param score The score value
+function DEPLS.AddScoreDirect(score)
+	local ComboCounter = DEPLS.Routines.ComboCounter
+	score = math.floor(score)
 	
-	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + added_score
+	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + score
 	DEPLS.Routines.ScoreEclipseF.Replay = true
 	
 	if not(DEPLS.MinimalEffect) then
-		EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(added_score))
+		EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(score))
 	end
 end
 
@@ -479,7 +486,7 @@ end
 --! @brief Add score
 --! @param score The score value (must be bigger than 0)
 function DEPLS.StoryboardFunctions.AddScore(score)
-	return DEPLS.AddScore(assert(score > 0, "Score must be bigger than 0"))
+	return DEPLS.AddScoreDirect(assert(score > 0 and score, "Score must be bigger than 0"))
 end
 
 --! @brief Activates or sets the Timing Window++ skill (Red) timer

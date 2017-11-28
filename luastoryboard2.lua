@@ -319,7 +319,7 @@ local function storyboard_callback(this, name, ...)
 	local callback_name = "On"..name
 	
 	if this.StoryboardLua[3] and this.StoryboardLua[2][callback_name] then
-		local a, b = pcall(this.StoryboardLua[2][callback_name], ...)
+		local a, b = xpcall(this.StoryboardLua[2][callback_name], debug.traceback, ...)
 		
 		if a == false then
 			AquaShine.Log("LuaStoryboard", "Storyboard Error %s: %s", callback_name, b)

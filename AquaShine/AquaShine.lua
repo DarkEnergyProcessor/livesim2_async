@@ -62,9 +62,13 @@ print("Screenshot saved as", name)
 --! @param y Uncalculated Y position
 --! @returns Calculated X and Y positions (2 values)
 function AquaShine.CalculateTouchPosition(x, y)
-	return
-		(x - AquaShine.LogicalScale.OffX) / AquaShine.LogicalScale.ScaleOverall,
-		(y - AquaShine.LogicalScale.OffY) / AquaShine.LogicalScale.ScaleOverall
+	if AquaShine.LogicalScale then
+		return
+			(x - AquaShine.LogicalScale.OffX) / AquaShine.LogicalScale.ScaleOverall,
+			(y - AquaShine.LogicalScale.OffY) / AquaShine.LogicalScale.ScaleOverall
+	else
+		return x, y
+	end
 end
 
 local mount_target = {}
@@ -488,12 +492,16 @@ function AquaShine.SetScissor(x, y, width, height)
 		return love.graphics.setScissor()
 	end
 	
-	love.graphics.setScissor(
-		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
-		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
-		width * AquaShine.LogicalScale.ScaleOverall,
-		height * AquaShine.LogicalScale.ScaleOverall
-	)
+	if AquaShine.LogicalScale then
+		return love.graphics.setScissor(
+			x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+			y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
+			width * AquaShine.LogicalScale.ScaleOverall,
+			height * AquaShine.LogicalScale.ScaleOverall
+		)
+	else
+		return love.graphics.setScissor(x, y, width, height)
+	end
 end
 
 function AquaShine.ClearScissor()
@@ -501,24 +509,31 @@ function AquaShine.ClearScissor()
 end
 
 function AquaShine.IntersectScissor(x, y, width, height)
-	love.graphics.intersectScissor(
-		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
-		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
-		width * AquaShine.LogicalScale.ScaleOverall,
-		height * AquaShine.LogicalScale.ScaleOverall
-	)
+	if AquaShine.LogicalScale then
+		return love.graphics.intersectScissor(
+			x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+			y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
+			width * AquaShine.LogicalScale.ScaleOverall,
+			height * AquaShine.LogicalScale.ScaleOverall
+		)
+	else
+		return love.grphics.intersectScissor(x, y, width, height)
+	end
 end
 
 function AquaShine.GetScissor()
 	local x, y, w, h = love.graphics.getScissor()
-	
 	if not(x and y and w and h) then return end
 	
-	return
-		x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
-		y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
-		w / AquaShine.LogicalScale.ScaleOverall,
-		h / AquaShine.LogicalScale.ScaleOverall
+	if AquaShine.LogicalScale then
+		return
+			x * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffX,
+			y * AquaShine.LogicalScale.ScaleOverall + AquaShine.LogicalScale.OffY,
+			w / AquaShine.LogicalScale.ScaleOverall,
+			h / AquaShine.LogicalScale.ScaleOverall
+	else
+		return x, y, w, h
+	end
 end
 
 ------------------------------
@@ -564,12 +579,18 @@ function AquaShine.StepLoop()
 			
 			if AquaShine.CurrentEntryPoint then
 				dt = dt * 1000
-				AquaShine.CurrentEntryPoint.Update(dt)
 				
+				AquaShine.CurrentEntryPoint.Update(dt)
 				love.graphics.push("all")
-				love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-				love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-				AquaShine.CurrentEntryPoint.Draw(dt)
+				
+				if AquaShine.LogicalScale then
+					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+					AquaShine.CurrentEntryPoint.Draw(dt)
+				else
+					AquaShine.CurrentEntryPoint.Draw(dt)
+				end
+				
 				love.graphics.pop()
 				love.graphics.setColor(1, 1, 1)
 			else
@@ -578,7 +599,9 @@ function AquaShine.StepLoop()
 			end
 			love.graphics.setCanvas()
 		end
+		love.graphics.setShader(srgbshader)
 		love.graphics.draw(AquaShine.MainCanvas)
+		love.graphics.setShader()
 		love.graphics.present()
 	end
 end
@@ -692,7 +715,11 @@ function love.mousemoved(x, y, dx, dy, istouch)
 	end
 	
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.MouseMoved then
-		AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx / AquaShine.LogicalScale.ScaleOverall, dy / AquaShine.LogicalScale.ScaleOverall, istouch)
+		if AquaShine.LogicalScale then
+			return AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx / AquaShine.LogicalScale.ScaleOverall, dy / AquaShine.LogicalScale.ScaleOverall, istouch)
+		else
+			return AquaShine.CurrentEntryPoint.MouseMoved(x, y, dx, dy, istouch)
+		end
 	end
 end
 
@@ -748,7 +775,6 @@ function love.focus(f)
 end
 
 -- File/folder drag-drop support
--- Broken in Ubuntu 14.04 atm
 function love.filedropped(file)
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.FileDropped then
 		AquaShine.CurrentEntryPoint.FileDropped(file)
@@ -768,11 +794,13 @@ end
 
 -- Letterboxing recalculation
 function love.resize(w, h)
-	local lx, ly = AquaShine.Config.LogicalWidth, AquaShine.Config.LogicalHeight
-	AquaShine.LogicalScale.ScreenX, AquaShine.LogicalScale.ScreenY = w, h
-	AquaShine.LogicalScale.ScaleOverall = math.min(AquaShine.LogicalScale.ScreenX / lx, AquaShine.LogicalScale.ScreenY / ly)
-	AquaShine.LogicalScale.OffX = (AquaShine.LogicalScale.ScreenX - AquaShine.LogicalScale.ScaleOverall * lx) / 2
-	AquaShine.LogicalScale.OffY = (AquaShine.LogicalScale.ScreenY - AquaShine.LogicalScale.ScaleOverall * ly) / 2
+	if AquaShine.LogicalScale then
+		local lx, ly = AquaShine.Config.Letterboxing.LogicalWidth, AquaShine.Config.Letterboxing.LogicalHeight
+		AquaShine.LogicalScale.ScreenX, AquaShine.LogicalScale.ScreenY = w, h
+		AquaShine.LogicalScale.ScaleOverall = math.min(AquaShine.LogicalScale.ScreenX / lx, AquaShine.LogicalScale.ScreenY / ly)
+		AquaShine.LogicalScale.OffX = (AquaShine.LogicalScale.ScreenX - AquaShine.LogicalScale.ScaleOverall * lx) / 2
+		AquaShine.LogicalScale.OffY = (AquaShine.LogicalScale.ScreenY - AquaShine.LogicalScale.ScaleOverall * ly) / 2
+	end
 	
 	AquaShine.MainCanvas = love.graphics.newCanvas()
 	
@@ -988,13 +1016,16 @@ do
 	
 	AquaShine.AllowEntryPointPreload = conf.EntryPointPreload
 	AquaShine.Config = conf
-	AquaShine.LogicalScale = {
-		ScreenX = assert(conf.LogicalWidth),
-		ScreenY = assert(conf.LogicalHeight),
-		OffX = 0,
-		OffY = 0,
-		ScaleOverall = 1
-	}
+	
+	if conf.Letterboxing then
+		AquaShine.LogicalScale = {
+			ScreenX = assert(conf.Letterboxing.LogicalWidth),
+			ScreenY = assert(conf.Letterboxing.LogicalHeight),
+			OffX = 0,
+			OffY = 0,
+			ScaleOverall = 1
+		}
+	end
 end
 
 return AquaShine

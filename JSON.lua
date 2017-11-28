@@ -14,8 +14,8 @@
 --    2) the web-page links above are maintained
 --    3) the 'AUTHOR_NOTE' string below is maintained
 --
-local VERSION = '20170823.25' -- version history at end of file
-local AUTHOR_NOTE = "-[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170823.25 ]-"
+local VERSION = '20170927.26' -- version history at end of file
+local AUTHOR_NOTE = "-[ JSON.lua package by Jeffrey Friedl (http://regex.info/blog/lua/json) version 20170927.26 ]-"
 
 --
 -- The 'AUTHOR_NOTE' variable exists so that information about the source
@@ -334,17 +334,27 @@ local OBJDEF = {
 -- ENCODING JSON NULL VALUES
 --
 --   Lua tables completely omit keys whose value is nil, so without special handling there's
---   no way to get a field in a JSON object with a null value.  For example
+--   no way to represent JSON object's null value in a Lua table.  For example
 --      JSON:encode({ username = "admin", password = nil })
---   produces
+--
+--   produces:
+--
 --      {"username":"admin"}
 --
 --   In order to actually produce
+--
 --      {"username":"admin", "password":null}
+--
+
 --   one can include a string value for a "null" field in the options table passed to encode().... 
 --   any Lua table entry with that value becomes null in the JSON output:
---      JSON:encode({ username = "admin", password = "xyzzy" }, nil, { null = "xyzzy" })
---   produces
+--
+--      JSON:encode({ username = "admin", password = "xyzzy" }, -- First arg is the Lua table to encode as JSON.
+--                  nil,                                        -- Second arg is the 'etc' value, ignored here
+--                  { null = "xyzzy" })                         -- Third arg is th options table
+--
+--   produces:
+--
 --      {"username":"admin", "password":null}
 --
 --   Just be sure to use a string that is otherwise unlikely to appear in your data.
@@ -352,14 +362,19 @@ local OBJDEF = {
 --
 --   The "null" options also applies to Lua tables that become JSON arrays.
 --      JSON:encode({ "one", "two", nil, nil })
---   produces
---      ["one","two"]
---   while
---      NULL = "\0"
---      JSON:encode({ "one", "two", NULL, NULL}, nil, { null = NULL })
---   produces
---      ["one","two",null,null]
 --
+--   produces
+--
+--      ["one","two"]
+--
+--   while
+--
+--      NullPlaceholder = "\0"
+--      encode_options = { null = NullPlaceholder }
+--      JSON:encode({ "one", "two", NullPlaceholder, NullPlaceholder}, nil, encode_options)
+--   produces
+--
+--      ["one","two",null,null]
 --
 --
 --
@@ -1083,7 +1098,7 @@ grok_one = function(self, text, start, options)
       return false, start + 5
 
    elseif text:find('^null', start) then
-      return nil, start + 4
+      return options.null, start + 4
 
    else
       self:onDecodeError("can't parse JSON", text, start, options.etc)
@@ -1577,6 +1592,9 @@ return OBJDEF:new()
 
 --
 -- Version history:
+--
+--   20170927.26   Use option.null in decoding as well. Thanks to Max Sindwani for the bump, and sorry to Oliver Hitz
+--                 whose first mention of it four years ago was completely missed by me.
 --
 --   20170823.25   Added support for JSON:unsupportedTypeEncoder().
 --                 Thanks to Chronos Phaenon Eosphoros (https://github.com/cpeosphoros) for the idea.

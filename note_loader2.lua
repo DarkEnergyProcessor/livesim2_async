@@ -145,7 +145,8 @@ end
 --! @returns The note object, or nil on failure
 --! @note Error message is printed to log
 function NoteLoader.NoteLoader(file, noproject)
-	local project_mode = not(noproject) and love.filesystem.getInfo(file).type == "directory"
+	local project_info_file = love.filesystem.getInfo(file)
+	local project_mode = not(noproject) and project_info_file and project_info_file.type == "directory"
 	local destination = file
 	local project_destination = "temp/.beatmap/"..file:gsub("(.*/)(.*)", "%2")
 	local zip_path

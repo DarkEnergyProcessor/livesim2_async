@@ -82,7 +82,7 @@ function AboutScreen.Draw()
 		
 		if mx >= a[1] and my >= a[2] and mx < a[1] + 56 and my < a[2] + 12 then
 			love.graphics.setColor(0, 0, 0, 0.75)
-			love.graphics.rectangle("fill", 0, 0, 960, 640)
+			love.graphics.rectangle("fill", -88, -43, 1136, 726)
 			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(a[3], 5, 150)
 			

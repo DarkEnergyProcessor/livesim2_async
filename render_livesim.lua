@@ -46,9 +46,9 @@ RenderMode.Frame = -RenderManager.CCCount + 1
 
 do
 	local c = lsys.getProcessorCount()
-	print("Processors", c)
+	io.write("Processors\t", c)
 	c = c * 2
-	print("Using "..c.." threads")
+	io.write("Using ", c, " threads")
 	
 	for i = 1, c do
 		RenderManager.Threads[i] = {Thread = love.thread.newThread [[
@@ -134,7 +134,7 @@ function love.audio.newSource(tgt)
 	
 	assert(rate <= 44100, "Sample rate higher than 44KHz is not supported")
 	
-	if sounddata:getChannels() == 1 then
+	if sounddata:getChannelCount() == 1 then
 		-- Make it stereo
 		local asd = love.sound.newSoundData(sounddata:getSampleCount(), rate)
 		
@@ -166,7 +166,7 @@ end
 function AudioMixer.SourceMetatable.play(audio)
 	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
 	
-	print("Source play", audio)
+	io.write("Source play\t", tostring(audio), "\n")
 	sourcetbl.Playing = true
 	AudioMixer.SourcePlaying[#AudioMixer.SourcePlaying + 1] = sourcetbl
 end
@@ -373,7 +373,7 @@ function RenderMode.Start(arg)
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
 	
 	-- Post-init
-	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
+	io.write("SoundData buffer\t", RenderMode.Duration * 44100 + 735, "\n")
 	AquaShine.RunUnfocused(true)
 	RenderManager.InitializeCanvasCycle()
 	
@@ -394,7 +394,7 @@ function RenderMode.Update(deltaT)
 			for i = 2, RenderManager.CCCount do
 				RenderMode.Frame = RenderMode.Frame + 1
 				RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
-				print("Rendering Frame", RenderMode.Frame)
+				io.write("Rendering Frame\t", RenderMode.Frame, "\n")
 			end
 			
 			repeat
@@ -476,7 +476,7 @@ function RenderMode.Draw(deltaT)
 		
 		if RenderMode.Frame >0 then
 			RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
-			print("Rendering Frame", RenderMode.Frame)
+			io.write("Rendering Frame\t", RenderMode.Frame, "\n")
 		end
 		
 		RenderManager.CycleCanvas()
@@ -505,7 +505,7 @@ function RenderMode.Exit()
 		love.timer.sleep(0.1)
 	until RenderManager.IsIdle()
 	
-	print("Saving audio")
+	io.write("Saving audio\n")
 	local audio_wav = assert(io.open((benchmark_mode and encode_audio_only) and null_device or RenderMode.Destination.."/audio.wav", "wb"))
 	local current_pos = (AudioMixer.SoundDataBuffer.Position + 1) * 4
 	

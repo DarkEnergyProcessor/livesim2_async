@@ -15,7 +15,7 @@ v1.1.3
 - Deprecation of SetNotesSpeed
 
 v2.0
-- FFmpeg extension					OK
+- FFmpeg extension (FFX)				OK
 - Unit creation						
 - NoteLoader2 (metadata loading, beatmap verification)	OK
 - Hidden note and sudden note				OK

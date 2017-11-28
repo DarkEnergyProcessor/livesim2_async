@@ -24,6 +24,8 @@ function Node.init(this, x, y, brother, parent)
 	this.parent = parent
 	this.brother = brother
 	this.child = {}
+	this.events = {}
+	this.userdata = {}
 	this.x = this.x or 0
 	this.y = this.y or 0
 end
@@ -53,6 +55,28 @@ function Node.draw(this)
 	-- If there's brother, pass to it next as tail call
 	if this.brother then
 		return this.brother:draw()
+	end
+end
+
+function Node.setEventHandler(this, name, func)
+	this.events[name] = func
+end
+
+function Node.triggerEvent(this, name, ...)
+	if this.events[name] and this.events[name](select(1, ...)) then
+		return
+	end
+	
+	-- Nothing to do. Pass it to child if any
+	for i = 1, #this.child do
+		if this.child[i].events[name] and this.child[i].events[name](select(1, ...)) then
+			break
+		end
+	end
+	
+	-- If there's brother, pass to it next as tail call
+	if this.brother then
+		return this.brother:triggerEvent(name, select(1, ...))
 	end
 end
 
@@ -137,7 +161,10 @@ end
 -- Set module --
 ----------------
 
+-- Four base node
 Node.Colorable = ColorNode
 Node.Rectangle = RectNode
 Node.Image = ImageNode
+
+-- Set AquaShine variable
 AquaShine.Node = Node

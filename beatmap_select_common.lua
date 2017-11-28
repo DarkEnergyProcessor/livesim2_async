@@ -134,20 +134,28 @@ function BSCommon.MousePressed(x, y, k, tid)
 	end
 	
 	BSCommon.MainUIComposition:MousePressed(x, y)
-	BSCommon.CompositionList[BSCommon.Page]:MousePressed(x, y)
+	
+	if BSCommon.CompositionList[BSCommon.Page] then
+		BSCommon.CompositionList[BSCommon.Page]:MousePressed(x, y)
+	end
 end
 
 function BSCommon.MouseMoved(x, y)
 	BSCommon.MainUIComposition:MouseMoved(x, y)
 	
 	if BSCommon.SwipeData[1] and math.abs(BSCommon.SwipeData[2] - x) >= BSCommon.SwipeThreshold then
-		BSCommon.CompositionList[BSCommon.Page]:MouseMoved(-100, -100)	-- Guaranteed to abort it
+		if BSCommon.CompositionList[BSCommon.Page] then
+			BSCommon.CompositionList[BSCommon.Page]:MouseMoved(-100, -100)	-- Guaranteed to abort it
+		end
 	end
 end
 
 function BSCommon.MouseReleased(x, y, k, tid)
 	BSCommon.MainUIComposition:MouseReleased(x, y)
-	BSCommon.CompositionList[BSCommon.Page]:MouseReleased(x, y)
+	
+	if BSCommon.CompositionList[BSCommon.Page] then
+		BSCommon.CompositionList[BSCommon.Page]:MouseReleased(x, y)
+	end
 	
 	if BSCommon.SwipeData[1] then
 		if math.abs(BSCommon.SwipeData[2] - x) >= BSCommon.SwipeThreshold then

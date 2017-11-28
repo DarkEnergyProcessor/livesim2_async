@@ -40,22 +40,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* Modified to be used with LOVE2D + Desktop OpenGL */
 #ifdef OPENGL_ES
-	#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
-	#else
-precision mediump float;
-	#endif	// GL_FRAGMENT_PRECISION_HIGH
-precision mediump vec2;
+#	ifdef GL_FRAGMENT_PRECISION_HIGH
+#		define HIGHEST_PRECISION highp
+#	else
+#		define HIGHEST_PRECISION mediump
+#	endif	// GL_FRAGMENT_PRECISION_HIGH
+precision HIGHEST_PRECISION float
+precision HIGHEST_PRECISION vec2;
+precision HIGHEST_PRECISION vec3;
+precision HIGHEST_PRECISION vec4;
 #endif	// OPENGL_ES
 
 #ifndef FXAA_REDUCE_MIN
-    #define FXAA_REDUCE_MIN   (1.0/ 128.0)
+    #define FXAA_REDUCE_MIN   (1.0/ 64.0)
 #endif
 #ifndef FXAA_REDUCE_MUL
-    #define FXAA_REDUCE_MUL   (1.0 / 8.0)
+    #define FXAA_REDUCE_MUL   1.0
 #endif
 #ifndef FXAA_SPAN_MAX
-    #define FXAA_SPAN_MAX     8.0
+    #define FXAA_SPAN_MAX     64.0
 #endif
 
 varying vec2 v_rgbNW;
