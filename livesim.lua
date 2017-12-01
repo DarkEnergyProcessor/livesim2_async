@@ -665,15 +665,17 @@ function DEPLS.Start(argv)
 		DEPLS.MinimalEffect = AquaShine.LoadConfig("MINIMAL_EFFECT", 0) == 1
 	end
 	
-	-- Load modules
-	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS, AquaShine)
-	
 	-- Load beatmap
 	local noteloader_data = argv.Beatmap
 	local notes_list = noteloader_data:GetNotesList()
 	local custom_background = false
 	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
+	DEPLS.ScoreBase = noteloader_data:GetScorePerTap() or DEPLS.ScoreBase
+	DEPLS.Stamina = noteloader_data:GetStamina() or DEPLS.Stamina
+	
+	-- Load modules
+	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS, AquaShine)
 	
 	-- Live Show! Cleared voice
 	if DEPLS.Sound.LiveClear then DEPLS.Sound.LiveClear = love.audio.newSource(DEPLS.Sound.LiveClear) end
@@ -734,9 +736,6 @@ function DEPLS.Start(argv)
 	
 	-- Load storyboard
 	DEPLS.StoryboardHandle = noteloader_data:GetStoryboard()
-	
-	DEPLS.ScoreBase = noteloader_data.scoretap or DEPLS.ScoreBase
-	DEPLS.Stamina = noteloader_data.staminadisp or DEPLS.Stamina
 	
 	-- Load cover art
 	local noteloader_coverdata = noteloader_data:GetCoverArt()

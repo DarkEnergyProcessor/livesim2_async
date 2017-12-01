@@ -69,7 +69,7 @@ function love.conf(t)
 	local conf = AquaShine.Config
 	
 	t.identity              = assert(conf.LOVE.Identity)
-	t.version               = assert(conf.LOVE.Version)
+	t.version               = assert(conf.LOVE.Version) > love._version and conf.LOVE.Version or love._version
 	t.console               = false
 	t.accelerometerjoystick = false
 	t.externalstorage       = conf.LOVE.AndroidExternalStorage

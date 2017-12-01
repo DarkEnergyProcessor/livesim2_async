@@ -162,7 +162,7 @@ function NoteLoader.NoteLoader(file, noproject)
 		-- Project folder loading
 		for i = 1, #NoteLoader.ProjectLoaders do
 			local ldr = NoteLoader.ProjectLoaders[i]
-			local success, nobj = pcall(ldr.LoadNoteFromFilename, destination)
+			local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, destination)
 			
 			if success then
 				if zip_path then
@@ -188,7 +188,7 @@ function NoteLoader.NoteLoader(file, noproject)
 		
 		for i = 1, #NoteLoader.FileLoaders do
 			local ldr = NoteLoader.FileLoaders[i]
-			local success, nobj, noclose = pcall(ldr.LoadNoteFromFilename, file_handle, destination)
+			local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, destination)
 			
 			if success then
 				if not(noclose) then file_handle:close() end

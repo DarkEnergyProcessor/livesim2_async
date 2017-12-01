@@ -658,8 +658,8 @@ local function write_UNIT(stream, unit_info)
 end
 
 local function write_DATA(stream, data)
-	fsw.write(stream, data.filename)
-	fsw.write(stream, data.contents)
+	writestring(stream, data.filename)
+	writestring(stream, data.contents)
 end
 
 local function write_ADIO(stream, adio_data)

@@ -154,7 +154,7 @@ function LS2Beatmap.GetCustomUnitInformation(this)
 end
 
 function LS2Beatmap.GetScoreInformation(this)
-	if this.version_2 then
+	if this.ls2.version_2 then
 		-- Live Simulator: 2 beatmap v2.0
 		-- Get from metadata instead from SCRI
 		return this:_GetMetadata().score
@@ -172,7 +172,7 @@ end
 
 function LS2Beatmap.GetComboInformation(this)
 	-- Combo information only supported in v2.0 beatmap format
-	if this.version_2 then
+	if this.ls2.version_2 then
 		return this:_GetMetadata().combo
 	end
 	
