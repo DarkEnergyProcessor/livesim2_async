@@ -19,7 +19,8 @@ local DEPLS = {
 	CoverShown = 0,             -- Cover shown if this value starts at 3167
 	CoverData = {},
 	
-	BackgroundOpacity = 1,    -- User background opacity set from storyboard
+	DefaultColorMode = 255,     -- Color range
+	BackgroundOpacity = 1,      -- User background opacity set from storyboard
 	BackgroundImage = {         -- Index 0 is the main background
 		-- {handle, logical x, logical y, x size, y size}
 		{nil, -88, 0},
@@ -214,16 +215,16 @@ end
 --! @brief Sets foreground live opacity
 --! @param opacity Transparency. 255 = opaque, 0 = invisible
 function DEPLS.StoryboardFunctions.SetLiveOpacity(opacity)
-	opacity = math.max(math.min(opacity or 255, 255), 0)
-	DEPLS.LiveOpacity = opacity / 255
+	opacity = math.max(math.min(opacity or DEPLS.DefaultColorMode, DEPLS.DefaultColorMode), 0)
+	DEPLS.LiveOpacity = opacity / DEPLS.DefaultColorMode
 end
 
 --! @brief Sets background blackness
 --! @param opacity Transparency. 0 = full black, 255 = full light
 function DEPLS.StoryboardFunctions.SetBackgroundDimOpacity(opacity)
-	opacity = math.max(math.min(opacity or 255, 255), 0)
+	opacity = math.max(math.min(opacity or DEPLS.DefaultColorMode, DEPLS.DefaultColorMode), 0)
 	
-	DEPLS.BackgroundOpacity = 1 - opacity / 255
+	DEPLS.BackgroundOpacity = 1 - opacity / DEPLS.DefaultColorMode
 end
 
 --! @brief Gets current elapsed time
@@ -277,13 +278,8 @@ end
 --! @param pos The unit position (9 is leftmost)
 --! @param opacity The desired opacity. 0 is fully transparent, 255 is fully opaque (255 default)
 function DEPLS.StoryboardFunctions.SetUnitOpacity(pos, opacity)
-	local data = DEPLS.IdolImageData[pos]
-	
-	if data == nil then
-		error("Invalid pos specificed")
-	end
-	
-	data[2] = math.min(math.max(opacity or 255, 0), 255)
+	local data = assert(DEPLS.IdolImageData[pos], "Invalid pos specificed")
+	data[2] = math.min(math.max(opacity or DEPLS.DefaultColorMode, 0), DEPLS.DefaultColorMode)
 end
 
 do
@@ -511,6 +507,11 @@ function DEPLS.StoryboardFunctions.IsRandomMode()
 	return not(not(DEPLS.NoteRandomized))
 end
 
+--! Internal function
+function DEPLS.StoryboardFunctions._SetColorRange(r)
+	DEPLS.DefaultColorMode = r
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -618,7 +619,7 @@ function DEPLS.Start(argv)
 	-- Load tap sound. High priority
 	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008
 	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData("sound/SE_306.ogg", love.audio.newSource, "sound/SE_306.ogg", "static")
-	DEPLS.Sound.PerfectTap:setVolume(se_volume)
+	DEPLS.Sound.PerfectTap:setVolume(se_volume * (DEPLS.RenderingMode and 0.5 or 1))
 	DEPLS.Sound.GreatTap = AquaShine.GetCachedData("sound/SE_307.ogg", love.audio.newSource, "sound/SE_307.ogg", "static")
 	DEPLS.Sound.GreatTap:setVolume(se_volume)
 	DEPLS.Sound.GoodTap = AquaShine.GetCachedData("sound/SE_308.ogg", love.audio.newSource, "sound/SE_308.ogg", "static")
@@ -671,8 +672,14 @@ function DEPLS.Start(argv)
 	local custom_background = false
 	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
-	DEPLS.ScoreBase = noteloader_data:GetScorePerTap() or DEPLS.ScoreBase
-	DEPLS.Stamina = noteloader_data:GetStamina() or DEPLS.Stamina
+	
+	if noteloader_data:GetScorePerTap() > 0 then
+		DEPLS.ScoreBase = noteloader_data:GetScorePerTap()
+	end
+	
+	if noteloader_data:GetStamina() > 0 then
+		DEPLS.Stamina = noteloader_data:GetStamina()
+	end
 	
 	-- Load modules
 	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS, AquaShine)

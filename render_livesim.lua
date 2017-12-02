@@ -350,6 +350,7 @@ function RenderMode.Start(arg)
 	RenderMode.DEPLS.MinimalEffect = false
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
 	RenderMode.DEPLS.AutoPlay = true
+	RenderMode.DEPLS.Sound.LiveAudio:setVolume(1.6)
 	
 	-- Image formats
 	if AquaShine.GetCommandLineConfig("tga") then

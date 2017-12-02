@@ -187,18 +187,19 @@ function DEPLSBeatmap.GetCustomBackground(this)
 				
 				for i = 1, 4 do
 					bgname = this.project_dir.."/background-"..i..ext
+					local bginfo = love.filesystem.getInfo(bgname)
 					
-					if love.filesystem.isFile(bgname) then
+					if bginfo and bginfo.type == "file" then
 						this.background[i] = love.graphics.newImage(bgname)
 					end
 				end
 				
-				if not(this.background[1]) or not(this.background[2]) then
+				if not(this.background[1]) ~= not(this.background[2]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain left or right part). Removed")
 					this.background[1], this.background[2] = nil, nil
 				end
 				
-				if not(this.background[3]) or not(this.background[4]) then
+				if not(this.background[3]) ~= not(this.background[4]) then
 					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain top or bottom part). Removed")
 					this.background[3], this.background[4] = nil, nil
 				end

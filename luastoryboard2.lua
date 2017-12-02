@@ -88,6 +88,10 @@ local function setup_env(story, lua)
 			return nil
 		end,
 		DrawObject = love.graphics.draw,
+		DrawRectangle = love.graphics.rectangle,
+		PrintText = love.graphics.print,
+		SetColor = love.graphics.setColor,
+		SetFont = love.graphics.setFont,
 		LoadShader = love.graphics.newShader,
 		LoadFont = function(path, size)
 			if not(path) then
@@ -218,8 +222,11 @@ local function setup_env(story, lua)
 		AquaShine.Log("storyboard", table.concat(a, "\t"))
 	end
 	env.UseZeroToOneColorRange = function()
+		story.AdditionalFunctions._SetColorRange(1)
 		env.love.graphics.setColor = love.graphics.setColor
+		env.SetColor = love.graphics.setColor
 	end
+	env._SetColorRange = nil	-- Internal function @ livesim.lua
 	
 	setfenv(lua, env)
 	

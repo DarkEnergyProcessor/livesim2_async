@@ -338,6 +338,8 @@ take LOVE 0.11.x color range changes into account.
 
 > This function can only be called inside, or before `Initialize` function.
 
+> This function also affects `SetUnitOpacity`, `SetLiveOpacity`, and `SetBackgroundDimOpacity` color range to be 0..1
+
 *************************************************
 
 ### `void AddScore(number score)`
