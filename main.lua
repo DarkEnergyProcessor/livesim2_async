@@ -24,14 +24,24 @@
 --]]---------------------------------------------------------------------------
 
 -- Version
-DEPLS_VERSION = "2.0-beta3"
-DEPLS_VERSION_NUMBER = 01010503	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-beta4"
+DEPLS_VERSION_NUMBER = 01010504	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 local AquaShine = love._getAquaShineHandle()
+local isFused = love.filesystem.isFused()
 AquaShine.SetDefaultFont("MTLmr3m.ttf")
 
 if love.filesystem.isFused() then
 	love._getAquaShineHandle = nil
+end
+
+-------------------
+-- Splash Screen --
+-------------------
+
+if (isFused and not(AquaShine.GetCommandLineConfig("nosplash"))) or (not(isFused) and AquaShine.GetCommandLineConfig("splash")) then
+	-- Set splash screen
+	AquaShine.SetSplashScreen("splash/love_splash.lua")
 end
 
 --------------------------------

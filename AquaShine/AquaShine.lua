@@ -178,17 +178,24 @@ local TemporaryEntryPoint
 function AquaShine.LoadEntryPoint(name, arg)
 	local scriptdata, title
 	
-	AquaShine.SleepDisabled = false
-	
-	if AquaShine._TempTouchEffect and AquaShine.TouchEffect == nil then
-		AquaShine.TouchEffect, AquaShine._TempTouchEffect = AquaShine._TempTouchEffect, nil
+	if AquaShine.SplashData then
+		local data = AquaShine.SplashData
+		AquaShine.SplashData = nil
+		
+		if type(data) == "string" then
+			return AquaShine.LoadEntryPoint(data, {name, arg})
+		else
+			TemporaryEntryPoint = data
+			return data.Start({name, arg})
+		end
 	end
 	
+	AquaShine.SleepDisabled = false
 	love.window.setDisplaySleepEnabled(true)
 	
 	if name:sub(1, 1) == ":" then
 		-- Predefined entry point
-		if AquaShine.AllowEntryPointPreload then
+		if AquaShine.Config.AllowEntryPointPreload then
 			scriptdata, title = assert(assert(AquaShine.PreloadedEntryPoint[name:sub(2)], "Entry point not found")(AquaShine))
 		else
 			scriptdata, title = assert(assert(love.filesystem.load(
@@ -394,6 +401,12 @@ function AquaShine.LoadModule(name, ...)
 	end
 	
 	return x[1]
+end
+
+--! @brief Sets the splash screen before loading entry point (for once)
+--! @param splash Splash screen Lua file path or table
+function AquaShine.SetSplashScreen(file)
+	AquaShine.SplashData = file
 end
 
 function AquaShine.Log() end
@@ -890,6 +903,7 @@ function love.load(arg)
 		local clear = love.graphics.clear
 		function love.graphics.clear(r, g, b, a, ...)
 			if type(r) == "table" then
+				-- Canvas clear (table)
 				local tablist = {r, g, b, a}
 				
 				for i = 1, select("#", ...) do
@@ -906,7 +920,7 @@ function love.load(arg)
 					tablist[i] = t
 				end
 				
-				return clear(tablist)
+				return clear(unpack(tablist))
 			elseif r then
 				return clear(r * 255, g * 255, b * 255, (a or 1) * 255)
 			else
@@ -952,6 +966,11 @@ function love.load(arg)
 		function love.data.decompress(fmt, data)
 			-- Notice the argument order
 			return love.math.decompress(data, fmt)
+		end
+		
+		-- Shader:hasUniform
+		function method.Shader.hasUniform(shader, name)
+			return not(not(shader:getExternVariable(name)))
 		end
 	end
 	
