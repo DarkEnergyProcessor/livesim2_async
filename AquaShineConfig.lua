@@ -10,7 +10,7 @@ return {
 		livesim = {1, "livesim2_cliwrap.lua"},
 		livesim_main = {-1, "livesim.lua"},
 		settings = {0, "setting_view.lua"},
-		main_menu = {0, "main_menu.lua"},
+		main_menu = {0, "main_menu2.lua"},
 		beatmap_select = {0, "beatmap_select_wrapper.lua"},
 		unit_editor = {0, "unit_editor.lua"},
 		unit_selection = {-1, "unit_selection.lua"},

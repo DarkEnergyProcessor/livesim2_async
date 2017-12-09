@@ -360,7 +360,7 @@ function AquaShine.GetCachedData(name, onfailfunc, ...)
 	local val = AquaShine.CacheTable[name]
 	AquaShine.Log("AquaShine", "GetCachedData %s", name)
 	
-	if val == nil then
+	if val == nil and onfailfunc then
 		val = onfailfunc(...)
 		AquaShine.Log("AquaShine", "CachedData, created & cached %s", name)
 		AquaShine.CacheTable[name] = val
@@ -635,6 +635,187 @@ function AquaShine.MainLoop()
 	end
 end
 
+-- Some LOVE 0.11.x functions in LOVE 0.10.x
+-- Game which uses AquaShine expects to use LOVE 0.11 API at some degree
+function AquaShine.NewLoveCompat()
+	local method = debug.getregistry()
+	
+	-- love.errorhandler is love.errhand
+	love.errorhandler = love.errhand
+	
+	-- love.timer.step returns deltaT
+	local step_time = love.timer.step
+	function love.timer.step()
+		step_time()
+		return love.timer.getDelta()
+	end
+	
+	-- love.filesystem.getInfo combines these:
+	-- * love.filesystem.exists
+	-- * love.filesystem.isDirectory
+	-- * love.filesystem.isFile
+	-- * love.filesystem.isSymlink
+	-- * love.filesystem.getSize
+	-- * love.filesystem.getLastModified
+	function love.filesystem.getInfo(dir, t)
+		if love.filesystem.exists(dir) then
+			t = t or {}
+			
+			-- Type
+			if love.filesystem.isFile(dir) then
+				t.type = "file"
+			elseif love.filesystem.isDirectory(dir) then
+				t.type = "directory"
+			elseif love.filesystem.isSymlink(dir) then
+				t.type = "symlink"
+			else
+				t.type = "other"
+			end
+			
+			if t.type == "directory" then
+				t.size = 0
+			else
+				t.size = love.filesystem.getSize(dir) or -1
+			end
+			
+			t.modtime = love.filesystem.getLastModified(dir) or -1
+			return t
+		end
+		
+		return nil
+	end
+	
+	-- 0..1 range for love.graphics.setColor
+	local setColor = love.graphics.setColor
+	function love.graphics.setColor(r, g, b, a)
+		if type(r) == "table" then
+			return setColor(r[1] * 255, r[2] * 255, r[3] * 255, (r[4] or 1) * 255)
+		else
+			return setColor(r * 255, g * 255, b * 255, (a or 1) * 255)
+		end
+	end
+	
+	-- 0..1 range for love.graphics.getColor
+	local getColor = love.graphics.getColor
+	function love.graphics.getColor()
+		local r, g, b, a = getColor()
+		
+		return r / 255, g / 255, b / 255, a / 255
+	end
+	
+	-- 0..1 range for love.graphics.clear
+	local clear = love.graphics.clear
+	function love.graphics.clear(r, g, b, a, ...)
+		if type(r) == "table" then
+			-- Canvas clear (table)
+			local tablist = {r, g, b, a}
+			
+			for i = 1, select("#", ...) do
+				tablist[i + 4] = select(i, ...)
+			end
+			
+			for i, v in ipairs(tablist) do
+				local t = {}
+				
+				t[1] = v[1] * 255
+				t[2] = v[2] * 255
+				t[3] = v[3] * 255
+				t[4] = (v[4] or 1) * 255
+				tablist[i] = t
+			end
+			
+			return clear(unpack(tablist))
+		elseif r then
+			return clear(r * 255, g * 255, b * 255, (a or 1) * 255)
+		else
+			return clear()
+		end
+	end
+	
+	-- 0..1 range for SpriteBatch:set/getColor
+	local SpriteBatch = method.SpriteBatch
+	local SpriteBatch_getColor = SpriteBatch.getColor
+	local SpriteBatch_setColor = SpriteBatch.setColor
+	function SpriteBatch.getColor(this)
+		local r, g, b, a = SpriteBatch_getColor(this)
+		return r / 255, g / 255, b / 255, a / 255
+	end
+	
+	function SpriteBatch.setColor(this, r, g, b, a)
+		if r then
+			return SpriteBatch_setColor(this, r * 255, g * 255, b * 255, (a or 1) * 255)
+		else
+			return SpriteBatch_setColor(this)
+		end
+	end
+	
+	-- 0..1 color range for Text:add/addf
+	local Text = method.Text
+	local Text_add = Text.add
+	local Text_addf = Text.addf
+	
+	local function patchTextString(textstring)
+		local newtab = {}
+		
+		for i = 1, #textstring, 2 do
+			-- First index is color
+			local col = textstring[i]
+			local newcol = {}
+			for j = 1, #col do
+				newcol[j] = col[j] * 255
+			end
+			newtab[#newtab + 1] = newcol
+			newtab[#newtab + 1] = textstring[i + 1]
+		end
+		
+		return newtab
+	end
+	
+	function Text.add(Text, textstring, x, y, angle, sx, sy, ox, oy, kx, ky)
+		if type(textstring) == "table" then
+			textstring = patchTextString(textstring)
+		end
+		
+		return Text_add(Text, textstring, x, y, angle, sx, sy, ox, oy, kx, ky)
+	end
+	
+	function Text.addf(Text, textstring, wraplimit, alignmode, x, y, angle, sx, sy, ox, oy, kx, ky)
+		if type(textstring) == "table" then
+			textstring = patchTextString(textstring)
+		end
+		
+		return Text_addf(Text, textstring, wraplimit, alignmode, x, y, angle, sx, sy, ox, oy, kx, ky)
+	end
+	
+	-- Image:replacePixels function
+	local Image = method.Image
+	function Image.replacePixels(this, imagedata)
+		local id = this:getData()
+		
+		if id ~= imagedata then
+			id:paste(imagedata, 0, 0)
+		end
+		
+		return this:refresh()
+	end
+	
+	-- SoundData:getChannelCount function
+	method.SoundData.getChannelCount = method.SoundData.getChannels
+	
+	love.data = {}
+	
+	-- love.math.decompress is deprecated, replaced by love.data.decompress
+	function love.data.decompress(fmt, data)
+		-- Notice the argument order
+		return love.math.decompress(data, fmt)
+	end
+	
+	-- Shader:hasUniform
+	function method.Shader.hasUniform(shader, name)
+		return not(not(shader:getExternVariable(name)))
+	end
+end
+
 ------------------------------------
 -- AquaShine love.* override code --
 ------------------------------------
@@ -831,153 +1012,18 @@ end
 
 -- Initialization
 function love.load(arg)
-	-- Some LOVE 0.11.x functions in LOVE 0.10.x
-	-- Game which uses AquaShine expects to use LOVE 0.11 API at some degree
 	if not(AquaShine.NewLove) then
-		local method = debug.getregistry()
-		
-		-- love.errorhandler is love.errhand
-		love.errorhandler = love.errhand
-		
-		-- love.timer.step returns deltaT
-		local step_time = love.timer.step
-		function love.timer.step()
-			step_time()
-			return love.timer.getDelta()
-		end
-		
-		-- love.filesystem.getInfo combines these:
-		-- * love.filesystem.exists
-		-- * love.filesystem.isDirectory
-		-- * love.filesystem.isFile
-		-- * love.filesystem.isSymlink
-		-- * love.filesystem.getSize
-		-- * love.filesystem.getLastModified
-		function love.filesystem.getInfo(dir, t)
-			if love.filesystem.exists(dir) then
-				t = t or {}
-				
-				-- Type
-				if love.filesystem.isFile(dir) then
-					t.type = "file"
-				elseif love.filesystem.isDirectory(dir) then
-					t.type = "directory"
-				elseif love.filesystem.isSymlink(dir) then
-					t.type = "symlink"
-				else
-					t.type = "other"
-				end
-				
-				if t.type == "directory" then
-					t.size = 0
-				else
-					t.size = love.filesystem.getSize(dir) or -1
-				end
-				
-				t.modtime = love.filesystem.getLastModified(dir) or -1
-				return t
-			end
-			
-			return nil
-		end
-		
-		-- 0..1 range for love.graphics.setColor
-		local setColor = love.graphics.setColor
-		function love.graphics.setColor(r, g, b, a)
-			if type(r) == "table" then
-				return setColor(r[1] * 255, r[2] * 255, r[3] * 255, (r[4] or 1) * 255)
-			else
-				return setColor(r * 255, g * 255, b * 255, (a or 1) * 255)
-			end
-		end
-		
-		-- 0..1 range for love.graphics.getColor
-		local getColor = love.graphics.getColor
-		function love.graphics.getColor()
-			local r, g, b, a = getColor()
-			
-			return r / 255, g / 255, b / 255, a / 255
-		end
-		
-		-- 0..1 range for love.graphics.clear
-		local clear = love.graphics.clear
-		function love.graphics.clear(r, g, b, a, ...)
-			if type(r) == "table" then
-				-- Canvas clear (table)
-				local tablist = {r, g, b, a}
-				
-				for i = 1, select("#", ...) do
-					tablist[i + 4] = select(i, ...)
-				end
-				
-				for i, v in ipairs(tablist) do
-					local t = {}
-					
-					t[1] = v[1] * 255
-					t[2] = v[2] * 255
-					t[3] = v[3] * 255
-					t[4] = (v[4] or 1) * 255
-					tablist[i] = t
-				end
-				
-				return clear(unpack(tablist))
-			elseif r then
-				return clear(r * 255, g * 255, b * 255, (a or 1) * 255)
-			else
-				return clear()
-			end
-		end
-		
-		-- 0..1 range for SpriteBatch:set/getColor
-		local SpriteBatch = method.SpriteBatch
-		local SpriteBatch_getColor = SpriteBatch.getColor
-		local SpriteBatch_setColor = SpriteBatch.setColor
-		function SpriteBatch.getColor(this)
-			local r, g, b, a = SpriteBatch_getColor(this)
-			return r / 255, g / 255, b / 255, a / 255
-		end
-		
-		function SpriteBatch.setColor(this, r, g, b, a)
-			if r then
-				return SpriteBatch_setColor(this, r * 255, g * 255, b * 255, (a or 1) * 255)
-			else
-				return SpriteBatch_setColor(this)
-			end
-		end
-		
-		-- Image:replacePixels function
-		local Image = method.Image
-		function Image.replacePixels(this, imagedata)
-			local id = this:getData()
-			
-			if id ~= imagedata then
-				id:paste(imagedata, 0, 0)
-			end
-			
-			return this:refresh()
-		end
-		
-		-- SoundData:getChannelCount function
-		method.SoundData.getChannelCount = method.SoundData.getChannels
-		
-		love.data = {}
-		
-		-- love.math.decompress is deprecated, replaced by love.data.decompress
-		function love.data.decompress(fmt, data)
-			-- Notice the argument order
-			return love.math.decompress(data, fmt)
-		end
-		
-		-- Shader:hasUniform
-		function method.Shader.hasUniform(shader, name)
-			return not(not(shader:getExternVariable(name)))
-		end
+		AquaShine.NewLoveCompat()
 	end
 	
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.OperatingSystem = love.system.getOS()
+	AquaShine.Class = love.filesystem.load("AquaShine/30log.lua")()
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	
+	-- Backward compatibility
+	package.loaded["30log"] = AquaShine.Class
 	
 	if AquaShine.GetCommandLineConfig("debug") then
 		function AquaShine.Log(part, msg, ...)
