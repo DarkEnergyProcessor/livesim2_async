@@ -799,8 +799,34 @@ function AquaShine.NewLoveCompat()
 		return this:refresh()
 	end
 	
+	-- 0..1 range for ImageData:get/setPixel 
+	local ImageData = method.ImageData
+	local ID_getPixel = ImageData.getPixel
+	local ID_setPixel = ImageData.setPixel
+	
+	function ImageData.getPixel(this, x, y)
+		local r, g, b, a = ID_getPixel(this, x, y)
+		return r / 255, g / 255, b / 255, a / 255
+	end
+	
+	function ImageData.setPixel(this, x, y, r, g, b, a)
+		return ID_setPixel(this, x, y, r * 255, g * 255, b * 255, a * 255)
+	end
+	
+	-- 0..1 range for ImageData:mapPixel
+	local ID_mapPixel = ImageData.mapPixel
+	
+	function ImageData.mapPixel(this, func, s, t, p, q)
+		return ID_mapPixel(this, function(x, y, r, g, b, a)
+			local ar, ag, ab, aa = func(x, y, r / 255, g / 255, b / 255, a / 255)
+			return ar * 255, ag * 255, ab * 255, aa * 255
+		end, s, t, p, q)
+	end
+	
 	-- SoundData:getChannelCount function
-	method.SoundData.getChannelCount = method.SoundData.getChannels
+	if method.SoundData then
+		method.SoundData.getChannelCount = method.SoundData.getChannels
+	end
 	
 	love.data = {}
 	
@@ -1081,6 +1107,7 @@ do
 	
 	AquaShine.AllowEntryPointPreload = conf.EntryPointPreload
 	AquaShine.Config = conf
+	conf.Extensions = conf.Extensions or {}
 	
 	if conf.Letterboxing then
 		AquaShine.LogicalScale = {

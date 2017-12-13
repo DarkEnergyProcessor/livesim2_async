@@ -134,8 +134,8 @@ while command ~= "QUIT" do
 	local headers = cin:pop()
 	local a, b, c = pcall(request_http, command, headers)
 	
-	if not(a) or (a and not(b)) then
-		push_event("ERR ", a and c or b)
+	if c then
+		push_event("ERR ", c)
 	end
 	
 	command = cin:demand()

@@ -16,7 +16,7 @@ local chunk_handler = {
 		this.ContentLength = data >= 0 and data or nil
 	end,
 	RECV = function(this, data)
-		this:recv(data)
+		return this:recv(data)
 	end,
 	HEDR = function(this, headers)
 		this.HeaderData = headers
@@ -64,12 +64,14 @@ function Download.init(this)
 end
 
 function Download.SetCallback(this, t)
+	assert(not(this.downloading), "Download is in progress")
 	assert(t.Error and t.Receive and t.Done, "Invalid callback")
 	this.err, this.recv, this.ok = t.Error, t.Receive, t.Done
 	return this
 end
 
 function Download.Download(this, url, additional_headers)
+	assert(this.err and this.recv and this.ok, "No callback")
 	assert(not(this.downloading), "Download is in progress")
 	
 	this.channelin:push(assert(url))

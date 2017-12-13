@@ -208,9 +208,9 @@ end
 function Util.InitializeInArea(node, x, y, w, h)
 	-- if w and h is nil
 	if w == nil and h == nil then
-		node.userdata.inarea = {type = "relative", x, y}
+		node.userdata.inarea = {type = "relative", w = x, h = y}
 	else
-		node.userdata.inarea = {type = "absolute", x, y, w, h}
+		node.userdata.inarea = {type = "absolute", x = x, y = y, w = w, h = h}
 	end
 end
 
@@ -226,7 +226,7 @@ function Util.InAreaFunction(node, action, notin)
 		return function(node, mx, my, ...)
 			local inarea = assert(node.userdata.inarea, "Call InitializeIsInArea first")
 			
-			if inAreaFunc(mx, my, inarea[1], inarea[2], inarea[1] + inarea[3], inarea[2] + inarea[4]) == not(notin) then
+			if inAreaFunc(mx, my, inarea.x, inarea.y, inarea.x + inarea.w, inarea.y + inarea.h) == not(notin) then
 				return action(node, mx, my, select(1, ...))
 			else
 				return false
@@ -236,7 +236,7 @@ function Util.InAreaFunction(node, action, notin)
 		return function(node, mx, my, ...)
 			local inarea = assert(node.userdata.inarea, "Call InitializeIsInArea first")
 			
-			if inAreaFunc(mx, my, node.x, node.y, node.x + inarea[1], node.y + inarea[2]) == not(notin) then
+			if inAreaFunc(mx, my, node.x, node.y, node.x + inarea.w, node.y + inarea.h) == not(notin) then
 				return action(node, mx, my, select(1, ...))
 			else
 				return false

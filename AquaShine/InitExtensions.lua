@@ -3,10 +3,24 @@
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
+local ext = AquaShine.Config.Extensions
+
 AquaShine.LoadModule("AquaShine.Composition")
-AquaShine.LoadModule("AquaShine.Download")
 AquaShine.LoadModule("AquaShine.EntryPoint")
-AquaShine.LoadModule("AquaShine.FileDialog")
-AquaShine.LoadModule("AquaShine.FFX2")
 AquaShine.LoadModule("AquaShine.Node")
-AquaShine.LoadModule("AquaShine.TempDirectory")
+
+if not(ext.DisableThreads) and not(ext.DisableDownload) then
+	AquaShine.LoadModule("AquaShine.Download")
+end
+
+if not(ext.DisableFileDialog) then
+	AquaShine.LoadModule("AquaShine.FileDialog")
+end
+
+if not(ext.DisableVideo) and not(ext.DisableFFX) then
+	AquaShine.LoadModule("AquaShine.FFX2")
+	
+	if not(ext.DisableTempDirectory) then
+		AquaShine.LoadModule("AquaShine.TempDirectory")
+	end
+end

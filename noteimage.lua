@@ -17,9 +17,13 @@ local newstyle_opacitymul = love.graphics.newShader [[
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
 	vec4 c = Texel(texture, texture_coords);
-	return vec4(c.rgb * 1.08, (c.a + log(1.0 + c.a)) * 0.75) * color;
+	return vec4(c.rgb * 1.25, c.a * 1.15) * color;
 }
 ]]
+
+local function unpremultiply(x, y, r, g, b, a)
+	return r / a, g / a, b / a, a
+end
 
 local old_style = make_cache_table {
 	"assets/image/tap_circle/red.png",
@@ -177,7 +181,9 @@ function NoteImageLoader.CreateNoteV5Style(attribute, idx, is_token, is_simultan
 	
 	love.graphics.pop()
 	
-	canvas_composition = love.graphics.newImage(canvas_composition:newImageData())
+	local canvas_imagedata = canvas_composition:newImageData()
+	canvas_imagedata:mapPixel(unpremultiply)
+	canvas_composition = love.graphics.newImage(canvas_imagedata)
 	AquaShine.CacheTable[cache_name] = canvas_composition
 	return canvas_composition
 end

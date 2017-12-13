@@ -92,6 +92,11 @@ function love.conf(t)
 	t.window.x              = nil
 	t.window.y              = nil
 	
+	t.modules.audio         = not(conf.Extensions.DisableAudio)
 	t.modules.joystick      = false
 	t.modules.physics       = false
+	t.modules.sound         = not(conf.Extensions.DisableAudio)
+	t.modules.video         = not(conf.Extensions.DisableVideo)
+	t.modules.touch         = not(conf.Extensions.NoMultiTouch)
+	t.modules.thread        = not(conf.Extensions.DisableThreads)
 end
