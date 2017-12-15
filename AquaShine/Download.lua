@@ -3,7 +3,7 @@
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
-local class = require("30log")
+local class = AquaShine.Class
 local love = require("love")
 local Download = class("AquaShine.Download")
 local DownloadList = setmetatable({}, {__mode = "k"})

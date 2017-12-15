@@ -27,16 +27,24 @@ Data types. All types actually string separated by newline, unless noted.
                 The next value is not separated by newline. Read directly!
 
 The file format, all values were separated by newline character (LF or "\n") unless noted
-    number - Version (currently 1 at the moment as I'm writing this)
+    number - Version (2)
     number - Last beatmap file modification time (UNIX timestamp)
     string - Beatmap name
     string - Beatmap type
     string - Beatmap file (or directory) path in Live Simulator: 2 save directory
     string - Score data. In form <cscore>:<bscore>:<ascore>:<sscore>. All values were number
     string - Combo data. In form <ccombo>:<bcombo>:<acombo>:<scombo>. All values were number
+    string - Difficulty string. In form <star>* (Unicode star character), or empty string if not known. (v2)
     string - In form: <has_storyboard>:<has_coverart>. All values were number (0-1)
     If <has_coverart> Then
         string - Cover display name (or empty)
         string - Cover arrangement info (or empty)
         binary - Cover PNG image data
     EndIf
+
+Changelog (DD/MM/YYYY):
+14/12/2017: Version 2
+- Difficulty information
+
+10/8/2017: Version 1
+- Initial release (v1)

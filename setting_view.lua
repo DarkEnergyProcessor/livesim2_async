@@ -259,7 +259,7 @@ function Settings.MouseReleased(x, y, button)
 	MouseState[3] = false
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	elseif x >= 800 and x < 944 and y >= 540 and y < 598 then
 		for i = 1, #SettingSelection do
 			local idx = SettingSelection[i]

@@ -771,7 +771,7 @@ function DEPLS.Start(argv)
 		if video then
 			-- We have video. Letterbox the video accordingly
 			local w, h = video:getDimensions()
-			assert(video:seek(0))
+			video:seek(0)
 			DEPLS.VideoBackgroundData = {video, w * 0.5, h * 0.5, math.max(960 / w, 640 / h)}
 		end
 	end

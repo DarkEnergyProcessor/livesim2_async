@@ -71,8 +71,8 @@ public:
 	/// Returns: 1 = old, 2 = v5, 0 = no enforcing
 	virtual int GetNotesStyle();
 	
-	virtual Livesim2::SoundData* GetBeatmapAudio();
-	virtual Livesim2::SoundData* GetLiveClearSound();
+	virtual love::sound::SoundData* GetBeatmapAudio();
+	virtual love::sound::SoundData* GetLiveClearSound();
 	
 	/// \brief Get star difficulty information.
 	/// \param random Retrieve star difficulty information for random notes instead?
@@ -96,7 +96,7 @@ For file-based loaders: LoadNoteFromFilename(handle, path) returns 2 values:
 local AquaShine = ...
 local love = love
 local JSON = require("JSON")
-local class = require("30log")
+local class = AquaShine.Class
 local NoteLoader = {}
 local NoteLoaderLoader = class("NoteLoader.NoteLoaderLoader")
 local NoteLoaderNoteObject = class("NoteLoader.NoteLoaderNoteObject")

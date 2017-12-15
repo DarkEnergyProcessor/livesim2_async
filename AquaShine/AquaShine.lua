@@ -196,14 +196,17 @@ function AquaShine.LoadEntryPoint(name, arg)
 	if name:sub(1, 1) == ":" then
 		-- Predefined entry point
 		if AquaShine.Config.AllowEntryPointPreload then
-			scriptdata, title = assert(assert(AquaShine.PreloadedEntryPoint[name:sub(2)], "Entry point not found")(AquaShine))
+			scriptdata, title = assert(AquaShine.PreloadedEntryPoint[name:sub(2)], "Entry point not found")(AquaShine)
+			assert(scriptdata, "Script doesn't return entry point")
 		else
-			scriptdata, title = assert(assert(love.filesystem.load(
+			scriptdata, title = assert(love.filesystem.load(
 				assert(AquaShine.Config.Entries[name:sub(2)], "Entry point not found")[2]
-			))(AquaShine))
+			))(AquaShine)
+			assert(scriptdata, "Script doesn't return entry point")
 		end
 	else
-		scriptdata, title = assert(assert(love.filesystem.load(name))(AquaShine))
+		scriptdata, title = assert(love.filesystem.load(name))(AquaShine)
+		assert(scriptdata, "Script doesn't return entry point")
 	end
 	
 	scriptdata.Start(arg or {})
@@ -1030,14 +1033,12 @@ function love.resize(w, h)
 end
 
 -- When running low memory
-if jit then
-	love.lowmemory = jit.flush
-else
-	love.lowmemory = collectgarbage
-end
+love.lowmemory = jit.flush
 
 -- Initialization
 function love.load(arg)
+	-- If we're running LOVE 0.10, add some functions
+	-- which present in LOVE 0.11
 	if not(AquaShine.NewLove) then
 		AquaShine.NewLoveCompat()
 	end
@@ -1047,9 +1048,6 @@ function love.load(arg)
 	AquaShine.OperatingSystem = love.system.getOS()
 	AquaShine.Class = love.filesystem.load("AquaShine/30log.lua")()
 	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
-	
-	-- Backward compatibility
-	package.loaded["30log"] = AquaShine.Class
 	
 	if AquaShine.GetCommandLineConfig("debug") then
 		function AquaShine.Log(part, msg, ...)

@@ -89,14 +89,18 @@ function Node.setPosition(this, x, y)
 	if type(y) == "number" then
 		this.y = y
 	end
+	
+	return this
 end
 
 function Node.setBrother(this, node)
 	this.brother = assert(node:instanceOf(Node) and node, "bad argument #1 to 'Node.setBrother' (AquaShine.Node expected)")
+	return this
 end
 
 function Node.addChild(this, node)
 	this.child[#this.child + 1] = assert(node:instanceOf(Node) and node, "bad argument #1 to 'Node.setBrother' (AquaShine.Node expected)")
+	return this
 end
 
 --------------------
@@ -111,10 +115,11 @@ function ColorNode.init(this, ...)
 end
 
 function ColorNode.setColor(this, r, g, b, a)
-	this.color[1] = assert(type(r) == "number", "bad argument #1 to 'AquaShine.Node.Colorable:setColor' (number expected)")
-	this.color[2] = assert(type(r) == "number", "bad argument #2 to 'AquaShine.Node.Colorable:setColor' (number expected)")
-	this.color[3] = assert(type(r) == "number", "bad argument #3 to 'AquaShine.Node.Colorable:setColor' (number expected)")
+	this.color[1] = assert(type(r) == "number" and r, "bad argument #1 to 'AquaShine.Node.Colorable:setColor' (number expected)")
+	this.color[2] = assert(type(r) == "number" and g, "bad argument #2 to 'AquaShine.Node.Colorable:setColor' (number expected)")
+	this.color[3] = assert(type(r) == "number" and b, "bad argument #3 to 'AquaShine.Node.Colorable:setColor' (number expected)")
 	this.color[4] = type(a) == "number" and a or 1
+	return this
 end
 
 function ColorNode.getColor(this)

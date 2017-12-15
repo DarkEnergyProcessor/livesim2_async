@@ -11,7 +11,7 @@ return {
 		livesim_main = {-1, "livesim.lua"},
 		settings = {0, "setting_view.lua"},
 		main_menu = {0, "main_menu2.lua"},
-		beatmap_select = {0, "beatmap_select_wrapper.lua"},
+		beatmap_select = {0, "beatmap_select_node.lua"},
 		unit_editor = {0, "unit_editor.lua"},
 		unit_selection = {-1, "unit_selection.lua"},
 		about = {0, "about_screen.lua"},

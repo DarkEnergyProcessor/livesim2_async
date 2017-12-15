@@ -49,7 +49,12 @@ function NCache.CreateCache(note, filename)
 		
 		if not(ncache.score_data) then
 			-- Use MASTER score preset
-			local s_score = #notes_list * 739
+			-- Swing notes is half of it.
+			local s_score = 0
+			for i = 1, #notes_list do
+				s_score = s_score + (notes_list[i].effect > 10 and 370 or 739)
+			end
+			
 			local score = {}
 			
 			score[1] = math.floor(s_score * 0.285521 + 0.5)
@@ -155,6 +160,13 @@ function NCache.ParseCache(file)
 	ncache.score_data = NCache._Explode(assert(file:read("*l")), ":")
 	ncache.combo_data = NCache._Explode(assert(file:read("*l")), ":")
 	
+	if ncache.version >= 2 then
+		local diff = assert(file:read("*l"))
+		if #diff > 0 then
+			ncache.difficulty = diff
+		end
+	end
+	
 	local storycover = NCache._Explode(assert(file:read("*l")), ":")
 	
 	if storycover[2] >= 1 then
@@ -178,11 +190,11 @@ function NCache.ParseCache(file)
 	
 	ncache.has_storyboard = storycover[1] >= 1
 	
+	
 	return ncache
 end
 
 function NCache.SaveCache(beatmap_path, cache)
-	print(beatmap_path)
 	return NCache._SaveCache(
 		("%s/noteloader_%s_cache.ncache"):format(AquaShine.GetTempDir(), (beatmap_path:gsub("[/|\\]", "_"))),
 		beatmap_path,
@@ -196,13 +208,14 @@ function NCache._SaveCache(desired_name, beatmap_path, cache)
 	cache._mtime = assert(love.filesystem.getLastModified(beatmap_path))
 	
 	f:write(
-		"1\n",
+		"2\n",
 		cache._mtime, "\n",
 		cache.name, "\n",
 		cache.type, "\n",
 		cache.filename, "\n",
 		table.concat(cache.score_data, ":"), "\n",
 		table.concat(cache.combo_data, ":"), "\n",
+		cache.difficulty or "", "\n",
 		cache.has_storyboard and 1 or 0, ":", cache.cover_art and 1 or 0, "\n"
 	)
 	

@@ -3,16 +3,15 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
-local Node = AquaShine.Node
 local love = love
-
-local TextShadow = Node.Colorable:extend("Livesim2.TextShadow")
+local TextShadow = AquaShine.Node.Colorable:extend("Livesim2.TextShadow")
 
 function TextShadow.init(this, font, text, x, y)
+	AquaShine.Node.Colorable.init(this)
 	this.text = love.graphics.newText(font or AquaShine.LoadFont(nil, 14), text)
 	this.actualtext = text
-	
-	return Node.Colorable.init(this)
+	this.x = x or 0
+	this.y = y or 0
 end
 
 function TextShadow.refresh(this)
@@ -29,14 +28,21 @@ function TextShadow.refresh(this)
 	
 	-- Draw actual text
 	this.text:add(this.actualtext)
+	return this
 end
 
 function TextShadow.setShadow(this, dist, blackness, doubleside, noupdate)
-	this.shadow = {dist, blackness, doubleside}
-	
-	if not(noupdate) then
-		return this:refresh()
+	if dist == 0 then
+		this.shadow = nil
+	else
+		this.shadow = {dist, blackness, doubleside}
+		
+		if not(noupdate) then
+			return this:refresh()
+		end
 	end
+	
+	return this
 end
 
 function TextShadow.setText(this, text, noupdate)
@@ -45,13 +51,17 @@ function TextShadow.setText(this, text, noupdate)
 	if not(noupdate) then
 		return this:refresh()
 	end
+	
+	return this
 end
 
 function TextShadow.draw(this)
-	love.graphics.setColor(this.color)
-	love.graphics.draw(this.text, this.x, this.y)
+	if #this.actualtext > 0 then
+		love.graphics.setColor(this.color)
+		love.graphics.draw(this.text, this.x, this.y)
+	end
 	
-	return Node.Colorable.draw(this)
+	return AquaShine.Node.Colorable.draw(this)
 end
 
 return TextShadow

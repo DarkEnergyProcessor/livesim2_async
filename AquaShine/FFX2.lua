@@ -290,7 +290,7 @@ local FFX = {
 	swscale = swscale
 }
 
-local class = require("30log")
+local class = AquaShine.Class
 local AquaShineVideo = class("AquaShineVideo")
 local AV_PIX_FMT_YUV420P = tonumber(ffi.cast("enum AVPixelFormat", "AV_PIX_FMT_YUV420P"))
 
@@ -501,19 +501,6 @@ function AquaShineVideo._stepVideo(this, dt)
 	-- Refresh the image buffer
 	-- Don't forget to do sws_scale first
 	local usedFrame = this:_selectUsedFrameData()
-	
-	--[[
-	for i = 0, this.ImgRes - 1 do
-		if i < this.HalfImgRes then
-			-- Copy U and V first
-			iu[i * 4] = usedFrame.data[1][i]
-			iv[i * 4] = usedFrame.data[2][i]
-		end
-		
-		-- Copy Y
-		iy[i * 4] = usedFrame.data[0][i]
-	end
-	--]]
 	local idx = 0
 	local idx2 = 0
 	local iy, iu, iv = this.ImageData[1][3], this.ImageData[2][3], this.ImageData[3][3]
@@ -544,11 +531,6 @@ function AquaShineVideo._stepVideo(this, dt)
 	end
 	
 	-- Reload Image object
-	--[[
-	this.ImageData[1][2]:refresh()
-	this.ImageData[2][2]:refresh()
-	this.ImageData[3][2]:refresh()
-	]]
 	this.ImageData[1][2]:replacePixels(this.ImageData[1][1])
 	this.ImageData[2][2]:replacePixels(this.ImageData[2][1])
 	this.ImageData[3][2]:replacePixels(this.ImageData[3][1])
@@ -558,7 +540,14 @@ function AquaShineVideo._stepVideo(this, dt)
 	end
 end
 
-function AquaShineVideo._draw(this, quad, x, y, r, sx, sy, ox, oy, kx, ky)
+local function sendShaderSafe(shader, name, ...)
+	if shader:hasUniform(name) then
+		shader:send(name, select(1, ...))
+	end
+end
+
+local graphics_draw = love.graphics.draw
+function AquaShineVideo._draw(this, ...)
 	local prevshdr = love.graphics.getShader()
 	local curshader = prevshdr or vidshader
 	
@@ -566,13 +555,12 @@ function AquaShineVideo._draw(this, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 		love.graphics.setShader(vidshader)
 	end
 	
-	curshader:send("love_VideoYChannel", this.ImageData[1][2])
-	curshader:send("love_VideoCbChannel", this.ImageData[2][2])
-	curshader:send("love_VideoCrChannel", this.ImageData[3][2])
-	love.graphics.draw(this.ImageData[1][2], quad, x, y, r, sx, sy, ox, oy, kx, ky)
+	sendShaderSafe(curshader, "love_VideoYChannel", this.ImageData[1][2])
+	sendShaderSafe(curshader, "love_VideoCbChannel", this.ImageData[2][2])
+	sendShaderSafe(curshader, "love_VideoCrChannel", this.ImageData[3][2])
+	graphics_draw(this.ImageData[1][2], select(1, ...))
 	love.graphics.setShader(prevshdr)
 end
-
 
 --! @brief Play video
 --! @param this AquaShineVideo object
@@ -602,8 +590,7 @@ function AquaShineVideo.seek(this, sec)
 	local ts = sec * this.TimeBase.den / this.TimeBase.num
 	this.CurrentTime = sec
 	avcodec.avcodec_flush_buffers(this.FFXData.CodecContext)
-	
-	return avformat.av_seek_frame(this.FFXData.FmtContext, this.VideoStreamIndex, ts, 1) >= 0
+	assert(avformat.av_seek_frame(this.FFXData.FmtContext, this.VideoStreamIndex, ts, 1) >= 0, "Seek failed")
 end
 
 --! @brief Rewind video
@@ -653,7 +640,7 @@ function AquaShineVideo.type()
 	return "AquaShineVideo"
 end
 
-function AquaShineVideo.typeOf(type)
+function AquaShineVideo.typeOf(_, type)
 	return
 		type == "AquaShineVideo" or
 		type == "Video" or
@@ -894,12 +881,11 @@ function FFX.LoadAudio(path, memstr)
 end
 
 -- Inject our proxy to love.graphics.draw
-local graphics_draw = love.graphics.draw
-function love.graphics.draw(obj, quad, x, y, r, sx, sy, ox, oy, kx, ky)
+function love.graphics.draw(obj, ...)
 	if type(obj) == "table" and obj.FFXData then
-		return obj:_draw(quad, x, y, r, sx, sy, ox, oy, kx, ky)
+		return obj:_draw(select(1, ...))
 	else
-		graphics_draw(obj, quad, x, y, r, sx, sy, ox, oy, kx, ky)
+		graphics_draw(obj, select(1, ...))
 	end
 end
 

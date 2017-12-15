@@ -18,10 +18,10 @@ end
 
 function BackgroundImage.draw(this)
 	love.graphics.setColor(this.color)
-	love.graphics.draw(this.image2, -88, 0)
-	love.graphics.draw(this.image3, 960, 0)
-	love.graphics.draw(this.image4, 0, -43)
-	love.graphics.draw(this.image5, 0, 640)
+	love.graphics.draw(this.image2, this.x - 88, this.y)
+	love.graphics.draw(this.image3, this.x + 960, this.y)
+	love.graphics.draw(this.image4, this.x, this.y - 43)
+	love.graphics.draw(this.image5, this.x, this.y + 640)
 	
 	return Node.Image.draw(this)
 end
