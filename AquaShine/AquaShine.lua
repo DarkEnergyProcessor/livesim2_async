@@ -653,41 +653,6 @@ function AquaShine.NewLoveCompat()
 		return love.timer.getDelta()
 	end
 	
-	-- love.filesystem.getInfo combines these:
-	-- * love.filesystem.exists
-	-- * love.filesystem.isDirectory
-	-- * love.filesystem.isFile
-	-- * love.filesystem.isSymlink
-	-- * love.filesystem.getSize
-	-- * love.filesystem.getLastModified
-	function love.filesystem.getInfo(dir, t)
-		if love.filesystem.exists(dir) then
-			t = t or {}
-			
-			-- Type
-			if love.filesystem.isFile(dir) then
-				t.type = "file"
-			elseif love.filesystem.isDirectory(dir) then
-				t.type = "directory"
-			elseif love.filesystem.isSymlink(dir) then
-				t.type = "symlink"
-			else
-				t.type = "other"
-			end
-			
-			if t.type == "directory" then
-				t.size = 0
-			else
-				t.size = love.filesystem.getSize(dir) or -1
-			end
-			
-			t.modtime = love.filesystem.getLastModified(dir) or -1
-			return t
-		end
-		
-		return nil
-	end
-	
 	-- 0..1 range for love.graphics.setColor
 	local setColor = love.graphics.setColor
 	function love.graphics.setColor(r, g, b, a)
@@ -1034,6 +999,44 @@ end
 
 -- When running low memory
 love.lowmemory = jit.flush
+
+-- love.filesystem always loaded, so put it outside of AquaShine.NewLoveCompat
+if not(AquaShine.NewLove) then
+	-- love.filesystem.getInfo combines these:
+	-- * love.filesystem.exists
+	-- * love.filesystem.isDirectory
+	-- * love.filesystem.isFile
+	-- * love.filesystem.isSymlink
+	-- * love.filesystem.getSize
+	-- * love.filesystem.getLastModified
+	function love.filesystem.getInfo(dir, t)
+		if love.filesystem.exists(dir) then
+			t = t or {}
+			
+			-- Type
+			if love.filesystem.isFile(dir) then
+				t.type = "file"
+			elseif love.filesystem.isDirectory(dir) then
+				t.type = "directory"
+			elseif love.filesystem.isSymlink(dir) then
+				t.type = "symlink"
+			else
+				t.type = "other"
+			end
+			
+			if t.type == "directory" then
+				t.size = 0
+			else
+				t.size = love.filesystem.getSize(dir)
+			end
+			
+			t.modtime = love.filesystem.getLastModified(dir)
+			return t
+		end
+		
+		return nil
+	end
+end
 
 -- Initialization
 function love.load(arg)

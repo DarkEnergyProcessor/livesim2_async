@@ -14,6 +14,7 @@ function SimpleButton.init(this, image, image_se, action, scale)
 	this.image = assert(image, "Normal image needed")
 	this.image_se = assert(image_se, "Selected image needed")
 	this.userdata.targetimage = "image"
+	this.userdata.disabled = false
 	this.scale = scale
 	this.imagewh = {image:getDimensions()}
 	
@@ -56,16 +57,18 @@ end
 
 function SimpleButton.disable(this)
 	this.userdata.targetimage = "image_di"
+	this.userdata.disabled = true
 	return this
 end
 
 function SimpleButton.enable(this)
 	this.userdata.targetimage = "image"
+	this.userdata.disabled = false
 	return this
 end
 
 function SimpleButton.isEnabled(this)
-	return this.userdata.targetimage ~= "image_di"
+	return not(this.userdata.disabled)
 end
 
 function SimpleButton.setTextPosition(this, x, y)
@@ -79,6 +82,14 @@ end
 function SimpleButton.setText(this, text, norel)
 	if this.textshadow then
 		this.textshadow:setText(text, norel)
+	end
+	
+	return this
+end
+
+function SimpleButton.setTextColor(this, r, g, b, a)
+	if this.textshadow then
+		this.textshadow:setColor(r, g, b, a)
 	end
 	
 	return this

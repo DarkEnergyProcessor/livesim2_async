@@ -193,6 +193,7 @@ local function setup_env(story, lua)
 	
 	-- Remove some datas
 	env._G = env
+	env.DEPLS_DIST = nil
 	env.io = nil
 	env.os = nil
 	env.debug = nil

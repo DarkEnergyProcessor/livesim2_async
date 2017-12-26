@@ -11,7 +11,7 @@ MainMenu.MenuSelect = {
 	{"Play", function() AquaShine.LoadEntryPoint(":beatmap_select") end},
 	{"Change Units", function() AquaShine.LoadEntryPoint(":unit_editor") end},
 	{"Settings", function() AquaShine.LoadEntryPoint(":settings") end},
-	{"Exit", love.event.quit}
+	{"Exit", function() AquaShine.LoadEntryPoint("iosdummy") end}
 }
 
 function MainMenu.ConstructVersionText()
@@ -63,7 +63,7 @@ function MainMenu.Start(arg)
 	local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 	
 	-- Remove "Exit" for iOS
-	if AquaShine.OperatingSystem == "iOS" then MainMenu.MenuSelect[4] = nil end
+	if AquaShine.OperatingSystem ~= "iOS" then MainMenu.MenuSelect[4][2] = love.event.quit end
 	
 	MainMenu.VersionText = AquaShine.GetCachedData("versionText", MainMenu.ConstructVersionText)
 	MainMenu.Background = BackgroundImageUI(14)

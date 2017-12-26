@@ -23,7 +23,8 @@ return {
 	DefaultEntry = "main_menu",
 	-- Allow entry points to be preloaded?
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
-	EntryPointPreload = false,
+	-- Enabling entry preloading increases the performance slightly but increase loading times slightly
+	EntryPointPreload = true,
 	
 	-- If this table present, letterboxing is enabled.
 	-- Otherwise, if it's not present, letterboxing is disabled.

@@ -22,15 +22,8 @@ function JSONLoader.GetLoaderName()
 	return "JSON-based Beatmap Loader"
 end
 
-function JSONLoader.LoadNoteFromFilename(f, file)
-	local fs, bm, loader
-	
-	assert(f:read(30):find("%s*{"), "Not a valid JSON beatmap")
-	f:seek(0)
-	
-	fs = f:read()
-	bm = JSON:decode(fs)
-	
+function JSONLoader.LoadNoteFromTable(bm, file)
+	local loader
 	if
 		bm.song_info and
 		bm.song_info[1] and
@@ -49,6 +42,18 @@ function JSONLoader.LoadNoteFromFilename(f, file)
 	end
 	
 	return loader
+end
+
+function JSONLoader.LoadNoteFromFilename(f, file)
+	local fs, bm, loader
+	
+	assert(f:read(30):find("%s*{"), "Not a valid JSON beatmap")
+	f:seek(0)
+	
+	fs = f:read()
+	bm = JSON:decode(fs)
+	
+	return JSONLoader.LoadNoteFromTable(bm, file)
 end
 
 return JSONLoader

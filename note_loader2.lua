@@ -146,39 +146,20 @@ end
 --! @note Error message is printed to log
 function NoteLoader.NoteLoader(file, noproject)
 	local project_info_file = love.filesystem.getInfo(file)
-	local project_mode = not(noproject) and project_info_file and project_info_file.type == "directory"
-	local destination = file
-	local project_destination = "temp/.beatmap/"..file:gsub("(.*/)(.*)", "%2")
-	local zip_path
 	
-	if not(project_mode) and not(noproject) and AquaShine.MountZip(file, project_destination) then
-		-- File is mountable. Project-based beatmap.
-		project_mode = true
-		destination = project_destination
-		zip_path = file
-	end
-	
-	if project_mode then
+	if project_info_file.type == "directory" then
 		-- Project folder loading
 		for i = 1, #NoteLoader.ProjectLoaders do
 			local ldr = NoteLoader.ProjectLoaders[i]
-			local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, destination)
+			local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file)
 			
 			if success then
-				if zip_path then
-					nobj._zipobj = NoteLoader._UnzipOnGone(zip_path)
-				end
-				
 				return nobj
 			end
 			
 			AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
 		end
-		
-		if zip_path then
-			assert(AquaShine.MountZip(file, nil), "ZIP unmount failed")
-		end
-	else
+	elseif project_info_file.type == "file" then
 		-- File loading
 		local file_handle = love.filesystem.newFile(file, "r")
 		
@@ -188,7 +169,7 @@ function NoteLoader.NoteLoader(file, noproject)
 		
 		for i = 1, #NoteLoader.FileLoaders do
 			local ldr = NoteLoader.FileLoaders[i]
-			local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, destination)
+			local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, file)
 			
 			if success then
 				if not(noclose) then file_handle:close() end
@@ -231,6 +212,19 @@ function NoteLoader.EnumerateCached()
 	end
 	
 	return a
+end
+
+function NoteLoader.GetLoader(name, file_first)
+	local path = {NoteLoader.ProjectLoaders, NoteLoader.FileLoaders}
+	if file_first then table.insert(path, 1, table.remove(path, 2)) end
+	
+	for i = 1, #path do
+		for n, v in ipairs(path[i]) do
+			if v.GetLoaderName() == name then
+				return v
+			end
+		end
+	end
 end
 
 ------------------------

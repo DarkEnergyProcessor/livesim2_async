@@ -22,15 +22,15 @@ local chunk_handler = {
 		this.HeaderData = headers
 	end,
 	DONE = function(this, data)
-		this:ok()
 		this.downloading = false
+		this:ok()
 		this.StatusCode = nil
 		this.ContentLength = nil
 		this.HeaderData = nil
 	end,
 	["ERR "] = function(this, data)
-		this:err(data)
 		this.downloading = false
+		this:err(data)
 		this.StatusCode = nil
 		this.ContentLength = nil
 		this.HeaderData = nil
@@ -77,9 +77,11 @@ function Download.Download(this, url, additional_headers)
 	this.channelin:push(assert(url))
 	this.channelin:push(additional_headers or {})
 	this.downloading = true
+	DownloadList[this.channelin] = this
 end
 
 function love.handlers.aqs_download(input, name, data)
+	print("aqs_download", input, name, tostring(data):sub(1, 10))
 	if DownloadList[input] then
 		local dl = DownloadList[input]
 		

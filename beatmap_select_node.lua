@@ -96,13 +96,14 @@ function BeatmapSelect.Start(arg)
 	end
 	
 	-- Download beatmap, if external script available
-	if love.filesystem.isFile("external/download_beatmap.lua") then
+	local dlwrap = love.filesystem.getInfo("external/dl_wrap.lua")
+	if dlwrap and dlwrap.type == "file" then
 		BeatmapSelect.MainNode:addChild(
 			SimpleButton(
 				AquaShine.LoadImage("assets/image/ui/s_button_03.png"),
 				AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
 				function()
-					AquaShine.LoadEntryPoint("external/download_beatmap.lua")
+					AquaShine.LoadEntryPoint("external/dl_wrap.lua")
 				end,
 				0.5
 			)
@@ -144,9 +145,6 @@ function BeatmapSelect.MouseMoved(x, y, dx, dy, t)
 	BeatmapSelect.MainNode:triggerEvent("MouseMoved", x, y, dx, dy, t)
 	
 	if BeatmapSelect.SwipeData[1] and math.abs(BeatmapSelect.SwipeData[2] - x) >= BeatmapSelect.SwipeThreshold then
-		--[[if BeatmapSelect.CompositionList[BeatmapSelect.Page] then
-			BeatmapSelect.CompositionList[BeatmapSelect.Page]:MouseMoved(-100, -100)	-- Guaranteed to abort it
-		end]]
 		BeatmapSelect.MainNode:triggerEvent("MouseMoved", -200, -200, -1, -1, t)
 		BeatmapSelect.MainNode:triggerEvent("MouseReleased", -200, -200, 1, t)
 	end
