@@ -5,6 +5,7 @@
 local cin = ...
 local socket = require("socket")
 local http = require("socket.http")
+http.TIMEOUT = 120
 
 -- AquaShine download event
 local le = require("love.event")
@@ -38,22 +39,25 @@ local request_http = socket.protect(function(url, headers)
 	local host, port = dest:match("([^:]+):?(%d*)")
 	port = #port > 0 and port or "80"
 	local fulldest = host..":"..port
-	if lasturl == dest and lasthttp and lasthttp.c:getsockname() then
+	if lasturl == fulldest and lasthttp and lasthttp.c:getsockname() then
 		-- Keep-alive
 		h = lasthttp
-		print("reusing existing connection")
 	else
+		-- New connection
+		if lasthttp then
+			lasthttp:close()
+		end
+		
 		h = http.open(host, assert(tonumber(port)))
-		print("new connection")
 	end
 	lasthttp = nil
 	lasturl = fulldest
 	
 	-- Adjust
 	local basic_header = {
-		["host"] = host,
+		["host"] = dest,
 		["connection"] = "keep-alive",
-		["keep-alive"] = "timeout=30",
+		["keep-alive"] = "timeout=60",
 		["user-agent"] = "AquaShine.Download "..socket._VERSION
 	}
 	
@@ -81,9 +85,7 @@ local request_http = socket.protect(function(url, headers)
 		headers = h:receiveheaders()
 		code, status = h:receivestatusline()
 	end
-	print("receivestatusline ok")
 	headers = h:receiveheaders()
-	print("receiveheaders ok")
 	
 	push_event("RESP", code)
 	push_event("SIZE", headers['content-length'] and tonumber(headers['content-length']) or -1)

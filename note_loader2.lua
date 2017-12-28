@@ -128,17 +128,6 @@ function NoteLoader._LoadDefaultAudioFromFilename(file)
 	return AquaShine.LoadAudio("audio/"..NoteLoader._GetBasenameWOExt(file)..".wav")
 end
 
-function NoteLoader._UnzipOnGone(zip_path)
-	local x = newproxy(true)
-	local y = getmetatable(x)
-	
-	y.__gc = function()
-		AquaShine.MountZip(zip_path, nil)
-	end
-	
-	return x
-end
-
 --! @brief Load note object from specificed path
 --! @param file The file path. Can be either file or directory
 --! @param noproject Do not attempt to load beatmap as project beatmap?

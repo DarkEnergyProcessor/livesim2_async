@@ -555,6 +555,8 @@ end
 ------------------------------
 -- Other Internal Functions --
 ------------------------------
+local FileDroppedList = {}
+
 function AquaShine.StepLoop()
 	AquaShine.ExitStatus = nil
 	
@@ -581,6 +583,14 @@ function AquaShine.StepLoop()
 		end
 		
 		love.handlers[name](a, b, c, d, e, f)
+	end
+	
+	if #FileDroppedList > 0 then
+		love.filedropped(FileDroppedList)
+		
+		for i = #FileDroppedList, 1, -1 do
+			FileDroppedList[i] = nil
+		end
 	end
 	
 	-- Update dt, as we'll be passing it to update
@@ -1045,6 +1055,10 @@ function love.load(arg)
 	if not(AquaShine.NewLove) then
 		AquaShine.NewLoveCompat()
 	end
+
+	function love.handlers.filedropped(file)
+		FileDroppedList[#FileDroppedList + 1] = file
+	end
 	
 	-- Initialization
 	local wx, wy = love.graphics.getDimensions()
@@ -1070,10 +1084,6 @@ function love.load(arg)
 	AquaShine.RendererInfo = {love.graphics.getRendererInfo()}
 	AquaShine.LoadModule("AquaShine.InitExtensions")
 	love.resize(wx, wy)
-	
-	if AquaShine.OperatingSystem == "Android" then
-		jit[AquaShine.LoadConfig("JUST_IN_TIME", "off")]()
-	end
 	
 	if jit and AquaShine.GetCommandLineConfig("interpreter") then
 		jit.off()

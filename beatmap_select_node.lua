@@ -11,11 +11,25 @@ local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local BeatmapInfo = AquaShine.LoadModule("uielement.beatmap_info")
 local BeatmapSelButton = AquaShine.LoadModule("uielement.beatmap_select_button")
 local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
-local BeatmapSelect = {}
+local BeatmapSelect = {SaveDir = love.filesystem.getSaveDirectory().."/"}
+
+local usableChar = {"0123456789", "abcdefghijklmnopqrstuvwxyz"}
+usableChar[3] = usableChar[2]:upper()
+function BeatmapSelect.CreateRandomString()
+	local a = {}
+	for i = 1, 16 do
+		local b = usableChar[math.random(1, 3)]
+		local c = math.random(1, #b)
+		a[#a + 1] = b:sub(c, c)
+	end
+	
+	return table.concat(a)
+end
 
 function BeatmapSelect.Start(arg)
 	local beatmap_list
 	local savedir = love.filesystem.getSaveDirectory()
+	BeatmapSelect.TempArg = arg
 	BeatmapSelect.MainNode = BackgroundImage(1)
 	BeatmapSelect.NodeList = {}
 	BeatmapSelect.Page = 0
@@ -86,6 +100,7 @@ function BeatmapSelect.Start(arg)
 				AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
 				function()
 					local list = AquaShine.FileSelection("Insert Beatmap(s)", nil, nil, true)
+					BeatmapSelect.FileDropped(list)
 				end,
 				0.5
 			)
@@ -115,6 +130,48 @@ function BeatmapSelect.Start(arg)
 	
 	-- Set brother button
 	BeatmapSelect.MainNode.brother = BeatmapSelect.NodeList[1]
+end
+
+function BeatmapSelect.FileDropped(list)
+	local hasInstalled = false
+	for i, v in ipairs(list) do
+		local f, h = io.open(v:getFilename(), "rb")
+		
+		if f then
+			local output = "temp/"..BeatmapSelect.CreateRandomString()
+			local fh, h = love.filesystem.newFile(output, "w")
+			
+			if fh then
+				
+				repeat
+					local contents = f:read(8192)
+					fh:write(contents)
+				until #contents < 8192
+				
+				fh:close()
+				local test = NoteLoader.NoteLoader(output)
+				
+				if test then
+					test:ReleaseBeatmapAudio()
+					test:Release()
+					assert(os.rename(BeatmapSelect.SaveDir..output, BeatmapSelect.SaveDir.."beatmap/"..AquaShine.Basename(v:getFilename())))
+					hasInstalled = true
+				end
+				
+				love.filesystem.remove(output)
+			else
+				AquaShine.Log("BeatmapSelect", "Cannot open file %s: %s", output, h)
+			end
+			
+			f:close()
+		else
+			AquaShine.Log("BeatmapSelect", "Cannot open file %s: %s", v, h)
+		end
+	end
+	
+	if hasInstalled then
+		AquaShine.LoadEntryPoint(":beatmap_select", BeatmapSelect.TempArg)
+	end
 end
 
 function BeatmapSelect.MovePage(inc)
