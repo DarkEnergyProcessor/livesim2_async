@@ -112,7 +112,7 @@ function LS2Beatmap.GetCoverArt(this)
 			-- Cover available
 			this.file:seek(this.ls2.sections.COVR[1])
 			this.cover_art = ls2.section_processor.COVR[1](this.file, this.ls2.version_2)
-			this.cover_art.image = love.graphics.newImage(love.filesystem.newFileData(this.cover_art.image, ""))
+			this.cover_art.image = love.graphics.newImage(love.filesystem.newFileData(this.cover_art.image, ""), {mipmaps = true})
 		end
 		
 		this.cover_art_loaded = true

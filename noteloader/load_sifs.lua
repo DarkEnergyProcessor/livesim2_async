@@ -118,7 +118,7 @@ function SIFSBeatmap.GetCoverArt(this)
 		this.cover = {}
 		this.cover.title = this.title
 		this.cover.arrangement = this.comment
-		this.cover.image = love.graphics.newImage(art_img_name)
+		this.cover.image = love.graphics.newImage(art_img_name, {mipmaps = true})
 	end
 	
 	return this.cover

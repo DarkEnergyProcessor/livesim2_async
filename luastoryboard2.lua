@@ -146,13 +146,13 @@ local function setup_env(story, lua)
 			
 			newCanvas = love.graphics.newCanvas,
 			newFont = env.LoadFont,
-			newImage = RelativeLoadImage,
+			newImage = env.LoadImage,
 			newMesh = love.graphics.newMesh,
 			newParticleSystem = love.graphics.newParticleSystem,
 			newShader = love.graphics.newShader,
 			newSpriteBatch = love.graphics.newSpriteBatch,
 			newQuad = love.graphics.newQuad,
-			newVideo = RelativeLoadVideo,
+			newVideo = env.LoadVideo,
 			
 			setBlendMode = love.graphics.setBlendMode,
 			setCanvas = function(canvas)

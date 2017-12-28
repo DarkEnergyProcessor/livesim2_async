@@ -13,9 +13,9 @@ local JSONLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.JSONLoader", {
 --------------------------
 
 local Loaders = {
-	SIF = assert(love.filesystem.load("noteloader/json_sif.lua"))(AquaShine, NoteLoader, class),
-	SIFT = assert(love.filesystem.load("noteloader/json_sift.lua"))(AquaShine, NoteLoader, class),
-	LLP = assert(love.filesystem.load("noteloader/json_llp.lua"))(AquaShine, NoteLoader, class),
+	SIF = assert(love.filesystem.load("noteloader/json_sif.lua"))(AquaShine, NoteLoader),
+	SIFT = assert(love.filesystem.load("noteloader/json_sift.lua"))(AquaShine, NoteLoader),
+	LLP = assert(love.filesystem.load("noteloader/json_llp.lua"))(AquaShine, NoteLoader),
 }
 
 function JSONLoader.GetLoaderName()

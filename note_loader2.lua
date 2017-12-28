@@ -136,43 +136,47 @@ end
 function NoteLoader.NoteLoader(file, noproject)
 	local project_info_file = love.filesystem.getInfo(file)
 	
-	if project_info_file.type == "directory" then
-		-- Project folder loading
-		for i = 1, #NoteLoader.ProjectLoaders do
-			local ldr = NoteLoader.ProjectLoaders[i]
-			local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file)
+	if project_info_file then
+		if project_info_file.type == "directory" then
+			-- Project folder loading
+			for i = 1, #NoteLoader.ProjectLoaders do
+				local ldr = NoteLoader.ProjectLoaders[i]
+				local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file)
+				
+				if success then
+					return nobj
+				end
+				
+				AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
+			end
+		elseif project_info_file.type == "file" then
+			-- File loading
+			local file_handle = love.filesystem.newFile(file, "r")
 			
-			if success then
-				return nobj
+			if not(file_handle) then
+				return nil, file..": Beatmap doesn't exist"
 			end
 			
-			AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
-		end
-	elseif project_info_file.type == "file" then
-		-- File loading
-		local file_handle = love.filesystem.newFile(file, "r")
-		
-		if not(file_handle) then
-			return nil, file..": Beatmap doesn't exist"
-		end
-		
-		for i = 1, #NoteLoader.FileLoaders do
-			local ldr = NoteLoader.FileLoaders[i]
-			local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, file)
-			
-			if success then
-				if not(noclose) then file_handle:close() end
-				return nobj
+			for i = 1, #NoteLoader.FileLoaders do
+				local ldr = NoteLoader.FileLoaders[i]
+				local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, file)
+				
+				if success then
+					if not(noclose) then file_handle:close() end
+					return nobj
+				end
+				
+				AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
+				file_handle:seek(0)
 			end
 			
-			AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
-			file_handle:seek(0)
+			file_handle:close()
 		end
 		
-		file_handle:close()
+		return nil, file..": No suitable beatmap format found"
 	end
 	
-	return nil, file..": No suitable beatmap format found"
+	return nil, file..": Beatmap not found"
 end
 
 function NoteLoader.Enumerate()

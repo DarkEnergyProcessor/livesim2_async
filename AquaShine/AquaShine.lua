@@ -464,7 +464,7 @@ local LoadedImage = setmetatable({}, {__mode = "v"})
 --! @returns Drawable object
 function AquaShine.LoadImageNoCache(path)
 	assert(path:sub(-4) == ".png", "Only PNG image is supported")
-	local x, y = pcall(love.graphics.newImage, path, ConstImageFlags)
+	local x, y = pcall(love.graphics.newImage, path)
 	AquaShine.Log("AquaShine", "LoadImageNoCache %s", path)
 	
 	if x then
@@ -625,9 +625,7 @@ function AquaShine.StepLoop()
 			end
 			love.graphics.setCanvas()
 		end
-		love.graphics.setShader(srgbshader)
 		love.graphics.draw(AquaShine.MainCanvas)
-		love.graphics.setShader()
 		love.graphics.present()
 	end
 end

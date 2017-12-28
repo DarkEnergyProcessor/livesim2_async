@@ -711,7 +711,7 @@ function DEPLS.Start(argv)
 		noteloader_data.background = nil
 	end
 	
-	local noteloader_background = noteloader_data:GetBackgroundID()
+	local noteloader_background = noteloader_data:GetBackgroundID(DEPLS.NoteRandomized)
 	
 	if noteloader_background > 0 then
 		BackgroundID = noteloader_background

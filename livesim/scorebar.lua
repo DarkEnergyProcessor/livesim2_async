@@ -8,7 +8,6 @@ local ScoreBar = {BarTapFlash = true}
 
 local ScoreUpdate = DEPLS.Routines.ScoreUpdate
 local ScoreData = DEPLS.ScoreData
-local LogicalScale = LogicalScale
 local setScissor = love.graphics.setScissor
 local setColor = love.graphics.setColor
 local draw = love.graphics.draw

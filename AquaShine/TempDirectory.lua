@@ -26,7 +26,7 @@ if AquaShine.OperatingSystem == "iOS" then
 	end
 elseif AquaShine.OperatingSystem == "Windows" then
 	-- Two techniques (the former is more reliable)
-	if hasffi then
+	if has_ffi then
 		ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
 		
 		local buf = ffi.new("char[260]")

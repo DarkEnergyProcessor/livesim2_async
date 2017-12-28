@@ -58,6 +58,15 @@ function SIFTBeatmap.GetNotesList(this)
 	return this.notes_list
 end
 
+function SIFTBeatmap.GetBackgroundID(this, random)
+	local i = this.sift.song_info[1]
+	local a = math.min(random and i.random_star or i.star, 12)
+	if i.member_category == 2 and a < 4 then
+		return a + 12
+	end
+	return a
+end
+
 function SIFTBeatmap.GetName(this)
 	return this.sift.song_name
 end
@@ -71,7 +80,7 @@ function SIFTBeatmap.GetCoverArt(this)
 		-- Side note: If we try to load image from save directory, always use love.graphics.newImage
 		-- This is to ensure that the we can see the changes immediately. AquaShine.LoadImage caches
 		-- the image so we won't see the changes immediately if that's used instead.
-		local _, img = pcall(love.graphics.newImage, "live_icon/"..this.sift.live_icon)
+		local _, img = pcall(love.graphics.newImage, "live_icon/"..this.sift.live_icon, {mipmaps = true})
 		
 		if _ then
 			local covr = {}
@@ -164,7 +173,7 @@ function SIFTBeatmap.GetBeatmapAudio(this)
 end
 
 function SIFTBeatmap.GetStarDifficultyInfo(this, random)
-	return (random and this.sift.random_star or this.sift.star) or this.sift.star or 0
+	return random and this.sift.random_star or this.sift.star or 0
 end
 
 return function(json, filename)

@@ -23,7 +23,7 @@ Special Thanks: @yuyu0127_ for the SIF v5-style note images.
 				/u/MilesElectric168 for the note randomizer algorithm
 License:
 The MIT License (MIT)
-Copyright (c) 2038 Dark Energy Processor Corporation
+Copyright (c) 2039 Dark Energy Processor Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation the

@@ -412,7 +412,7 @@ function CBFBeatmap.GetCoverArt(this)
 				
 				cover.title = this.cbf_conf.SONG_NAME
 				cover.arrangement = this.cbf_conf.COVER_COMMENT
-				cover.image = love.graphics.newImage(name)
+				cover.image = love.graphics.newImage(name, {mipmaps = true})
 				
 				this.cover_art = cover
 				break

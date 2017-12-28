@@ -84,7 +84,7 @@ function DEPLSBeatmap.GetCoverArt(this)
 			local line = f:lines()
 			
 			this.cover = {}
-			this.cover.image = love.graphics.newImage(cover_img)
+			this.cover.image = love.graphics.newImage(cover_img, {mipmaps = true})
 			this.cover.title = line()
 			this.cover.arrangement = line()
 			

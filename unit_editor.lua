@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
-local UnitEditor = {State = _G.SavedUnitEditorState}
+local UnitEditor = {}
 local MouseState = {0, 0, false}	-- x, y, is click?
 local IdolPosition = {	-- Idol position. 9 is leftmost
 	{816, 96 }, {785, 249}, {698, 378},
@@ -42,6 +42,7 @@ local function applyChanges()
 end
 
 function UnitEditor.Start(arg)
+	UnitEditor.State = AquaShine.GetCachedData("SavedUnitEditorState")
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	
 	background_5 = {AquaShine.LoadImage(
@@ -74,7 +75,7 @@ function UnitEditor.Start(arg)
 			i = i - 1
 		end
 		
-		_G.SavedUnitEditorState = UnitEditor.State
+		AquaShine.CacheTable.SavedUnitEditorState = UnitEditor.State
 	end
 	
 	if type(arg[1]) == "table" then
@@ -180,7 +181,7 @@ function UnitEditor.MouseReleased(x, y, button)
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		-- Discard changes and back
-		_G.SavedUnitEditorState = nil
+		AquaShine.CacheTable.SavedUnitEditorState = nil
 		AquaShine.LoadEntryPoint(":main_menu")
 		
 		return

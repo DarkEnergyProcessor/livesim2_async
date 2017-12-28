@@ -110,23 +110,20 @@ function BeatmapSelect.Start(arg)
 		)
 	end
 	
-	-- Download beatmap, if external script available
-	local dlwrap = love.filesystem.getInfo("external/dl_wrap.lua")
-	if dlwrap and dlwrap.type == "file" then
-		BeatmapSelect.MainNode:addChild(
-			SimpleButton(
-				AquaShine.LoadImage("assets/image/ui/s_button_03.png"),
-				AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
-				function()
-					AquaShine.LoadEntryPoint("external/dl_wrap.lua")
-				end,
-				0.5
-			)
-			:setPosition(512, 8)
-			:initText(AquaShine.LoadFont("MTLmr3m.ttf", 18), "Download Beatmap(s)")
-			:setTextPosition(8, 6)
+	-- Download beatmap
+	BeatmapSelect.MainNode:addChild(
+		SimpleButton(
+			AquaShine.LoadImage("assets/image/ui/s_button_03.png"),
+			AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
+			function()
+				AquaShine.LoadEntryPoint("dl_wrap.lua")
+			end,
+			0.5
 		)
-	end
+		:setPosition(512, 8)
+		:initText(AquaShine.LoadFont("MTLmr3m.ttf", 18), "Download Beatmap(s)")
+		:setTextPosition(8, 6)
+	)
 	
 	-- Set brother button
 	BeatmapSelect.MainNode.brother = BeatmapSelect.NodeList[1]
