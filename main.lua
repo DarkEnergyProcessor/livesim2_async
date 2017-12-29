@@ -2,7 +2,7 @@
 -- High-performance LL!SIF Live Simulator
 
 --[[---------------------------------------------------------------------------
--- Copyright (c) 2038 Dark Energy Processor Corporation
+-- Copyright (c) 2039 Dark Energy Processor Corporation
 -- 
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,11 @@
 DEPLS_VERSION = "2.0-beta4"
 DEPLS_VERSION_NUMBER = 01010504	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
+setmetatable(_G, {
+	__index = function(_, var) error("Unknown variable "..var, 2) end,
+	__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
+})
+
 local AquaShine = love._getAquaShineHandle()
 local isFused = love.filesystem.isFused()
 AquaShine.SetDefaultFont("MTLmr3m.ttf")
@@ -34,6 +39,15 @@ AquaShine.SetDefaultFont("MTLmr3m.ttf")
 if love.filesystem.isFused() then
 	love._getAquaShineHandle = nil
 end
+
+-- Distribution mode
+rawset(_G, "DEPLS_DIST", love.filesystem.getInfo("DEPLS_DIST") or
+	(-- Android as LOVE file
+	love.filesystem.getInfo("resources.arsc") and
+	love.filesystem.getInfo("classes.dex") and
+	love.filesystem.getInfo("AndroidManifest.xml")
+	) or false
+)
 
 -------------------
 -- Splash Screen --

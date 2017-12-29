@@ -22,6 +22,21 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
+if jit then
+	require("table.new")
+	require("table.clear")
+else
+	function table.new()
+		return {}
+	end
+	
+	function table.clear(a)
+		for n, v in pairs(a) do
+			a[n] = nil
+		end
+	end
+end
+
 local weak_table = {__mode = "v"}
 local AquaShine = {
 	CurrentEntryPoint = nil,
@@ -212,6 +227,16 @@ function AquaShine.LoadEntryPoint(name, arg)
 	scriptdata.Start(arg or {})
 	TemporaryEntryPoint = scriptdata
 	
+	if title then
+		love.window.setTitle(AquaShine.WindowName .. " - "..title)
+	else
+		love.window.setTitle(AquaShine.WindowName)
+	end
+end
+
+--! @brief Set window title
+--! @param title The new window title (or nil to reset)
+function AquaShine.SetWindowTitle(title)
 	if title then
 		love.window.setTitle(AquaShine.WindowName .. " - "..title)
 	else
@@ -585,13 +610,7 @@ function AquaShine.StepLoop()
 		love.handlers[name](a, b, c, d, e, f)
 	end
 	
-	if #FileDroppedList > 0 then
-		love.filedropped(FileDroppedList)
-		
-		for i = #FileDroppedList, 1, -1 do
-			FileDroppedList[i] = nil
-		end
-	end
+	table.clear(FileDroppedList)
 	
 	-- Update dt, as we'll be passing it to update
 	local dt = love.timer.step()
@@ -807,9 +826,26 @@ function AquaShine.NewLoveCompat()
 	love.data = {}
 	
 	-- love.math.decompress is deprecated, replaced by love.data.decompress
-	function love.data.decompress(fmt, data)
+	function love.data.decompress(data_or_string, fmt, data)
 		-- Notice the argument order
-		return love.math.decompress(data, fmt)
+		if data_or_string == "data" then
+			return love.filesystem.newFileData(love.math.decompress(data, fmt), "")
+		elseif data_or_string == "string" then
+			return love.math.decompress(data, fmt)
+		else
+			error("Invalid return type: expected 'data' or 'string'", 2)
+		end
+	end
+	
+	-- love.math.compress is deprecated, replaced by love.data.compress
+	function love.data.compress(data_or_string, fmt, data, level)
+		if data_or_string == "data" then
+			return love.filesystem.newFileData(love.math.compress(data, fmt, level), "")
+		elseif data_or_string == "string" then
+			return love.math.compress(data, fmt, level)
+		else
+			error("Invalid return type: expected 'data' or 'string'", 2)
+		end
 	end
 	
 	-- Shader:hasUniform

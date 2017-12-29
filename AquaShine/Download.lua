@@ -23,6 +23,7 @@ local chunk_handler = {
 	end,
 	DONE = function(this, data)
 		this.downloading = false
+		DownloadList[this.channelin] = nil
 		this:ok()
 		this.StatusCode = nil
 		this.ContentLength = nil
@@ -81,7 +82,6 @@ function Download.Download(this, url, additional_headers)
 end
 
 function love.handlers.aqs_download(input, name, data)
-	--print("aqs_download", input, name, tostring(data):sub(1, 15))
 	if DownloadList[input] then
 		local dl = DownloadList[input]
 		

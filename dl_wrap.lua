@@ -18,7 +18,6 @@ function DLWrap.Update(deltaT)
 	local dest = love.filesystem.getInfo("external/download_beatmap_llp.lua") and "external/download_beatmap_llp.lua"
 	if not(DLWrap.Download.downloading) then
 		AquaShine.LoadEntryPoint(AquaShine.LoadConfig("DL_CURRENT", dest or "download_beatmap_sif.lua"))
-		isLoaded = true
 	end
 end
 

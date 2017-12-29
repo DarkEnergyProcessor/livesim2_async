@@ -27,7 +27,7 @@ function SimpleButton.init(this, image, image_se, action, scale)
 	end, true)
 	local released = AquaShine.Node.Util.InAreaFunction(this, function(x, y)
 		if this.userdata.targetimage == "image_se" then
-			action()
+			action(this)
 		end
 		
 		this.userdata.targetimage = "image"

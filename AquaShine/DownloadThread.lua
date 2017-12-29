@@ -63,7 +63,11 @@ local request_http = socket.protect(function(url, headers)
 	
 	-- Override headers
 	for n, v in pairs(headers) do
-		basic_header[n:lower()] = tostring(v)
+		if v == math.huge then
+			basic_header[n:lower()] = nil
+		else
+			basic_header[n:lower()] = tostring(v)
+		end
 	end
 	h:sendrequestline("GET", #uri > 0 and uri or "/")
 	h:sendheaders(basic_header)
@@ -102,7 +106,6 @@ end)
 
 local command = cin:demand()
 while command ~= "QUIT" do
-	print("command", command)
 	local headers = cin:pop()
 	local a, b, c = pcall(request_http, command, headers)
 	
