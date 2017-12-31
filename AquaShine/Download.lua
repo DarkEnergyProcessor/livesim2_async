@@ -58,6 +58,7 @@ function Download.init(this)
 		local t = this.thread
 		local cin = this.channelin
 		
+		print("push quit")
 		cin:push("QUIT")
 	end
 	

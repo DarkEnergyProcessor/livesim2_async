@@ -24,8 +24,8 @@
 --]]---------------------------------------------------------------------------
 
 -- Version
-DEPLS_VERSION = "2.0-beta4"
-DEPLS_VERSION_NUMBER = 01010504	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+DEPLS_VERSION = "2.0-beta5"
+DEPLS_VERSION_NUMBER = 01010505	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
 
 setmetatable(_G, {
 	__index = function(_, var) error("Unknown variable "..var, 2) end,

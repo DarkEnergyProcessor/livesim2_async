@@ -76,7 +76,7 @@ function Composition.Draw(this)
 		
 		if this.mousedata[1] == i then
 			drawf = a.draw_se or drawf
-		elseif (w and h) and
+		elseif (a.w and a.h) and
 			this.mousedata[2] >= x and this.mousedata[3] >= y and
 			this.mousedata[2] < x + a.w and this.mousedata[3] < y + a.h
 		then
