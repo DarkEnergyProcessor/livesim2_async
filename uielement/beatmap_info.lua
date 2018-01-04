@@ -9,7 +9,7 @@ local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local Checkbox = AquaShine.LoadModule("uielement.checkbox")
 
-function BeatmapInfo.init(this, random_tick)
+function BeatmapInfo.init(this, random_tick, NoteLoader)
 	AquaShine.Node.init(this)
 	this.infofont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	this.arrangementfont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
@@ -27,12 +27,19 @@ function BeatmapInfo.init(this, random_tick)
 				this.userdata.beatmap.song:stop()
 			end
 			
-			-- 4th child is Random checkbox
-			if this.userdata.beatmap.data then
-				AquaShine.LoadEntryPoint(":livesim_main", {Beatmap = this.userdata.beatmap.data, Random = this.child[5]:isChecked()})
-			else
-				AquaShine.LoadEntryPoint(":livesim", {this.userdata.beatmap.filename, Random = this.child[5]:isChecked(), Absolute = true})
+			-- 5th child is Random checkbox
+			local params = {
+				Beatmap = this.userdata.beatmap.data,
+				Random = this.child[5]:isChecked(),
+				NoStoryboard = not(this.child[6]:isChecked()),
+				NoVideo = not(this.child[7]:isChecked())
+			}
+			
+			if not(this.userdata.beatmap.data) then
+				params.Beatmap = NoteLoader.NoteLoader(this.userdata.beatmap.filename)
 			end
+				
+			AquaShine.LoadEntryPoint(":livesim_main", params)
 		end
 	)
 		:setPosition(768, 529)
@@ -63,13 +70,27 @@ function BeatmapInfo.init(this, random_tick)
 	this.child[3].userdata.stop = AquaShine.LoadImage("assets/image/ui/button_stop.png")        -- Stop image
 	this.child[3].userdata.stop_se = AquaShine.LoadImage("assets/image/ui/button_stop_se.png")  -- Stop image
 	-- Autoplay checkbox
-	this.child[4] = Checkbox("Autoplay", 440, 520, function(checked)AquaShine.SaveConfig("AUTOPLAY",checked and"1"or"0")end)
+	this.child[4] = Checkbox("Autoplay", 440, 520, function(checked)
+			AquaShine.SaveConfig("AUTOPLAY", checked and "1" or "0")
+		end)
 		:setColor(0, 0, 0)
 		:setChecked(AquaShine.LoadConfig("AUTOPLAY", 0) == 1)
 	-- Random checkbox
 	this.child[5] = Checkbox("Random", 440, 556)
 		:setColor(0, 0, 0)
 		:setChecked(random_tick)
+	-- Storyboard checkbox
+	this.child[6] = Checkbox("Storyboard", 580, 520, function(checked)
+			AquaShine.SaveConfig("STORYBOARD", checked and "1" or "0")
+		end)
+		:setColor(0, 0, 0)
+		:setChecked(AquaShine.LoadConfig("STORYBOARD", AquaShine.IsSlowSystem() and 0 or 1) == 1)
+	-- Video Background checkbox
+	this.child[7] = Checkbox("Video Backgr.", 580, 556, function(checked)
+			AquaShine.SaveConfig("VIDEOBG", checked and "1" or "0")
+		end)
+		:setColor(0, 0, 0)
+		:setChecked(AquaShine.LoadConfig("VIDEOBG", AquaShine.IsSlowSystem() and 0 or 1) == 1)
 end
 
 function BeatmapInfo.setBeatmapData(this, beatmap)

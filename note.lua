@@ -316,15 +316,8 @@ function SingleNoteObject.Update(this, deltaT)
 	end
 end
 
-local setBlendMode = love.graphics.setBlendMode
 function SingleNoteObject.Draw(this)
-	local draw = love.graphics.draw
-	local setColor = love.graphics.setColor
-	
-	setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity)
-	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
-	
-	setColor(1, 1, 1)
+	return this:NoteFunction()
 end
 
 function SingleNoteObject.SetTouchID(this, touchid)
@@ -544,15 +537,12 @@ end
 --! @brief LongNoteObject draw routine
 --! @param this NoteObject
 function LongNoteObject.Draw(this)
-	local NoteImage
-	local setColor = love.graphics.setColor
-	local draw = love.graphics.draw
-	
 	-- Draw note trail
-	setColor(1, 1, this.TouchID and 0.5 or 1, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
-	draw(this.LongNoteMesh)
+	love.graphics.setColor(1, 1, this.TouchID and 0.5 or 1, DEPLS.LiveOpacity * (this.TouchID and this.LNTrail or 1))
+	love.graphics.draw(this.LongNoteMesh)
 	
 	-- Draw note object
+	--[[
 	setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity)
 	draw(this.NoteImage, this.FirstCircle[1], this.FirstCircle[2], this.Rotation or 0, this.CircleScale, this.CircleScale, 64, 64)
 	
@@ -560,15 +550,17 @@ function LongNoteObject.Draw(this)
 	if this.SimulNoteImage then
 		draw(this.SimulNoteImage, this.FirstCircle[1], this.FirstCircle[2], 0, this.CircleScale, this.CircleScale, 64, 64)
 	end
+	]]
+	this:NoteFunction()
 	
 	local draw_endcircle = this.EndCircleScale > 0
 	-- Draw end note trail if it is
 	if draw_endcircle then
-		setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity2)
-		draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
+		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity * this.Opacity2)
+		love.graphics.draw(this.EndNoteImage, this.SecondCircle[1], this.SecondCircle[2], 0, this.EndCircleScale, this.EndCircleScale, 64, 64)
 	end
 	
-	setColor(1, 1, 1)
+	love.graphics.setColor(1, 1, 1)
 	if this.TouchID and not(DEPLS.MinimalEffect) then
 		love.graphics.push()
 		love.graphics.translate(this.FirstCircle[1], this.FirstCircle[2])
@@ -579,7 +571,7 @@ function LongNoteObject.Draw(this)
 		love.graphics.pop()
 	end
 	
-	setColor(1, 1, 1)
+	love.graphics.setColor(1, 1, 1)
 end
 
 --! @brief LongNoteObject on hold note
@@ -769,7 +761,8 @@ local function initnote_pos(a)
 	for i = 1, #Note[a] do
 		local obj = Note[a][i]
 		
-		obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, a, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote, obj.Rotation)
+		--obj.NoteImage = DEPLS.NoteImageLoader.LoadNoteImage(obj.Attribute, a, obj.TokenNote, obj.SimulNote, obj.StarNote, obj.SlideNote, obj.Rotation)
+		obj.NoteFunction = DEPLS.NoteImageLoader.GetNoteImageFunction()
 	end
 end
 
@@ -932,6 +925,7 @@ end
 --! Function to draw the note
 function Note.Draw()
 	local ElapsedTime = DEPLS.ElapsedTime
+	love.graphics.push("all")
 	
 	for i = 1, 9 do
 		for j = 1, #Note[i] do
@@ -945,6 +939,8 @@ function Note.Draw()
 			end
 		end
 	end
+	
+	love.graphics.pop()
 end
 
 --! Function to draw the timing icon

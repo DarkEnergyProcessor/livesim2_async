@@ -56,7 +56,7 @@ function BeatmapSelect.Start(arg)
 	BeatmapSelect.MainNode:addChild(BackNavigation("Select Beatmap", ":main_menu"))
 	
 	-- Beatmap info
-	BeatmapSelect.Info = BeatmapInfo(arg.RandomWasTicked)
+	BeatmapSelect.Info = BeatmapInfo(arg.RandomWasTicked, NoteLoader)
 	BeatmapSelect.MainNode:addChild(BeatmapSelect.Info)
 	
 	-- Each node contain 8 buttons

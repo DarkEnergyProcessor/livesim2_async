@@ -35,6 +35,7 @@ local DEPLS = {
 	LiveShowCleared = Yohane.newFlashFromFilename("flash/live_clear.flsh"),
 	FullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh"),
 	
+	StoryboardErrorMsg = "",
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
 	Routines = {},			-- Table to store all DEPLS effect routines
 	
@@ -512,6 +513,25 @@ function DEPLS.StoryboardFunctions._SetColorRange(r)
 	DEPLS.DefaultColorMode = r
 end
 
+--! @brief Set post-processing shader
+--! @param shader New shader to be used as post-processing
+--! @returns Previous shader
+function DEPLS.StoryboardFunctions.SetPostProcessingShader(shader)
+	if type(shader) == nil or (type(shader) == "userdata" and shader:typeOf("Shader")) then
+		local sh = DEPLS.PostShader
+		DELS.PostShader = shader
+		return sh
+	else
+		error("bad argument #2 to 'SetPostProcessingShader' (Invalid shader)", 2)
+	end
+end
+
+--! @brief Get the screen dimensions
+--! @returns Screen dimensions
+function DEPLS.StoryboardFunctions.GetScreenDimensions()
+	return DEPLS.PostShader:getDimensions()
+end
+
 -----------------------------
 -- The Live simuator logic --
 -----------------------------
@@ -615,6 +635,9 @@ function DEPLS.Start(argv)
 	AquaShine.DisableSleep()
 	AquaShine.DisableTouchEffect()
 	EffectPlayer.Clear()
+	
+	-- Create canvas
+	DEPLS.Resize()
 	
 	-- Load tap sound. High priority
 	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008
@@ -742,7 +765,15 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load storyboard
-	DEPLS.StoryboardHandle = noteloader_data:GetStoryboard()
+	if not(argv.NoStoryboard) then
+		local s, msg = pcall(noteloader_data.GetStoryboard, noteloader_data)
+		
+		if s then
+			DEPLS.StoryboardHandle = msg
+		else
+			DEPLS.StoryboardErrorMsg = msg
+		end
+	end
 	
 	-- Load cover art
 	local noteloader_coverdata = noteloader_data:GetCoverArt()
@@ -764,8 +795,16 @@ function DEPLS.Start(argv)
 	-- Initialize storyboard
 	if DEPLS.StoryboardHandle then
 		AquaShine.Log("livesim2", "Storyboard init")
-		DEPLS.StoryboardHandle:Initialize(DEPLS.StoryboardFunctions)
-	else
+		local s, msg = pcall(DEPLS.StoryboardHandle.Initialize, DEPLS.StoryboardHandle, DEPLS.StoryboardFunctions)
+		
+		if not(s) then
+			DEPLS.StoryboardHandle = nil
+			DEPLS.StoryboardErrorMsg = msg
+			AquaShine.Log("livesim2", "Storyboard error: %s", msg)
+		end
+	end
+	
+	if not(DEPLS.StoryboardHandle) and not(argv.NoVideo) then
 		local video = noteloader_data:GetVideoBackground()
 		
 		if video then
@@ -898,6 +937,7 @@ function DEPLS.Start(argv)
 	
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
+	DEPLS.ErrorFont = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	
 	-- Set NoteLoader object
 	DEPLS.NoteLoaderObject = noteloader_data
@@ -913,6 +953,10 @@ local audiolasttime = 0
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Update(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
+	
+	if AquaShine.FFmpegExt then
+		AquaShine.FFmpegExt.Update(deltaT)
+	end
 	
 	if not(DEPLS.Routines.PauseScreen.IsPaused()) then
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime + deltaT
@@ -989,6 +1033,7 @@ end
 function DEPLS.Draw(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
 	-- Localize love functions
+	-- TODO: Remove localize
 	local graphics = love.graphics
 	local rectangle = graphics.rectangle
 	local draw = graphics.draw
@@ -996,12 +1041,10 @@ function DEPLS.Draw(deltaT)
 	local Images = DEPLS.Images
 	
 	local Routines = DEPLS.Routines
-	local ElapsedTime = DEPLS.ElapsedTime
-	local AllowedDraw = DEPLS.ElapsedTime > 0 
+	local AllowedDraw = DEPLS.ElapsedTime > 0
 	
-	if AquaShine.FFmpegExt then
-		AquaShine.FFmpegExt.Update(deltaT)
-	end
+	graphics.push("all")
+	graphics.setCanvas(DEPLS.MainCanvas)
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
@@ -1031,7 +1074,7 @@ function DEPLS.Draw(deltaT)
 		
 		for i = 1, 4 do
 			if BackgroundImage[i][1] then
-				draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+				graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
 			end
 		end
 	end
@@ -1043,6 +1086,14 @@ function DEPLS.Draw(deltaT)
 		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity)
 		rectangle("fill", -88, -43, 1136, 726)
 		setColor(1, 1, 1)
+	end
+	
+	if DEPLS.ElapsedTime < 0 then
+		love.graphics.setFont(DEPLS.ErrorFont)
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.print(DEPLS.StoryboardErrorMsg, 1, 601)
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.print(DEPLS.StoryboardErrorMsg, 0, 600)
 	end
 		
 	if AllowedDraw then
@@ -1105,6 +1156,14 @@ function DEPLS.Draw(deltaT)
 	if DEPLS.DebugDisplay then
 		DEPLS.DrawDebugInfo()
 	end
+	
+	graphics.pop()
+	graphics.push()
+	graphics.origin()
+	graphics.setShader(DEPLS.PostShader)
+	graphics.draw(DEPLS.MainCanvas)
+	graphics.setShader()
+	graphics.pop()
 end
 
 -- LOVE2D mouse/touch pressed
@@ -1246,6 +1305,10 @@ function DEPLS.KeyReleased(key)
 			end
 		end
 	end
+end
+
+function DEPLS.Resize(w, h)
+	DEPLS.MainCanvas = love.graphics.newCanvas()
 end
 
 function DEPLS.Exit()

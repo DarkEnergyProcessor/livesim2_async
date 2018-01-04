@@ -22,14 +22,13 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-if jit then
-	require("table.new")
-	require("table.clear")
-else
+if not(pcall(require, "table.new")) then
 	function table.new()
 		return {}
 	end
-	
+end
+
+if not(pcall(require, "table.clear")) then
 	function table.clear(a)
 		for n, v in pairs(a) do
 			a[n] = nil
@@ -354,7 +353,7 @@ end
 
 --! @brief Determines if runs under slow system (mobile devices)
 function AquaShine.IsSlowSystem()
-	return not(jit) or AquaShine.OperatingSystem == "Android" or AquaShine.OperatingSystem == "iOS"
+	return AquaShine.OperatingSystem == "Android" or AquaShine.OperatingSystem == "iOS"
 end
 
 --! @brief Disable screen sleep
@@ -580,7 +579,7 @@ end
 ------------------------------
 -- Other Internal Functions --
 ------------------------------
-local FileDroppedList = {}
+local FileDroppedList = table.new(50, 0)
 
 function AquaShine.StepLoop()
 	AquaShine.ExitStatus = nil
@@ -609,7 +608,6 @@ function AquaShine.StepLoop()
 		
 		love.handlers[name](a, b, c, d, e, f)
 	end
-	
 	table.clear(FileDroppedList)
 	
 	-- Update dt, as we'll be passing it to update
