@@ -17,6 +17,7 @@ return {
 		about = {0, "about_screen.lua"},
 		render = {3, "render_livesim.lua"},
 		noteloader = {1, "invoke_noteloader.lua"},
+		llpbeatmap = {1, "tollp.lua"},
 		unit_create = {0, "unit_create.lua"},
 	},
 	-- Default entry point to be used if there's none specificed in command-line

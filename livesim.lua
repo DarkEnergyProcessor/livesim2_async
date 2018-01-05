@@ -513,16 +513,27 @@ function DEPLS.StoryboardFunctions._SetColorRange(r)
 	DEPLS.DefaultColorMode = r
 end
 
---! @brief Set post-processing shader
---! @param shader New shader to be used as post-processing
---! @returns Previous shader
-function DEPLS.StoryboardFunctions.SetPostProcessingShader(shader)
-	if type(shader) == nil or (type(shader) == "userdata" and shader:typeOf("Shader")) then
-		local sh = DEPLS.PostShader
-		DELS.PostShader = shader
-		return sh
+--! @brief Set post-processing shaders
+--! @param ... New shaders to be used as post-processing
+--! @returns Previous shaders
+function DEPLS.StoryboardFunctions.SetPostProcessingShader(...)
+	local arg = {...}
+	local prev = DEPLS.PostShader
+	
+	if #arg == 0 then
+		DEPLS.PostShader = nil
+	else		
+		for i = 1, #arg do
+			assert(type(arg[i]) == "userdata" and arg[i]:typeOf("Shader"), "Invalid value passed")
+		end
+		
+		DEPLS.PostShader = arg
+	end
+	
+	if prev then
+		return unpack(prev)
 	else
-		error("bad argument #2 to 'SetPostProcessingShader' (Invalid shader)", 2)
+		return nil
 	end
 end
 
@@ -1158,12 +1169,28 @@ function DEPLS.Draw(deltaT)
 	end
 	
 	graphics.pop()
-	graphics.push()
-	graphics.origin()
-	graphics.setShader(DEPLS.PostShader)
-	graphics.draw(DEPLS.MainCanvas)
-	graphics.setShader()
-	graphics.pop()
+	return DEPLS.PostProcessingDraw()
+end
+
+-- Post-processing draw. Shaders can be chained here
+function DEPLS.PostProcessingDraw()
+	love.graphics.push()
+	love.graphics.origin()
+	
+	if DEPLS.PostShader then
+		for i = 1, #DEPLS.PostShader do
+			love.graphics.setCanvas(DEPLS.SecondaryCanvas)
+			love.graphics.clear()
+			love.graphics.setShader(DEPLS.PostShader[i])
+			love.graphics.draw(DEPLS.MainCanvas)
+			DEPLS.MainCanvas, DEPLS.SecondaryCanvas = DEPLS.SecondaryCanvas, DEPLS.MainCanvas
+		end
+		love.graphics.setShader()
+		love.graphics.setCanvas(AquaShine.MainCanvas)
+	end
+	
+	love.graphics.draw(DEPLS.MainCanvas)
+	love.graphics.pop()
 end
 
 -- LOVE2D mouse/touch pressed
@@ -1309,6 +1336,7 @@ end
 
 function DEPLS.Resize(w, h)
 	DEPLS.MainCanvas = love.graphics.newCanvas()
+	DEPLS.SecondaryCanvas = love.graphics.newCanvas()
 end
 
 function DEPLS.Exit()

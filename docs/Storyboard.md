@@ -390,6 +390,26 @@ Check whenever the notes is randomized.
 
 Returns: `false` if the notes is not randomized, `true` otherwise.
 
+*************************************************
+
+### `Shader ... SetPostProcessingShader(Shader ...)`
+
+Set post-processing shader chain
+
+Parameters:
+
+* `...` - New shaders to be used as post-processing (in order). Pass empty value to unset.
+
+Returns: Previous `Shader` objects (or `nil` if no shader is used)
+
+*************************************************
+
+### `number, number GetScreenDimensions()`
+
+Get the screen dimensions
+
+Returns: Screen dimensions (width and height)
+
 Storyboard Callback Functions
 =============================
 
