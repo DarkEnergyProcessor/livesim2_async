@@ -211,7 +211,21 @@ local function setup_env(story, lua)
 	env.collectgarbage = nil
 	env.getfenv = nil
 	env.require = function(libname)
-		return (assert(allowed_libs[libname], "require is limited in storyboard lua script"))
+		if allowed_libs[libname] then
+			return allowed_libs[libname]
+		elseif story.CacheRequire[libname] then
+			return story.CacheRequire[libname]
+		else
+			local luaname = libname:gsub("%.", "/")..".lua"
+			
+			if story.AdditionalData[luaname] then
+				local chunk = loadstring(story.AdditionalData[luaname], "@"..luaname)
+				setfenv(chunk, env)
+				story.CacheRequire[libname] = chunk(libname) or true
+			else
+				error("require is limited in storyboard lua script", 2)
+			end
+		end
 	end
 	env.print = function(...)
 		local a = {}
@@ -232,19 +246,14 @@ local function setup_env(story, lua)
 	setfenv(lua, env)
 	
 	-- Call state once
-	local luastate = coroutine.wrap(lua)
-	luastate()
+	lua()
 	AquaShine.Log("LuaStoryboard", "Lua script storyboard initialized")
 	
 	if env.Initialize then
 		env.Initialize()
 	end
 	
-	story.StoryboardLua = {
-		luastate,							-- The lua storyboard
-		env,								-- The global variables
-		env.Update or env.Initialize,		-- New DEPLS2 storyboard or usual DEPLS storyboard
-	}
+	story.StoryboardLua = env
 end
 
 local function storyboard_draw(this, deltaT)
@@ -255,12 +264,7 @@ local function storyboard_draw(this, deltaT)
 		love.graphics.setCanvas(this.Canvas)
 		love.graphics.clear()
 		
-		local status, msg
-		if this.StoryboardLua[3] then
-			status, msg = xpcall(this.StoryboardLua[2].Update, debug.traceback, deltaT)
-		else
-			status, msg = xpcall(this.StoryboardLua[1], debug.traceback, deltaT)
-		end
+		local status, msg = xpcall(this.StoryboardLua.Update, debug.traceback, deltaT)
 		
 		-- Rebalance push/pop
 		for i = 1, this.PushPopCount do
@@ -326,8 +330,8 @@ end
 local function storyboard_callback(this, name, ...)
 	local callback_name = "On"..name
 	
-	if this.StoryboardLua[3] and this.StoryboardLua[2][callback_name] then
-		local a, b = xpcall(this.StoryboardLua[2][callback_name], debug.traceback, ...)
+	if this.StoryboardLua[callback_name] then
+		local a, b = xpcall(this.StoryboardLua[callback_name], debug.traceback, ...)
 		
 		if a == false then
 			AquaShine.Log("LuaStoryboard", "Storyboard Error %s: %s", callback_name, b)
@@ -363,6 +367,7 @@ function LuaStoryboard.LoadString(str, dir, export)
 	story.Canvas = love.graphics.newCanvas(1136, 726)
 	story.Paused = false
 	story.PausedVideos = {}
+	story.CacheRequire = {}
 	
 	return story
 end

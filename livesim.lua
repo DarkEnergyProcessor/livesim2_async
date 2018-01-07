@@ -500,7 +500,9 @@ function DEPLS.StoryboardFunctions.SetYellowTimingDuration(dur)
 	return DEPLS.NoteManager.TimingYellow(dur)
 end
 
-DEPLS.StoryboardFunctions.IsLiveEnded = DEPLS.IsLiveEnded
+function DEPLS.StoryboardFunctions.IsLiveEnded()
+	return DEPLS.IsLiveEnded()
+end
 
 --! @brief Check whenever the notes is randomized
 --! @returns `false` if the notes is not randomized, `true` otherwise.
@@ -1053,9 +1055,10 @@ function DEPLS.Draw(deltaT)
 	
 	local Routines = DEPLS.Routines
 	local AllowedDraw = DEPLS.ElapsedTime > 0
+	local lastCanvas = love.graphics.getCanvas()
 	
-	graphics.push("all")
-	graphics.setCanvas(DEPLS.MainCanvas)
+	love.graphics.push("all")
+	love.graphics.setCanvas(DEPLS.MainCanvas)
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
@@ -1159,22 +1162,25 @@ function DEPLS.Draw(deltaT)
 			setColor(1, 1, 1, DEPLS.LiveOpacity)
 			draw(Images.Pause, 916, 5, 0, 0.6)
 		end
-		
-		-- Pause overlay
-		Routines.PauseScreen.Draw()
 	end
+	
+	-- Post-processing draw first so the pause overlay
+	-- and the debug display doesn't affected.
+	DEPLS.PostProcessingDraw(lastCanvas)
+	graphics.pop()
+	
+	-- Pause overlay
+	Routines.PauseScreen.Draw()
 	
 	if DEPLS.DebugDisplay then
 		DEPLS.DrawDebugInfo()
 	end
-	
-	graphics.pop()
-	return DEPLS.PostProcessingDraw()
 end
 
 -- Post-processing draw. Shaders can be chained here
-function DEPLS.PostProcessingDraw()
-	love.graphics.push()
+function DEPLS.PostProcessingDraw(curcanv)
+	love.graphics.push("all")
+	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.origin()
 	
 	if DEPLS.PostShader then
@@ -1186,9 +1192,9 @@ function DEPLS.PostProcessingDraw()
 			DEPLS.MainCanvas, DEPLS.SecondaryCanvas = DEPLS.SecondaryCanvas, DEPLS.MainCanvas
 		end
 		love.graphics.setShader()
-		love.graphics.setCanvas(AquaShine.MainCanvas)
 	end
 	
+	love.graphics.setCanvas(curcanv)
 	love.graphics.draw(DEPLS.MainCanvas)
 	love.graphics.pop()
 end

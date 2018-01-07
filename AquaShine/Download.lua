@@ -31,6 +31,7 @@ local chunk_handler = {
 	end,
 	["ERR "] = function(this, data)
 		this.downloading = false
+		DownloadList[this.channelin] = nil
 		this:err(data)
 		this.StatusCode = nil
 		this.ContentLength = nil

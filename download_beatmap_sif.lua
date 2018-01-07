@@ -78,7 +78,7 @@ function DLBeatmap.SetupList(beatmaplist)
 		
 		-- Create information data
 		local infodata = {}
-		trackidx.live[v.difficulty] = infodata
+		trackidx.live[v.difficulty_text] = infodata
 		
 		-- in C, B, A, S format
 		infodata.score = {}

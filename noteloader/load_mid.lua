@@ -113,7 +113,7 @@ local function midi2sif(stream)
 	event_list = {}
 	
 	for n, v in pairs(temp_event_list) do
-		for a, b in pairs(v) do
+		for a, b in ipairs(v) do
 			table.insert(event_list, {
 				tick = n,
 				order = a,
@@ -136,7 +136,7 @@ local function midi2sif(stream)
 	local bottom_index = 127
 	
 	-- Analyze start and end position. 
-	for n, v in pairs(event_list) do
+	for n, v in ipairs(event_list) do
 		if type(v.note) == "boolean" then
 			-- Note
 			top_index = math.max(top_index, v.pos)
@@ -159,11 +159,15 @@ local function midi2sif(stream)
 	-- Now start conversion.
 	local longnote_queue = {}
 	local sif_beatmap = {}
+	local last_timing_sec = 0
+	local last_tick = 0
 	
-	for n, v in pairs(event_list) do
+	for n, v in ipairs(event_list) do
 		if v.meta == 81 then
 			-- Tempo change
 			local tempo_num = {string.byte(v.data, 1, 128)}
+			last_timing_sec = v.tick * 60 / ppqn / tempo
+			last_tick = v.tick
 			tempo = 0
 			
 			for i = 1, #tempo_num do
@@ -171,6 +175,7 @@ local function midi2sif(stream)
 			end
 			
 			tempo = math.floor((60000000000 / tempo) + 0.5) / 1000
+			print("NewTempo", tempo)
 		elseif type(v.note) == "boolean" then
 			local position = v.pos - bottom_index + 1
 			local attribute = math.floor(v.channel / 4)
@@ -185,7 +190,7 @@ local function midi2sif(stream)
 						longnote_queue[position] = {v.tick, attribute, effect, position, v.vel}
 					else
 						sif_beatmap[#sif_beatmap + 1] = {
-							timing_sec = v.tick * 60 / ppqn / tempo,
+							timing_sec = (v.tick - last_tick) * 60 / ppqn / tempo + last_timing_sec,
 							notes_attribute = attribute,
 							notes_level = is_swing and v.vel + 1 or 1,
 							effect = effect + (is_swing and 10 or 0),
@@ -195,12 +200,16 @@ local function midi2sif(stream)
 					end
 				elseif v.note == false and effect == 3 then
 					-- Stop longnote queue
-					local queue = assert(longnote_queue[position], "queue for pos "..position.." is empty")
+					local queue = longnote_queue[position]
+					if not(queue) then
+						error("queue for pos "..position.." is empty")
+					end
+					
 					is_swing = queue[5] < 64
 					
 					longnote_queue[position] = nil
 					sif_beatmap[#sif_beatmap + 1] = {
-						timing_sec = queue[1] * 60 / ppqn / tempo,
+						timing_sec = (queue[1] - last_tick) * 60 / ppqn / tempo + last_timing_sec,
 						notes_attribute = attribute,
 						notes_level = is_swing and queue[5] + 1 or 1,
 						effect = is_swing and 13 or 3,
