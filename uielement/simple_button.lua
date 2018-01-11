@@ -17,6 +17,7 @@ function SimpleButton.init(this, image, image_se, action, scale)
 	this.userdata.disabled = false
 	this.scale = scale
 	this.imagewh = {image:getDimensions()}
+	this.userdata.tap = action
 	
 	AquaShine.Node.Util.InitializeInArea(this, this.imagewh[1] * scale, this.imagewh[2] * scale)
 	local pressed = AquaShine.Node.Util.InAreaFunction(this, function(x, y)
@@ -119,6 +120,11 @@ function SimpleButton.draw(this)
 	
 	if this.textshadow then this.textshadow:draw(this) end
 	return AquaShine.Node.draw(this)
+end
+
+function SimpleButton.press(this)
+	this.events.MousePressed(this, this.x, this.y, 1, nil)
+	this.events.MouseReleased(this, this.x, this.y, 1, nil)
 end
 
 return SimpleButton

@@ -785,6 +785,7 @@ function DEPLS.Start(argv)
 			DEPLS.StoryboardHandle = msg
 		else
 			DEPLS.StoryboardErrorMsg = msg
+			AquaShine.Log("livesim2", msg)
 		end
 	end
 	
@@ -1102,12 +1103,13 @@ function DEPLS.Draw(deltaT)
 		setColor(1, 1, 1)
 	end
 	
-	if DEPLS.ElapsedTime < 0 then
+	if DEPLS.ElapsedTime < 0 and #DEPLS.StoryboardErrorMsg > 0 then
+		local y = 638 - (select(2, DEPLS.StoryboardErrorMsg:gsub("\n", "")) + 1) * 14
 		love.graphics.setFont(DEPLS.ErrorFont)
 		love.graphics.setColor(0, 0, 0)
-		love.graphics.print(DEPLS.StoryboardErrorMsg, 1, 601)
+		love.graphics.print(DEPLS.StoryboardErrorMsg, 1, y + 1)
 		love.graphics.setColor(1, 1, 1)
-		love.graphics.print(DEPLS.StoryboardErrorMsg, 0, 600)
+		love.graphics.print(DEPLS.StoryboardErrorMsg, 0, y)
 	end
 		
 	if AllowedDraw then

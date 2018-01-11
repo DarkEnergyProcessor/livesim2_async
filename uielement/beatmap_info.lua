@@ -105,6 +105,10 @@ function BeatmapInfo.setBeatmapData(this, beatmap)
 	-- * cover - Beatmap cover which contains "image" field, optionally with "arrangement" field too. (optional)
 	-- * song - Beatmap song file (optional)
 	
+	
+	if this.userdata.beatmap and this.userdata.beatmap.song and this.userdata.beatmap.song:isPlaying() then
+		this.child[3]:press()
+	end
 	if beatmap then this.child[2]:enable() else this.child[2]:disable() end
 	
 	if beatmap.__name and beatmap.__name:find("NoteLoader.", 1, true) == 1 then

@@ -148,12 +148,14 @@ end
 
 -- Look at "Cards" folder for custom cards
 local function LoadUnitStrategy1(table, file)
-	if love.filesystem.isDirectory(file.."/Cards") then
+	local card_info = love.filesystem.getInfo(file.."/Cards")
+	if card_info and card_info.type == "directory" then
 		setmetatable(table, {
 			__index = function(_, var)
 				local name = file.."/Cards/"..var..".png"
+				local name_info = love.filesystem.getInfo(name)
 				
-				if love.filesystem.isFile(name) then
+				if name_info and name_info.type == "file" then
 					local x = love.graphics.newImage(name)
 					
 					table[var] = x
@@ -173,9 +175,11 @@ end
 -- Look at "Custom Cards" folder and read list.txt
 local function LoadUnitStrategy2(table, file)
 	local listname = file.."/Custom Cards/list.txt"
+	local listname_info = love.filesystem.getInfo(listname)
+	local custlist_info = love.filesystem.getInfo(file.."/Custom Cards")
 	if
-		love.filesystem.isDirectory(file.."/Custom Cards") and
-		love.filesystem.isFile(listname)
+		custlist_info and custlist_info.type == "directory" and
+		listname_info and listname_info.type == "file"
 	then
 		local f = assert(love.filesystem.newFile(listname, "r"))
 		for line in f:lines() do
@@ -406,8 +410,9 @@ function CBFBeatmap.GetCoverArt(this)
 	if not(this.cover_art_loaded) then
 		for _, v in ipairs(supported_image_fmts) do
 			local name = this.project_folder.."/cover"..v
+			local name_info = love.filesystem.getInfo(name)
 			
-			if love.filesystem.isFile(name) then
+			if name_info and name_info.type == "file" then
 				local cover = {}
 				
 				cover.title = this.cbf_conf.SONG_NAME
@@ -428,10 +433,11 @@ end
 function CBFBeatmap.GetCustomUnitInformation(this)
 	if not(this.unit_loaded) then
 		local charpos = this.project_folder.."/characterPositions.txt"
+		local charpos_info = love.filesystem.getInfo(charpos)
 		local units = {}
 		this.custom_unit = units
 		
-		if love.filesystem.isFile(charpos) then
+		if charpos_info and charpos_info.type == "file" then
 			local composition_cache = {}
 			local cunitloc = LoadUnitStrategy0()
 			local f = assert(love.filesystem.newFile(charpos, "r"))
@@ -458,11 +464,13 @@ function CBFBeatmap.GetCustomUnitInformation(this)
 					
 					local name = this.project_folder.."/"..var..".png"
 					local name2 = "unit_icon/"..var..".png"
+					local name_info = love.filesystem.getInfo(name)
+					local name2_info = love.filesystem.getInfo(name2)
 					local x = nil
 					
-					if love.filesystem.isFile(name) then
+					if name_info and name_info.type == "file" then
 						x = love.graphics.newImage(name)
-					elseif love.filesystem.isFile(name2) then
+					elseif name2_info and name2_info.type == "file" then
 						x = love.graphics.newImage(name2)
 					end
 					
@@ -505,8 +513,9 @@ function CBFBeatmap.GetCustomBackground(this)
 	if not(this.bg_loaded) then
 		for _, v in ipairs(supported_image_fmts) do
 			local name = this.project_folder.."/background"..v
+			local name_info = love.filesystem.getInfo(name)
 			
-			if love.filesystem.isFile(name) then
+			if name_info and name_info.type == "file" then
 				local bg = {}
 				local img = love.graphics.newImage(name)
 				local w, h = img:getDimensions()
@@ -574,8 +583,9 @@ function CBFBeatmap.GetVideoBackground(this)
 	if not(this.video_loaded) then
 		for _, v in ipairs(supported_video_fmts) do
 			local name = this.project_folder.."/video_background"..v
+			local name_info = love.filesystem.getInfo(name)
 			
-			if love.filesystem.isFile(name) then
+			if name_info and name_info.type == "file" then
 				local message
 				this.video, message = AquaShine.LoadVideo(name)
 				
@@ -604,8 +614,9 @@ function CBFBeatmap.GetBeatmapAudio(this)
 	if not(this.audio_loaded) then
 		for _, v in ipairs(supported_audio_fmts) do
 			local name = this.project_folder.."/songFile"..v
+			local name_info = love.filesystem.getInfo(name)
 			
-			if love.filesystem.isFile(name) then
+			if name_info and name_info.type == "file" then
 				this.audio = love.sound.newSoundData(name)
 				break
 			end

@@ -2,7 +2,7 @@
 
 if love and love._version >= "0.11.0" then
 	return function(str)
-		return love.data.encode("hex", love.data.hash("md5", str))
+		return love.data.encode("string", "hex", love.data.hash("md5", str))
 	end
 end
 

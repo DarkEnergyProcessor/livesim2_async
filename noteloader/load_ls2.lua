@@ -190,7 +190,7 @@ function LS2Beatmap.GetStoryboard(this)
 		
 		-- Attempt to decompress storyboard script
 		do
-			local status, new_story = pcall(love.data.decompress, "zlib", story_data)
+			local status, new_story = pcall(love.data.decompress, "string", "zlib", story_data)
 			
 			if status then
 				story_data = new_story

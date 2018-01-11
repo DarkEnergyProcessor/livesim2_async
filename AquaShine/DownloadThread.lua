@@ -5,7 +5,7 @@
 local cin = ...
 local socket = require("socket")
 local http = require("socket.http")
-http.TIMEOUT = 120
+http.TIMEOUT = 60
 
 -- AquaShine download event
 local le = require("love.event")
@@ -38,28 +38,12 @@ local function get_http(url, force)
 	local dest, uri = assert(url:match("http://([^/]+)(/?.*)"))
 	local host, port = dest:match("([^:]+):?(%d*)")
 	port = #port > 0 and port or "80"
-	local fulldest = host..":"..port
-	if not(force) and lasthttp and lasturl == fulldest and lasthttp.c:getsockname() then
-		-- Keep-alive
-		h = lasthttp
-	else
-		-- New connection
-		if lasthttp then
-			lasthttp:close()
-		end
-		
-		print("pre-http open")
-		h = http.open(host, assert(tonumber(port)))
-		print("post-http open")
-	end
-	lasthttp = nil
-	lasturl = fulldest
+	h = http.open(host, assert(tonumber(port)))
 	
 	return h, #uri == 0 and "/" or uri, dest
 end
 
 local function send_http(h, str)
-	print(str)
 	return h.c:send(str)
 end
 
@@ -71,8 +55,7 @@ local request_http = socket.protect(function(url, headers)
 	-- Adjust
 	local basic_header = {
 		["host"] = dest,
-		["connection"] = "keep-alive",
-		["keep-alive"] = "timeout=60",
+		["connection"] = "close",
 		["user-agent"] = "AquaShine.Download "..socket._VERSION
 	}
 	print("header base", basic_header, headers)
@@ -93,14 +76,8 @@ local request_http = socket.protect(function(url, headers)
 		local reqline = string.format("GET %s HTTP/1.1\r\n", uri)
 		
 		print("pre-send req")
-		if not(send_http(h, reqline)) then
-			-- Looks like closed. Re-create
-			h = get_http(url, true)
-			send_http(h, reqline)
-			print("2nd send req")
-		else
-			print("1st send req")
-		end
+		send_http(h, reqline)
+		print("1st send req")
 	end
 	print("pre-send header")
 	do
@@ -139,15 +116,8 @@ local request_http = socket.protect(function(url, headers)
 	push_event("HEDR", headers)
 	
 	h:receivebody(headers, custom_sink)
+	h:close()
 	push_event("DONE", 0)
-	
-	
-	if headers.connection and headers.connection == "keep-alive" then
-		lasthttp = h
-	else
-		h:close()
-		lasthttp = nil
-	end
 end)
 
 local command = cin:demand()

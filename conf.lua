@@ -83,7 +83,7 @@ function love.conf(t)
 	t.window.resizable      = conf.LOVE.Resizable
 	t.window.minwidth       = conf.LOVE.MinWidth
 	t.window.minheight      = conf.LOVE.MinHeight
-	t.window.fullscreen     = gcfgb("fullscreen")
+	t.window.fullscreen     = love._os == "iOS" or gcfgb("fullscreen")
 	t.window.fullscreentype = "desktop"
 	t.window.vsync          = vsync(not(gcfgb("novsync")))
 	t.window.msaa           = gcfgn("msaa", 0)

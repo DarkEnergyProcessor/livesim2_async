@@ -33,10 +33,12 @@ function BeatmapSelButton.draw(this)
 	love.graphics.draw(this[this.userdata.targetimage] or this.image, this.x, this.y, 0, this.scale)
 	love.graphics.setColor(1, 1, 1)
 	love.graphics.setFont(this.namefont)
+	AquaShine.SetScissor(this.x, this.y, 324, 60)
 	love.graphics.print(this.userdata.name, this.x + 16, this.y + 10)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.setFont(this.typefont)
 	love.graphics.print(this.userdata.type, this.x + 8, this.y + 40)
+	AquaShine.SetScissor()
 	
 	return AquaShine.Node.draw(this)
 end

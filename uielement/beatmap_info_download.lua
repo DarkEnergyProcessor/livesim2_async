@@ -9,7 +9,7 @@ local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local CoverArtLoading = AquaShine.LoadModule("external.cover_art_loading")
 
-function BeatmapInfoDL.init(this, random_tick, NoteLoader)
+function BeatmapInfoDL.init(this, beatmap_data, NoteLoader)
 	AquaShine.Node.init(this)
 	this.infofont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	this.arrangementfont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
