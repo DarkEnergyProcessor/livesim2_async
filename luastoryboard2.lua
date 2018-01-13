@@ -8,33 +8,12 @@ local love = love
 local StoryboardBase = require("storyboard_base")
 local LuaStoryboard = {}
 
--- Used to isolate function and returns table of all created global variable
-local function isolate_globals(func)
-	local env = {}
-	local created_vars = {}
-	
-	for n, v in pairs(_G) do
-		env[n] = v
-	end
-	
-	setmetatable(env, {
-		__newindex = function(a, b, c)
-			created_vars[b] = c
-			rawset(a, b, c)
-		end
-	})
-	setfenv(func, env)
-	func()
-	
-	return created_vars
-end
-
 -- List of whitelisted libraries for storyboard
 local allowed_libs = {
 	JSON = require("JSON"),
 	tween = require("tween"),
 	EffectPlayer = require("effect_player"),
-	luafft = isolate_globals(love.filesystem.load("luafft.lua")),
+	luafft = require("luafft"),
 	string = string,
 	table = table,
 	math = math,

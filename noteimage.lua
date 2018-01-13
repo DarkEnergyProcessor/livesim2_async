@@ -8,8 +8,9 @@ local DEPLS, AquaShine = ...
 local NoteImageLoader = {}
 
 local function make_cache_table(link)
-	return setmetatable({}, {__index = function(_, var)
-		return AquaShine.LoadImage(link[var])
+	return setmetatable({}, {__index = function(a, var)
+		a[var] = AquaShine.LoadImage(link[var])
+		return a[var]
 	end})
 end
 
