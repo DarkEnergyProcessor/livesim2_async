@@ -137,16 +137,10 @@ function BeatmapInfoDL.draw(this)
 		love.graphics.printf(this.userdata.beatmap.type, 600, 330, 316)
 		
 		--[[
-		if this.userdata.beatmap.cover then
-			local w, h = this.userdata.beatmap.cover.image:getDimensions()
+		if this.userdata.cover_art then
+			local w, h = this.userdata.cover_art:getDimensions()
 			love.graphics.setColor(1, 1, 1)
-			love.graphics.draw(this.userdata.beatmap.cover.image, 440, 130, 0, 160 / w, 160 / h)
-			
-			if this.userdata.beatmap.cover.arrangement then
-				love.graphics.setColor(0, 0, 0)
-				love.graphics.setFont(this.arrangementfont)
-				love.graphics.printf(this.userdata.beatmap.cover.arrangement, 440, 296, 476)
-			end
+			love.graphics.draw(this.userdata.cover_art, 440, 130, 0, 160 / w, 160 / h)
 		end
 		]]
 	end
@@ -154,4 +148,8 @@ function BeatmapInfoDL.draw(this)
 	return AquaShine.Node.draw(this)
 end
 
-return BeatmapInfo
+function BeatmapInfoDL.setLiveIconImage(this, img)
+	return this.child[3]:setImage(img)
+end
+
+return BeatmapInfoDL
