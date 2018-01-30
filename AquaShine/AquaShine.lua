@@ -608,7 +608,11 @@ function AquaShine.StepLoop()
 		
 		love.handlers[name](a, b, c, d, e, f)
 	end
-	table.clear(FileDroppedList)
+	
+	if #FileDroppedList > 0 then
+		love.filedropped(FileDroppedList)
+		table.clear(FileDroppedList)
+	end
 	
 	-- Update dt, as we'll be passing it to update
 	local dt = love.timer.step()

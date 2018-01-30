@@ -93,7 +93,7 @@ end
 
 function AboutScreen.KeyReleased(key, scancode)
 	if key == "escape" then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	end
 end
 
