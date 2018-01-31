@@ -119,4 +119,11 @@ function MainMenu.MouseReleased(x, y, b, t)
 	return MainMenu.Background:triggerEvent("MouseReleased", x, y, b, t)
 end
 
+MainMenu.Buttons = {"Yes", "No"}
+function MainMenu.KeyReleased(key)
+	if key == "escape" and love.window.showMessageBox("Quit", "Quit Live Simulator: 2?", MainMenu.Buttons, "warning") == 1 then
+		love.event.quit()
+	end
+end
+
 return MainMenu

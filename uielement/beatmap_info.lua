@@ -134,6 +134,7 @@ function BeatmapInfo.setBeatmapData(this, beatmap)
 		end
 		
 		-- Difficulty information
+		--[[
 		local din = beatmap:GetStarDifficultyInfo()
 		if din > 0 then
 			local dir = beatmap:GetStarDifficultyInfo(true)
@@ -144,6 +145,8 @@ function BeatmapInfo.setBeatmapData(this, beatmap)
 				mapdata.difficulty = string.format("%d\226\152\134", din)
 			end
 		end
+		]]
+		mapdata.difficulty = beatmap:GetDifficultyString()
 		
 		-- Song file
 		local sounddata = beatmap:GetBeatmapAudio()

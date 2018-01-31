@@ -9,7 +9,7 @@ local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local CoverArtLoading = AquaShine.LoadModule("external.cover_art_loading")
 
-function BeatmapInfoDL.init(this, beatmap_data, NoteLoader)
+function BeatmapInfoDL.init(this, track_data, NoteLoader)
 	AquaShine.Node.init(this)
 	this.infofont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	this.arrangementfont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
@@ -31,86 +31,12 @@ function BeatmapInfoDL.init(this, beatmap_data, NoteLoader)
 		:disable()
 	this.child[3] = CoverArtLoading()
 		:setPosition(440, 130)
-	
+	this.trackdata = track_data
 end
 
-function BeatmapInfoDL.setBeatmapData(this, beatmap)
-	local mapdata = {}
-	-- At least, mapdata must contain these fields:
-	-- * data - The beatmap data, if it's NoteLoaderNoteObject (optional)
-	-- * name - Beatmap name
-	-- * score_info - String-formatted score info (optional)
-	-- * combo_info - String-formatted combo info (optional)
-	-- * type - Beatmap format type
-	-- * difficulty - Beatmap difficulty string (optional)
-	-- * cover - Beatmap cover which contains "image" field, optionally with "arrangement" field too. (optional)
-	-- * song - Beatmap song file (optional)
-	
-	if beatmap then this.child[2]:enable() else this.child[2]:disable() end
-	
-	if beatmap.__name and beatmap.__name:find("NoteLoader.", 1, true) == 1 then
-		-- We received beatmap of type NoteLoader object
-		mapdata.data = beatmap
-		
-		-- Beatmap name
-		mapdata.name = beatmap:GetName()
-		
-		-- Beatmap type
-		mapdata.type = beatmap:GetBeatmapTypename()
-		
-		-- Score information
-		local si = beatmap:GetScoreInformation()
-		if si then
-			mapdata.score_info = string.format("%d\n%d\n%d\n%d", si[4], si[3], si[2], si[1])
-		end
-		
-		-- Combo information
-		local ci = beatmap:GetComboInformation()
-		if ci then
-			mapdata.combo_info = string.format("%d\n%d\n%d\n%d", ci[4], ci[3], ci[2], ci[1])
-		end
-		
-		-- Difficulty information
-		local din = beatmap:GetStarDifficultyInfo()
-		if din > 0 then
-			local dir = beatmap:GetStarDifficultyInfo(true)
-			
-			if dir ~= din then
-				mapdata.difficulty = string.format("%d\226\152\134 (Random %d\226\152\134)", din, dir)
-			else
-				mapdata.difficulty = string.format("%d\226\152\134", din)
-			end
-		end
-		
-		-- Song file
-		local sounddata = beatmap:GetBeatmapAudio()
-		if sounddata then
-			mapdata.song = love.audio.newSource(sounddata)
-			this.child[3]:enable()
-		end
-		
-		-- Cover art
-		mapdata.cover = beatmap:GetCoverArt()
-	else
-		-- Well, it's in NCache format
-		mapdata.filename = beatmap.filename
-		mapdata.name = beatmap.name
-		mapdata.type = beatmap.type
-		mapdata.difficulty = beatmap.difficulty
-		
-		-- Score information
-		local si = beatmap.score_data
-		mapdata.score_info = string.format("%d\n%d\n%d\n%d", si[4], si[3], si[2], si[1])
-		
-		-- Combo information
-		local ci = beatmap.combo_data
-		mapdata.combo_info = string.format("%d\n%d\n%d\n%d", ci[4], ci[3], ci[2], ci[1])
-		
-		-- Cover art
-		mapdata.cover = beatmap.cover_art
-	end
-	
-	this.userdata.beatmap = mapdata
+function BeatmapInfoDL.setBeatmapIndex(this, index)
+	-- index is difficulty name
+	this.beatmapidx = index
 end
 
 function BeatmapInfoDL.draw(this)
@@ -126,15 +52,15 @@ function BeatmapInfoDL.draw(this)
 	love.graphics.print("Difficulty:", 440, 380)
 	
 	if this.userdata.beatmap then
-		local name = this.userdata.beatmap.name
-		local si = this.userdata.beatmap.score_info or "-\n-\n-\n-"
-		local ci = this.userdata.beatmap.combo_info or "-\n-\n-\n-"
-		local din = this.userdata.beatmap.difficulty or "Unknown"
+		local name = this.trackdata.name
+		local si = this.score_info or "-\n-\n-\n-"
+		local ci = this.combo_info or "-\n-\n-\n-"
+		local din = this.difficulty or "Unknown"
 		
 		love.graphics.print(si, 620, 152)
 		love.graphics.print(ci, 800, 152)
 		love.graphics.print(din, 600, 380)
-		love.graphics.printf(this.userdata.beatmap.type, 600, 330, 316)
+		--love.graphics.printf(this.userdata.beatmap.type, 600, 330, 316)
 		
 		--[[
 		if this.userdata.cover_art then

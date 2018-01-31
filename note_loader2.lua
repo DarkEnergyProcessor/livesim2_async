@@ -79,7 +79,13 @@ public:
 	/// \returns Star difficulty information, or 0 if not available
 	virtual int GetStarDifficultyInfo(bool random);
 	
+	/// \brief Get difficulty information as string.
+	/// \returns Difficulty information as string, or NULL if no difficulty information is available.
+	virtual const char* GetDifficultyString();
+	
+	/// \deprecated Removed soon
 	virtual void ReleaseBeatmapAudio();
+	/// \deprecated Removed soon
 	virtual void Release();
 };
 ]]
@@ -255,6 +261,24 @@ end
 
 function NoteLoaderNoteObject.HasStoryboard()
 	return false
+end
+
+function NoteLoaderNoteObject.GetDifficultyString(this)
+	if not(this.difficulty_str_load) then
+		this.difficulty_str_load = true
+		local din = this:GetStarDifficultyInfo()
+		if din > 0 then
+			local dir = this:GetStarDifficultyInfo(true)
+			
+			if dir ~= din then
+				this.difficulty_str = string.format("%d\226\152\134 (Random %d\226\152\134)", din, dir)
+			else
+				this.difficulty_str = string.format("%d\226\152\134", din)
+			end
+		end
+	end
+	
+	return this.difficulty_str
 end
 
 NoteLoaderNoteObject.GetStarDifficultyInfo = zeroret

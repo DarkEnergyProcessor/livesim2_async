@@ -183,4 +183,6 @@ end
 
 function DLBeatmap.Start(arg)
 	DLBeatmap.TrackData = arg[1][arg[2]]
+	DLBeatmap.MainNode = BackgroundImage(13)
+	DLBeatmap.InfoDL = BeatmapInfoDL(DLBeatmap.TrackData)
 end

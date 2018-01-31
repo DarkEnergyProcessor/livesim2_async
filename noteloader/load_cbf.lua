@@ -607,6 +607,10 @@ function CBFBeatmap.GetNotesStyle(this)
 	return this.cbf_conf.PROJECT_NOTE_SPRITES and (this.cbf_conf.PROJECT_NOTE_SPRITES + 1) or 0
 end
 
+function CBFBeatmap.GetDifficultyString(this)
+	return this.cbf_conf.DIFFICULTY_TEMPLATE
+end
+
 -- In CBF, only  WAV and OGG were supported
 -- But actually Live Simulator: 2 also supports MP3
 local supported_audio_fmts = {".wav", ".ogg"}

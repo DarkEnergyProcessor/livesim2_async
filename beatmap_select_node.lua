@@ -219,4 +219,14 @@ function BeatmapSelect.MouseReleased(x, y, b, t)
 	end
 end
 
+function BeatmapSelect.KeyReleased(key)
+	if key == "escape" then
+		AquaShine.LoadEntryPoint(":main_menu")
+	elseif key == "left" then
+		BeatmapSelect.MovePage(-1)
+	elseif key == "right" then
+		BeatmapSelect.MovePage(1)
+	end
+end
+
 return BeatmapSelect
