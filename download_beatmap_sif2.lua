@@ -166,7 +166,7 @@ function DLBeatmap.GetHashedName(path)
 		local sel = chr >= 16 and keyhash or filehash
 		chr = (chr % 16) + 1
 		strb[#strb + 1] = sel:sub(2 * chr - 1, 2 * chr)
-		seed = (1103515245 * seed + 12345) % 2147483648
+		seed = (214013 * seed + 2531011) % 2147483648
 	end
 	
 	strb[#strb + 1] = path
@@ -179,6 +179,10 @@ end
 
 function DLBeatmap.GetLiveIconPath(track_data)
 	return "live_icon/"..DLBeatmap.GetHashedName(AquaShine.Basename(track_data.icon))
+end
+
+function DLBeatmap.SetStatus(msg)
+	return DLBeatmap.InfoDL:setStatus(msg)
 end
 
 function DLBeatmap.Start(arg)

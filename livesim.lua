@@ -1319,7 +1319,6 @@ function DEPLS.KeyReleased(key)
 	elseif key == "backspace" then
 		-- Restart
 		AquaShine.LoadEntryPoint("livesim.lua", DEPLS.Arg)
-		DEPLS.NoteLoaderObjectNoRelease = true
 	elseif key == "lshift" then
 		DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
 	elseif key == "lctrl" then
@@ -1356,12 +1355,6 @@ function DEPLS.Exit()
 	-- Cleanup storyboard
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Cleanup()
-	end
-	
-	-- Cleanup note object if necessary
-	if not(DEPLS.NoteLoaderObjectNoRelease) then
-		DEPLS.NoteLoaderObject:ReleaseBeatmapAudio()
-		DEPLS.NoteLoaderObject:Release()
 	end
 	
 	if DEPLS.VideoBackgroundData then

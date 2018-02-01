@@ -632,8 +632,4 @@ function CBFBeatmap.GetBeatmapAudio(this)
 	return this.audio
 end
 
-function CBFBeatmap.ReleaseBeatmapAudio(this)
-	this.audio_loaded, this.audio = false, nil
-end
-
 return CBFLoader

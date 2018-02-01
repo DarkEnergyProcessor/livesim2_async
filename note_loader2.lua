@@ -295,8 +295,6 @@ NoteLoaderNoteObject.GetCustomBackground = nilret
 NoteLoaderNoteObject.GetVideoBackground = nilret
 NoteLoaderNoteObject.GetBeatmapAudio = nilret
 NoteLoaderNoteObject.GetLiveClearSound = nilret
-NoteLoaderNoteObject.ReleaseBeatmapAudio = nilret
-NoteLoaderNoteObject.Release = nilret
 
 ----------------
 -- Initialize --

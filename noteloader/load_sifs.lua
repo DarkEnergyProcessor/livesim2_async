@@ -143,8 +143,4 @@ function SIFSBeatmap.GetStarDifficultyInfo(this)
 	return this.difficulty
 end
 
-function SIFSBeatmap.ReleaseBeatmapAudio(this)
-	this.audio_loaded, this.audio = false, nil
-end
-
 return SIFSLoader

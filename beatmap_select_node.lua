@@ -149,8 +149,6 @@ function BeatmapSelect.FileDropped(list)
 				local test = NoteLoader.NoteLoader(output)
 				
 				if test then
-					test:ReleaseBeatmapAudio()
-					test:Release()
 					assert(os.rename(BeatmapSelect.SaveDir..output, BeatmapSelect.SaveDir.."beatmap/"..AquaShine.Basename(v:getFilename())))
 					hasInstalled = true
 				end
@@ -180,6 +178,7 @@ function BeatmapSelect.MovePage(inc)
 end
 
 function BeatmapSelect.Update(deltaT)
+	return BeatmapSelect.MainNode:update(deltaT)
 end
 
 function BeatmapSelect.Draw()

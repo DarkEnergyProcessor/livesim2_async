@@ -101,7 +101,9 @@ function MainMenu.Start(arg)
 	end
 end
 
-function MainMenu.Update() end
+function MainMenu.Update(deltaT)
+	return MainMenu.Background:update(deltaT)
+end
 
 function MainMenu.Draw()
 	return MainMenu.Background:draw()

@@ -284,9 +284,4 @@ function DEPLSBeatmap.GetStarDifficultyInfo(this)
 	return this.note_object:GetStarDifficultyInfo()
 end
 
-function DEPLSBeatmap.ReleaseBeatmapAudio(this)
-	this.audio_loaded, this.audio = false, nil
-	return this.note_object:ReleaseBeatmapAudio()
-end
-
 return DEPLSLoader

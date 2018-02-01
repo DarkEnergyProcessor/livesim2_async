@@ -310,12 +310,4 @@ function LS2Beatmap.GetStarDifficultyInfo(this, rand)
 	return rand and metadata.random_star or metadata.star or 0
 end
 
-function LS2Beatmap.ReleaseBeatmapAudio(this)
-	this.audio_loaded, this.audio = false, nil
-end
-
-function LS2Beatmap.Release(this)
-	this.file:close()
-end
-
 return LS2Loader

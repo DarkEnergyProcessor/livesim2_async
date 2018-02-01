@@ -14,6 +14,7 @@ function BeatmapInfoDL.init(this, track_data, NoteLoader)
 	this.infofont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	this.arrangementfont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
 	this.layoutimage = AquaShine.LoadImage("assets/image/ui/com_win_40.png")
+	this.status = ""
 	
 	-- Title text
 	this.child[1] = TextShadow(AquaShine.LoadFont("MTLmr3m.ttf", 30), "", 64, 560)
@@ -37,6 +38,12 @@ end
 function BeatmapInfoDL.setBeatmapIndex(this, index)
 	-- index is difficulty name
 	this.beatmapidx = index
+	local ci = this.trackdata.live[index].combo
+	local si = this.trackdata.live[index].score
+	
+	this.score_info = string.format("%d\n%d\n%d\n%d", si[4], si[3], si[2], si[1])
+	this.combo_info = string.format("%d\n%d\n%d\n%d", ci[4], ci[3], ci[2], ci[1])
+	this.difficulty = string.format("%d\226\152\134", this.trackdata.live[index].star)
 end
 
 function BeatmapInfoDL.draw(this)
@@ -45,6 +52,7 @@ function BeatmapInfoDL.draw(this)
 	love.graphics.rectangle("fill", 440, 130, 160, 160)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.setFont(this.infofont)
+	love.graphics.print(this.status, 440, 576)
 	love.graphics.print("Score", 620, 132)
 	love.graphics.print("Combo", 800, 132)
 	love.graphics.print("S\nA\nB\nC", 604, 152)
@@ -76,6 +84,10 @@ end
 
 function BeatmapInfoDL.setLiveIconImage(this, img)
 	return this.child[3]:setImage(img)
+end
+
+function BeatmapInfoDL.setStatus(this, text)
+	this.status = assert(type(text) == "string" and text, "bad argument #1 to 'setStatus' (string expected)")
 end
 
 return BeatmapInfoDL

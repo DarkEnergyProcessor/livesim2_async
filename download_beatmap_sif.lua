@@ -51,52 +51,55 @@ function DLBeatmap.SetupList(beatmaplist)
 	local live_track = {}
 	
 	for i, v in ipairs(beatmaplist) do
-		local trackidx
-		-- Find the live track
-		for i = 1, #live_track do
-			if live_track[i].track == v.live_track_id then
-				trackidx = live_track[i]
-				break
+		-- Ignore it if it's TECHNICAL difficulty
+		if v.difficulty_text ~= "TECHNICAL" then
+			local trackidx
+			-- Find the live track
+			for i = 1, #live_track do
+				if live_track[i].track == v.live_track_id then
+					trackidx = live_track[i]
+					break
+				end
 			end
-		end
-		
-		if not(trackidx) then
-			trackidx = {}
-			live_track[#live_track + 1] = trackidx
 			
-			trackidx.track = v.live_track_id
-			trackidx.name = v.name_translations and v.name_translations.english or v.name
-			trackidx.name = #trackidx.name > 0 and trackidx.name or v.name
-			trackidx.song = v.sound_asset
-			trackidx.icon = v.title_asset
-			trackidx.live = {}
-			if trackidx.name:find("* ", 1, true) == 1 then
-				-- Unofficial romaji, but we don't care ¯\_(ツ)_/¯
-				trackidx.name = trackidx.name:sub(3)
+			if not(trackidx) then
+				trackidx = {}
+				live_track[#live_track + 1] = trackidx
+				
+				trackidx.track = v.live_track_id
+				trackidx.name = v.name_translations and v.name_translations.english or v.name
+				trackidx.name = #trackidx.name > 0 and trackidx.name or v.name
+				trackidx.song = v.sound_asset
+				trackidx.icon = v.title_asset
+				trackidx.live = {}
+				if trackidx.name:find("* ", 1, true) == 1 then
+					-- Unofficial romaji, but we don't care ¯\_(ツ)_/¯
+					trackidx.name = trackidx.name:sub(3)
+				end
 			end
+			
+			-- Create information data
+			local infodata = {}
+			trackidx.live[v.difficulty_text] = infodata
+			
+			-- in C, B, A, S format
+			infodata.score = {}
+			infodata.score[1], infodata.score[2] = v.c_rank_score, v.b_rank_score
+			infodata.score[3], infodata.score[4] = v.a_rank_score, v.s_rank_score
+			infodata.combo = {}
+			infodata.combo[1], infodata.combo[2] = v.c_rank_combo, v.b_rank_combo
+			infodata.combo[3], infodata.combo[4] = v.a_rank_combo, v.s_rank_combo
+			
+			-- Background
+			infodata.background = math.min(v.stage_level, 12)
+			infodata.star = v.stage_level
+			if v.member_category == 2 and v.stage_level < 4 then
+				infodata.background = 12 + v.stage_level
+			end
+			
+			-- Livejson info
+			infodata.livejson = "livejson/"..v.notes_setting_asset
 		end
-		
-		-- Create information data
-		local infodata = {}
-		trackidx.live[v.difficulty_text] = infodata
-		
-		-- in C, B, A, S format
-		infodata.score = {}
-		infodata.score[1], infodata.score[2] = v.c_rank_score, v.b_rank_score
-		infodata.score[3], infodata.score[4] = v.a_rank_score, v.s_rank_score
-		infodata.combo = {}
-		infodata.combo[1], infodata.combo[2] = v.c_rank_combo, v.b_rank_combo
-		infodata.combo[3], infodata.combo[4] = v.a_rank_combo, v.s_rank_combo
-		
-		-- Background
-		infodata.background = math.min(v.stage_level, 12)
-		infodata.star = v.stage_level
-		if v.member_category == 2 and v.stage_level < 4 then
-			infodata.background = 12 + v.stage_level
-		end
-		
-		-- Livejson info
-		infodata.livejson = "livejson/"..v.notes_setting_asset
 	end
 	
 	DLBeatmap.BeatmapListRaw = live_track
