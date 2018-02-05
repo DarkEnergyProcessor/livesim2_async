@@ -24,7 +24,7 @@ function BeatmapInfoDL.init(this, track_data, NoteLoader)
 		AquaShine.LoadImage("assets/image/ui/com_button_14.png"),
 		AquaShine.LoadImage("assets/image/ui/com_button_14se.png"),
 		function()
-			-- TODO
+			this.okButtonCallback()
 		end
 	)
 		:setPosition(768, 529)
@@ -88,6 +88,16 @@ end
 
 function BeatmapInfoDL.setStatus(this, text)
 	this.status = assert(type(text) == "string" and text, "bad argument #1 to 'setStatus' (string expected)")
+end
+
+function BeatmapInfoDL.setOkButtonCallback(this, cb)
+	this.okButtonCallback = cb
+	
+	if not(cb) then
+		this.child[2]:disable()
+	else
+		this.child[2]:enable()
+	end
 end
 
 return BeatmapInfoDL

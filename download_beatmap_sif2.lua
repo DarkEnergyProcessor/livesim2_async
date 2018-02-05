@@ -34,47 +34,41 @@ DLBeatmap.DLArt = {
 	Done = function(this, msg)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
-			DLBeatmap.DLArt.Start()
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLArt.Start)
 		else
-			DLBeatmap.CoverArt = love.filesystem.newFileData(table.concat(DLBeatmap.DLArt.Response), "")
-			DLBeatmap.CoverArtDraw = love.graphics.newImage(DLBeatmap.CoverArt)
+			local coverArt = love.filesystem.newFileData(table.concat(DLBeatmap.DLArt.Response), "")
+			DLBeatmap.CoverArtDraw = love.graphics.newImage(coverArt)
 			DLBeatmap.DLArt.Response = {}
 			DLBeatmap.DLArt.RespLen = 0
 			DLBeatmap.SetStatus("Ready...")
-			AquaShine.CacheTable[DLBeatmap.TrackData.icon] = DLBeatmap.CoverArt
-			love.filesystem.write(DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData), DLBeatmap.CoverArt)
-			--[[
-			DLBeatmap.CoverArtLoading:setImage(DLBeatmap.CoverArtDraw)
-			DLBeatmap.DLButton:enable()
-			DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
-			]]
+			AquaShine.CacheTable[DLBeatmap.TrackData.icon] = DLBeatmap.CoverArtDraw
+			love.filesystem.write(DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData), coverArt)
+			DLBeatmap.InfoDL:setLiveIconImage(DLBeatmap.CoverArtDraw)
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
 		end
 	end,
 	Start = function()
-		if not(DLBeatmap.Trigger) then
-			DLBeatmap.CoverArt = AquaShine.GetCachedData(DLBeatmap.TrackData.icon)
+		DLBeatmap.CoverArtDraw = AquaShine.GetCachedData(DLBeatmap.TrackData.icon)
+		
+		if not(DLBeatmap.CoverArtDraw) then
+			-- Find in live_icon path first
+			local cover_path = DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData)
 			
-			if not(DLBeatmap.CoverArt) then
-				-- Find in live_icon path first
-				local cover_path = DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData)
-				
-				if love.filesystem.getInfo(cover_path) then
-					DLBeatmap.CoverArt = love.graphics.newImage(cover_path)
-					AquaShine.CacheTable[DLBeatmap.TrackData.icon] = DLBeatmap.CoverArt
-				else
-					-- Download
-					DLBeatmap.DLButton:disable()
-					DLBeatmap.DLButton:setTextColor(0, 0, 0, 0)
-					DLBeatmap.Download:SetCallback(DLBeatmap.DLArt)
-					DLBeatmap.Download:Download(address..DLBeatmap.TrackData.icon)
-					DLBeatmap.SetStatus("Downloading Cover Art...")
-				end
+			if love.filesystem.getInfo(cover_path) then
+				DLBeatmap.CoverArtDraw = love.graphics.newImage(cover_path)
+				AquaShine.CacheTable[DLBeatmap.TrackData.icon] = DLBeatmap.CoverArt
+				DLBeatmap.InfoDL:setLiveIconImage(DLBeatmap.CoverArtDraw)
+			else
+				-- Download
+				DLBeatmap.Download:SetCallback(DLBeatmap.DLArt)
+				DLBeatmap.Download:Download(address..DLBeatmap.TrackData.icon)
+				DLBeatmap.InfoDL:setOKButtonCallback(nil)
+				DLBeatmap.SetStatus("Downloading Cover Art...")
 			end
-			
-			if DLBeatmap.CoverArt then
-				DLBeatmap.CoverArtDraw = love.graphics.newImage(DLBeatmap.CoverArt)
-				DLBeatmap.CoverArtLoading:setImage(DLBeatmap.CoverArtDraw)
-			end
+		else
+			DLBeatmap.SetStatus("Ready...")
+			DLBeatmap.InfoDL:setLiveIconImage(DLBeatmap.CoverArtDraw)
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
 		end
 	end,
 }
@@ -99,10 +93,10 @@ DLBeatmap.DLMP3 = {
 	Done = function(this, msg)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
-			DLBeatmap.DLButton:enable()
-			DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
 		else
-			DLBeatmap.MP3File = table.concat(DLBeatmap.DLMP3.Response)
+			local mp3Path = DLBeatmap.GetAudioPath(DLBeatmap.TrackData)
+			assert(love.filesystem.write(mp3Path, table.concat(DLBeatmap.DLMP3.Response)))
 			DLBeatmap.DLMP3.Response = {}
 			DLBeatmap.DLMP3.RespLen = 0
 			return DLBeatmap.DLBG.Start()
@@ -112,12 +106,13 @@ DLBeatmap.DLMP3 = {
 		local audiopath = DLBeatmap.GetAudioPath(DLBeatmap.TrackData)
 		
 		if love.filesystem.getInfo(audiopath) then
-			DLBeatmap.MP3File = love.audio.newSource(audiopath, "stream")
+			--DLBeatmap.MP3File = love.audio.newSource(audiopath, "stream")
 			return DLBeatmap.DLBM.Start()
 		else
 			DLBeatmap.SetStatus("Downloading Song...")
 			DLBeatmap.Download:SetCallback(DLBeatmap.DLMP3)
 			DLBeatmap.Download:Download(address..DLBeatmap.TrackData.song)
+			DLBeatmap.InfoDL:setOKButtonCallback(nil)
 		end
 	end,
 }
@@ -140,19 +135,22 @@ DLBeatmap.DLBM = {
 			DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
 		else
 			local json = JSON:decode(table.concat(DLBeatmap.DLBM.Response))
-			return DLBeatmap.ToLS2(json)
+			DLBeatmap.ToLS2(json)
+			DLBeatmap.SetStatus("Play!")
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.StartPlay)
 		end
 	end,
-	Start = function(diff)
+	Start = function()
 		DLBeatmap.SetStatus("Downloading Beatmap...")
 		DLBeatmap.Download:SetCallback(DLBeatmap.DLBM)
-		DLBeatmap.Download:Download(address..DLBeatmap.TrackData.live[diff].livejson)
+		DLBeatmap.Download:Download(address..DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty].livejson)
+		DLBeatmap.InfoDL:setOKButtonCallback(nil)
 	end,
 }
 
 function DLBeatmap.GetLS2Name(difficulty)
 	local hashedname = DLBeatmap.GetHashedName(DLBeatmap.TrackData.live[difficulty].livejson)
-	return hashedname:sub(1, -#DLBeatmap.TrackData.live[difficulty].livejson - 1).."."..difficulty..".ls2"
+	return "beatmap/"..hashedname:sub(1, -#DLBeatmap.TrackData.live[difficulty].livejson - 1).."."..difficulty..".ls2"
 end
 
 function DLBeatmap.GetHashedName(path)
@@ -183,6 +181,29 @@ end
 
 function DLBeatmap.SetStatus(msg)
 	return DLBeatmap.InfoDL:setStatus(msg)
+end
+
+function DLBeatmap.ToLS2(beatmap)
+	local path = DLBeatmap.GetLS2Name(DLBeatmap.SelectedDifficulty)
+	local cover = love.filesystem.read(DLBeatmap.GetLiveIconPath(DLbeatmap.TrackData))
+	local cur = DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty]
+	local out = assert(love.filesystem.newFile(path, "w"))
+	ls2.encoder.new(out, {
+		name = DLBeatmap.TrackData.name,
+		song_file = AquaShine.Basename(DLBeatmap.GetAudioPath(DLBeatmap.TrackData)),
+		star = cur.star,
+		score = cur.score,
+		combo = cur.combo
+	})
+	-- Add beatmap
+	:add_beatmap(beatmap)
+	-- Add cover art
+	:add_cover_art({
+		image = cover,
+		title = DLBeatmap.TrackData.name
+	})
+	-- Write
+	:write()
 end
 
 function DLBeatmap.Start(arg)

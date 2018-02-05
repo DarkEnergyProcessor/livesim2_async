@@ -4,7 +4,7 @@
 
 local ls2 = {
 	_VERSION = "2.0",
-	_LICENSE = "Copyright \169 2038 Dark Energy Processor, licensed under MIT/Expat. See copyright notice in Live Simulator: 2 main.lua",
+	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under MIT/Expat. See copyright notice in Live Simulator: 2 main.lua",
 	_AUTHOR  = "Dark Energy Processor Corporation",
 	encoder = {}
 }
@@ -13,7 +13,7 @@ local bit = require("bit")
 ---------------------------------------------------
 -- File reading/writing wrapper, for consistency --
 ---------------------------------------------------
-local fileptr = debug.getregistry()["FILE*"]
+local fileptr = getmetatable(io.stdout)
 local fsw = {
 	read = fileptr.read,
 	write = fileptr.write,

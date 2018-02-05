@@ -39,6 +39,35 @@ local chunk_handler = {
 	end
 }
 
+local function createFinalizer(this)
+	local x = newproxy(true)
+	local y = getmetatable(x)
+	local gccall = false
+	y.__gc = function()
+		if gccall then return end
+		
+		local t = this.thread
+		local cin = this.channelin
+		DownloadList[cin] = nil
+		cin:push("QUIT")
+	end
+	y.__call = function()
+		gccall = true
+		return y.__gc()
+	end
+	
+	return x
+end
+
+local function reInitDownload(this)
+	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
+	this.channelin = love.thread.newChannel()
+	this.finalizer = createFinalizer(this)
+	this.err = Download.DefaultErrorCallback
+	
+	this.thread:start(this.channelin)
+end
+
 function Download.DefaultErrorCallback(this, data)
 	error(data)
 end
@@ -48,28 +77,32 @@ function Download.Create()
 end
 
 function Download.init(this)
-	local fmt
-	
-	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
-	this.channelin = love.thread.newChannel()
-	this.finalizer = newproxy(true)
 	this.err = Download.DefaultErrorCallback
-	fmt = getmetatable(this.finalizer)
-	fmt.__gc = function()
-		local t = this.thread
-		local cin = this.channelin
-		
-		print("push quit")
-		cin:push("QUIT")
-	end
-	
-	this.thread:start(this.channelin)
+	return reInitDownload(this)
 end
 
 function Download.SetCallback(this, t)
 	assert(not(this.downloading), "Download is in progress")
 	assert(t.Error and t.Receive and t.Done, "Invalid callback")
 	this.err, this.recv, this.ok = t.Error, t.Receive, t.Done
+	return this
+end
+
+function Download.SetErrorCallback(this, err)
+	assert(not(this.downloading), "Download is in progress")
+	this.err = assert(err, "Invalid callback")
+	return this
+end
+
+function Download.SetReceiveCallback(this, recv)
+	assert(not(this.downloading), "Download is in progress")
+	this.recv = assert(recv, "Invalid callback")
+	return this
+end
+
+function Download.SetDoneCallback(this, done)
+	assert(not(this.downloading), "Download is in progress")
+	this.ok = done
 	return this
 end
 
@@ -81,6 +114,16 @@ function Download.Download(this, url, additional_headers)
 	this.channelin:push(additional_headers or {})
 	this.downloading = true
 	DownloadList[this.channelin] = this
+end
+
+function Download.Cancel(this)
+	assert(this.downloading, "No download in progress")
+	this.finalizer()
+	return reInitDownload(this)
+end
+
+function Download.IsDownloading(this)
+	return this.downloading
 end
 
 function love.handlers.aqs_download(input, name, data)

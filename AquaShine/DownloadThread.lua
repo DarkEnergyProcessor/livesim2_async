@@ -14,14 +14,10 @@ local function push_event(name, data)
 	le.push("aqs_download", cin, name, data)
 end
 
-local function check_if_quit()
-	assert(cin:pop() ~= "QUIT", "Quit requested")
-end
-
 -- We create our custom sink function which does send
 -- the response data to LOVE channel
 local function custom_sink(chunk, err)
-	check_if_quit()
+	assert(cin:peek() ~= "QUIT", "Quit requested")
 	if chunk then
 		push_event("RECV", chunk)
 	end

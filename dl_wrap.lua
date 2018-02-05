@@ -9,6 +9,7 @@ local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
 local DLWrap = {}
 
 function DLWrap.Start()
+	DLWrap.Delay = 10000
 	DLWrap.Download = AquaShine.GetCachedData("BeatmapDLHandle", AquaShine.Download)
 	DLWrap.LiveIDFont = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 	DLWrap.MainNode = BackNavigation("Download Beatmap", ":beatmap_select")
@@ -16,8 +17,12 @@ end
 
 function DLWrap.Update(deltaT)
 	local dest = love.filesystem.getInfo("external/download_beatmap_llp.lua") and "external/download_beatmap_llp.lua"
-	if not(DLWrap.Download.downloading) then
+	DLWrap.Delay = DLWrap.Delay - deltaT
+	if not(DLWrap.Download:IsDownloading()) then
 		AquaShine.LoadEntryPoint(AquaShine.LoadConfig("DL_CURRENT", dest or "download_beatmap_sif.lua"))
+	elseif DLWrap.Delay <= 0 then
+		DLWrap.Delay = math.huge
+		DLWrap.Download:Cancel()
 	end
 end
 
