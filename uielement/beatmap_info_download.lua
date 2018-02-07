@@ -7,7 +7,7 @@ local love = love
 local BeatmapInfoDL = AquaShine.Node:extend("Livesim2.BeatmapInfoDL")
 local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
-local CoverArtLoading = AquaShine.LoadModule("external.cover_art_loading")
+local CoverArtLoading = AquaShine.LoadModule("uielement.cover_art_loading")
 
 function BeatmapInfoDL.init(this, track_data, NoteLoader)
 	AquaShine.Node.init(this)
@@ -52,14 +52,13 @@ function BeatmapInfoDL.draw(this)
 	love.graphics.rectangle("fill", 440, 130, 160, 160)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.setFont(this.infofont)
-	love.graphics.print(this.status, 440, 576)
+	love.graphics.print(this.status, 440, 566)
 	love.graphics.print("Score", 620, 132)
 	love.graphics.print("Combo", 800, 132)
 	love.graphics.print("S\nA\nB\nC", 604, 152)
-	love.graphics.print("Beatmap Type:", 440, 330)
 	love.graphics.print("Difficulty:", 440, 380)
 	
-	if this.userdata.beatmap then
+	if this.beatmapidx then
 		local name = this.trackdata.name
 		local si = this.score_info or "-\n-\n-\n-"
 		local ci = this.combo_info or "-\n-\n-\n-"
@@ -68,15 +67,6 @@ function BeatmapInfoDL.draw(this)
 		love.graphics.print(si, 620, 152)
 		love.graphics.print(ci, 800, 152)
 		love.graphics.print(din, 600, 380)
-		--love.graphics.printf(this.userdata.beatmap.type, 600, 330, 316)
-		
-		--[[
-		if this.userdata.cover_art then
-			local w, h = this.userdata.cover_art:getDimensions()
-			love.graphics.setColor(1, 1, 1)
-			love.graphics.draw(this.userdata.cover_art, 440, 130, 0, 160 / w, 160 / h)
-		end
-		]]
 	end
 	
 	return AquaShine.Node.draw(this)
@@ -90,7 +80,7 @@ function BeatmapInfoDL.setStatus(this, text)
 	this.status = assert(type(text) == "string" and text, "bad argument #1 to 'setStatus' (string expected)")
 end
 
-function BeatmapInfoDL.setOkButtonCallback(this, cb)
+function BeatmapInfoDL.setOKButtonCallback(this, cb)
 	this.okButtonCallback = cb
 	
 	if not(cb) then

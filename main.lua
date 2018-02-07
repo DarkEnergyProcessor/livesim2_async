@@ -23,9 +23,11 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
--- Version
-DEPLS_VERSION = "2.0-beta5"
-DEPLS_VERSION_NUMBER = 01010505	-- xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter
+-- Version  string
+DEPLS_VERSION = "2.0-RC1"
+-- Version number
+-- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
+DEPLS_VERSION_NUMBER = 01020001
 
 setmetatable(_G, {
 	__index = function(_, var) error("Unknown variable "..var, 2) end,

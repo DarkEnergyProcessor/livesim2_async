@@ -15,8 +15,11 @@ local function make_cache_table(link)
 end
 
 local newstyle_opacitymul = love.graphics.newShader [[
+extern bool enable;
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
+	if (!enable) return Texel(texture, texture_coords) * color;
+	
 	vec4 c = Texel(texture, texture_coords);
 	return vec4(c.rgb * 1.25, c.a * 1.15) * color;
 }
@@ -109,14 +112,15 @@ function NoteImageLoader.DrawNoteV5Style(this)
 	
 	love.graphics.setColor(color_temp)
 	love.graphics.setShader(newstyle_opacitymul)
+	newstyle_opacitymul:send("enable", true)
 	if this.SlideNote then
 		-- If it's swing, simply draw the pre-generated image
-		drawNoteBase(noteimg_swing, this, new_style_rotation[this.Position])
+		drawNoteBase(noteimg_swing, this, this.Rotation)
 	else
 		-- Otherwise, normal note
 		drawNoteBase(noteimg, this, new_style_rotation[this.Position])
 	end
-	love.graphics.setShader()
+	newstyle_opacitymul:send("enable", false)
 	love.graphics.setColor(1, 1, 1, color_temp[4])
 	
 	if this.TokenNote then
@@ -128,6 +132,8 @@ function NoteImageLoader.DrawNoteV5Style(this)
 	if this.SimulNote then
 		drawNoteBase(new_style.Simultaneous, this)
 	end
+	
+	love.graphics.setShader()
 end
 
 function NoteImageLoader.DrawNoteOldStyle(this)

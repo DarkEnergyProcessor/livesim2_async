@@ -31,7 +31,9 @@ function SimpleButton.init(this, image, image_se, action, scale)
 			action(this)
 		end
 		
-		this.userdata.targetimage = "image"
+		if this.userdata.targetimage == "image_se" then
+			this.userdata.targetimage = "image"
+		end
 	end)
 	
 	this.events.MousePressed = function(x, y, b, t)

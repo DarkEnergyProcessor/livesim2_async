@@ -70,7 +70,7 @@ function DLBeatmap.SetupList(beatmaplist)
 				trackidx.name = v.name_translations and v.name_translations.english or v.name
 				trackidx.name = #trackidx.name > 0 and trackidx.name or v.name
 				trackidx.song = v.sound_asset
-				trackidx.icon = v.title_asset
+				trackidx.icon = v.live_icon_asset
 				trackidx.live = {}
 				if trackidx.name:find("* ", 1, true) == 1 then
 					-- Unofficial romaji, but we don't care ¯\_(ツ)_/¯
@@ -190,9 +190,9 @@ function DLBeatmap.Start(arg)
 end
 
 function DLBeatmap.Update(deltaT)
-	if DLBeatmap.Download and not(DLBeatmap.Download.downloading) then
+	if not(DLBeatmap.BeatmapListRaw) and DLBeatmap.Download and not(DLBeatmap.Download.downloading) then
 		DLBeatmap.Download:SetCallback(DLBeatmap.DLCB)
-		DLBeatmap.Download:Download(address.."maps.json", {["connection"] = "close", ["keep-alive"] = math.huge})
+		DLBeatmap.Download:Download(address.."maps.json")
 	end
 end
 

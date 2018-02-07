@@ -5,7 +5,10 @@
 local cin = ...
 local socket = require("socket")
 local http = require("socket.http")
+local lt = require("love.timer")
 http.TIMEOUT = 60
+
+function print() lt.sleep(0.001) end
 
 -- AquaShine download event
 local le = require("love.event")
