@@ -1,9 +1,9 @@
--- Unit Editor
+-- Change Units
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local AquaShine = AquaShine
-local UnitEditor = {State = _G.SavedUnitEditorState}
+local AquaShine = ...
+local UnitEditor = {}
 local MouseState = {0, 0, false}	-- x, y, is click?
 local IdolPosition = {	-- Idol position. 9 is leftmost
 	{816, 96 }, {785, 249}, {698, 378},
@@ -14,6 +14,7 @@ local IdolPosition = {	-- Idol position. 9 is leftmost
 local Font
 
 local dummy_image = AquaShine.LoadImage("assets/image/dummy.png")
+local background_5
 local com_win_02
 local com_button_01, com_button_01se
 local com_button_14, com_button_14se
@@ -41,7 +42,16 @@ local function applyChanges()
 end
 
 function UnitEditor.Start(arg)
+	UnitEditor.State = AquaShine.GetCachedData("SavedUnitEditorState")
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
+	
+	background_5 = {AquaShine.LoadImage(
+		"assets/image/background/liveback_5.png",
+		"assets/image/background/b_liveback_005_01.png",
+		"assets/image/background/b_liveback_005_02.png",
+		"assets/image/background/b_liveback_005_03.png",
+		"assets/image/background/b_liveback_005_04.png"
+	)}
 	
 	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	com_button_01 = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
@@ -65,7 +75,7 @@ function UnitEditor.Start(arg)
 			i = i - 1
 		end
 		
-		_G.SavedUnitEditorState = UnitEditor.State
+		AquaShine.CacheTable.SavedUnitEditorState = UnitEditor.State
 	end
 	
 	if type(arg[1]) == "table" then
@@ -76,9 +86,12 @@ end
 function UnitEditor.Update() end
 
 function UnitEditor.Draw()
-	love.graphics.setColor(242, 59, 76)
-	love.graphics.rectangle("fill", -88, -43, 1136, 726)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
+	love.graphics.draw(background_5[1])
+	love.graphics.draw(background_5[2], -88, 0)
+	love.graphics.draw(background_5[3], 960, 0)
+	love.graphics.draw(background_5[4], 0, -43)
+	love.graphics.draw(background_5[5], 0, 640)
 	love.graphics.draw(com_win_02, -98, 0)
 	love.graphics.setFont(Font)
 	
@@ -97,9 +110,9 @@ function UnitEditor.Draw()
 		love.graphics.draw((UnitEditor.State.Changed[i] or UnitEditor.State[i]).Image, IdolPosition[i][1], IdolPosition[i][2])
 			
 		if distance(MouseState[1] - a[1] - 64, MouseState[2] - a[2] - 64) <= 64 then
-			love.graphics.setColor(255, 255, 255, 96)
+			love.graphics.setColor(1, 1, 1, 96 / 255)
 			love.graphics.circle("fill", a[1] + 64, a[2] + 64, 64)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 		end
 	end
 	
@@ -124,13 +137,18 @@ function UnitEditor.Draw()
 	
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Change Units", 95, 13)
-	love.graphics.print("Click unit icon to change.", 337, 160)
-	love.graphics.print("Please note that some beatmap", 320.5, 182)
-	love.graphics.print("can override unit icon shown in here", 282, 204)
-	love.graphics.print("Press OK to apply changes,", 337, 276)
-	love.graphics.print("Cancel to discard any changes", 320.5, 298)
-	love.graphics.print("Back to discard any changes and back to", 265.5, 320)
-	love.graphics.print("Live Simulator: 2 main menu", 331.5, 342)
+	
+	for i = 1, 0, -1 do
+		local c = 255 - i * 255
+		love.graphics.setColor(c, c, c)
+		love.graphics.print("Click unit icon to change.", 337 + i, 160 + i)
+		love.graphics.print("Please note that some beatmap", 320.5 + i, 182 + i)
+		love.graphics.print("can override unit icon shown in here", 282 + i, 204 + i)
+		love.graphics.print("Press OK to apply changes,", 337 + i, 276 + i)
+		love.graphics.print("Cancel to discard any changes", 320.5 + i, 298 + i)
+		love.graphics.print("Back to discard any changes and back to", 265.5 + i, 320 + i)
+		love.graphics.print("Live Simulator: 2 main menu", 331.5 + i, 342 + i)
+	end
 end
 
 function UnitEditor.MousePressed(x, y, button)
@@ -155,7 +173,7 @@ function UnitEditor.MouseReleased(x, y, button)
 		
 		if distance(x - a[1] - 64, y - a[2] - 64) <= 64 then
 			UnitEditor.State.LastSelIdx = i
-			AquaShine.LoadEntryPoint("unit_selection.lua", {(UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename})
+			AquaShine.LoadEntryPoint(":unit_selection", {(UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename})
 			
 			return
 		end
@@ -163,8 +181,8 @@ function UnitEditor.MouseReleased(x, y, button)
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
 		-- Discard changes and back
-		_G.SavedUnitEditorState = nil
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.CacheTable.SavedUnitEditorState = nil
+		AquaShine.LoadEntryPoint(":main_menu")
 		
 		return
 	elseif x >= 60 and x < 204 and y >= 556 and y < 614 then

@@ -40,23 +40,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* Modified to be used with LOVE2D + Desktop OpenGL */
 #ifdef OPENGL_ES
-	#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
-	#else
-precision mediump float;
-	#endif	// GL_FRAGMENT_PRECISION_HIGH
-precision mediump vec2;
+#	ifdef GL_FRAGMENT_PRECISION_HIGH
+#		define HIGHEST_PRECISION highp
+#	else
+#		define HIGHEST_PRECISION mediump
+#	endif	// GL_FRAGMENT_PRECISION_HIGH
+precision HIGHEST_PRECISION float
+precision HIGHEST_PRECISION vec2;
+precision HIGHEST_PRECISION vec3;
+precision HIGHEST_PRECISION vec4;
 #endif	// OPENGL_ES
 
 #ifndef FXAA_REDUCE_MIN
-    #define FXAA_REDUCE_MIN   (1.0/ 128.0)
+    #define FXAA_REDUCE_MIN   (1.0/ 64.0)
 #endif
 #ifndef FXAA_REDUCE_MUL
-    #define FXAA_REDUCE_MUL   (1.0 / 8.0)
+    #define FXAA_REDUCE_MUL   1.0
 #endif
 #ifndef FXAA_SPAN_MAX
-    #define FXAA_SPAN_MAX     8.0
+    #define FXAA_SPAN_MAX     64.0
 #endif
+
+varying vec2 v_rgbNW;
+varying vec2 v_rgbNE;
+varying vec2 v_rgbSW;
+varying vec2 v_rgbSE;
+varying vec2 v_rgbM;
+
+void texcoords(vec2 fragCoord, vec2 resolution,
+			out vec2 v_rgbNW, out vec2 v_rgbNE,
+			out vec2 v_rgbSW, out vec2 v_rgbSE,
+			out vec2 v_rgbM) {
+	vec2 inverseVP = 1.0 / resolution.xy;
+	v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
+	v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
+	v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
+	v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
+	v_rgbM = vec2(fragCoord * inverseVP);
+}
+
+#if defined(PIXEL)
 
 //optimized version for mobile, where dependent 
 //texture reads can be a bottleneck
@@ -108,29 +131,23 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
     return color;
 }
 
-void texcoords(vec2 fragCoord, vec2 resolution,
-			out vec2 v_rgbNW, out vec2 v_rgbNE,
-			out vec2 v_rgbSW, out vec2 v_rgbSE,
-			out vec2 v_rgbM) {
-	vec2 inverseVP = 1.0 / resolution.xy;
-	v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
-	v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
-	v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
-	v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
-	v_rgbM = vec2(fragCoord * inverseVP);
-}
-
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
-	vec2 v_rgbNW;
-	vec2 v_rgbNE;
-	vec2 v_rgbSW;
-	vec2 v_rgbSE;
-	vec2 v_rgbM;
-	
 	vec2 resolution = vec2(love_ScreenSize.xy);
 	vec2 fragCoord = texture_coords * resolution;
-	texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+	/*texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);*/
 	return color * fxaa(texture, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 }
+
+#elif defined(VERTEX)
+
+vec4 position(mat4 clipSpaceFromLocal, vec4 localPosition) {
+	vec2 resolution = love_ScreenSize.xy;
+    vec2 fragCoord = VaryingTexCoord.xy * resolution;
+    texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+
+    return clipSpaceFromLocal * localPosition;
+}
+
+#endif
 ]]

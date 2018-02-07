@@ -1,176 +1,287 @@
--- DEPLS beatmap loader
--- Based on CBF and SIF beatmap format, 2nd most complex beatmap
+-- Dark Energy Processor Live Simulator beatmap project loader
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local JSON = require("JSON")
-local DEPLS2Beatmap = {
-	Name = "DEPLS Beatmap Folder",
-	Extension = nil		-- Detect function is necessary
-}
+local love = love
+local LuaStoryboard = require("luastoryboard2")
+local DEPLSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.DEPLSLoader", {ProjectLoader = true})
+local DEPLSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.DEPLSBeatmap")
 
---! @brief Check if specificed beatmap is DEPLS2 beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns true if it's DEPLS2 beatmap, false otherwise
-function DEPLS2Beatmap.Detect(file)
-	local zip = file[1]..".zip"
-	
-	if love.filesystem.isFile(zip) then
-		AquaShine.MountZip(zip, file[1])
-	end
-	
-	-- Enum loaders
-	for i = 1, #NoteLoader.Loaders do
-		local loader = NoteLoader.Loaders[i]
-		
-		if
-			(loader.Extension and loader.Extension ~= "txt") or
-			(loader.Extension == "txt" and love.filesystem.isFile(file[1].."/projectConfig.txt") == false)
-		then
-			if love.filesystem.isFile(file[1].."/beatmap."..loader.Extension) then
-				return true
-			end
-		end
-	end
-			
-	return false
+------------------
+-- DEPLS Loader --
+------------------
+
+function DEPLSLoader.GetLoaderName()
+	return "DEPLS Beatmap Project"
 end
 
---! @brief Loads DEPLS beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns table with these data
---!          - notes_list is the SIF-compilant notes data
---!          - song_file is the song file handle (Source object) or nil
---!          - storyboard is the DEPLS beatmap storyboard object handle or nil if no storyboard is present
---!          - background is beatmap-specific background ID or handle list (extended backgrounds) (jpg supported) or nil
---!          - units is custom units image list or nil
-function DEPLS2Beatmap.Load(file)
-	local notes_data
-	local storyboard
-	local scoreinfo
+function DEPLSLoader.LoadNoteFromFilename(file)
+	local this = DEPLSBeatmap()
+	this.project_dir = file
 	
-	-- Enum loaders
-	for i = 1, #NoteLoader.Loaders do
-		local loader = NoteLoader.Loaders[i]
+	-- At least one DEPLS beatmap project must have "beatmap.*"
+	-- file which is supported by NoteLoader2
+	for _, v in ipairs(love.filesystem.getDirectoryItems(file)) do
+		if v:find("^beatmap%.[^%.]+$") == 1 then
+			-- Looks like we have one here. Try to load it
+			-- NoteLoader will return nil if it's not supported
+			this.note_object = NoteLoader.NoteLoader(file.."/"..v)
+		end
 		
-		if loader.Extension then
-			if love.filesystem.isFile(file[1].."/beatmap."..loader.Extension) then
-				local out = loader.Load({
-					file[1].."/beatmap",
-					file[2].."/beatmap"
-				}, file[1].."/")
+		if this.note_object then break end
+	end
+	
+	assert(this.note_object, "No beatmap file found")
+	return this
+end
+
+--------------------------
+-- DEPLS Beatmap Object --
+--------------------------
+
+function DEPLSBeatmap.GetNotesList(this)
+	return this.note_object:GetNotesList()
+end
+
+function DEPLSBeatmap.GetName(this)
+	if not(this.name) then
+		this.name = this.note_object:GetName()
+		
+		-- If it's named "beatmap", then it should be taken from
+		-- the filename argument. In that case, don't use that name
+		if this.name == "beatmap" then
+			local cover_info = this:GetCoverArt()
+			
+			if cover_info and cover_info.title then
+				this.name = cover_info.title
+			else
+				this.name = NoteLoader._GetBasenameWOExt(this.project_dir)
+			end
+		end
+	end
+	
+	return this.name
+end
+
+function DEPLSBeatmap.GetBeatmapTypename(this)
+	if not(this.typename) then
+		this.typename = "DEPLS Project: "..this.note_object:GetBeatmapTypename()
+	end
+	
+	return this.typename
+end
+
+function DEPLSBeatmap.GetCoverArt(this)
+	if not(this.cover_loaded) then
+		local cover_info = this.project_dir.."/cover.txt"
+		local cover_img = this.project_dir.."/cover.png"
+		local cover_info_file = love.filesystem.getInfo(cover_info)
+		local cover_img_file = love.filesystem.getInfo(cover_img)
+		
+		if cover_info_file and cover_info_file.type == "file" and cover_img_file and cover_img_file.type == "file" then
+			local f = assert(love.filesystem.newFile(cover_info, "r"))
+			local line = f:lines()
+			
+			this.cover = {}
+			this.cover.image = love.graphics.newImage(cover_img, {mipmaps = true})
+			this.cover.title = line()
+			this.cover.arrangement = line()
+			
+			line = nil
+			f:close()
+		else
+			this.cover = this.note_object:GetCoverArt()
+		end
+		
+		this.cover_loaded = true
+	end
+	
+	return this.cover
+end
+
+function DEPLSBeatmap.GetCustomUnitInformation(this)
+	if not(this.custom_unit) then
+		local image_cache = {}
+		this.custom_unit = {}
+		this.note_object_custom_unit = this.note_object:GetCustomUnitInformation(this)
+		
+		for i = 1, 9 do
+			local filename = this.project_dir.."/unit_pos_"..i..".txt"
+			local filename_info = love.filesystem.getInfo(filename)
+			
+			if filename_info and filename_info.type == "file" then
+				local image_name = love.filesystem.read(filename)
 				
-				notes_data = out.notes_list
-				scoreinfo = out.score
+				if not(image_cache[image_name]) then
+					image_cache[image_name] = love.graphics.newImage(this.project_dir.."/"..image_name)
+				end
+				
+				this.custom_unit[i] = image_cache[image_name]
+			else
+				local image_name = "unit_pos_"..i..".png"
+				filename = this.project_dir.."/"..image_name
+				filename_info = love.filesystem.getInfo(filename)
+				
+				if not(image_cache[image_name]) and filename_info and filename_info.type == "file" then
+					image_cache[image_name] = love.graphics.newImage(filename)
+				end
+				
+				this.custom_unit[i] = image_cache[image_name]
 			end
+			
+			this.custom_unit[i] = this.custom_unit[i] or this.note_object_custom_unit[i]
 		end
-		
-		if notes_data then break end
 	end
 	
-	table.sort(notes_data, function(a, b) return a.timing_sec < b.timing_sec end)
+	return this.custom_unit
+end
+
+function DEPLSBeatmap.GetScoreInformation(this)
+	return this.note_object:GetScoreInformation()
+end
+
+function DEPLSBeatmap.HasStoryboard(this)
+	return love.filesystem.isFile(this.project_dir.."/storyboard.lua") or this.note_object:HasStoryboard()
+end
+
+function DEPLSBeatmap.GetStoryboard(this)
+	-- 1. Get "storyboard.lua" file
+	local storyboard_file = this.project_dir.."/storyboard.lua"
+	local story_info = love.filesystem.getInfo(storyboard_file)
 	
-	-- Get storyboard
-	if love.filesystem.isFile(file[1].."/storyboard.lua") then
-		storyboard = {Storyboard = love.filesystem.load("luastoryboard.lua")()}
-		storyboard.Load = function() storyboard.Storyboard.Load(file[1].."/storyboard.lua") end
+	if story_info and story_info.type == "file" then
+		return LuaStoryboard.Load(storyboard_file)
 	end
 	
-	-- Get background
-	local background = {}
-	local background_id
+	return this.note_object:GetStoryboard()
+end
+
+function DEPLSBeatmap.GetBackgroundID(this)
+	local bgobj = this:GetCustomBackground()
 	
-	if love.filesystem.isFile(file[1].."/background.txt") then
-		-- Background ID
-		background_id = assert(tonumber(love.filesystem.newFileData(file[1].."/background.txt"):getString()))
-	else
-		-- Background handle
-		local exts = {"png", "jpg", "bmp"}
-		
-		for a, b in pairs(exts) do
-			if love.filesystem.isFile(file[1].."/background."..b) then
-				background[0] = NoteLoader.LoadImageRelative(file[1], "background."..b)
-			end
-		end
-		
-		-- Left, Right, Top, Bottom
-		if background[0] then
-			for i = 1, 4 do
-				for j = 1, 3 do
-					local b = exts[j]
+	if bgobj then
+		return -1
+	end
+	
+	local bgidname = this.project_dir.."/background.txt"
+	local bgidname_info = love.filesystem.getInfo(bgidname)
+	if not(this.bgid_loaded) and bgidname_info and bgidname_info.type == "file" then
+		this.bgid = tonumber((love.filesystem.read(bgidname)))
+		this.bgid_loaded = true
+	end
+	
+	return this.bgid or 0
+end
+
+local supported_img_fmts = {".png", ".jpg", ".bmp"}
+function DEPLSBeatmap.GetCustomBackground(this)
+	if not(this.bg_loaded) then
+		for _, ext in ipairs(supported_img_fmts) do
+			local bgname = this.project_dir.."/background"..ext
+			local bgname_info = love.filesystem.getInfo(bgname)
+			
+			if bgname_info and bgname_info.type == "file" then
+				this.background = {}
+				this.background[0] = love.graphics.newImage(bgname)
+				
+				for i = 1, 4 do
+					bgname = this.project_dir.."/background-"..i..ext
+					local bginfo = love.filesystem.getInfo(bgname)
 					
-					if love.filesystem.isFile(file[1].."/background-"..i.."."..b) then
-						background[i] = NoteLoader.LoadImageRelative(file[1], "background-"..i.."."..b)
-						break
+					if bginfo and bginfo.type == "file" then
+						this.background[i] = love.graphics.newImage(bgname)
 					end
 				end
-			end
-		end
-	end
-	
-	-- Get units
-	local units_ext = {"png", "txt"}
-	local units = {}
-	local has_custom_units = false
-	
-	for i = 1, 9 do
-		for j = 1, 2 do
-			if love.filesystem.isFile(file[1].."/unit_pos_"..i.."."..units_ext[j]) then
-				units[i] = NoteLoader.UnitLoader(file[1], "unit_pos_"..i.."."..units_ext[j])
-				has_custom_units = true
+				
+				if not(this.background[1]) ~= not(this.background[2]) then
+					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain left or right part). Removed")
+					this.background[1], this.background[2] = nil, nil
+				end
+				
+				if not(this.background[3]) ~= not(this.background[4]) then
+					AquaShine.Log("NoteLoader2/load_depls", "Non-balanced background (only contain top or bottom part). Removed")
+					this.background[3], this.background[4] = nil, nil
+				end
+				
 				break
 			end
 		end
-	end
-	
-	-- Get cover image
-	local covr
-	if love.filesystem.isFile(file[1].."/cover.png") then
-		covr = {image = love.graphics.newImage(love.filesystem.newFileData(file[1].."/cover.png"))}
 		
-		if love.filesystem.isFile(file[1].."/cover.txt") then
-			local fs = assert(love.filesystem.newFileData(file[1].."/cover.txt")):getString()
-			local title, arr = fs:match("([^\r\n|\r|\n]+)[\r\n|\r|\n]*(.*)")
-			
-			covr.title = title
-			if #arr > 0 then
-				covr.arrangement = arr
-			end
-		end
+		this.bg_loaded = true
 	end
 	
-	-- Result
-	local out = {
-		notes_list = notes_data,
-		storyboard = storyboard,
-		song_file = AquaShine.LoadAudio(file[1].."/songFile.wav"),
-		score = scoreinfo,
-		cover = covr
-	}
-	
-	local live_clear = AquaShine.LoadAudio(file[1].."/live_clear.wav")
-	if live_clear then
-		out.live_clear = love.audio.newSource(live_clear)
-	end
-	
-	if background_id then
-		out.background = background_id
-	elseif background[0] then
-		out.background = background
-	end
-	
-	if has_custom_units then
-		out.units = units
-	end
-	
-	return out
+	return this.background
 end
 
-return DEPLS2Beatmap
+local supported_video_fmts = {".ogg", ".ogv"}
+if AquaShine.FFmpegExt then
+	supported_video_fmts[#supported_video_fmts + 1] = ".mp4"
+	supported_video_fmts[#supported_video_fmts + 1] = ".mkv"
+	supported_video_fmts[#supported_video_fmts + 1] = ".avi"
+	supported_video_fmts[#supported_video_fmts + 1] = ".flv"
+end
+function DEPLSBeatmap.GetVideoBackground(this)
+	if not(this.video_loaded) then
+		for _, v in ipairs(supported_video_fmts) do
+			local name = this.project_dir.."/video_background"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				local message
+				this.video, message = AquaShine.LoadVideo(name)
+				
+				if not(this.video) then
+					AquaShine.Log("NoteLoader2/load_depls", "Failed to load video: %s", message)
+				end
+			end
+		end
+		
+		this.video_loaded = true
+	end
+	
+	return this.video
+end
+
+function DEPLSBeatmap.GetScorePerTap(this)
+	return this.note_object:GetScorePerTap()
+end
+
+function DEPLSBeatmap.GetStamina(this)
+	return this.note_object:GetStamina()
+end
+
+function DEPLSBeatmap.GetNotesStyle(this)
+	return this.note_object:GetNotesStyle()
+end
+
+function DEPLSBeatmap.GetBeatmapAudio(this)
+	if not(this.audio_loaded) then
+		-- 1. Load songFile.wav/ogg/mp3 file
+		this.audio = AquaShine.LoadAudio(this.project_dir.."/songFile.wav")
+		
+		if not(this.audio) then
+			-- 2. Load embedded audio from beatmap
+			this.audio = this.note_object:GetBeatmapAudio()
+			
+			if not(this.audio) then
+				-- 3. Load from audio/ folder
+				this.audio = AquaShine.LoadAudio("audio/"..AquaShine.Basename(this.project_dir)..".wav")
+			end
+		end
+		
+		this.audio_loaded = true
+	end
+	
+	return this.audio
+end
+
+function DEPLSBeatmap.GetLiveClearSound(this)
+	return AquaShine.LoadAudio(this.project_dir.."/live_clear.wav") or this.note_object:GetLiveClearSound()
+end
+
+function DEPLSBeatmap.GetStarDifficultyInfo(this)
+	return this.note_object:GetStarDifficultyInfo()
+end
+
+return DEPLSLoader

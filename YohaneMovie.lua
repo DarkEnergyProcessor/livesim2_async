@@ -21,8 +21,8 @@ end
 
 local function mat3af(tm)
 	return {
-		tm[1], tm[3], tm[5],
-		tm[2], tm[4], tm[6],
+		tm[1], tm[2], tm[5],
+		tm[3], tm[4], tm[6],
 		0, 0, 1,
 		Type = tm.Type
 	}
@@ -316,9 +316,9 @@ function YohaneMovie._internal._mt.draw(this, x, y)
 		
 		z.x = tm[3] + x
 		z.y = tm[6] + y
-		z.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[2] * tm[2])
-		z.scaleY = math_sign(tm[5]) * math.sqrt(tm[4] * tm[4] + tm[5] * tm[5])
-		z.rotation = math.atan2(tm[2] / z.scaleX, tm[5] / z.scaleY)
+		z.scaleX = math_sign(tm[1]) * math.sqrt(tm[1] * tm[1] + tm[4] * tm[4])
+		z.scaleY = math_sign(tm[5]) * math.sqrt(tm[2] * tm[2] + tm[5] * tm[5])
+		z.rotation = math.atan2(tm[4] / z.scaleX, tm[5] / z.scaleY)
 		
 		z.r = a.r * 255
 		z.g = a.g * 255

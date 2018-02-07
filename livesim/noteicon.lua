@@ -9,7 +9,7 @@ local NoteIcon = {}
 local Images = DEPLS.Images
 local noteicon_data = {scale = 1}
 local noteicon_tween = tween.new(800, noteicon_data, {scale = 0.8})
-local noteicon_tween2 = tween.new(1200, noteicon_data, {scale = 1}, "outSine")
+local noteicon_tween2 = tween.new(1400, noteicon_data, {scale = 1}, "outSine")
 local noteicon_circle = {}
 local active_tween = noteicon_tween
 local et = 0
@@ -17,7 +17,7 @@ local et = 0
 for i = 1, 3 do
 	local temp = {
 		time = (i - 1) * 300,
-		data = {scale = 0.6, opacity = 255},
+		data = {scale = 0.6, opacity = 1},
 	}
 	temp.tween = tween.new(1600, temp.data, {scale = 2.5, opacity = 0})
 	
@@ -27,10 +27,19 @@ end
 local setColor = love.graphics.setColor
 local draw = love.graphics.draw
 
+local function noteicon_draw(i)
+	local ni = noteicon_circle[i]
+	
+	if ni.time <= 0 then
+		setColor(1, 1, 1, ni.data.opacity * DEPLS.LiveOpacity)
+		draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
+	end
+end
+
 function NoteIcon.Update(deltaT)
 	et = et + deltaT
 	
-	if et >= 2000 then
+	if et >= 2200 then
 		et = deltaT
 		
 		noteicon_tween:reset()
@@ -59,23 +68,14 @@ function NoteIcon.Update(deltaT)
 	end
 end
 
-local function noteicon_draw(i)
-	local ni = noteicon_circle[i]
-	
-	if ni.time <= 0 then
-		setColor(255, 255, 255, ni.data.opacity * DEPLS.LiveOpacity / 255)
-		draw(Images.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
-	end
-end
-
-function NoteIcon.Draw(deltaT)
+function NoteIcon.Draw()
 	noteicon_draw(1)
 	noteicon_draw(2)
 	noteicon_draw(3)
 	
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
+	setColor(1, 1, 1, DEPLS.LiveOpacity)
 	draw(Images.NoteIcon, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
-	setColor(255, 255, 255, 255)
+	setColor(1, 1, 1)
 end
 
 return NoteIcon

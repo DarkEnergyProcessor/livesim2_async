@@ -6,6 +6,7 @@
 
 assert(jit, "Render mode is unavailable in Lua 5.1")
 
+local AquaShine = ...
 local love = love
 local lsys = require("love.system")
 local ffi = require("ffi")
@@ -36,14 +37,18 @@ local VideoManager = {
 	VideoList = {}
 }
 local RenderManager = {
-	Threads = {}
+	Threads = {},
+	-- [1] canvas is the newst canvas, the [2..n] canvas is the old canvas
+	CanvasCycle = {},
+	CCCount = 3
 }
+RenderMode.Frame = -RenderManager.CCCount + 1
 
 do
 	local c = lsys.getProcessorCount()
-	print("Processors", c)
+	io.write("Processors\t", c)
 	c = c * 2
-	print("Using "..c.." threads")
+	io.write("Using ", c, " threads")
 	
 	for i = 1, c do
 		RenderManager.Threads[i] = {Thread = love.thread.newThread [[
@@ -58,6 +63,7 @@ f:close()
 	end
 end
 local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
+local encode_audio_only = true
 local benchmark_mode
 
 -- len is the sample length
@@ -128,7 +134,7 @@ function love.audio.newSource(tgt)
 	
 	assert(rate <= 44100, "Sample rate higher than 44KHz is not supported")
 	
-	if sounddata:getChannels() == 1 then
+	if sounddata:getChannelCount() == 1 then
 		-- Make it stereo
 		local asd = love.sound.newSoundData(sounddata:getSampleCount(), rate)
 		
@@ -160,7 +166,7 @@ end
 function AudioMixer.SourceMetatable.play(audio)
 	local sourcetbl = assert(AudioMixer.SourceList[audio], "Invalid audio passed")
 	
-	print("Source play", audio)
+	io.write("Source play\t", tostring(audio), "\n")
 	sourcetbl.Playing = true
 	AudioMixer.SourcePlaying[#AudioMixer.SourcePlaying + 1] = sourcetbl
 end
@@ -308,6 +314,17 @@ function RenderManager.EncodeFrame(id, frame)
 	assert(false, "No free threads")
 end
 
+function RenderManager.InitializeCanvasCycle()
+	for i = 1, RenderManager.CCCount do
+		RenderManager.CanvasCycle[i] = love.graphics.newCanvas()
+	end
+end
+
+function RenderManager.CycleCanvas()
+	local c = table.remove(RenderManager.CanvasCycle, 1)
+	RenderManager.CanvasCycle[#RenderManager.CanvasCycle + 1] = c
+end
+
 -- Render mode
 function RenderMode.Start(arg)
 	RenderMode.Destination = arg[1]
@@ -318,7 +335,6 @@ function RenderMode.Start(arg)
 		local w, h, flgs = love.window.getMode()
 		
 		flgs.resizable = false
-		flgs.vsync = false
 		if flgs.fullscreen then
 			w, h = 960, 640
 			flgs.fullscreen = false
@@ -329,17 +345,21 @@ function RenderMode.Start(arg)
 	end
 	
 	-- Init DEPLS
-	RenderMode.DEPLS = (AquaShine.PreloadedEntryPoint["livesim.lua"] or love.filesystem.load("livesim.lua"))()
+	RenderMode.DEPLS = (AquaShine.PreloadedEntryPoint["livesim2_cliwrap.lua"] or love.filesystem.load("livesim2_cliwrap.lua"))(AquaShine)
 	RenderMode.DEPLS.RenderingMode = true
 	RenderMode.DEPLS.MinimalEffect = false
 	RenderMode.DEPLS.Start({arg[3], arg[4]})
 	RenderMode.DEPLS.AutoPlay = true
+	RenderMode.DEPLS.Sound.LiveAudio:setVolume(1.6)
 	
 	-- Image formats
 	if AquaShine.GetCommandLineConfig("tga") then
 		RenderMode.EncodeType = "tga"
 	end
 	benchmark_mode = AquaShine.GetCommandLineConfig("benchmark")
+	encode_audio_only = not(AquaShine.GetCommandLineConfig("vn"))
+	
+	if not(encode_audio_only) then benchmark_mode = true end
 	
 	-- Create canvas
 	RenderMode.Canvas = love.graphics.newCanvas()
@@ -347,15 +367,16 @@ function RenderMode.Start(arg)
 	-- FXAA Shader
 	if AquaShine.GetCommandLineConfig("fxaa") then
 		RenderMode.FXAAShader = require("render_livesim_fxaa")
-		RenderMode.Canvas2 = love.graphics.newCanvas()
+		RenderMode.FXAACanvas = love.graphics.newCanvas()
 	end
 	
 	-- Set audio
 	RenderMode.DEPLS.Sound.BeatmapAudio = AudioMixer.SourceList[RenderMode.DEPLS.Sound.LiveAudio].SoundData
 	
 	-- Post-init
-	print("SoundData buffer", RenderMode.Duration * 44100 + 735)
+	io.write("SoundData buffer\t", RenderMode.Duration * 44100 + 735, "\n")
 	AquaShine.RunUnfocused(true)
+	RenderManager.InitializeCanvasCycle()
 	
 	-- Sound data buffer post-init
 	AudioMixer.SoundDataBuffer.Handle = love.sound.newSoundData(math.floor(RenderMode.Duration * 44100 + 735.5))
@@ -370,6 +391,17 @@ end
 function RenderMode.Update(deltaT)
 	if RenderMode.ElapsedTime >= RenderMode.Duration or RenderManager.HasFreeThreads() == false then
 		if RenderManager.IsIdle() then
+			-- Render the rest of the frame
+			for i = 2, RenderManager.CCCount do
+				RenderMode.Frame = RenderMode.Frame + 1
+				RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
+				io.write("Rendering Frame\t", RenderMode.Frame, "\n")
+			end
+			
+			repeat
+				love.timer.sleep(0.05)
+			until RenderManager.IsIdle()
+			
 			love.event.quit()
 		end
 		
@@ -418,33 +450,45 @@ end
 
 function RenderMode.Draw(deltaT)
 	if RenderManager.HasFreeThreads() and RenderMode.ElapsedTime < RenderMode.Duration then
-		love.graphics.setCanvas(RenderMode.Canvas)
-		love.graphics.clear()
-		RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
+		local canvas = RenderManager.CanvasCycle[1]
+		
+		love.graphics.push("all")
 		
 		if RenderMode.FXAAShader then
-			love.graphics.setCanvas(RenderMode.Canvas2)
-			love.graphics.clear()
+			love.graphics.setCanvas(RenderMode.FXAACanvas)
+			love.graphics.clear(0, 0, 0, 255)
+			RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
+			love.graphics.setCanvas(canvas)
+			love.graphics.clear(0, 0, 0, 255)
 			love.graphics.setShader(RenderMode.FXAAShader)
 			love.graphics.setBlendMode("alpha", "premultiplied")
-			love.graphics.draw(RenderMode.Canvas)
+			love.graphics.origin()
+			love.graphics.draw(RenderMode.FXAACanvas)
 			love.graphics.setBlendMode("alpha")
 			love.graphics.setShader()
-			
-			RenderMode.Canvas, RenderMode.Canvas2 = RenderMode.Canvas2, RenderMode.Canvas
+		else
+			love.graphics.setCanvas(canvas)
+			love.graphics.clear(0, 0, 0, 255)
+			RenderMode.DEPLS.Draw(RenderMode.DeltaTime)
 		end
 		
-		love.graphics.setCanvas(nil)
+		love.graphics.pop()
 		RenderMode.Frame = RenderMode.Frame + 1
 		
-		RenderManager.EncodeFrame(RenderMode.Canvas:newImageData(), RenderMode.Frame)
+		if RenderMode.Frame >0 then
+			RenderManager.EncodeFrame(RenderManager.CanvasCycle[2]:newImageData(), RenderMode.Frame)
+			io.write("Rendering Frame\t", RenderMode.Frame, "\n")
+		end
 		
-		print("Rendering Frame", RenderMode.Frame)
+		RenderManager.CycleCanvas()
 	end
 	
+	love.graphics.push()
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(RenderMode.Canvas, -AquaShine.LogicalScale.OffX, -AquaShine.LogicalScale.OffY)
+	love.graphics.origin()
+	love.graphics.draw(RenderManager.CanvasCycle[RenderManager.CCCount])
 	love.graphics.setBlendMode("alpha")
+	love.graphics.pop()
 	
 	RenderMode.DEPLS.DrawDebugInfo()
 end
@@ -462,8 +506,8 @@ function RenderMode.Exit()
 		love.timer.sleep(0.1)
 	until RenderManager.IsIdle()
 	
-	print("Saving audio")
-	local audio_wav = assert(io.open(benchmark_mode and null_device or RenderMode.Destination.."/audio.wav", "wb"))
+	io.write("Saving audio\n")
+	local audio_wav = assert(io.open((benchmark_mode and encode_audio_only) and null_device or RenderMode.Destination.."/audio.wav", "wb"))
 	local current_pos = (AudioMixer.SoundDataBuffer.Position + 1) * 4
 	
 	audio_wav:write("RIFF\0\0\0\0WAVEfmt \16\0\0\0\1\0\2\0\68\172\0\0\16\177\2\0\4\0\16\0data")

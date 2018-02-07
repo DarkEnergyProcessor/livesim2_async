@@ -4,7 +4,7 @@
 -- See copyright notice in main.lua
 
 local love = love
-local AquaShine = AquaShine
+local AquaShine = ...
 local Settings = {
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
@@ -17,13 +17,6 @@ local Settings = {
 
 local SettingSelection = {
 	{
-		Name = "AUTOPLAY", Default = 0,
-		Caption = "Autoplay",
-		Type = "switch",
-		On = 1,
-		Off = 0
-	},
-	{
 		Name = "NOTE_STYLE", Default = 1,
 		Caption = "SIF-v5 Note Style",
 		Type = "switch",
@@ -33,13 +26,6 @@ local SettingSelection = {
 	{
 		Name = "CBF_UNIT_LOAD", Default = 1,
 		Caption = "Load CBF Units",
-		Type = "switch",
-		On = 1,
-		Off = 0
-	},
-	{
-		Name = "UNFOCUSED_RUN", Default = 1,
-		Caption = "Run in Background",
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -83,9 +69,6 @@ local SettingSelection = {
 		Min = 1,
 		Max = 11
 	},
-	------------------
-	-- Another page --
-	------------------
 	{
 		Name = "JUST_IN_TIME", Default = "off",
 		Caption = "JIT (Needs Restart)",
@@ -100,6 +83,9 @@ local SettingSelection = {
 		On = 1,
 		Off = 0
 	},
+	------------------
+	-- Another page --
+	------------------
 	{
 		Name = "AUTO_BACKGROUND", Default = 1,
 		Caption = "Custom Background",
@@ -114,6 +100,29 @@ local SettingSelection = {
 		Min = -4000,
 		Max = 4000,
 		Increment = 20
+	},
+	{
+		Name = "TEXT_SCALING", Default = 1,
+		Caption = "Text Scaling",
+		Type = "number",
+		Min = 0.5,
+		Max = 1,
+		Increment = 0.1
+	},
+	{
+		Name = "SE_VOLUME", Default = 80,
+		Caption = "SE Volume",
+		Type = "number",
+		Min = 0,
+		Max = 100,
+		Increment = 10
+	},
+	{
+		Name = "BEATMAP_SELECT_CACHED", Default = 0,
+		Caption = "Fast Beatmap List",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	}
 }
 
@@ -199,9 +208,9 @@ function Settings.Draw(deltaT)
 
 	-- Draw label
 	love.graphics.setFont(Settings.FontDesc)
-	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Settings", 95, 13)
-	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.setColor(1, 1, 1)
 	
 	for i = settings_index_multipler * 8 + 1, (settings_index_multipler + 1) * 8 do
 		local idx = SettingSelection[i]
@@ -225,7 +234,7 @@ function Settings.Draw(deltaT)
 			end
 			
 			love.graphics.print(idx.Caption, 5, yp + 10)
-			love.graphics.setColor(255, 255, 255, 255)
+			love.graphics.setColor(1, 1, 1)
 		end
 	end
 	
@@ -250,7 +259,7 @@ function Settings.MouseReleased(x, y, button)
 	MouseState[3] = false
 	
 	if x >= 0 and x < 86 and y >= 0 and y < 58 then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	elseif x >= 800 and x < 944 and y >= 540 and y < 598 then
 		for i = 1, #SettingSelection do
 			local idx = SettingSelection[i]
@@ -307,7 +316,7 @@ end
 
 function Settings.KeyReleased(key)
 	if key == "escape" then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	end
 end
 

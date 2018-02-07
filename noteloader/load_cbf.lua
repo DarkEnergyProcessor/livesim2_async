@@ -1,20 +1,28 @@
--- Custom Beatmap Festival beatmap loader
+-- Custom Beatmap Festival project loader
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
+local love = love
 local bit = require("bit")
-local CBFBeatmap = {
-	Name = "Custom Beatmap Festival",
-	Extension = nil,	-- No extension, that means detect function is necessary
-}
+
+local CBFLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.CBFLoader", {ProjectLoader = true})
+local CBFBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.CBFBeatmap")
+
+---------------------------
+-- Pre-CBF beatmap setup --
+---------------------------
+
+local function image_cache(link)
+	return setmetatable({}, {
+		__index = function(_, var)
+			return AquaShine.LoadImage(link[var])
+		end,
+	})
+end
+
 local position_translation = {L4 = 9, L3 = 8, L2 = 7, L1 = 6, C = 5, R1 = 4, R2 = 3, R3 = 2, R4 = 1}
-local UnitLoadingAllowed = AquaShine.LoadConfig("CBF_UNIT_LOAD", 1) == 1
-
-local CompositionCache = {}
-local UnitIconCache, IconCache, ComposeUnitImage, LoadUnitStrategy1, LoadUnitStrategy2
-
-local UnitIconNames = {
+local cbf_unit_icons = image_cache {
 	HONOKA_POOL = "assets/image/cbf/01_pool_unidolized_game_4.png",
 	HONOKA_POOL_IDOL = "assets/image/cbf/01_pool_idolized_game_3.png",
 	KOTORI_POOL = "assets/image/cbf/01_pool_unidolized_game_3.png",
@@ -54,354 +62,397 @@ local UnitIconNames = {
 	HANAMARU_YUKATA = "assets/image/cbf/02_yukata_unidolized_game.png"
 }
 
-if UnitLoadingAllowed then
-	UnitIconCache = setmetatable({}, {__index = function(_, var)
-		local x = AquaShine.LoadImage(UnitIconNames[var])
-		_[var] = x
+local cbf_icons = {
+	None = {
+		UR = image_cache {
+			"assets/image/cbf/star4circleUREmpty.png",
+			"assets/image/cbf/star4foreURSmile_empty.png"
+		},
+		["UR (Old)"] = image_cache {
+			"assets/image/cbf/star4circleURCustom_Old.png",
+			"assets/image/cbf/star4foreURSmile_empty.png"
+		},
+		SR = image_cache {
+			"assets/image/cbf/star4circleSR_Custom.png",
+			"assets/image/cbf/star4circleSR_Custom_fore.png"
+		},
+		R = image_cache {
+			"assets/image/cbf/star4circleR_Custom.png",
+			"assets/image/cbf/star4circleR_Custom_fore.png"
+		},
+	},
+	Smile = {
+		UR = image_cache {
+			"assets/image/cbf/star4circleURSmile.png",
+			"assets/image/cbf/star4foreURSmile.png"
+		},
+		["UR (Old)"] = image_cache {
+			"assets/image/cbf/star4circleURSmile_Old.png",
+			"assets/image/cbf/star4foreURSmile.png"
+		},
+		SSR = image_cache {
+			"assets/image/cbf/star4circleSSRSmile.png",
+			"assets/image/cbf/star4foreSRSmileIdolized.png"
+		},
+		SR = image_cache {
+			"assets/image/cbf/star4circleSRSmile.png",
+			"assets/image/cbf/star4foreSRSmileIdolized.png"
+		},
+	},
+	Pure = {
+		UR = image_cache {
+			"assets/image/cbf/star4circleURPure.png",
+			"assets/image/cbf/star4foreURPure.png"
+		},
+		["UR (Old)"] = image_cache {
+			"assets/image/cbf/star4circleURPure_Old.png",
+			"assets/image/cbf/star4foreURPure.png"
+		},
+		SSR = image_cache {
+			"assets/image/cbf/star4circleSSRPure.png",
+			"assets/image/cbf/star4foreSRPureIdolized.png"
+		},
+		SR = image_cache {
+			"assets/image/cbf/star4circleSRPure.png",
+			"assets/image/cbf/star4foreSRPureIdolized.png"
+		},
+	},
+	Cool = {
+		UR = image_cache {
+			"assets/image/cbf/star4circleURCool.png",
+			"assets/image/cbf/star4foreURCool.png"
+		},
+		["UR (Old)"] = image_cache {
+			"assets/image/cbf/star4circleURCool_Old.png",
+			"assets/image/cbf/star4foreURCool.png"
+		},
+		SSR = image_cache {
+			"assets/image/cbf/star4circleSSRCool.png",
+			"assets/image/cbf/star4foreSRCoolIdolized.png"
+		},
+		SR = image_cache {
+			"assets/image/cbf/star4circleSRCool.png",
+			"assets/image/cbf/star4foreSRCoolIdolized.png"
+		},
+	},
+}
+
+local function LoadUnitStrategy0(table)
+	return setmetatable(table or {}, {__index = function(self, var)
+		local x = cbf_unit_icons[var]
+		self[var] = x
 		
 		return x
 	end})
-	
-	IconCache = {
-		None = {
-			UR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleUREmpty.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURSmile_empty.png")
-			},
-			["UR (Old)"] = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURCustom_Old.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURSmile_empty.png")
-			},
-			SR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSR_Custom.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4circleSR_Custom_fore.png")
-			},
-			R = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleR_Custom.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4circleR_Custom_fore.png")
-			},
-		},
-		Smile = {
-			UR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURSmile.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURSmile.png")
-			},
-			["UR (Old)"] = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURSmile_Old.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURSmile.png")
-			},
-			SSR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSSRSmile.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRSmileIdolized.png")
-			},
-			SR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSRSmile.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRSmileIdolized.png")
-			},
-		},
-		Pure = {
-			UR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURPure.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURPure.png")
-			},
-			["UR (Old)"] = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURPure_Old.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURPure.png")
-			},
-			SSR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSSRPure.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRPureIdolized.png")
-			},
-			SR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSRPure.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRPureIdolized.png")
-			},
-		},
-		Cool = {
-			UR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURCool.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURCool.png")
-			},
-			["UR (Old)"] = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleURCool_Old.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreURCool.png")
-			},
-			SSR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSSRCool.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRCoolIdolized.png")
-			},
-			SR = {
-				AquaShine.LoadImage("assets/image/cbf/star4circleSRCool.png"),
-				AquaShine.LoadImage("assets/image/cbf/star4foreSRCoolIdolized.png")
-			},
-		},
-	}
-
-	function ComposeUnitImage(color_type, rarity, chara_name, r, g, b)
-		-- chara_name can be nil
-		-- r, g, b are in float
-		if chara_name and #chara_name == 0 then chara_name = nil end
-		
-		local cl = {}
-		local da
-		local img
-		
-		if color_type == "Custom" then
-			da = IconCache.None
-			img = assert(da[rarity], "Invalid rarity")
-			
-			cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
-			cl[#cl + 1] = {love.graphics.draw, img[2]}
-			
-			if chara_name and UnitIconCache[chara_name] then
-				cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
-				cl[#cl + 1] = {love.graphics.draw, UnitIconCache[chara_name]}
-				cl[#cl + 1] = {love.graphics.setColor, r * 255, g * 255, b * 255}
-			end
-			
-			cl[#cl + 1] = {love.graphics.draw, img[1]}
-		else
-			da = assert(IconCache[color_type], "Invalid attribute")
-			img = assert(da[rarity], "Invalid rarity")
-			
-			cl[#cl + 1] = {love.graphics.setColor, 255, 255, 255}
-			cl[#cl + 1] = {love.graphics.draw, img[2]}
-			
-			if chara_name and UnitIconCache[chara_name] then
-				cl[#cl + 1] = {love.graphics.draw, UnitIconCache[chara_name]}
-			end
-			
-			cl[#cl + 1] = {love.graphics.draw, img[1]}
-		end
-		
-		return AquaShine.ComposeImage(128, 128, cl)
-	end
-
-	-- Look at "Cards" folder for custom cards
-	function LoadUnitStrategy1(file)
-		if love.filesystem.isDirectory(file[1].."/Cards") then
-			setmetatable(UnitIconCache, {
-				__index = function(_, var)
-					local name = file[1].."/Cards/"..var..".png"
-					
-					if love.filesystem.isFile(name) then
-						local x = love.graphics.newImage(name)
-						
-						UnitIconCache[var] = x
-						return x
-					end
-					
-					return nil
-				end
-			})
-			
-			return true
-		end
-		
-		return false
-	end
-
-	-- Look at "Custom Cards" folder and read list.txt
-	function LoadUnitStrategy2(file)
-		local listname = file[1].."/Custom Cards/list.txt"
-		if
-			love.filesystem.isDirectory(file[1].."/Custom Cards") and
-			love.filesystem.isFile(listname)
-		then
-			for line in love.filesystem.lines(listname) do
-				if #line > 0 then
-					local idx = line:match("([^/]+)/[^;]+")
-					local _, img = pcall(love.graphics.newImage, file[1].."/Custom Cards/"..idx..".png")
-					
-					if _ then
-						UnitIconCache[idx] = img
-					end
-				end
-			end
-			
-			return true
-		end
-		
-		return false
-	end
 end
 
---! @brief Check if specificed beatmap is CBF beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns true if it's CBF beatmap, false otherwise
-function CBFBeatmap.Detect(file)
-	-- File param is table:
-	-- 1. path relative to DEPLS save dir
-	-- 2. absolute path
-	-- dir separator is forward slash
-	-- does not contain trailing slash
-	local zip = file[1]..".zip"
-	
-	if love.filesystem.isFile(zip) then
-		AquaShine.MountZip(zip, file[1])
+-- Look at "Cards" folder for custom cards
+local function LoadUnitStrategy1(table, file)
+	local card_info = love.filesystem.getInfo(file.."/Cards")
+	if card_info and card_info.type == "directory" then
+		setmetatable(table, {
+			__index = function(_, var)
+				local name = file.."/Cards/"..var..".png"
+				local name_info = love.filesystem.getInfo(name)
+				
+				if name_info and name_info.type == "file" then
+					local x = love.graphics.newImage(name)
+					
+					table[var] = x
+					return x
+				end
+				
+				return nil
+			end
+		})
+		
+		return true
 	end
 	
-	return
-		love.filesystem.isFile(file[1].."/beatmap.txt") and
-		love.filesystem.isFile(file[1].."/projectConfig.txt")
+	return false
 end
 
---! @brief Loads CBF beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns table with these data
---!          - notes_list is the SIF-compilant notes data
---!          - song_file is the song file handle (Source object) or nil
---!          - background is beatmap-specific background handle list (for extended backgrounds) (jpg supported) or nil
---!          - units is custom units image list or nil
-function CBFBeatmap.Load(file)
-	local cbf = {
-		beatmap = assert(love.filesystem.newFile(file[1].."/beatmap.txt", "r")),
-		projectConfig = assert(love.filesystem.newFile(file[1].."/projectConfig.txt", "r"))
-	}
+-- Look at "Custom Cards" folder and read list.txt
+local function LoadUnitStrategy2(table, file)
+	local listname = file.."/Custom Cards/list.txt"
+	local listname_info = love.filesystem.getInfo(listname)
+	local custlist_info = love.filesystem.getInfo(file.."/Custom Cards")
+	if
+		custlist_info and custlist_info.type == "directory" and
+		listname_info and listname_info.type == "file"
+	then
+		local f = assert(love.filesystem.newFile(listname, "r"))
+		for line in f:lines() do
+			if #line > 0 then
+				local idx = line:match("([^/]+)/[^;]+")
+				local _, img = pcall(love.graphics.newImage, file.."/Custom Cards/"..idx..".png")
+				
+				if _ then
+					table[idx] = img
+				end
+			end
+		end
+		
+		f:close()
+		return true
+	end
+	
+	return false
+end
+
+local function compose_unit_icon(unit_cache, color_type, rarity, chara_name, r, g, b)
+	-- chara_name can be nil
+	-- r, g, b are in float (0..1)
+	if chara_name and #chara_name == 0 then chara_name = nil end
+	
+	local cl = {}
+	local da
+	local img
+	
+	if color_type == "Custom" then
+		da = cbf_icons.None
+		img = assert(da[rarity], "Invalid rarity")
+		
+		cl[#cl + 1] = {love.graphics.setColor, r, g, b}
+		cl[#cl + 1] = {love.graphics.draw, img[2]}
+		
+		if chara_name and unit_cache[chara_name] then
+			cl[#cl + 1] = {love.graphics.setColor, 1, 1, 1}
+			cl[#cl + 1] = {love.graphics.draw, unit_cache[chara_name]}
+			cl[#cl + 1] = {love.graphics.setColor, r, g, b}
+		end
+		
+		cl[#cl + 1] = {love.graphics.draw, img[1]}
+	else
+		da = assert(cbf_icons[color_type], "Invalid attribute")
+		img = assert(da[rarity], "Invalid rarity")
+		
+		cl[#cl + 1] = {love.graphics.setColor, 1, 1, 1}
+		cl[#cl + 1] = {love.graphics.draw, img[2]}
+		
+		if chara_name and unit_cache[chara_name] then
+			cl[#cl + 1] = {love.graphics.draw, unit_cache[chara_name]}
+		end
+		
+		cl[#cl + 1] = {love.graphics.draw, img[1]}
+	end
+	
+	return AquaShine.ComposeImage(128, 128, cl)
+end
+
+------------------------
+-- CBF Beatmap Loader --
+------------------------
+
+function CBFLoader.GetLoaderName()
+	return "Custom Beatmap Festival"
+end
+
+function CBFLoader.LoadNoteFromFilename(file)
+	local this = CBFBeatmap()
+	local project_config = file.."/projectConfig.txt"
+	this.beatmap_filename = file.."/beatmap.txt"
+	this.project_folder = file
+	local info_beatmap = love.filesystem.getInfo(this.beatmap_filename)
+	local info_project = love.filesystem.getInfo(project_config)
+	
+	assert(
+		info_beatmap and info_beatmap.type == "file" and
+		info_project and info_project.type == "file",
+		"Not a valid Custom Beatmap Festival project"
+	)
+	
+	this.cbf_conf = {}
+	project_config = assert(love.filesystem.newFile(project_config, "r"))
 	
 	-- Add keys
-	for key, value in cbf.projectConfig:read():gmatch("%[([^%]]+)%];([^;]+);") do
-		cbf[key] = value
+	for key, value in project_config:read():gmatch("%[([^%]]+)%];([^;]+);") do
+		this.cbf_conf[key] = tonumber(value) or value
 	end
 	
-	local notes_data = {}
-	local desired_attribute
-	
-	if cbf.SONG_ATTRIBUTE == "Smile" then
-		desired_attribute = 1
-	elseif cbf.SONG_ATTRIBUTE == "Pure" then
-		desired_attribute = 2
-	elseif cbf.SONG_ATTRIBUTE == "Cool" then
-		desired_attribute = 3
-	else
-		desired_attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 1)
+	if this.cbf_conf.SONG_NAME then
+		this.cbf_conf.SONG_NAME = tostring(this.cbf_conf.SONG_NAME)
 	end
 	
-	local readed_notes_data = {}
-	local hold_note_queue = {}
+	project_config:close()
+	return this
+end
 
-	for line in cbf.beatmap:lines() do
-		if #line > 0 then
-			readed_notes_data[#readed_notes_data + 1] = line
-		end
+------------------------
+-- CBF Beatmap Object --
+------------------------
+
+local function parse_note(str)
+	local values = {}
+	local curidx = 1
+	local nextidx = str:find("/", 1, true)
+	
+	while nextidx do
+		values[#values + 1] = str:sub(curidx, nextidx - 1)
+		curidx = nextidx + 1
+		nextidx = str:find("/", curidx, true)
 	end
+	
+	local lastval = str:sub(curidx)
+	if lastval:sub(-1) == ";" then
+		lastval = lastval:sub(1, -2)
+	end
+	values[#values + 1] = lastval
+	
+	return unpack(values)
+end
 
-	cbf.beatmap:close()
-
-	-- sort
-	table.sort(readed_notes_data, function(a, b)
-		local a1 = a:match("([^/]+)/")
-		local b1 = b:match("([^/]+)/")
+function CBFBeatmap.GetNotesList(this)
+	if not(this.notes_data) then
+		local f = assert(love.filesystem.newFile(this.beatmap_filename, "r"))
+		local notes_data = {}
+		local readed_notes_data = {}
+		local hold_note_queue = {}
+		local desired_attribute
 		
-		return tonumber(a1) < tonumber(b1)
-	end)
-
-	-- Parse notes
-	for _, line in pairs(readed_notes_data) do
-		local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+);")
-		
-		if time and pos and is_hold and is_release and release_time and hold_time and is_star and r and g and b and is_customcol then
-			local num_pos = position_translation[pos]
-			local attri = desired_attribute
-			release_time = tonumber(release_time)
-			hold_time = tonumber(hold_time)
-			
-			if is_customcol == "True" then
-				attri = bit.bor(
-					bit.bor(bit.lshift(math.floor(tonumber(r) * 255), 23), bit.lshift(math.floor(tonumber(g) * 255), 14)),
-					bit.bor(bit.lshift(math.floor(tonumber(b) * 255), 5), 31)
-				)
-			end
-			
-			if is_release == "True" then
-				local last = assert(hold_note_queue[num_pos], "unbalanced release note")
-				
-				last.effect_value = time - last.timing_sec
-				hold_note_queue[num_pos] = nil
-			elseif is_hold == "True" then
-				local val = {
-					timing_sec = time + 0,
-					notes_attribute = attri,
-					notes_level = 1,
-					effect = 3,
-					effect_value = 0,
-					position = num_pos
-				}
-				
-				table.insert(notes_data, val)
-				assert(hold_note_queue[num_pos] == nil, "overlapped hold note")
-				
-				hold_note_queue[num_pos] = val
-			else
-				table.insert(notes_data, {
-					timing_sec = time + 0,
-					notes_attribute = attri,
-					notes_level = 1,
-					effect = is_star == "True" and 4 or 1,
-					effect_value = 2,
-					position = num_pos
-				})
-			end
+		if this.cbf_conf.SONG_ATTRIBUTE == "Smile" then
+			desired_attribute = 1
+		elseif this.cbf_conf.SONG_ATTRIBUTE == "Pure" then
+			desired_attribute = 2
+		elseif this.cbf_conf.SONG_ATTRIBUTE == "Cool" then
+			desired_attribute = 3
 		else
-			io.write("[CBF Beatmap] Ignored", line, "\n")
+			desired_attribute = AquaShine.LoadConfig("LLP_SIFT_DEFATTR", 10)
 		end
-	end
 
-	for i = 1, 9 do
-		assert(hold_note_queue[i] == nil, "unbalanced hold note")
-	end
-	
-	table.sort(notes_data, function(a, b) return a.timing_sec < b.timing_sec end)
-	
-	-- Get background
-	local background = {}
-	local exts = {"png", "jpg", "bmp"}
-	
-	for a, b in pairs(exts) do
-		if love.filesystem.isFile(file[1].."/background."..b) then
-			background[0] = NoteLoader.LoadImageRelative(file[1], "background."..b)
-		end
-	end
-	
-	-- Left, Right, Top, Bottom
-	if background[0] then
-		for i = 1, 4 do
-			for j = 1, 3 do
-				local b = exts[j]
-				
-				if love.filesystem.isFile(file[1].."/background-"..i.."."..b) then
-					background[i] = NoteLoader.LoadImageRelative(file[1], "background-"..i.."."..b)
-					break
-				end
+		-- Load it line by line
+		for line in f:lines() do
+			if #line > 0 then
+				readed_notes_data[#readed_notes_data + 1] = line
 			end
 		end
+		f:close()
+		
+		-- First phase sort
+		table.sort(readed_notes_data, function(a, b)
+			local a1 = a:match("([^/]+)/")
+			local b1 = b:match("([^/]+)/")
+			
+			return tonumber(a1) < tonumber(b1)
+		end)
+		
+		-- Parse
+		for _, line in ipairs(readed_notes_data) do
+			--local time, pos, is_hold, is_release, release_time, hold_time, is_star, r, g, b, is_customcol = line:match("([^/]+)/([^/]+)/[^/]+/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^,]+),([^,]+),([^,]+),([^;]+)")
+			local time, pos, _u, is_hold, is_release, release_time, hold_time, is_star, colinfo = parse_note(line)
+			local r, g, b, is_customcol = colinfo:match("([^,]+),([^,]+),([^,]+),([True|False]+)")
+			
+			if time and pos and is_hold and is_release and release_time and hold_time and is_star and r and g and b and is_customcol then
+				local num_pos = position_translation[pos]
+				local attri = desired_attribute
+				release_time = tonumber(release_time)
+				hold_time = tonumber(hold_time)
+				time = tonumber(time)
+				
+				if is_customcol == "True" then
+					attri = bit.bor(
+						bit.bor(bit.lshift(math.floor(tonumber(r) * 255), 23), bit.lshift(math.floor(tonumber(g) * 255), 14)),
+						bit.bor(bit.lshift(math.floor(tonumber(b) * 255), 5), 31)
+					)
+				end
+				
+				if is_release == "True" then
+					local last = assert(hold_note_queue[num_pos], "unbalanced release note")
+					
+					last.effect_value = time - last.timing_sec
+					hold_note_queue[num_pos] = nil
+				elseif is_hold == "True" then
+					local val = {
+						timing_sec = time,
+						notes_attribute = attri,
+						notes_level = 1,
+						effect = 3,
+						effect_value = 0,
+						position = num_pos
+					}
+					
+					table.insert(notes_data, val)
+					assert(hold_note_queue[num_pos] == nil, "overlapped hold note")
+					
+					hold_note_queue[num_pos] = val
+				else
+					table.insert(notes_data, {
+						timing_sec = time,
+						notes_attribute = attri,
+						notes_level = 1,
+						effect = is_star == "True" and 4 or 1,
+						effect_value = 2,
+						position = num_pos
+					})
+				end
+			else
+				AquaShine.Log("NoteLoader2/load_cbf", "Ignored: %s", line)
+			end
+		end
+		
+		table.sort(notes_data, function(a, b) return a.timing_sec < b.timing_sec end)
+		this.notes_data = notes_data
 	end
 	
-	-- Load units
-	local units = {}
-	local has_custom_units = false
-	
-	if UnitLoadingAllowed then
-		local charposname = file[1].."/characterPositions.txt"
+	return this.notes_data
+end
+
+function CBFBeatmap.GetName(this)
+	return this.cbf_conf.SONG_NAME
+end
+
+function CBFBeatmap.GetBeatmapTypename()
+	return "Custom Beatmap Festival"
+end
+
+local supported_image_fmts = {".png", ".bmp", ".jpg"}
+function CBFBeatmap.GetCoverArt(this)
+	if not(this.cover_art_loaded) then
+		for _, v in ipairs(supported_image_fmts) do
+			local name = this.project_folder.."/cover"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				local cover = {}
+				
+				cover.title = this.cbf_conf.SONG_NAME
+				cover.arrangement = this.cbf_conf.COVER_COMMENT
+				cover.image = love.graphics.newImage(name, {mipmaps = true})
+				
+				this.cover_art = cover
+				break
+			end
+		end
 		
-		if love.filesystem.isFile(charposname) then
+		this.cover_art_loaded = true
+	end
+	
+	return this.cover_art
+end
+
+function CBFBeatmap.GetCustomUnitInformation(this)
+	if not(this.unit_loaded) then
+		local charpos = this.project_folder.."/characterPositions.txt"
+		local charpos_info = love.filesystem.getInfo(charpos)
+		local units = {}
+		this.custom_unit = units
+		
+		if charpos_info and charpos_info.type == "file" then
+			local composition_cache = {}
+			local cunitloc = LoadUnitStrategy0()
+			local f = assert(love.filesystem.newFile(charpos, "r"))
+			
 			-- Initialize units image
-			if not(LoadUnitStrategy1(file)) then
-				LoadUnitStrategy2(file)
+			if not(LoadUnitStrategy1(cunitloc, this.project_folder)) then
+				LoadUnitStrategy2(cunitloc, this.project_folder)
 			end
 			
 			-- If loading from "Cards" folder and "Custom Cards" folder fails,
 			-- Load in current beatmap directory instead or in unit_icon folder
-			local index_name = getmetatable(UnitIconCache)
+			local index_name = getmetatable(cunitloc)
 			if index_name then index_name = index_name.__index end
 			
-			setmetatable(UnitIconCache, {
+			setmetatable(cunitloc, {
 				__index = function(_, var)
 					if index_name then
 						local ret = index_name(_, var)
@@ -411,83 +462,174 @@ function CBFBeatmap.Load(file)
 						end
 					end
 					
-					local name = file[1].."/"..var..".png"
+					local name = this.project_folder.."/"..var..".png"
 					local name2 = "unit_icon/"..var..".png"
+					local name_info = love.filesystem.getInfo(name)
+					local name2_info = love.filesystem.getInfo(name2)
 					local x = nil
 					
-					if love.filesystem.isFile(name) then
+					if name_info and name_info.type == "file" then
 						x = love.graphics.newImage(name)
-					elseif love.filesystem.isFile(name2) then
+					elseif name2_info and name2_info.type == "file" then
 						x = love.graphics.newImage(name2)
 					end
 					
-					UnitIconCache[var] = x
+					cunitloc[var] = x
 					return x
 				end
 			})
 			
-			
-			for line in love.filesystem.lines(charposname) do
+			for line in f:lines() do
 				if #line > 0 then
 					local cache_name = line:sub(line:find("/") + 1)
 					local pos, attr, rar, cname, r, g, b = line:match("([^/]+)/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
 					local i = assert(position_translation[pos])
 					
-					if CompositionCache[cache_name] then
-						units[i] = CompositionCache[cache_name]
-						has_custom_units = true
+					if composition_cache[cache_name] then
+						units[i] = composition_cache[cache_name]
 					else
-						local a = ComposeUnitImage(attr, rar, cname, r, g, b)
+						local a = compose_unit_icon(cunitloc, attr, rar, cname, r, g, b)
 						
 						units[i] = a
-						CompositionCache[cache_name] = a
-						has_custom_units = true
+						composition_cache[cache_name] = a
 					end
 				end
 			end
+			
+			f:close()
 		end
-	end
-	
-	-- Result
-	local out = {
-		notes_list = notes_data,
-		song_file = AquaShine.LoadAudio(file[1].."/songFile.wav")
-	}
-	
-	if background[0] then
-		out.background = background
-	end
-	
-	if has_custom_units then
-		out.units = units
-	end
-	
-	-- Get cover
-	local cover_ext = {"jpg", "png"}
-	
-	for i = 1, 2 do
-		local fn = file[1].."/cover."..cover_ext[i]
 		
-		if love.filesystem.isFile(file[1].."/cover."..cover_ext[i]) then
-			-- Has cover image
-			local cover = {image = love.graphics.newImage(fn)}
-			
-			cover.title = cbf.SONG_NAME
-			cover.arrangement = cbf.COVER_COMMENT or ""
-			out.cover = cover
-			
-			break
-		end
+		this.unit_loaded = true
 	end
 	
-	-- Get live clear SFX
-	local live_clear_sound = AquaShine.LoadAudio(file[1].."/liveShowClearSFX.wav")
-	
-	if live_clear_sound then
-		out.live_clear = love.audio.newSource(live_clear_sound)
-	end
-	
-	return out
+	return this.custom_unit
 end
 
-return CBFBeatmap
+function CBFBeatmap.GetBackgroundID(this)
+	return this:GetCustomBackground() and -1 or 0
+end
+
+function CBFBeatmap.GetCustomBackground(this)
+	if not(this.bg_loaded) then
+		for _, v in ipairs(supported_image_fmts) do
+			local name = this.project_folder.."/background"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				local bg = {}
+				local img = love.graphics.newImage(name)
+				local w, h = img:getDimensions()
+				local ratio = w / h
+				
+				if ratio >= 1.770 then
+					-- We can make the background to be 16:9
+					local canvas = love.graphics.newCanvas(1136, 640)
+					local scale = 640 / h
+					
+					love.graphics.push("all")
+					love.graphics.setCanvas(canvas)
+					love.graphics.setColor(1, 1, 1)
+					love.graphics.clear(0, 0, 0)
+					love.graphics.draw(img, 568, 320, 0, scale, scale, w * 0.5, h * 0.5)
+					love.graphics.pop()
+					
+					bg[0] = love.graphics.newImage(canvas:newImageData(88, 0, 960, 640))
+					bg[1] = love.graphics.newImage(canvas:newImageData(0, 0, 88, 640))
+					bg[2] = love.graphics.newImage(canvas:newImageData(1048, 0, 88, 640))
+				elseif ratio >= 1.5 then
+					-- 2:3 ratio. Put it as-is
+					bg[0] = img
+				elseif ratio >= 4/3 then
+					-- We can make the background to be 4:3
+					local canvas = love.graphics.newCanvas(960, 720)
+					local scale = 960 / w
+					
+					love.graphics.push("all")
+					love.graphics.setCanvas(canvas)
+					love.graphics.setColor(1, 1, 1)
+					love.graphics.clear(0, 0, 0)
+					love.graphics.draw(img, 480, 360, 0, scale, scale, w * 0.5, h * 0.5)
+					love.graphics.pop()
+					
+					bg[0] = love.graphics.newImage(canvas:newImageData(0, 40, 960, 640))
+					bg[4] = love.graphics.newImage(canvas:newImageData(0, 0, 960, 40))
+					bg[5] = love.graphics.newImage(canvas:newImageData(0, 640, 960, 40))
+				else
+					-- We don't know the ratio. Put it as-is
+					bg[0] = img
+				end
+				
+				this.background = bg
+				break
+			end
+		end
+		
+		this.bg_loaded = true
+	end
+	
+	return this.background
+end
+
+-- This is non-standard (and not supported in CBF 0.7 atm).
+local supported_video_fmts = {".ogg", ".ogv"}
+if AquaShine.FFmpegExt then
+	-- Wooo, FFmpegExt power!
+	supported_video_fmts[#supported_video_fmts + 1] = ".mp4"
+	supported_video_fmts[#supported_video_fmts + 1] = ".mkv"
+	supported_video_fmts[#supported_video_fmts + 1] = ".avi"
+	supported_video_fmts[#supported_video_fmts + 1] = ".flv"
+end
+function CBFBeatmap.GetVideoBackground(this)
+	if not(this.video_loaded) then
+		for _, v in ipairs(supported_video_fmts) do
+			local name = this.project_folder.."/video_background"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				local message
+				this.video, message = AquaShine.LoadVideo(name)
+				
+				if not(this.video) then
+					AquaShine.Log("NoteLoader2/load_cbf", "Failed to load video: %s", message)
+				end
+				
+				break
+			end
+		end
+		
+		this.video_loaded = true
+	end
+	
+	return this.video
+end
+
+function CBFBeatmap.GetNotesStyle(this)
+	return this.cbf_conf.PROJECT_NOTE_SPRITES and (this.cbf_conf.PROJECT_NOTE_SPRITES + 1) or 0
+end
+
+function CBFBeatmap.GetDifficultyString(this)
+	return this.cbf_conf.DIFFICULTY_TEMPLATE
+end
+
+-- In CBF, only  WAV and OGG were supported
+-- But actually Live Simulator: 2 also supports MP3
+local supported_audio_fmts = {".wav", ".ogg"}
+function CBFBeatmap.GetBeatmapAudio(this)
+	if not(this.audio_loaded) then
+		for _, v in ipairs(supported_audio_fmts) do
+			local name = this.project_folder.."/songFile"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				this.audio = love.sound.newSoundData(name)
+				break
+			end
+		end
+		
+		this.audio_loaded = true
+	end
+	
+	return this.audio
+end
+
+return CBFLoader

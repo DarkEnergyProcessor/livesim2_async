@@ -5,31 +5,19 @@
 local DEPLS, AquaShine = ...
 local ScoreUpdate = {CurrentScore = 0}
 
-local draw = love.graphics.draw
-local setColor = love.graphics.setColor
-local score_str = {string.byte(tostring(ScoreUpdate.CurrentScore), 1, 2147483647)}
-local score_images = {}
-local score_digit_len = 0
+local love = love
+local score_str = tostring(ScoreUpdate.CurrentScore)
+local score_images = AquaShine.GetCachedData("score_list", love.graphics.newImageFont, "assets/image/live/score_num/score.png", "0123456789", -4)
 local xpos
 
-for i = 0, 9 do
-	score_images[i] = AquaShine.LoadImage("assets/image/live/score_num/l_num_0"..i..".png")
-end
-
 function ScoreUpdate.Update(deltaT)
-	score_str = {string.byte(tostring(ScoreUpdate.CurrentScore), 1, 2147483647)}
-	score_digit_len = #score_str
-	xpos = 448 - 16 * score_digit_len
+	score_str = tostring(ScoreUpdate.CurrentScore)
 end
 
 function ScoreUpdate.Draw()
-	setColor(255, 255, 255, DEPLS.LiveOpacity)
-	
-	for i = 1, score_digit_len do
-		draw(score_images[score_str[i] - 48], xpos + 32 * i, 53)
-	end
-	
-	setColor(255, 255, 255, 255)
+	love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
+	love.graphics.setFont(score_images)
+	love.graphics.print(score_str, 476, 53, 0, 1, 1, #score_str * 16, 0)
 end
 
 return ScoreUpdate

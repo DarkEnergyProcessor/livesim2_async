@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local DEPLS, AquaShine = ...
+local love = love
 local tween = require("tween")
 local lg = require("love.graphics")
 local Yohane = require("Yohane")
@@ -34,23 +35,11 @@ SkillPopups.DirectionRarity.SSR = "ef_308"
 SkillPopups.DirectionRarity.SR = "ef_306"
 SkillPopups.DirectionRarity.R = "ef_305"
 
-local function make_idolcolor_tween()
-	local a = {}
-	local b = {}
-	
-	a.opacity = 255
-	a.scale = 0.2
-	b.opacity = 0
-	b.scale = 4
-	
-	return (tween.new(700, a, b))
-end
-
 -- Idol effect for effect player
 SkillPopups.IdolEffect.__index = SkillPopups.IdolEffect
 function SkillPopups.IdolEffect.Create(unit_pos, image)
 	local out = {}
-	local info = {Opacity = 255, Scale = 0.2}
+	local info = {Opacity = 1, Scale = 0.2}
 	
 	out.Status = info
 	out.Tween = tween.new(700, info, {Opacity = 0}, "inCubic")
@@ -67,7 +56,7 @@ function SkillPopups.IdolEffect.Update(out, deltaT)
 end
 
 function SkillPopups.IdolEffect.Draw(out)
-	love.graphics.setColor(255, 255, 255, out.Status.Opacity)
+	love.graphics.setColor(1, 1, 1, out.Status.Opacity)
 	love.graphics.draw(out.Image, out.X, out.Y, 0, out.Status.Scale, out.Status.Scale, 32, 32)
 end
 

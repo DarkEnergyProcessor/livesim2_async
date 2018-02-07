@@ -6,10 +6,10 @@ local tween = require("tween")
 local DEPLS = ...
 local ScoreEclipseF = {}
 
-local eclipse_data = {scale = 1, opacity = 255}
+local eclipse_data = {scale = 1, opacity = 1}
 local eclipse_tween = tween.new(500, eclipse_data, {scale = 1.6, opacity = 0}, "outSine")
 
-local bar_data = {opacity = 255}
+local bar_data = {opacity = 1}
 bar_data.tween = tween.new(300, bar_data, {opacity = 0})
 eclipse_tween:update(500)
 bar_data.tween:update(300)
@@ -30,12 +30,12 @@ end
 
 function ScoreEclipseF.Draw()
 	if ScoreEclipseF.BarDataStats then
-		setColor(255, 255, 255, eclipse_data.opacity * DEPLS.LiveOpacity / 255)
+		setColor(1, 1, 1, eclipse_data.opacity * DEPLS.LiveOpacity)
 		draw(ScoreEclipseF.Img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
 	end
 	
-	if ScoreEclipseF.EclipseStats then
-		setColor(255, 255, 255, bar_data.opacity * DEPLS.LiveOpacity / 255)
+	if ScoreEclipseF.EclipseStats and ScoreEclipseF.ScoreBar.BarTapFlash then
+		setColor(1, 1, 1, bar_data.opacity * DEPLS.LiveOpacity)
 		draw(ScoreEclipseF.Img2, 5, 8)
 	end
 end

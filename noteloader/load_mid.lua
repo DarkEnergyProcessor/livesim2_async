@@ -3,12 +3,11 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
+local love = love
 local stringstream = require("stringstream")
 
-local MIDIBeatmap = {
-	Name = "MIDI Beatmap",
-	Extension = "mid"
-}
+local MIDILoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.MIDILoader", {ProjectLoader = false})
+local MIDIBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.MIDIBeatmap")
 
 local function str2dword_be(str)
 	return str:sub(1,1):byte() * 16777216 + str:sub(2,2):byte() * 65536 + str:sub(3,3):byte() * 256 + str:sub(4,4):byte()
@@ -21,7 +20,7 @@ local function read_varint(fs)
 	repeat
 		local b = tonumber(fs:read(1):byte())
 		
-		last_bit_set = b / 128 >= 1
+		last_bit_set = b * 0.0078125 >= 1
 		out = out * 128 + (b % 128)
 	until last_bit_set == false
 	
@@ -69,6 +68,7 @@ local function midi2sif(stream)
 			timing_total = timing_total + timing
 			
 			if event_type == 8 then
+				-- Note Off
 				note = ss:read(1):byte()
 				velocity = ss:read(1):byte()
 				
@@ -79,6 +79,7 @@ local function midi2sif(stream)
 					channel = event_byte % 16
 				})
 			elseif event_type == 9 then
+				-- Note On
 				note = ss:read(1):byte()
 				velocity = ss:read(1):byte()
 				
@@ -88,6 +89,9 @@ local function midi2sif(stream)
 					velocity = velocity,
 					channel = event_byte % 16
 				})
+			elseif event_type == 12 or event_type == 13 then
+				-- Program change or Aftertouch
+				ss:seek("cur", 1)
 			elseif event_byte == 255 then
 				-- meta
 				
@@ -109,7 +113,7 @@ local function midi2sif(stream)
 	event_list = {}
 	
 	for n, v in pairs(temp_event_list) do
-		for a, b in pairs(v) do
+		for a, b in ipairs(v) do
 			table.insert(event_list, {
 				tick = n,
 				order = a,
@@ -132,7 +136,7 @@ local function midi2sif(stream)
 	local bottom_index = 127
 	
 	-- Analyze start and end position. 
-	for n, v in pairs(event_list) do
+	for n, v in ipairs(event_list) do
 		if type(v.note) == "boolean" then
 			-- Note
 			top_index = math.max(top_index, v.pos)
@@ -155,18 +159,22 @@ local function midi2sif(stream)
 	-- Now start conversion.
 	local longnote_queue = {}
 	local sif_beatmap = {}
+	local last_timing_sec = 0
+	local last_tick = 0
 	
-	for n, v in pairs(event_list) do
+	for n, v in ipairs(event_list) do
 		if v.meta == 81 then
 			-- Tempo change
 			local tempo_num = {string.byte(v.data, 1, 128)}
+			last_timing_sec = v.tick * 60 / ppqn / tempo
+			last_tick = v.tick
 			tempo = 0
 			
 			for i = 1, #tempo_num do
 				tempo = tempo * 256 + tempo_num[i]
 			end
 			
-			tempo = math.floor(600000000 / tempo) / 10
+			tempo = math.floor((60000000000 / tempo) + 0.5) / 1000
 		elseif type(v.note) == "boolean" then
 			local position = v.pos - bottom_index + 1
 			local attribute = math.floor(v.channel / 4)
@@ -181,7 +189,7 @@ local function midi2sif(stream)
 						longnote_queue[position] = {v.tick, attribute, effect, position, v.vel}
 					else
 						sif_beatmap[#sif_beatmap + 1] = {
-							timing_sec = v.tick * 60 / ppqn / tempo,
+							timing_sec = (v.tick - last_tick) * 60 / ppqn / tempo + last_timing_sec,
 							notes_attribute = attribute,
 							notes_level = is_swing and v.vel + 1 or 1,
 							effect = effect + (is_swing and 10 or 0),
@@ -191,12 +199,16 @@ local function midi2sif(stream)
 					end
 				elseif v.note == false and effect == 3 then
 					-- Stop longnote queue
-					local queue = assert(longnote_queue[position], "queue for pos "..position.." is empty")
+					local queue = longnote_queue[position]
+					if not(queue) then
+						error("queue for pos "..position.." is empty")
+					end
+					
 					is_swing = queue[5] < 64
 					
 					longnote_queue[position] = nil
 					sif_beatmap[#sif_beatmap + 1] = {
-						timing_sec = queue[1] * 60 / ppqn / tempo,
+						timing_sec = (queue[1] - last_tick) * 60 / ppqn / tempo + last_timing_sec,
 						notes_attribute = attribute,
 						notes_level = is_swing and queue[5] + 1 or 1,
 						effect = is_swing and 13 or 3,
@@ -213,19 +225,46 @@ local function midi2sif(stream)
 	return sif_beatmap
 end
 
---! @brief Loads MIDI beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns table with these data
---!          - notes_list is the SIF-compilant notes data
-function MIDIBeatmap.Load(file)
-	local f = assert(love.filesystem.newFile(file[1]..".mid", "r"))
-	local out = {notes_list = midi2sif(f)}
-	
-	f:close()
-	return out
+-------------------------
+-- MIDI Beatmap Loader --
+-------------------------
+
+function MIDILoader.GetLoaderName()
+	return "Custom MIDI Beatmap"
 end
 
-return MIDIBeatmap
+function MIDILoader.LoadNoteFromFilename(f, file)
+	local out = midi2sif(f)
+	local this = MIDIBeatmap()
+	
+	this.out = out
+	this.name = NoteLoader._GetBasenameWOExt(file)
+	return this
+end
+
+------------------------------
+-- MIDI Beatmap Note Object --
+------------------------------
+
+function MIDIBeatmap.GetNotesList(this)
+	return this.out
+end
+
+function MIDIBeatmap.GetName(this)
+	return this.name
+end
+
+function MIDIBeatmap.GetBeatmapTypename()
+	return "MIDI Beatmap"
+end
+
+function MIDIBeatmap.GetBeatmapAudio(this)
+	if not(this.song_file_loaded) then
+		this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
+		this.song_file_loaded = true
+	end
+	
+	return this.song_file
+end
+
+return MIDILoader

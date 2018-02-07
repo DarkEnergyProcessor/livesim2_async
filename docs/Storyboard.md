@@ -4,14 +4,14 @@ Lua Storyboard
 Lua storyboard is simply a Lua script which controls how objects shown behind the simulator,
 hence it's named Lua storyboard. Please note that Lua script running as Lua storyboard is
 sandboxed, which means most of `love` functions doesn't exist in here or modified to prevent
-alteration of the rendering state, and to prevent malicious Lua storyboard from running.
+alteration of the rendering state, and to prevent malicious Lua script from running.
 
 Storyboard Entry Points
 =======================
 
 Lua storyboard needs to create this function in global namespace. Although there's way to use
 it without this entry points by using coroutines, but it's usage is discouraged and only
-provided for legacy DEPLS storyboard lua script.
+provided for legacy DEPLS storyboard Lua script.
 
 *************************************************
 
@@ -29,6 +29,34 @@ Storyboard frame update. Draw and calculate everything for the storyboard in her
 Parameters:
 
 * deltaT - The delta-time, in milliseconds
+
+*************************************************
+
+### `void Jump(number elapsed_time)`
+
+Storyboard seek. This function is called when user resumes Live Show!
+
+> This function is not available in current release.
+
+> If this function is not implemented, the beatmap is assumed not to support resumeable live.
+
+Parameters:
+
+* elapsed_time - Last elapsed time when the live show state is saved
+
+*************************************************
+
+### `void Pause(bool pausing)`
+
+Storyboard pause. This function is called when user pressed the pause button.
+
+> This function is not available in current release.
+
+> If this function is not implemented, the storyboard is assumed not to support pause, and all drawing operation will be emulated in 1136x726 canvas
+
+Parameters:
+
+* pausing - `true` if the game is paused, `false` if the game is unpaused.
 
 Storyboard Functions
 ====================
@@ -104,23 +132,37 @@ Parameters:
 
 * `path` - Video filename
 
-Returns: love2d `Video` object or `nil` on failure
+Returns: LOVE `Video` object or `AquaShineVideoObject` or `nil` on failure
 
-> For additional sandboxing and compatibility, this is synonym of `love.graphics.newVideo`
+> Unlike `love.graphics.newVideo`, this function allows loading of many video formats if system supports it (see `MultiVideoFormatSupported()`)
 
 *************************************************
 
 ### `Image|nil LoadImage(string path)`
 
-Load image. Directory is relative to current beatmap folder
+Load image. Directory is relative to current beatmap folder.
 
 Parameters:
 
 * `path` - Image filename
 
-Returns: love2d `Image` object or `nil` on failure
+Returns: LOVE `Image` object or `nil` on failure
 
 > For additional sandboxing and compatibility, this is synonym of `love.graphics.newImage`
+
+*************************************************
+
+### `Font|nil LoadFont([string path [, number size = 14]])`
+
+Load font. Directory is relative to current beatmap folder.
+
+Parameters:
+
+* `path` - Font path or nil to use default, Motoya L Maru font `MTLmr3m.ttf`
+
+* `size` - The font size. Defaults to 14.
+
+Returns: LOVE `Font` object or `nil` on failure
 
 *************************************************
 
@@ -176,22 +218,6 @@ Returns: Image handle or `nil` on failure
 
 *************************************************
 
-### `number SetNotesSpeed([number notes_speed])`
-
-Get or set notes speed
-
-Parameters:
-
-* `notes_speed` - Note speed, in milliseconds. 0.8 notes speed in SIF is equal to 800 in here
-
-Returns: Previous notes speed
-
-> This function throws error if `notes_speed` is less than 400ms
-
-> This function is now deprecated and will be removed in the future
-
-*************************************************
-
 ### `number SetPlaySpeed([number speed_factor])`
 
 Get or set play speed. This affects how fast the live simulator are
@@ -205,21 +231,6 @@ Returns: Previous play speed factor
 > This function throws error if `speed_factor` is zero or less
 
 > This function is disabled in rendering mode. Calls to this function in rendering mode will always result in error
-
-*************************************************
-
-### `ShelshaObject LoadTextureBank(string filename)`
-
-Load Playground texture bank (TEXB). Uses [Shelsha](https://github.com/MikuAuahDark/Shelsha) LOVE2D library to load
-Playground TEXB and parse it's mesh data, so you should check Shelsha documentation for function reference.
-
-Parameters:
-
-* `filename` - The texture bank filename. The TEXB must be decrypted before used. **Live Simulator: 2 doesn't decrypt the files**
-
-Returns: `ShelshaObject` or `nil` on failure.
-
-> This function is now deprecated and will be removed in the future
 
 *************************************************
 
@@ -238,6 +249,8 @@ Parameters:
 ### `boolean IsRenderingMode()`
 
 Check for current rendering type.
+
+> This function can be useful to determine quality of storyboard
 
 Returns: `true` if currently in rendering mode (offline drawing), `false` if currently in live mode (online drawing).
 
@@ -272,14 +285,130 @@ drawn by default.
 
 > This function can only be called inside `Initialize` function.
 
+*************************************************
+
 ### `bool IsOpenGLES()`
 
-Check if current renderer is OpenGL ES. This can be used to select shader code to be used because Desktop GL shader and GLES shader  
+Check if current renderer is OpenGL ES. This can be used to select shader code to use because Desktop GL shader and GLES shader code  
 were bit different each other
 
 Returns: `true` if running under OpenGLES, `false` otherwise
 
-> This function returns `true` when running LOVE2D under desktop with [ANGLE](http://angleproject.org) renderer.
+> This function also returns `true` when running LOVE under desktop with [ANGLE](http://angleproject.org) renderer.
+
+*************************************************
+
+### `bool MultiVideoFormatSupported()`
+
+Check if FFmpeg extension is available.
+
+Returns: `true` if FFmpeg extension is available (allow loading video other than Theora .ogg/.ogv), `false` otherwise.
+
+*************************************************
+
+### `table|Image|nil GetCurrentBackgroundImage([number index = 0])`
+
+Get the current beatmap background.
+
+Parameters:
+
+* `idx` - The index to retrieve it's background image or nil for all index
+
+Returns: LOVE `Image` object of specificed index, or nil, or table containing all of background image in LOVE `Image` object (index 0-4)
+
+*************************************************
+
+### `Image GetCurrentUnitImage(number index)`
+
+Get the current unit image.
+
+Parameters:
+
+* `idx` - The unit index to retrieve it's image. 1 is rightmost, 9 is leftmost.
+
+Returns: LOVE `Image` object
+
+*************************************************
+
+### `void UseZeroToOneColorRange()`
+
+Changes the behaviour of `love.graphics.setColor` inside storyboard to use 0-1 range instead of 0-255.
+0-255 color range is the default. This function exists for compatibility with older storyboard and doesn't
+take LOVE 0.11.x color range changes into account.
+
+> This function can only be called inside, or before `Initialize` function.
+
+> This function also affects `SetUnitOpacity`, `SetLiveOpacity`, and `SetBackgroundDimOpacity` color range to be 0..1
+
+*************************************************
+
+### `void AddScore(number score)`
+
+Add score.
+
+Parameters:
+
+* `score` - The score value (must be bigger than 0)
+
+*************************************************
+
+### `void SetRedTimingDuration(number duration)
+
+Activates or sets the Timing Window++ skill (Red) timer. This makes Good or Great to Perfect
+
+Parameters:
+
+* `dur` - The duration in milliseconds
+
+> If the current timing duration is higher than `dur`, this function has no effect
+
+*************************************************
+
+### `void SetYellowTimingDuration(number duration)
+
+Same as above, except this function is for Timing Window+ skill (Yellow) timer. This makes Great to Perfect
+
+Parameters:
+
+* `dur` - The duration in milliseconds
+
+> If the current timing duration is higher than `dur`, this function has no effect
+
+*************************************************
+
+### `bool IsLiveEnded()`
+
+Check whenever the live has cleared/ended.
+
+Returns: `true` if live has ended, `false` otherwise.
+
+*************************************************
+
+### `bool IsRandomMode()`
+
+Check whenever the notes is randomized.
+
+Returns: `false` if the notes is not randomized, `true` otherwise.
+
+*************************************************
+
+### `Shader ... SetPostProcessingShader(Shader ...)`
+
+Set post-processing shader chain
+
+Parameters:
+
+* `...` - New shaders to be used as post-processing (in order). Pass empty value to unset.
+
+Returns: Previous `Shader` objects (or `nil` if no shader is used)
+
+*************************************************
+
+### `number, number GetScreenDimensions()`
+
+Get the screen dimensions
+
+Returns: Screen dimensions (width and height)
 
 Storyboard Callback Functions
 =============================

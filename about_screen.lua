@@ -1,23 +1,29 @@
 -- About screen
 -- Part of Live Simulator: 2
 
-local AquaShine = AquaShine
+local AquaShine = ...
 local love = love
 local AboutScreen = {}
 
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
 local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
-local Background = AquaShine.LoadImage("assets/image/background/liveback_12.png")
+local Background = {AquaShine.LoadImage(
+	"assets/image/background/liveback_12.png",
+	"assets/image/background/b_liveback_012_01.png",
+	"assets/image/background/b_liveback_012_02.png",
+	"assets/image/background/b_liveback_012_03.png",
+	"assets/image/background/b_liveback_012_04.png"
+)}
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
-Written By:		AuahDark
-Special Thanks:	@yuyu0127_ for the SIF v5-style note images.
-
+Written By:     AuahDark
+Special Thanks: @yuyu0127_ for the SIF v5-style note images.
+                @RayFirefist for the contribution to Live Simulator: 2
+				/u/MilesElectric168 for the note randomizer algorithm
 License:
-
 The MIT License (MIT)
-Copyright (c) 2038 Dark Energy Processor Corporation
+Copyright (c) 2039 Dark Energy Processor Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -38,10 +44,11 @@ This Live Simulator uses these external libraries:
 	* JSON.lua				 	License
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
-	* Shelsha TEXB Loader	  	License
-	* LuaBit				  	 License		(Used when running under Lua 5.1)
+	* FFmpeg (when available)  	License
 
 
+
+LOVE Version:				  ]]..love._version..[[
 
 Repository:					https://github.com/MikuAuahDark/livesim2
 Live Simulator: 2 Version:	 ]].._G.DEPLS_VERSION
@@ -53,9 +60,13 @@ function AboutScreen.Draw()
 	local mx, my = AquaShine.CalculateTouchPosition(love.mouse.getPosition())
 	
 	-- Background
-	love.graphics.setColor(64, 64, 64)
-	love.graphics.draw(Background)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(0.25, 0.25, 0.25)
+	love.graphics.draw(Background[1])
+	love.graphics.draw(Background[2], -88, 0)
+	love.graphics.draw(Background[3], 960, 0)
+	love.graphics.draw(Background[4], 0, -43)
+	love.graphics.draw(Background[5], 0, 640)
+	love.graphics.setColor(1, 1, 1)
 	
 	-- Title
 	love.graphics.setFont(TitleFont)
@@ -70,9 +81,9 @@ function AboutScreen.Draw()
 		local a = ExternalLicenses[i]
 		
 		if mx >= a[1] and my >= a[2] and mx < a[1] + 56 and my < a[2] + 12 then
-			love.graphics.setColor(0, 0, 0, 192)
-			love.graphics.rectangle("fill", 0, 0, 960, 640)
-			love.graphics.setColor(255, 255, 255)
+			love.graphics.setColor(0, 0, 0, 0.75)
+			love.graphics.rectangle("fill", -88, -43, 1136, 726)
+			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(a[3], 5, 150)
 			
 			break
@@ -82,7 +93,7 @@ end
 
 function AboutScreen.KeyReleased(key, scancode)
 	if key == "escape" then
-		AquaShine.LoadEntryPoint("main_menu.lua")
+		AquaShine.LoadEntryPoint(":main_menu")
 	end
 end
 

@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local tween = require("tween")
+local love = love
 local DEPLS = ...
 local ComboCounter = {CurrentCombo = 0}
 
@@ -60,9 +61,6 @@ function ComboCounter.Update(deltaT)
 end
 
 
-local ComboNumbers = DEPLS.Images.ComboNumbers
-local draw = love.graphics.draw
-local setColor = love.graphics.setColor
 function ComboCounter.Draw()
 	local cc = ComboCounter.CurrentCombo
 	if cc > 0 then
@@ -70,19 +68,23 @@ function ComboCounter.Draw()
 		-- number pos: 451x267+24+24; aligh right; subtract by 43 for distance
 		-- ImageMagick coordinate notation is used
 		local combo_str = {string.byte(tostring(cc), 1, 20)}
-		local img = ComboNumbers[get_combo_num_idx(cc)]
+		local img = DEPLS.Images.ComboNumbers[get_combo_num_idx(cc)]
 		
-		setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
-		draw(img.combo, 541, 266, 0, combo_boom.s, combo_boom.s, 61, 18)
-		setColor(255, 255, 255, DEPLS.LiveOpacity)
+		love.graphics.push()
+		love.graphics.translate(480, 320)
+		love.graphics.scale(DEPLS.TextScaling)
+		love.graphics.setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
+		love.graphics.draw(img.combo, 61, -54, 0, combo_boom.s, combo_boom.s, 61, 18)
+		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
 		
 		for i = 1, #combo_str do
 			-- Draw numbers
-			draw(img[combo_str[i] - 47], 451 - (#combo_str - i) * 43, 267, 0, combo_scale.s, combo_scale.s, 24, 24)
+			love.graphics.draw(img[combo_str[i] - 47], -29 - (#combo_str - i) * 43, -53, 0, combo_scale.s, combo_scale.s, 24, 24)
 		end
 		
-		draw(img.combo, 541, 267, 0, combo_scale.s, combo_scale.s, 61, 17)
-		setColor(255, 255, 255, 255)
+		love.graphics.draw(img.combo, 61, -54, 0, combo_scale.s, combo_scale.s, 61, 17)
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.pop()
 	end
 end
 

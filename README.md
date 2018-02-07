@@ -13,23 +13,25 @@ Please see `docs/How_To_Setup.md`
 Components
 ==========
 
-Live Simulator: 2 uses these special components:
+Live Simulator: 2 uses these special components specially created for this project:
 
-* AquaShine Loader (base/core component that runs Live Simulator: 2). Please see `docs/AquaShine.md` for more information about this component.
+* AquaShine. Please see `docs/AquaShine.md` for more information about this component.
 
-* NoteLoader, internal component responsible of loading beatmaps from variety of different formats.
+* NoteLoader, internal component responsible of loading beatmaps from variety of different formats. Depends on AquaShine
+
+* LS2, Live Simulator: 2 binary beatmap parser and generator.
 
 Live Simulator: 2 uses these external libraries to run:
 
 * [Yohane Playground Flash Abstraction](https://github.com/MikuAuahDark/Yohane)
 
-* [Shelsha Playground Texture Bank Loader](https://github.com/MikuAuahDark/Shelsha)
+* [tween.lua](https://github.com/kikito/tween.lua)
 
-* [LuaBit](http://luaforge.net/projects/bit/) (when running under Lua 5.1)
+* [JSON.lua](http://regex.info/blog/lua/json)
 
-* [tween.lua](https://github.com/kikito/tween.lua) (for most animations)
+Live Simulator: 2 uses these external libraries if available:
 
-* [JSON.lua](http://regex.info/blog/lua/json) (to load SIF and LLP beatmap)
+* [FFmpeg 3.2](http://ffmpeg.org/) (Windows & Android)
 
 Controls
 ========
@@ -46,12 +48,16 @@ Controls
 
 * F6 = Turn the song volume up by 5%
 
+* PageUp = Increase speed factor by 2x (max 400%)
+
+* PageDown = Decrease speed factor by 2x (min 6.25%)
+
 * Backspace = Restart live simulator
 
 Supported Beatmaps
 ==================
 
-* Raw SIF beatmap, this is main beatmap format that Live Simulator: 2 internally uses.
+* SIF beatmap, this is main beatmap format that Live Simulator: 2 uses.
 
 * Sukufesu Simulator beatmap, yuyu live simulator beatmap.
 
@@ -66,7 +72,7 @@ Supported Beatmaps
 Screenshots
 ===========
 
-Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8) (example beatmap code `::2`)
+Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8)
 
 Note circle Pre-5.0
 
@@ -96,14 +102,6 @@ Motoya L Maru font license.
 
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 
-Live Simulator: 2 uses these external libraries:
-
-* [tween.lua](https://github.com/kikito/tween.lua)
-
-* [JSON.lua](http://regex.info/blog/lua/json)
-
-* Lua FFT library (`luafft.lua`)
-
-* LuaBit library (`bit.lua`) (fallback: used if `bit` library is unavailable)
+Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3
 
 Please see respective files (or website) for license of those libraries.

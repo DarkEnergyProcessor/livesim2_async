@@ -4,99 +4,143 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
+local love = love
+local SIFSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.SIFSLoader", {ProjectLoader = false})
+local SIFSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.SIFSBeatmap")
 
-local SIFSBeatmap = {
-	Name = "Sukufesu Simulator Beatmap",
-	Extension = "txt"
-}
+-------------------------
+-- SIFS Beatmap Loader --
+-------------------------
 
-local function basename(f)
-	local _ = f:reverse()
-	return _:sub(1,(_:find("/") or _:find("\\") or #_ + 1) - 1):reverse()
+local function sifs_fetch_number(iterator, name)
+	return tonumber(iterator():match(string.format("^%s = (%%-?%%d+);", name)))
 end
 
---! @brief Loads Sukufesu Simulator beatmap
---! @param file Table contains:
---!        - path relative to DEPLS save dir
---!        - absolute path
---!        - forward slashed and not contain trailing slash
---! @returns table with these data
---!          - notes_list is the SIF-compilant notes data
---!          - song_file is the song file handle (Source object) or nil
-function SIFSBeatmap.Load(file)
-	local sifsimu = assert(io.open(file[2]..".txt", "rb"))
-	local song_file
-	local offset_ms = 0
-	local bpm = 120
-	local attribute = 3
-	local beatmap_string = ""
-	local sif_beatmap_data = {}
+function SIFSLoader.GetLoaderName()
+	return "SIFs Beatmap"
+end
 
-	do
-		local x = sifsimu:lines()
-		
-		-- Parse BPM
-		bpm = tonumber(x():match("BPM = (%d+)")) or 120
-		
-		-- Parse offset. Offset time unit is in "count" (in Excel)
-		offset_ms = (tonumber(x():match("OFFSET = ([-]?%d+)")) or 0) * 1250 / bpm
-		x()
-		
-		-- Parse attribute
-		attribute = (tonumber(x():match("ATTRIBUTE = (%d+)")) or 2) + 1
-		
-		-- Get song file
-		x()
-		song_file = basename(x():match("MUSIC = GetCurrentScriptDirectory~\"([^\"]+)\";"))
-		
-		-- Skip until beatmap
-		while x():find("BEATMAP") == nil do end
-		
-		beatmap_string = x()
-	end
-
-	sifsimu:close()
+function SIFSLoader.LoadNoteFromFilename(f)
+	local lines = f:lines()
+	local this = SIFSBeatmap()
 	
-	local stop_time_count = 0
+	this.bpm = sifs_fetch_number(lines, "BPM") or 120
+	this.offset = (sifs_fetch_number(lines, "OFFSET") or 0) * 1250 / this.bpm
+	lines()
+	this.attribute = (sifs_fetch_number(lines, "ATTRIBUTE") or 2) + 1
+	this.difficulty = assert(sifs_fetch_number(lines, "DIFFICULTY"))
+	this.audio_file = assert(AquaShine.Basename(lines():match("^MUSIC = GetCurrentScriptDirectory~\"([^\"]+)\";")))
+	lines()
+	this.cover_image = assert(AquaShine.Basename(lines():match("^imgJacket = \"([^\"]+)\";")))
+	this.title = assert(lines():match("^TITLE = \"([^\"]+)\";"))
+	this.comment = assert(lines():match("^COMMENT = \"([^\"]+)\";"))
+	lines()
+	this.beatmap_data = lines()
+	
+	lines = nil
+	return this
+end
 
-	for a, b, c in beatmap_string:gmatch("([^,]+),([^,]+),([^,]+)") do
-		a, b, c = assert(tonumber(a)) + stop_time_count, assert(tonumber(b)), assert(tonumber(c))
-		local c_abs = math.abs(c)
+-------------------------
+-- SIFS Beatmap Object --
+-------------------------
+
+function SIFSBeatmap.GetNotesList(this)
+	if not(this.notes_data) then
+		local notes_data = {}
+		local speed_multipler = 1
+		local stop_time_count = 0
+		local notes_speed = AquaShine.LoadConfig("NOTE_SPEED", 800) * 0.001
+		local last_timing_sec = 0
+		local last_tick = 0
+		local attribute = this.attribute
 		
-		if b == 18 then
-			-- Note attribute change
-			attribute = math.min(c + 1, 10)
-		elseif b == 19 then
-			-- Add stop time
-			stop_time_count = stop_time_count + c
-		elseif b < 10 then
-			local effect = 1
-			local effect_value = 2
+		for a, b, c in this.beatmap_data:gmatch("([^,]+),([^,]+),([^,]+)") do
+			a, b, c = assert(tonumber(a)) + stop_time_count - last_tick, assert(tonumber(b)), assert(tonumber(c))
 			
-			if c == 2 or c == 3 then
-				effect = 4
-			elseif c_abs >= 4 then
-				effect = 3
-				effect_value = c_abs * 1.25 / bpm
+			if b == 10 then
+				-- BPM change
+				last_timing_sec = (a * 1250 / this.bpm + last_timing_sec)
+				last_tick = a
+				this.bpm = c
+			elseif b == 18 then
+				-- Note attribute change
+				attribute = math.min(c + 1, 11)
+			elseif b == 19 then
+				-- Add stop time
+				stop_time_count = stop_time_count + c
+			elseif b == 20 then
+				-- Note speed change
+				-- We didn't support negative values, so check for it
+				speed_multipler = c > 0 and c or 1
+			elseif b < 10 then
+				local effect = 1
+				local effect_value = 2
+				local c_abs = math.abs(c)
+				
+				if c == 2 or c == 3 then
+					effect = 4
+				elseif c_abs >= 4 then
+					effect = 3
+					effect_value = c_abs * 1.25 / this.bpm
+				end
+				
+				notes_data[#notes_data + 1] = {
+					timing_sec = (a * 1250 / this.bpm - this.offset + last_timing_sec) * 0.001,
+					notes_attribute = attribute,
+					notes_level = 1,
+					effect = effect,
+					effect_value = effect_value,
+					speed = notes_speed / speed_multipler,
+					position = 10 - b
+				}
 			end
-			
-			sif_beatmap_data[#sif_beatmap_data + 1] = {
-				timing_sec = (a * 1250 / bpm - offset_ms) / 1000,
-				notes_attribute = attribute,
-				notes_level = 1,
-				effect = effect,
-				effect_value = effect_value,
-				position = 10 - b
-			}
 		end
+		
+		this.notes_data = notes_data
 	end
-
-	table.sort(sif_beatmap_data, function(a, b) return a.timing_sec < b.timing_sec end)
 	
-	return {
-		notes_list = sif_beatmap_data,
-		song_file = AquaShine.LoadAudio("audio/"..song_file)
-	}
+	return this.notes_data
 end
 
-return SIFSBeatmap
+function SIFSBeatmap.GetName(this)
+	return this.title
+end
+
+function SIFSBeatmap.GetBeatmapTypename()
+	return "SIFs Beatmap"
+end
+
+function SIFSBeatmap.GetCoverArt(this)
+	local art_img_name = "live_icon/"..this.cover_image
+	
+	if not(this.cover) and love.filesystem.isFile(art_img_name) then
+		this.cover = {}
+		this.cover.title = this.title
+		this.cover.arrangement = this.comment
+		this.cover.image = love.graphics.newImage(art_img_name, {mipmaps = true})
+	end
+	
+	return this.cover
+end
+
+
+function SIFSBeatmap.GetBeatmapAudio(this)
+	if not(this.audio_loaded) then
+		local name = "audio/"..this.audio_file
+		
+		if love.filesystem.isFile(name) then
+			this.audio = AquaShine.LoadAudio(name)
+		end
+		
+		this.audio_loaded = true
+	end
+	
+	return this.audio
+end
+
+function SIFSBeatmap.GetStarDifficultyInfo(this)
+	return this.difficulty
+end
+
+return SIFSLoader

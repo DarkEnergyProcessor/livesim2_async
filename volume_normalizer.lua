@@ -59,12 +59,14 @@ local ls = require("love.sound")
 local SoundData = debug.getregistry().SoundData
 local sd, start, stop, peak = ...
 
+if peak >= 1/32767 then return end
+
 for i = start, stop do
 	SoundData.setSample(sd, i, SoundData.getSample(sd, i) * peak)
 end
 ]]
 	return function(sd)
-		local samples_per_thread = splitIntoParts(sd:getSampleCount() * sd:getChannels(), Cores)
+		local samples_per_thread = splitIntoParts(sd:getSampleCount() * sd:getChannelCount(), Cores)
 		local thread_arg = {}
 		local parts = 0
 		local peak = 0
@@ -116,7 +118,7 @@ end
 
 -- FFI functions
 return function(sd)
-	local samples_per_thread = splitIntoParts(sd:getSampleCount() * sd:getChannels(), Cores)
+	local samples_per_thread = splitIntoParts(sd:getSampleCount() * sd:getChannelCount(), Cores)
 	local depth = sd:getBitDepth()
 	local lower_limits = -2 ^ (depth - 1)
 	local upper_limits = 2 ^ (depth - 1) - 1

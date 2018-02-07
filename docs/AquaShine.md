@@ -1,14 +1,17 @@
 AquaShine
 =========
+
+![AquaShine](https://i.imgur.com/kC7EF5J.jpg)
+
+(image by [AquaShine](https://www.facebook.com/AquaShineBali)!)
+
 AquaShine is the base layer which powers Live Simulator: 2. It contains useful
 utilities functions meant to be used for Live Simulator: 2. Because AquaShine
 is specially written for Live Simulator: 2, is not distributed as standalone
 LOVE2D library.
 
 However, you can simply take the `AquaShine.lua` and use it in your another
-game. I don't mind about it. Please note that AquaShine itself depends on
-Shelsha library. Well, of course you can edit the AquaShine code to not load
-Playground texture banks, thus removing dependency to Shelsha library.
+game. I don't mind about it.
 
 Origin of the Name
 ==================
@@ -42,7 +45,7 @@ stores the current entry point and call it's appropriate functions.
 A typical entry point Lua script as follows
 
 ```lua
-local AquaShine = AquaShine
+local AquaShine = select(1, ...)
 local MySection = {}
 
 function MySection.Start(arg)
@@ -64,4 +67,7 @@ end
 return MySection, "Window title name"
 ```
 
-Please see `main.lua` for example how to initialize AquaShine.
+Please see `conf.lua` for example how to initialize AquaShine.
+
+TODO: Separate AquaShine and Live Simulator: 2 and make it standalone
+
