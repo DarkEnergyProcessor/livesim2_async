@@ -20,7 +20,9 @@ function DLWrap.Update(deltaT)
 	DLWrap.Delay = DLWrap.Delay - deltaT
 	if not(DLWrap.Download:IsDownloading()) then
 		AquaShine.LoadEntryPoint(AquaShine.LoadConfig("DL_CURRENT", dest or "download_beatmap_sif.lua"))
-	elseif DLWrap.Delay <= 0 then
+	end
+	
+	if DLWrap.Delay <= 0 then
 		DLWrap.Delay = math.huge
 		DLWrap.Download:Cancel()
 	end

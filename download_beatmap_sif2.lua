@@ -21,8 +21,9 @@ DLBeatmap.DLArt = {
 	RespLen = 0,
 	Error = function(this, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
-		-- Retry
-		DLBeatmap.DLArt.Start()
+		DLBeatmap.DLArt.RespLen = 0
+		table.clear(DLBeatmap.DLArt.Response)
+		DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLArt.Start)
 	end,
 	Receive = function(this, msg)
 		DLBeatmap.DLArt.RespLen = DLBeatmap.DLArt.RespLen + #msg
@@ -35,6 +36,8 @@ DLBeatmap.DLArt = {
 	Done = function(this, msg)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
+			DLBeatmap.DLArt.RespLen = 0
+			table.clear(DLBeatmap.DLArt.Response)
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLArt.Start)
 		else
 			local coverArt = love.filesystem.newFileData(table.concat(DLBeatmap.DLArt.Response), "")
@@ -86,8 +89,9 @@ DLBeatmap.DLMP3 = {
 	RespLen = 0,
 	Error = function(this, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
-		DLBeatmap.DLButton:enable()
-		DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
+		DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
+		table.clear(DLBeatmap.DLMP3.Response)
+		DLBeatmap.DLMP3.RespLen = 0
 	end,
 	Receive = function(this, msg)
 		DLBeatmap.DLMP3.RespLen = DLBeatmap.DLMP3.RespLen + #msg
@@ -101,10 +105,12 @@ DLBeatmap.DLMP3 = {
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
+			table.clear(DLBeatmap.DLMP3.Response)
+			DLBeatmap.DLMP3.RespLen = 0
 		else
 			local mp3Path = DLBeatmap.GetAudioPath(DLBeatmap.TrackData)
 			assert(love.filesystem.write(mp3Path, table.concat(DLBeatmap.DLMP3.Response)))
-			DLBeatmap.DLMP3.Response = {}
+			table.clear(DLBeatmap.DLMP3.Response)
 			DLBeatmap.DLMP3.RespLen = 0
 			return DLBeatmap.DLBM.Start()
 		end
@@ -130,8 +136,8 @@ DLBeatmap.DLBM = {
 	Response = {},
 	Error = function(this, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
-		DLBeatmap.DLButton:enable()
-		DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
+		DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
+		table.clear(DLBeatmap.DLBM.Response)
 	end,
 	Receive = function(this, msg)
 		DLBeatmap.DLBM.Response[#DLBeatmap.DLBM.Response + 1] = msg
@@ -139,14 +145,16 @@ DLBeatmap.DLBM = {
 	Done = function(this, msg)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
-			DLBeatmap.DLButton:enable()
-			DLBeatmap.DLButton:setTextColor(1, 1, 1, 1)
+			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
+			table.clear(DLBeatmap.DLBM.Response)
 		else
 			local json = JSON:decode(table.concat(DLBeatmap.DLBM.Response))
 			DLBeatmap.ToLS2(json)
 			DLBeatmap.SetStatus("Ready...")
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
 		end
+		
+		table.clear(DLBeatmap.DLBM.Response)
 	end,
 	Start = function()
 		local beatmap_name = DLBeatmap.GetLS2Name(DLBeatmap.SelectedDifficulty)
@@ -163,7 +171,7 @@ DLBeatmap.DLBM = {
 
 function DLBeatmap.GetLS2Name(difficulty)
 	local hashedname = DLBeatmap.GetHashedName(DLBeatmap.TrackData.live[difficulty].livejson)
-	return "beatmap/"..hashedname:sub(1, -#DLBeatmap.TrackData.live[difficulty].livejson - 1).."."..difficulty..".ls2"
+	return "beatmap/"..hashedname:sub(1, -#DLBeatmap.TrackData.live[difficulty].livejson - 1)..".sif."..difficulty..".ls2"
 end
 
 function DLBeatmap.GetHashedName(path)
@@ -201,6 +209,11 @@ function DLBeatmap.ToLS2(beatmap)
 	local cover = love.filesystem.read(DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData))
 	local cur = DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty]
 	local out = assert(love.filesystem.newFile(path, "w"))
+	
+	-- There are some -40ms offset, so decrease it.
+	for i = 1, #beatmap do
+		beatmap[i].timing_sec = beatmap[i].timing_sec - 0.04
+	end
 	
 	-- New LS2 writer
 	ls2.encoder.new(out, {
