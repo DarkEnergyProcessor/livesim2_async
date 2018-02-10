@@ -16,19 +16,7 @@ function NCache.CreateCache(note, filename)
 	ncache.combo_data = note:GetComboInformation()
 	ncache.cover_art = note:GetCoverArt()
 	ncache.has_storyboard = note:HasStoryboard()
-	
-	do
-		local s = note:GetStarDifficultyInfo()
-		local rs = note:GetStarDifficultyInfo(true)
-		
-		if s > 0 then
-			if rs ~= s then
-				ncache.difficulty = string.format("%d\226\152\134 (Random %d\226\152\134)", s, rs)
-			else
-				ncache.difficulty = string.format("%d\226\152\134", s)
-			end
-		end
-	end
+	ncache.difficulty = note:GetDifficultyString()
 	
 	-- Resize cover art and add PNG string representation
 	if ncache.cover_art then
@@ -96,7 +84,6 @@ function NCache.LoadCache(beatmap_path)
 		
 		cache = NCache.CreateCache(note, beatmap_path)
 		NCache._SaveCache(cname, beatmap_path, cache)
-		note:Release()
 	else
 		local beatmap_mtime = assert(love.filesystem.getLastModified(beatmap_path))
 		local status
@@ -115,7 +102,6 @@ function NCache.LoadCache(beatmap_path)
 			
 			cache = NCache.CreateCache(note, beatmap_path)
 			NCache._SaveCache(cname, beatmap_path, cache)
-			note:Release()
 		end
 	end
 	

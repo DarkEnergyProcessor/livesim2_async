@@ -1,8 +1,9 @@
 local splashlib = {
-  _VERSION     = "v1.2.0",
+  _VERSION     = "v1.2.0-modified",
   _DESCRIPTION = "a 0.10.1 splash",
   _URL         = "https://github.com/love2d-community/splashes",
   _LICENSE     = [[Copyright (c) 2016 love-community members (as per git commits in repository above)
+(Modified to be compatible with letterbox)
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -78,8 +79,8 @@ function splashlib.new(init)
       local ox = rain.ox
       local oy = rain.oy
 
-      local batch_w = 2 * math.ceil(960 / sx) + 2
-      local batch_h = 2 * math.ceil(640 / sy) + 2
+      local batch_w = 2 * math.ceil(love.graphics.getWidth() / sx) + 2
+      local batch_h = 2 * math.ceil(love.graphics.getHeight() / sy) + 2
 
       batch:clear()
 
@@ -125,6 +126,7 @@ function splashlib.new(init)
   extern number blur;
   extern number shadow;
   extern number lighten;
+  #define iResolution love_ScreenSize
 
   vec4 desat(vec4 color) {
     number g = dot(vec3(.299, .587, .114), color.rgb);
@@ -135,7 +137,7 @@ function splashlib.new(init)
   {
     // radial mask
     vec4 color = Texel(canvas, tc);
-    number r = length((tc - vec2(.5)) * love_ScreenSize.xy);
+    number r = length((tc - vec2(.5)) * iResolution.xy);
     number s = smoothstep(radius+blur, radius-blur, r);
     #ifdef LIGHTEN
     color = color + desat(color) * (1.0-s);
@@ -158,10 +160,7 @@ function splashlib.new(init)
 
   vec4 effect(vec4 color, Image logo, vec2 tc, vec2 sc)
   {
-    //Probably would be better to just use the texture's dimensions instead; faster reaction.
-    vec2 sd = sc / love_ScreenSize.xy;
-
-    if (sd.x <= alpha) {
+    if (tc.x * 0.5 <= alpha) {
       return color * Texel(logo, tc);
     }
     return vec4(0);
@@ -191,7 +190,7 @@ function splashlib.new(init)
   }
   ]]
 
-  self.canvas = love.graphics.newCanvas()
+  self.canvas = love.graphics.newCanvas(width, height)
 
   self.elapsed = 0
   self.alpha = 1
@@ -341,13 +340,13 @@ function splashlib:draw()
     love.graphics.pop()
 
     love.graphics.setColor(1, 1, 1, self.heart.scale)
-    love.graphics.draw(self.heart.sprite, 0, 5, self.heart.rot, self.heart.scale, self.heart.scale, 43, 39)
+    love.graphics.draw(self.heart.sprite, 0, 5, self.heart.rot, self.heart.scale, self.heart.scale, 43, 39.5)
     love.graphics.pop()
   end)
 
   love.graphics.setColor(1, 1, 1, self.alpha)
   love.graphics.setShader(self.maskshader)
-  love.graphics.draw(self.canvas, 0,0)
+  love.graphics.draw(self.canvas)
   love.graphics.setShader()
 
   love.graphics.push()

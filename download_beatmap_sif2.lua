@@ -223,6 +223,8 @@ function DLBeatmap.ToLS2(beatmap)
 		score = cur.score,
 		combo = cur.combo
 	})
+	-- Set background image
+	:set_background_id(cur.star)
 	-- Add beatmap
 	:add_beatmap(beatmap)
 	-- Add cover art

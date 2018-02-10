@@ -23,16 +23,38 @@ function LS2Loader.LoadNoteFromFilename(f, file)
 	local this = LS2Beatmap()
 	
 	this.name = NoteLoader._GetBasenameWOExt(file)
-	this.file = f
 	this.ls2 = ls2.loadstream(f)
-	return this, true
+	this.file = f
+	this.file_count = 0
+
+	return this
 end
 
 ------------------------
 -- LS2 Beatmap Object --
 ------------------------
 
-function LS2Beatmap.GetNotesList(this)
+local function _wrapFileHandle(func)
+	return function(this, ...)
+		if this.file_count == 0 then
+			assert(this.file:open("r"))
+			this.file_count = 1
+		else
+			this.file_count = this.file_count + 1
+		end
+		
+		local r1, r2, r3, r4 = func(this, select(1, ...))
+		
+		this.file_count = this.file_count - 1
+		if this.file_count == 0 then
+			this.file:close()
+		end
+		
+		return r1, r2, r3, r4
+	end
+end
+
+LS2Beatmap.GetNotesList = _wrapFileHandle(function(this)
 	if not(this.notes_list) then
 		local nlist = {}
 		
@@ -72,9 +94,9 @@ function LS2Beatmap.GetNotesList(this)
 	end
 	
 	return this.notes_list
-end
+end)
 
-function LS2Beatmap._GetMetadata(this)
+LS2Beatmap._GetMetadata = _wrapFileHandle(function(this)
 	if not(this.metadata) then
 		if this.ls2.sections.MTDT then
 			this.file:seek(this.ls2.sections.MTDT[1])
@@ -85,9 +107,9 @@ function LS2Beatmap._GetMetadata(this)
 	end
 	
 	return this.metadata
-end
+end)
 
-function LS2Beatmap.GetName(this)
+LS2Beatmap.GetName = _wrapFileHandle(function(this)
 	-- Get from metadata (v2.0)
 	local meta = this:_GetMetadata()
 	if meta.name then return meta.name end
@@ -100,13 +122,13 @@ function LS2Beatmap.GetName(this)
 	
 	-- Not found too? Okay, fallback to basename without extension
 	return this.name
-end
+end)
 
 function LS2Beatmap.GetBeatmapTypename(this)
 	return string.format("Live Simulator: 2 Beatmap (v%s)", this.ls2.version_2 and "2.0" or "1.x")
 end
 
-function LS2Beatmap.GetCoverArt(this)
+LS2Beatmap.GetCoverArt = _wrapFileHandle(function(this)
 	if not(this.cover_art_loaded) then
 		if this.ls2.sections.COVR then
 			-- Cover available
@@ -119,9 +141,9 @@ function LS2Beatmap.GetCoverArt(this)
 	end
 	
 	return this.cover_art
-end
+end)
 
-function LS2Beatmap.GetCustomUnitInformation(this)
+LS2Beatmap.GetCustomUnitInformation = _wrapFileHandle(function(this)
 	-- Get all UIMG information
 	if not(this.unit_info) then
 		local unit_list = {}
@@ -151,9 +173,9 @@ function LS2Beatmap.GetCustomUnitInformation(this)
 	end
 	
 	return this.unit_info
-end
+end)
 
-function LS2Beatmap.GetScoreInformation(this)
+LS2Beatmap.GetScoreInformation = _wrapFileHandle(function(this)
 	if this.ls2.version_2 then
 		-- Live Simulator: 2 beatmap v2.0
 		-- Get from metadata instead from SCRI
@@ -168,7 +190,7 @@ function LS2Beatmap.GetScoreInformation(this)
 	end
 	
 	return this.score
-end
+end)
 
 function LS2Beatmap.GetComboInformation(this)
 	-- Combo information only supported in v2.0 beatmap format
@@ -183,7 +205,7 @@ function LS2Beatmap.HasStoryboard(this)
 	return not(not(this.ls2.sections.SRYL))
 end
 
-function LS2Beatmap.GetStoryboard(this)
+LS2Beatmap.GetStoryboard = _wrapFileHandle(function(this)
 	if this.ls2.sections.SRYL then
 		this.file:seek(this.ls2.sections.SRYL[1])
 		local story_data = ls2.section_processor.SRYL[1](this.file)
@@ -217,7 +239,7 @@ function LS2Beatmap.GetStoryboard(this)
 	end
 	
 	return nil
-end
+end)
 
 function LS2Beatmap.GetBackgroundID(this)
 	if this.ls2.sections.BIMG then
@@ -227,7 +249,7 @@ function LS2Beatmap.GetBackgroundID(this)
 	end
 end
 
-function LS2Beatmap.GetCustomBackground(this)
+LS2Beatmap.GetCustomBackground = _wrapFileHandle(function(this)
 	if not(this.background_loaded) and this.ls2.sections.BIMG then
 		local backgrounds = {}
 		
@@ -243,7 +265,7 @@ function LS2Beatmap.GetCustomBackground(this)
 	end
 	
 	return this.background
-end
+end)
 
 function LS2Beatmap.GetScorePerTap(this)
 	return this.ls2.score_tap or 0
@@ -257,7 +279,7 @@ function LS2Beatmap.GetNotesStyle(this)
 	return this.ls2.note_style
 end
 
-function LS2Beatmap.GetBeatmapAudio(this)
+LS2Beatmap.GetBeatmapAudio = _wrapFileHandle(function(this)
 	if not(this.audio_loaded) then
 		if this.ls2.sections.ADIO then
 			-- Embedded audio available
@@ -285,9 +307,9 @@ function LS2Beatmap.GetBeatmapAudio(this)
 	end
 	
 	return this.audio
-end
+end)
 
-function LS2Beatmap.GetLiveClearSound(this)
+LS2Beatmap.GetLiveClearSound = _wrapFileHandle(function(this)
 	if this.ls2.sections.LCLR then
 		-- Embedded audio available
 		this.file:seek(this.ls2.sections.LCLR[1])
@@ -302,7 +324,7 @@ function LS2Beatmap.GetLiveClearSound(this)
 	end
 	
 	return nil
-end
+end)
 
 function LS2Beatmap.GetStarDifficultyInfo(this, rand)
 	local metadata = this:_GetMetadata()
