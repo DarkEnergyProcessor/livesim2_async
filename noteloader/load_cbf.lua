@@ -321,7 +321,7 @@ function CBFBeatmap.GetNotesList(this)
 		end
 
 		-- Load it line by line
-		-- FIXME: LOVE 0.11.0 seekless love.filesystem.lines causes it to enter infinite loop.
+		-- FIXME: LOVE 0.11.0 seekless File:lines causes it to enter infinite loop.
 		-- So, read all contents then use string.gmatch. Slower but it should work.
 		--[[
 		for line in f:lines() do
