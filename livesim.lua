@@ -1060,6 +1060,7 @@ function DEPLS.Draw(deltaT)
 	
 	love.graphics.push("all")
 	love.graphics.setCanvas(DEPLS.MainCanvas)
+	love.graphics.clear()
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
@@ -1197,6 +1198,7 @@ function DEPLS.PostProcessingDraw(curcanv)
 	end
 	
 	love.graphics.setCanvas(curcanv)
+	love.graphics.clear()
 	love.graphics.draw(DEPLS.MainCanvas)
 	love.graphics.pop()
 end

@@ -53,6 +53,12 @@ function DLBeatmap.SetupList(beatmaplist)
 	for i, v in ipairs(beatmaplist) do
 		-- Ignore it if it's TECHNICAL difficulty
 		if v.difficulty_text ~= "TECHNICAL" then
+			-- According to ieb, if the `live_difficulty_id` is 20000 and later
+			-- then it's SIFAC beatmap.
+			if v.live_setting_id >= 20000 then
+				v.difficulty_text = "SIFAC"
+			end
+			
 			local trackidx
 			-- Find the live track
 			for i = 1, #live_track do

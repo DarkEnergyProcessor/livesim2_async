@@ -13,7 +13,7 @@ local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
 local BeatmapInfoDL = AquaShine.LoadModule("uielement.beatmap_info_download")
 local DLBeatmap = {}
 local address = "http://r.llsif.win/"
-local difficultyString = {"EASY", "NORMAL", "HARD", "EXPERT", "MASTER"}
+local difficultyString = {"EASY", "NORMAL", "HARD", "EXPERT", "MASTER", "SIFAC"}
 
 -- Cover art downloader
 DLBeatmap.DLArt = {
@@ -157,6 +157,10 @@ DLBeatmap.DLBM = {
 		table.clear(DLBeatmap.DLBM.Response)
 	end,
 	Start = function()
+		if #DLBeatmap.SelectedDifficulty == 0 then
+			return DLBeatmap.SetStatus("Warning: Difficulty not selected!")
+		end
+		
 		local beatmap_name = DLBeatmap.GetLS2Name(DLBeatmap.SelectedDifficulty)
 		if love.filesystem.getInfo(beatmap_name) then
 			AquaShine.LoadEntryPoint(":livesim", {beatmap_name, Absolute = true})
@@ -246,6 +250,7 @@ end
 
 function DLBeatmap.Start(arg)
 	DLBeatmap.TrackData = arg[1][arg[2]]
+	DLBeatmap.SelectedDifficulty = ""
 	DLBeatmap.Download = AquaShine.GetCachedData("BeatmapDLHandle", AquaShine.Download)
 	if DLBeatmap.Download:IsDownloading() then
 		DLBeatmap.Download:Cancel()
