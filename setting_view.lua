@@ -99,7 +99,7 @@ local SettingSelection = {
 		Type = "number",
 		Min = -4000,
 		Max = 4000,
-		Increment = 20
+		Increment = 10
 	},
 	{
 		Name = "TEXT_SCALING", Default = 1,
