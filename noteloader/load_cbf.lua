@@ -642,4 +642,22 @@ function CBFBeatmap.GetBeatmapAudio(this)
 	return this.audio
 end
 
+function CBFBeatmap.GetLiveClearSound(this)
+	if not(this.lclr_loaded) then
+		for _, v in ipairs(supported_audio_fmts) do
+			local name = this.project_folder.."/liveShowClearSFX"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				this.lclr = love.sound.newSoundData(name)
+				break
+			end
+		end
+		
+		this.lclr_loaded = true
+	end
+	
+	return this.lclr
+end
+
 return CBFLoader
