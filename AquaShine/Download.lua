@@ -61,9 +61,8 @@ end
 
 local function reInitDownload(this)
 	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
-	this.channelin = love.thread.newChannel()
+	this.channelin = assert(love.thread.newChannel())
 	this.finalizer = createFinalizer(this)
-	this.err = Download.DefaultErrorCallback
 	
 	this.thread:start(this.channelin)
 end

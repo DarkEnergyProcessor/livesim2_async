@@ -2,13 +2,15 @@
 -- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
+require("love.thread")
+
 local cin = ...
 local socket = require("socket")
 local http = require("socket.http")
 local lt = require("love.timer")
 http.TIMEOUT = 60
 
-function print() lt.sleep(0.001) end
+--function print() lt.sleep(0.001) end
 
 -- AquaShine download event
 local le = require("love.event")
@@ -20,8 +22,11 @@ end
 -- We create our custom sink function which does send
 -- the response data to LOVE channel
 local function custom_sink(chunk, err)
-	assert(cin:peek() ~= "QUIT", "Quit requested")
-	if chunk then
+	print("custom_sink", chunk, err)
+	if cin:peek() ~= "QUIT" then
+		print("QUIT req")
+		return nil, "QUIT Requested"
+	elseif chunk then
 		push_event("RECV", chunk)
 	end
 	
