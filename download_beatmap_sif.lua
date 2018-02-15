@@ -234,7 +234,6 @@ function DLBeatmap.MouseReleased(x, y, b, t)
 	if DLBeatmap.SwipeData[1] then
 		if math.abs(DLBeatmap.SwipeData[2] - x) >= DLBeatmap.SwipeThreshold then
 			-- Switch page
-			local is_left = DLBeatmap.SwipeData[2] - x < 0
 			DLBeatmap.MovePage(DLBeatmap.SwipeData[2] - x < 0 and -1 or 1)
 			DLBeatmap.SwipeData[2] = nil
 		else
@@ -242,6 +241,16 @@ function DLBeatmap.MouseReleased(x, y, b, t)
 		end
 		
 		DLBeatmap.SwipeData[1] = nil
+	end
+end
+
+function DLBeatmap.KeyReleased(key)
+	if key == "escape" then
+		AquaShine.LoadEntryPoint(":beatmap_select")
+	elseif key == "left" then
+		DLBeatmap.MovePage(-1)
+	elseif key == "right" then
+		DLBeatmap.MovePage(1)
 	end
 end
 

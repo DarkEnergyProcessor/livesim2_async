@@ -163,7 +163,11 @@ DLBeatmap.DLBM = {
 		
 		local beatmap_name = DLBeatmap.GetLS2Name(DLBeatmap.SelectedDifficulty)
 		if love.filesystem.getInfo(beatmap_name) then
-			AquaShine.LoadEntryPoint(":livesim", {beatmap_name, Absolute = true})
+			AquaShine.LoadEntryPoint(":livesim", {
+				beatmap_name,
+				Absolute = true,
+				Random = DLBeatmap.InfoDL:isRandomTicked(),
+			})
 			return
 		end
 		DLBeatmap.SetStatus("Downloading Beatmap...")
