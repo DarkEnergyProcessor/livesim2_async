@@ -8,14 +8,18 @@ local TextShadow = AquaShine.Node.Colorable:extend("Livesim2.TextShadow")
 
 function TextShadow.init(this, font, text, x, y)
 	AquaShine.Node.Colorable.init(this)
-	this.text = love.graphics.newText(font or AquaShine.LoadFont(nil, 14), text)
+	this.text = assert(love.graphics.newText(font or AquaShine.LoadFont(nil, 14), text))
 	this.actualtext = text
 	this.x = x or 0
 	this.y = y or 0
 end
 
 function TextShadow.refresh(this)
-	this.text:clear()
+	if this.text:typeOf("Text") then
+		this.text:clear()
+	else
+		error("Text invalid type "..this.text:type())
+	end
 	
 	-- First add shadow
 	if this.shadow then

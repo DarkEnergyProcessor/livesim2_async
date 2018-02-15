@@ -207,7 +207,7 @@ function DLBeatmap.Draw()
 end
 
 function DLBeatmap.Exit()
-	if DLBeatmap.Download:IsDownloading() then
+	if DLBeatmap.Download and DLBeatmap.Download:IsDownloading() then
 		DLBeatmap.Download:Cancel()
 	end
 end

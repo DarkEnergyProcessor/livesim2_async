@@ -594,7 +594,14 @@ function AquaShine.StepLoop()
 	-- Switch entry point
 	if TemporaryEntryPoint then
 		if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
-			pcall(AquaShine.CurrentEntryPoint.Exit)
+			--[[
+			local s, msg = pcall(AquaShine.CurrentEntryPoint.Exit)
+
+			if not(s) then
+				AquaShine.Log("AquaShine", "Error on exit: %s", msg)
+			end
+			]]
+			AquaShine.CurrentEntryPoint.Exit()
 		end
 		
 		AquaShine.CurrentEntryPoint = TemporaryEntryPoint
