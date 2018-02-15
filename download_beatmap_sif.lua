@@ -206,6 +206,12 @@ function DLBeatmap.Draw()
 	return DLBeatmap.MainNode:draw()
 end
 
+function DLBeatmap.Exit()
+	if DLBeatmap.Download:IsDownloading() then
+		DLBeatmap.Download:Cancel()
+	end
+end
+
 function DLBeatmap.MousePressed(x, y, b, t)
 	if not(DLBeatmap.SwipeData[1]) then
 		DLBeatmap.SwipeData[1] = t or 0

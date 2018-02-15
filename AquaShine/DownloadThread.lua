@@ -23,6 +23,7 @@ end
 -- the response data to LOVE channel
 local function custom_sink(chunk, err)
 	if cin:peek() == "QUIT" then
+		print("QUIT requested")
 		return nil, "QUIT Requested"
 	elseif chunk then
 		push_event("RECV", chunk)

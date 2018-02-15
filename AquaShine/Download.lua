@@ -42,19 +42,17 @@ local chunk_handler = {
 local function createFinalizer(this)
 	local x = newproxy(true)
 	local y = getmetatable(x)
+	local cin = this.channelin
+	local t = this.thread
 	local gccall = false
 	y.__gc = function()
 		if gccall then return end
+		gccall = true
 		
-		local t = this.thread
-		local cin = this.channelin
 		DownloadList[cin] = nil
 		cin:push("QUIT")
 	end
-	y.__call = function()
-		gccall = true
-		return y.__gc()
-	end
+	y.__call = y.__gc
 	
 	return x
 end
@@ -118,7 +116,9 @@ end
 function Download.Cancel(this)
 	assert(this.downloading, "No download in progress")
 	this.finalizer()
-	return reInitDownload(this)
+	reInitDownload(this)
+
+	this.downloading = false
 end
 
 function Download.IsDownloading(this)
