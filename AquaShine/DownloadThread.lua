@@ -22,9 +22,7 @@ end
 -- We create our custom sink function which does send
 -- the response data to LOVE channel
 local function custom_sink(chunk, err)
-	print("custom_sink", chunk, err)
-	if cin:peek() ~= "QUIT" then
-		print("QUIT req")
+	if cin:peek() == "QUIT" then
 		return nil, "QUIT Requested"
 	elseif chunk then
 		push_event("RECV", chunk)
