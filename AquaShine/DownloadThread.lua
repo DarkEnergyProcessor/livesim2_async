@@ -3,12 +3,25 @@
 -- See copyright notice in AquaShine.lua
 
 require("love.thread")
+local lf = require("love.filesystem")
 
 local cin = ...
+local hasSSL, ssl = pcall(require, "ssl")
 local socket = require("socket")
 local http = require("socket.http")
 local lt = require("love.timer")
+local sslParams
 http.TIMEOUT = 60
+
+-- If LuaSec is available, use it
+if hasSSL then
+	sslParams = ssl.newcontext {
+		mode = "client",
+		protocol = "tlsv1_2",
+		cafile = assert(love.filesystem.getRealDirectory("cacert.pem")).."/cacert.pem",
+		verify = "peer",
+	}
+end
 
 --function print() lt.sleep(0.001) end
 
@@ -26,6 +39,7 @@ local function custom_sink(chunk, err)
 		print("QUIT requested")
 		return nil, "QUIT Requested"
 	elseif chunk then
+		print("recv", chunk:sub(1, 40))
 		push_event("RECV", chunk)
 	end
 	
@@ -38,10 +52,24 @@ local lasthttp
 
 local function get_http(url, force)
 	local h
-	local dest, uri = assert(url:match("http://([^/]+)(/?.*)"))
+	local s, dest, uri = socket.try(url:match("http(s?)://([^/]+)(/?.*)"))
 	local host, port = dest:match("([^:]+):?(%d*)")
-	port = #port > 0 and port or "80"
-	h = http.open(host, assert(tonumber(port)))
+
+	-- Check if we passed "https" but doesn't have LuaSec
+	socket.try(#s > 0 and hasSSL or #s == 0, "HTTPS is not supported")
+
+	-- Open connection
+	port = #port > 0 and port or (#s > 0 and "443" or "80")
+	port = socket.try(tonumber(port), "Invalid port")
+	h = http.open(host, port)
+
+	-- If HTTPS is used, do wrap it to LuaSec SSL connection and do handshake
+	if #s > 0 then
+		h.c = ssl.wrap(h.c, sslParams)
+		print("attempt handshake")
+		socket.try(h.c:dohandshake())
+		print("handshake ok")
+	end
 	
 	return h, #uri == 0 and "/" or uri, dest
 end
@@ -52,6 +80,7 @@ end
 
 local request_http = socket.protect(function(url, headers)
 	-- Build request table
+	print("get http")
 	local h, uri, dest = get_http(url)
 	print("http hand", h, uri)
 	

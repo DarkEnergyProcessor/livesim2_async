@@ -8,6 +8,18 @@ local BackgroundImage = AquaShine.LoadModule("uielement.background_image")
 local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
 local DLWrap = {}
 
+function DLWrap.IsLLPOK()
+	return AquaShine.Download.HasHTTPS() or love.filesystem.getInfo("external/download_beatmap_llp.lua")
+end
+
+function DLWrap.GetLLPDestination()
+	if AquaShine.Download.HasHTTPS() then
+		return "download_beatmap_llp.lua"
+	else
+		return "external/download_beatmap_llp.lua"
+	end
+end
+
 function DLWrap.Start()
 	DLWrap.Delay = 10000
 	DLWrap.Download = AquaShine.GetCachedData("BeatmapDLHandle", AquaShine.Download)
@@ -16,7 +28,7 @@ function DLWrap.Start()
 end
 
 function DLWrap.Update(deltaT)
-	local dest = love.filesystem.getInfo("external/download_beatmap_llp.lua") and "external/download_beatmap_llp.lua"
+	local dest = DLWrap.IsLLPOK() and DLWrap.GetLLPDestination()
 	DLWrap.Delay = DLWrap.Delay - deltaT
 	if not(DLWrap.Download:IsDownloading()) then
 		AquaShine.LoadEntryPoint(AquaShine.LoadConfig("DL_CURRENT", dest or "download_beatmap_sif.lua"))

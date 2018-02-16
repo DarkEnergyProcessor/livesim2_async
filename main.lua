@@ -24,10 +24,10 @@
 --]]---------------------------------------------------------------------------
 
 -- Version  string
-DEPLS_VERSION = "2.0-RC2"
+DEPLS_VERSION = "2.0.0"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 01020002
+DEPLS_VERSION_NUMBER = 02000099
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then
@@ -152,6 +152,13 @@ ls2.setstreamwrapper {
 --------------------------
 local LuaStoryboard = require("luastoryboard2")
 LuaStoryboard._SetAquaShine(AquaShine)
+
+----------------------
+-- Certificate List --
+----------------------
+if not(love.filesystem.getInfo("cacert.pem")) then
+	assert(love.filesystem.write("cacert.pem", assert(love.filesystem.read("ca_cert.pem"))))
+end
 
 ----------------------------
 -- Force Create Directory --
