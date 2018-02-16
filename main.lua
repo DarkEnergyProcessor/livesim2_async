@@ -24,15 +24,18 @@
 --]]---------------------------------------------------------------------------
 
 -- Version  string
-DEPLS_VERSION = "2.0-RC1"
+DEPLS_VERSION = "2.0.0"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 01020001
+DEPLS_VERSION_NUMBER = 02000099
 
-setmetatable(_G, {
-	__index = function(_, var) error("Unknown variable "..var, 2) end,
-	__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
-})
+-- We don't want to protect the global table if we run it from LuaJIT/Terra
+if love._exe then
+	setmetatable(_G, {
+		__index = function(_, var) error("Unknown variable "..var, 2) end,
+		__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
+	})
+end
 
 local AquaShine = love._getAquaShineHandle()
 local isFused = love.filesystem.isFused()
@@ -149,6 +152,13 @@ ls2.setstreamwrapper {
 --------------------------
 local LuaStoryboard = require("luastoryboard2")
 LuaStoryboard._SetAquaShine(AquaShine)
+
+----------------------
+-- Certificate List --
+----------------------
+if not(love.filesystem.getInfo("cacert.pem")) then
+	assert(love.filesystem.write("cacert.pem", assert(love.filesystem.read("ca_cert.pem"))))
+end
 
 ----------------------------
 -- Force Create Directory --

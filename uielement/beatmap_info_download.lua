@@ -8,6 +8,7 @@ local BeatmapInfoDL = AquaShine.Node:extend("Livesim2.BeatmapInfoDL")
 local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local CoverArtLoading = AquaShine.LoadModule("uielement.cover_art_loading")
+local Checkbox = AquaShine.LoadModule("uielement.checkbox")
 
 function BeatmapInfoDL.init(this, track_data, NoteLoader)
 	AquaShine.Node.init(this)
@@ -32,7 +33,17 @@ function BeatmapInfoDL.init(this, track_data, NoteLoader)
 		:disable()
 	this.child[3] = CoverArtLoading()
 		:setPosition(440, 130)
+	-- Autoplay checkbox
+	this.child[4] = Checkbox("Autoplay", 440, 520, function(checked)
+			AquaShine.SaveConfig("AUTOPLAY", checked and "1" or "0")
+		end)
+		:setColor(0, 0, 0)
+		:setChecked(AquaShine.LoadConfig("AUTOPLAY", 0) == 1)
+	-- Random checkbox
+	this.child[5] = Checkbox("Random", 440, 556)
+		:setColor(0, 0, 0)
 	this.trackdata = track_data
+	this.beatmap_name = track_data.name
 end
 
 function BeatmapInfoDL.setBeatmapIndex(this, index)
@@ -52,7 +63,8 @@ function BeatmapInfoDL.draw(this)
 	love.graphics.rectangle("fill", 440, 130, 160, 160)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.setFont(this.infofont)
-	love.graphics.print(this.status, 440, 566)
+	love.graphics.print(this.beatmap_name, 423, 85)
+	love.graphics.print(this.status, 440, 480)
 	love.graphics.print("Score", 620, 132)
 	love.graphics.print("Combo", 800, 132)
 	love.graphics.print("S\nA\nB\nC", 604, 152)
@@ -69,6 +81,8 @@ function BeatmapInfoDL.draw(this)
 		love.graphics.print(din, 600, 380)
 	end
 	
+	love.graphics.setColor(1, 1, 1)
+	love.graphics.print(this.beatmap_name, 422, 84)
 	return AquaShine.Node.draw(this)
 end
 
@@ -88,6 +102,10 @@ function BeatmapInfoDL.setOKButtonCallback(this, cb)
 	else
 		this.child[2]:enable()
 	end
+end
+
+function BeatmapInfoDL.isRandomTicked(this)
+	return this.child[5]:isChecked()
 end
 
 return BeatmapInfoDL

@@ -205,6 +205,7 @@ function AquaShine.LoadEntryPoint(name, arg)
 	end
 	
 	AquaShine.SleepDisabled = false
+	AquaShine.CallingSetWindowTitle = false
 	love.window.setDisplaySleepEnabled(true)
 	
 	if name:sub(1, 1) == ":" then
@@ -226,16 +227,22 @@ function AquaShine.LoadEntryPoint(name, arg)
 	scriptdata.Start(arg or {})
 	TemporaryEntryPoint = scriptdata
 	
-	if title then
-		love.window.setTitle(AquaShine.WindowName .. " - "..title)
-	else
-		love.window.setTitle(AquaShine.WindowName)
+	if not(AquaShine.CallingSetWindowTitle) then
+		if title then
+			love.window.setTitle(AquaShine.WindowName .. " - "..title)
+		else
+			love.window.setTitle(AquaShine.WindowName)
+		end
 	end
+
+	AquaShine.CallingSetWindowTitle = false
 end
 
 --! @brief Set window title
 --! @param title The new window title (or nil to reset)
 function AquaShine.SetWindowTitle(title)
+	AquaShine.CallingSetWindowTitle = true
+	
 	if title then
 		love.window.setTitle(AquaShine.WindowName .. " - "..title)
 	else
@@ -587,7 +594,14 @@ function AquaShine.StepLoop()
 	-- Switch entry point
 	if TemporaryEntryPoint then
 		if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
-			pcall(AquaShine.CurrentEntryPoint.Exit)
+			--[[
+			local s, msg = pcall(AquaShine.CurrentEntryPoint.Exit)
+
+			if not(s) then
+				AquaShine.Log("AquaShine", "Error on exit: %s", msg)
+			end
+			]]
+			AquaShine.CurrentEntryPoint.Exit()
 		end
 		
 		AquaShine.CurrentEntryPoint = TemporaryEntryPoint

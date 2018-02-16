@@ -321,7 +321,17 @@ function CBFBeatmap.GetNotesList(this)
 		end
 
 		-- Load it line by line
+		-- FIXME: LOVE 0.11.0 seekless File:lines causes it to enter infinite loop.
+		-- So, read all contents then use string.gmatch. Slower but it should work.
+		--[[
 		for line in f:lines() do
+			if #line > 0 then
+				readed_notes_data[#readed_notes_data + 1] = line
+			end
+		end
+		]]
+		local contents = f:read()
+		for line in contents:gmatch("([^\r\n|\r|\n]+)") do
 			if #line > 0 then
 				readed_notes_data[#readed_notes_data + 1] = line
 			end
@@ -630,6 +640,24 @@ function CBFBeatmap.GetBeatmapAudio(this)
 	end
 	
 	return this.audio
+end
+
+function CBFBeatmap.GetLiveClearSound(this)
+	if not(this.lclr_loaded) then
+		for _, v in ipairs(supported_audio_fmts) do
+			local name = this.project_folder.."/liveShowClearSFX"..v
+			local name_info = love.filesystem.getInfo(name)
+			
+			if name_info and name_info.type == "file" then
+				this.lclr = love.sound.newSoundData(name)
+				break
+			end
+		end
+		
+		this.lclr_loaded = true
+	end
+	
+	return this.lclr
 end
 
 return CBFLoader

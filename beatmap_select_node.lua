@@ -100,7 +100,7 @@ function BeatmapSelect.Start(arg)
 				AquaShine.LoadImage("assets/image/ui/s_button_03se.png"),
 				function()
 					local list = AquaShine.FileSelection("Insert Beatmap(s)", nil, nil, true)
-					BeatmapSelect.FileDropped(list)
+					BeatmapSelect.BeatmapInstall(list)
 				end,
 				0.5
 			)
@@ -130,9 +130,18 @@ function BeatmapSelect.Start(arg)
 end
 
 function BeatmapSelect.FileDropped(list)
+	local out = {}
+	for i = 1, #list do
+		out[i] = list[i]:getFilename()
+	end
+	
+	return BeatmapSelect.BeatmapInstall(out)
+end
+
+function BeatmapSelect.BeatmapInstall(list)
 	local hasInstalled = false
 	for i, v in ipairs(list) do
-		local f, h = io.open(v:getFilename(), "rb")
+		local f, h = io.open(v, "rb")
 		
 		if f then
 			local output = "temp/"..BeatmapSelect.CreateRandomString()
@@ -149,7 +158,11 @@ function BeatmapSelect.FileDropped(list)
 				local test = NoteLoader.NoteLoader(output)
 				
 				if test then
-					assert(os.rename(BeatmapSelect.SaveDir..output, BeatmapSelect.SaveDir.."beatmap/"..AquaShine.Basename(v:getFilename())))
+					local source_path = BeatmapSelect.SaveDir..output
+					local dest_path = BeatmapSelect.SaveDir.."beatmap/"..AquaShine.Basename(v)
+					print(source_path, dest_path)
+					print("remove", os.remove(dest_path))
+					assert(os.rename(source_path, dest_path))
 					hasInstalled = true
 				end
 				

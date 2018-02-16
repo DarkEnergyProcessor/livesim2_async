@@ -186,6 +186,8 @@ function BeatmapInfo.draw(this)
 		local ci = this.userdata.beatmap.combo_info or "-\n-\n-\n-"
 		local din = this.userdata.beatmap.difficulty or "Unknown"
 		
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.print(name, 423, 85)
 		love.graphics.print(si, 620, 152)
 		love.graphics.print(ci, 800, 152)
 		love.graphics.print(din, 600, 380)
@@ -202,6 +204,9 @@ function BeatmapInfo.draw(this)
 				love.graphics.printf(this.userdata.beatmap.cover.arrangement, 440, 296, 476)
 			end
 		end
+		
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.print(name, 422, 84)
 	end
 	
 	return AquaShine.Node.draw(this)
