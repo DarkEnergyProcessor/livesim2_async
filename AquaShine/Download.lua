@@ -5,6 +5,7 @@
 local AquaShine = ...
 local class = AquaShine.Class
 local love = require("love")
+local supportHTTPS = pcall(require, "ssl")
 local Download = class("AquaShine.Download")
 local DownloadList = setmetatable({}, {__mode = "k"})
 
@@ -67,6 +68,10 @@ end
 
 function Download.DefaultErrorCallback(this, data)
 	error(data)
+end
+
+function Download.HasHTTPS()
+	return supportHTTPS
 end
 
 function Download.Create()
@@ -136,3 +141,4 @@ function love.handlers.aqs_download(input, name, data)
 end
 
 AquaShine.Download = Download
+return Download
