@@ -742,25 +742,22 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load background
-	if  AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 0 then
-		-- Background always default one
-		noteloader_data.background = nil
-	end
-	
-	local noteloader_background = noteloader_data:GetBackgroundID(DEPLS.NoteRandomized)
-	
-	if noteloader_background > 0 then
-		BackgroundID = noteloader_background
-	elseif noteloader_background == -1 then
-		local cbackground = noteloader_data:GetCustomBackground()
-		DEPLS.BackgroundImage[0][1] = cbackground[0]
-		DEPLS.BackgroundImage[0][4] = 960 / cbackground[0]:getWidth()
-		DEPLS.BackgroundImage[0][5] = 640 / cbackground[0]:getHeight()
-		DEPLS.BackgroundImage[1][1] = cbackground[1]
-		DEPLS.BackgroundImage[2][1] = cbackground[2]
-		DEPLS.BackgroundImage[3][1] = cbackground[3]
-		DEPLS.BackgroundImage[4][1] = cbackground[4]
-		custom_background = true
+	if  AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 1 then
+		local noteloader_background = noteloader_data:GetBackgroundID(DEPLS.NoteRandomized)
+		
+		if noteloader_background > 0 then
+			BackgroundID = noteloader_background
+		elseif noteloader_background == -1 then
+			local cbackground = noteloader_data:GetCustomBackground()
+			DEPLS.BackgroundImage[0][1] = cbackground[0]
+			DEPLS.BackgroundImage[0][4] = 960 / cbackground[0]:getWidth()
+			DEPLS.BackgroundImage[0][5] = 640 / cbackground[0]:getHeight()
+			DEPLS.BackgroundImage[1][1] = cbackground[1]
+			DEPLS.BackgroundImage[2][1] = cbackground[2]
+			DEPLS.BackgroundImage[3][1] = cbackground[3]
+			DEPLS.BackgroundImage[4][1] = cbackground[4]
+			custom_background = true
+		end
 	end
 	
 	-- Load unit icons
@@ -1060,6 +1057,7 @@ function DEPLS.Draw(deltaT)
 	
 	love.graphics.push("all")
 	love.graphics.setCanvas(DEPLS.MainCanvas)
+	love.graphics.clear()
 	
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
@@ -1197,6 +1195,7 @@ function DEPLS.PostProcessingDraw(curcanv)
 	end
 	
 	love.graphics.setCanvas(curcanv)
+	love.graphics.clear()
 	love.graphics.draw(DEPLS.MainCanvas)
 	love.graphics.pop()
 end

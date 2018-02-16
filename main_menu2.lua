@@ -42,6 +42,10 @@ function MainMenu.ConstructVersionText()
 		bld[#bld + 1] = "FFX "
 	end
 	
+	if AquaShine.Download.HasHTTPS() then
+		bld[#bld + 1] = "HTTPS "
+	end
+	
 	bld[#bld + 1] = "\nRenderer: "
 	bld[#bld + 1] = AquaShine.RendererInfo[1]
 	

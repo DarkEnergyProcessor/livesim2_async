@@ -88,7 +88,7 @@ function love.conf(t)
 	t.window.vsync          = vsync(not(gcfgb("novsync")))
 	t.window.msaa           = gcfgn("msaa", 0)
 	t.window.display        = 1
-	t.window.highdpi        = true
+	t.window.highdpi        = false
 	t.window.x              = nil
 	t.window.y              = nil
 	

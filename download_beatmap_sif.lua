@@ -53,6 +53,12 @@ function DLBeatmap.SetupList(beatmaplist)
 	for i, v in ipairs(beatmaplist) do
 		-- Ignore it if it's TECHNICAL difficulty
 		if v.difficulty_text ~= "TECHNICAL" then
+			-- According to ieb, if the `live_difficulty_id` is 20000 and later
+			-- then it's SIFAC beatmap.
+			if v.live_setting_id >= 20000 then
+				v.difficulty_text = "SIFAC"
+			end
+			
 			local trackidx
 			-- Find the live track
 			for i = 1, #live_track do
@@ -150,6 +156,18 @@ function DLBeatmap.MovePage(inc)
 	DLBeatmap.MainNode.brother = DLBeatmap.NodePageList[DLBeatmap.CurrentPage + 1]
 end
 
+function DLBeatmap.IsLLPOK()
+	return AquaShine.Download.HasHTTPS() or love.filesystem.getInfo("external/download_beatmap_llp.lua")
+end
+
+function DLBeatmap.GetLLPDestination()
+	if AquaShine.Download.HasHTTPS() then
+		return "download_beatmap_llp.lua"
+	else
+		return "external/download_beatmap_llp.lua"
+	end
+end
+
 function DLBeatmap.Start(arg)
 	local maps_info = love.filesystem.getInfo("maps.json")
 	local s_button_03 = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
@@ -167,10 +185,11 @@ function DLBeatmap.Start(arg)
 			:setShadow(1, 1, true)
 		)
 	
-	if love.filesystem.getInfo("external/download_beatmap_llp.lua") then
+	if DLBeatmap.IsLLPOK() then
 		DLBeatmap.MainNode:addChild(SimpleButton(s_button_03, s_button_03se, function()
-				AquaShine.SaveConfig("DL_CURRENT", "external/download_beatmap_llp.lua")
-				AquaShine.LoadEntryPoint("external/download_beatmap_llp.lua")
+				local dest = DLBeatmap.GetLLPDestination()
+				AquaShine.SaveConfig("DL_CURRENT", dest)
+				AquaShine.LoadEntryPoint(dest)
 			end, 0.5)
 			:setPosition(696, 18)
 			:initText(AquaShine.LoadFont("MTLmr3m.ttf", 14), "LLP Download Beatmap")
@@ -200,6 +219,12 @@ function DLBeatmap.Draw()
 	return DLBeatmap.MainNode:draw()
 end
 
+function DLBeatmap.Exit()
+	if DLBeatmap.Download and DLBeatmap.Download:IsDownloading() then
+		DLBeatmap.Download:Cancel()
+	end
+end
+
 function DLBeatmap.MousePressed(x, y, b, t)
 	if not(DLBeatmap.SwipeData[1]) then
 		DLBeatmap.SwipeData[1] = t or 0
@@ -222,7 +247,6 @@ function DLBeatmap.MouseReleased(x, y, b, t)
 	if DLBeatmap.SwipeData[1] then
 		if math.abs(DLBeatmap.SwipeData[2] - x) >= DLBeatmap.SwipeThreshold then
 			-- Switch page
-			local is_left = DLBeatmap.SwipeData[2] - x < 0
 			DLBeatmap.MovePage(DLBeatmap.SwipeData[2] - x < 0 and -1 or 1)
 			DLBeatmap.SwipeData[2] = nil
 		else
@@ -230,6 +254,16 @@ function DLBeatmap.MouseReleased(x, y, b, t)
 		end
 		
 		DLBeatmap.SwipeData[1] = nil
+	end
+end
+
+function DLBeatmap.KeyReleased(key)
+	if key == "escape" then
+		AquaShine.LoadEntryPoint(":beatmap_select")
+	elseif key == "left" then
+		DLBeatmap.MovePage(-1)
+	elseif key == "right" then
+		DLBeatmap.MovePage(1)
 	end
 end
 

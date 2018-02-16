@@ -5,6 +5,7 @@
 local AquaShine = ...
 local class = AquaShine.Class
 local love = require("love")
+local supportHTTPS = pcall(require, "ssl")
 local Download = class("AquaShine.Download")
 local DownloadList = setmetatable({}, {__mode = "k"})
 
@@ -42,34 +43,35 @@ local chunk_handler = {
 local function createFinalizer(this)
 	local x = newproxy(true)
 	local y = getmetatable(x)
+	local cin = this.channelin
+	local t = this.thread
 	local gccall = false
 	y.__gc = function()
 		if gccall then return end
+		gccall = true
 		
-		local t = this.thread
-		local cin = this.channelin
 		DownloadList[cin] = nil
 		cin:push("QUIT")
 	end
-	y.__call = function()
-		gccall = true
-		return y.__gc()
-	end
+	y.__call = y.__gc
 	
 	return x
 end
 
 local function reInitDownload(this)
 	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
-	this.channelin = love.thread.newChannel()
+	this.channelin = assert(love.thread.newChannel())
 	this.finalizer = createFinalizer(this)
-	this.err = Download.DefaultErrorCallback
 	
 	this.thread:start(this.channelin)
 end
 
 function Download.DefaultErrorCallback(this, data)
 	error(data)
+end
+
+function Download.HasHTTPS()
+	return supportHTTPS
 end
 
 function Download.Create()
@@ -119,7 +121,9 @@ end
 function Download.Cancel(this)
 	assert(this.downloading, "No download in progress")
 	this.finalizer()
-	return reInitDownload(this)
+	reInitDownload(this)
+
+	this.downloading = false
 end
 
 function Download.IsDownloading(this)
@@ -137,3 +141,4 @@ function love.handlers.aqs_download(input, name, data)
 end
 
 AquaShine.Download = Download
+return Download
