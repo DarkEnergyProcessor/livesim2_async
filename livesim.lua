@@ -855,7 +855,11 @@ function DEPLS.Start(argv)
 		end
 	else
 		-- Calculate using master difficulty preset
-		local s_score = #notes_list * 739
+		local s_score = 0
+		
+		for i = 1, #notes_list do
+			s_score = s_score + (notes_list[i].effect > 10 and 370 or 739)
+		end
 		
 		DEPLS.ScoreData[1] = math.floor(s_score * 0.285521 + 0.5)
 		DEPLS.ScoreData[2] = math.floor(s_score * 0.71448 + 0.5)

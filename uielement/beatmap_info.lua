@@ -188,6 +188,9 @@ function BeatmapInfo.draw(this)
 		
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.print(name, 423, 85)
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.print(name, 422, 84)
+		love.graphics.setColor(0, 0, 0)
 		love.graphics.print(si, 620, 152)
 		love.graphics.print(ci, 800, 152)
 		love.graphics.print(din, 600, 380)
@@ -204,9 +207,6 @@ function BeatmapInfo.draw(this)
 				love.graphics.printf(this.userdata.beatmap.cover.arrangement, 440, 296, 476)
 			end
 		end
-		
-		love.graphics.setColor(1, 1, 1)
-		love.graphics.print(name, 422, 84)
 	end
 	
 	return AquaShine.Node.draw(this)

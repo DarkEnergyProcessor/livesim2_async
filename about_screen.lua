@@ -45,8 +45,8 @@ This Live Simulator uses these external libraries:
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
 	* FFmpeg (when available)  	License
-
-
+	* LuaSec				   	License
+	* OpenSSL (need by LuaSec)	 License
 
 LOVE Version:				  ]]..love._version..[[
 
