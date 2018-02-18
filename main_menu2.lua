@@ -34,6 +34,10 @@ function MainMenu.ConstructVersionText()
 		bld[#bld + 1] = "Hz "
 	end
 	
+	if jit.status() then
+		bld[#bld + 1] = "JIT "
+	end
+	
 	if AquaShine.FileSelection then
 		bld[#bld + 1] = "fselect "
 	end

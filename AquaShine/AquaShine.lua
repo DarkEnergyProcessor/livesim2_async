@@ -1114,7 +1114,6 @@ function love.load(arg)
 	local wx, wy = love.graphics.getDimensions()
 	AquaShine.OperatingSystem = love.system.getOS()
 	AquaShine.Class = love.filesystem.load("AquaShine/30log.lua")()
-	love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
 	
 	if AquaShine.GetCommandLineConfig("debug") then
 		function AquaShine.Log(part, msg, ...)
@@ -1165,6 +1164,7 @@ end
 -----------------------------------
 do
 	local conf = AquaShine.LoadModule("AquaShineConfig")
+	love.filesystem.setIdentity(conf.LOVE.Identity, true)
 	
 	AquaShine.AllowEntryPointPreload = conf.EntryPointPreload
 	AquaShine.Config = conf

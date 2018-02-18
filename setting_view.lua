@@ -14,6 +14,7 @@ local Settings = {
 	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22),
 	DescImage = AquaShine.LoadImage("assets/image/ui/com_win_42.png"),
 }
+local defaultJIT = (love._os == "Android" or love._os == "iOS") and "off" or "on"
 
 local SettingSelection = {
 	{
@@ -70,7 +71,7 @@ local SettingSelection = {
 		Max = 11
 	},
 	{
-		Name = "JUST_IN_TIME", Default = "off",
+		Name = "JIT_COMPILER", Default = defaultJIT,
 		Caption = "JIT (Needs Restart)",
 		Type = "switch",
 		On = "on",

@@ -62,6 +62,23 @@ local function vsync(v)
 	return v
 end
 
+-----------------------------
+-- Check JIT compiler mode --
+-----------------------------
+
+-- A note, JIT compiler must be disabled before love.conf so that other
+-- LOVE function which uses "fast paths if JIT is on" is not taken.
+do
+	local defaultJIT = (love._os == "Android" or love._os == "iOS") and "off" or "on"
+	local jit_mode = AquaShine.LoadConfig("JIT_COMPILER", defaultJIT)
+	
+	if jit_mode == "off" then
+		jit.off()
+	elseif jit_mode == "on" then
+		jit.on()
+	end
+end
+
 ------------------------
 -- Configuration file --
 ------------------------
