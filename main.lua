@@ -24,16 +24,17 @@
 --]]---------------------------------------------------------------------------
 
 -- Version  string
-DEPLS_VERSION = "2.0.0"
+DEPLS_VERSION = "2.0.1"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02000099
+DEPLS_VERSION_NUMBER = 02000199
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then
 	setmetatable(_G, {
 		__index = function(_, var) error("Unknown variable "..var, 2) end,
 		__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
+		__metatable = function(_) error("Global variable protection", 2) end,
 	})
 end
 
