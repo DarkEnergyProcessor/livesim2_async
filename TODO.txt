@@ -23,10 +23,16 @@ v2.0
 - Pause							OK
 - Adjustable combo display size				OK
 - Adjustable SE volume					OK
-- Download SIF beatmaps					WIP (with RayFirefist)
+- Download SIF beatmaps					OK
 - Album art for SIFTrain beatmap			OK
 - Decrease sensitivity for swing note accuracy		OK
 - LS2 v2.0						OK
 - Removal of Playground TEXB Loader (Shelsha)		OK
 - Removal of test beatmap				OK
 - Removal of SetNotesSpeed				OK
+
+v2.1
+- Unit creation
+- New note icon
+- Working stamina
+- Restart button (live show)
