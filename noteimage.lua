@@ -137,6 +137,7 @@ function NoteImageLoader.DrawNoteMatteStyle(this)
 		color_temp[3] = bit.band(bit.rshift(this.Attribute, 5), 511) / 255
 	else
 		noteimg = assert(matte_style[this.Attribute], "Invalid note attribute")
+		noteimg_swing = matte_style_slide[this.Attribute]
 	end
 	
 	love.graphics.setColor(color_temp)

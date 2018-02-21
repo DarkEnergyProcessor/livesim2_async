@@ -56,8 +56,8 @@ rawset(_G, "DEPLS_DIST", love.filesystem.getInfo("DEPLS_DIST") or
 )
 
 -- GC tweak
-collectgarbage("setpause", 110)
-collectgarbage("setstepmul", 200)
+--collectgarbage("setpause", 110)
+--collectgarbage("setstepmul", 200)
 
 -------------------
 -- Splash Screen --
