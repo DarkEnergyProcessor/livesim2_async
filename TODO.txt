@@ -36,3 +36,7 @@ v2.1
 - New note icon
 - Working stamina
 - Restart button (live show)
+- Better live clear
+- Lovewing UI
+- Matte note style					OK
+- Delete beatmap
