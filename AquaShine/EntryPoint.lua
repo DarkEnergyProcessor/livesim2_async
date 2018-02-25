@@ -11,6 +11,6 @@ function AquaShine.EntryPoint:Update()
 	error("Pure virtual method AquaShine.EntryPoint:Update")
 end
 
-function AquaShine.EntryPoint:Update()
+function AquaShine.EntryPoint:Draw()
 	error("Pure virtual method AquaShine.EntryPoint:Draw")
 end

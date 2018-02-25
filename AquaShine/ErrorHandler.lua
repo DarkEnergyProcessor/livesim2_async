@@ -3,11 +3,12 @@
 -- See copyright notice in AquaShine.lua
 
 local AquaShine = ...
+local love = require("love")
 local ErrorHandler = {}
 
 function ErrorHandler.Start(arg)
 	ErrorHandler.Msg = assert(arg[1])
-	
+
 	love.graphics.setFont(AquaShine.LoadFont(nil, 14))
 end
 
@@ -18,10 +19,10 @@ function ErrorHandler.Draw()
 	love.graphics.print(ErrorHandler.Msg, 70, 70)
 end
 
-local ExecutionIsRestart = false
+local option = {"No", "Yes"}
 function ErrorHandler.KeyReleased(key)
 	if key == "escape" then
-		if love.window.showMessageBox("AquaShine loader", "Are you sure want to exit?", {"No", "Yes"}) == 2 then
+		if love.window.showMessageBox("AquaShine loader", "Are you sure want to exit?", option) == 2 then
 			love.event.quit()
 		end
 	end
@@ -33,11 +34,15 @@ function ErrorHandler.KeyPressed(key)
 	end
 end
 
-function ErrorHandler.MouseReleased()
-	return ErrorHandler.KeyReleased("escape")
+function ErrorHandler.MouseReleased(_, _, _, touch)
+	if touch then
+		return love.system.setClipboardText(ErrorHandler.Msg:sub(113))
+	else
+		return ErrorHandler.KeyReleased("escape")
+	end
 end
 
 function ErrorHandler.Quit()
-end	
+end
 
 return ErrorHandler

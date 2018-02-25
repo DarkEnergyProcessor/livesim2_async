@@ -2,17 +2,18 @@
 -- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
-local AquaShine = ...
-local null_device = AquaShine.OperatingSystem == "Windows" and "nul" or "/dev/null"
+-- Check if we're loading it using AquaShine or standalone
+local isAqs = ...
+local AquaShine
+if type(isAqs) == "table" then
+	AquaShine = isAqs
+end
+local FileSelection
+local love = require("love")
 local has_shell = os.execute() == 1
 
 if not(has_shell) then
-	AquaShine.Log("AquaShineFileDialog", "Possible file dialog backend detection fail")
-end
-
-if not(AquaShine.IsDesktopSystem()) or AquaShine.OperatingSystem == "OS X" then
-	AquaShine.Log("AquaShineFileDialog", "Platform not supported for file dialog")
-	return
+	io.stderr:write("Possible file dialog backend detection fail\n")
 end
 
 --! @fn AquaShine.FileSelection(title, directory, filter, multiple)
@@ -25,11 +26,10 @@ end
 --!          For multiple file selection, list of selected files is returned as table (can be empty)
 --! @note This function only available if the system supports it.
 --!       Example: This function is unavailable when running under Windows without FFI or under Android
-if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
+if love._os == "Windows" and package.preload.ffi then
 	-- Use native OpenFileName for Windows with FFI
 	local ffi = require("ffi")
 	local Comdlg32 = ffi.load("Comdlg32")
-	local wchar_t_size = ffi.sizeof("wchar_t")
 	
 	ffi.cdef [[
 		int MultiByteToWideChar(unsigned int codepage, unsigned long flags, const char* str, int strlen, wchar_t* wstr, int wstrlen);
@@ -87,7 +87,7 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 	end
 	
 	local allfiles
-	function AquaShine.FileSelection(title, directory, filter, multiple)
+	function FileSelection(title, directory, filter, multiple)
 		local ofnptr = ffi.new("OPENFILENAMEW[1]")
 		local ofn = ofnptr[0]
 		local null = ffi.cast("void*", 0)
@@ -154,11 +154,10 @@ if AquaShine.OperatingSystem == "Windows" and package.preload.ffi then
 		return nil
 	end
 	
-	AquaShine.Log("AquaShineFileDialog", "Using WinAPI as file selection dialog backend")
-	return
+	--AquaShine.Log("AquaShineFileDialog", "Using WinAPI as file selection dialog backend")
 elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 	if os.execute("command -v zenity >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] zenity not found.\"; exit 1; }") == 0 then
-		function AquaShine.FileSelection(title, directory, filter, multiple)
+		function FileSelection(title, directory, filter, multiple)
 			local cmdbuild = {}
 			
 			cmdbuild[#cmdbuild + 1] = "zenity --file-selection"
@@ -205,8 +204,7 @@ elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 			end
 		end
 		
-		AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
-		return
+		--AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
 	elseif os.execute("command -v kdialog >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] kdialog not found.\"; exit 1; }") == 0 then
 		function AquaShine.FileSelection(title, directory, filter, multiple)
 			-- title and multiple is not supported unfortunately
@@ -245,9 +243,13 @@ elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 			end
 		end
 		
-		AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
-		return
+		--AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
 	end
 end
 
-AquaShine.Log("AquaShineFileDialog", "File dialog is not supported")
+--AquaShine.Log("AquaShineFileDialog", "File dialog is not supported")
+if AquaShine then
+	AquaShine.FileSelection = FileSelection
+end
+
+return FileSelection
