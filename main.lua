@@ -24,10 +24,10 @@
 --]]---------------------------------------------------------------------------
 
 -- Version  string
-DEPLS_VERSION = "2.0.1"
+DEPLS_VERSION = "2.0.2"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02000199
+DEPLS_VERSION_NUMBER = 02000299
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then

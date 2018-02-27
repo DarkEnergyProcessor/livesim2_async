@@ -326,7 +326,7 @@ end
 
 function DLBeatmap.Exit()
 	if DLBeatmap.Download:IsDownloading() then
-		DLBeamtap.Download:Cancel()
+		DLBeatmap.Download:Cancel()
 	end
 end
 
