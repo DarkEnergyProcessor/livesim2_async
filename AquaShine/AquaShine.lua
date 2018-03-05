@@ -630,7 +630,7 @@ function AquaShine.StepLoop()
 	local dt = love.timer.step()
 
 	if love.graphics.isActive() then
-		local t = love.timer.getTime()
+		--local t = love.timer.getTime()
 		love.graphics.clear()
 
 		do
@@ -660,6 +660,7 @@ function AquaShine.StepLoop()
 			love.graphics.setCanvas()
 		end
 		love.graphics.draw(AquaShine.MainCanvas)
+		--[[
 		accumulateDT = accumulateDT + (-t + love.timer.getTime())
 		frameCounter = frameCounter + 1
 
@@ -668,6 +669,7 @@ function AquaShine.StepLoop()
 			frameCounter = 0
 			accumulateDT = 0
 		end
+		]]
 
 		love.graphics.present()
 	end
