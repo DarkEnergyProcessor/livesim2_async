@@ -23,11 +23,13 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
+local love = require("love")
+
 -- Version  string
-DEPLS_VERSION = "2.0.2"
+DEPLS_VERSION = "2.1.0"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02000299
+DEPLS_VERSION_NUMBER = 02010099
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then
@@ -56,8 +58,8 @@ rawset(_G, "DEPLS_DIST", love.filesystem.getInfo("DEPLS_DIST") or
 )
 
 -- GC tweak
-collectgarbage("setpause", 110)
-collectgarbage("setstepmul", 400)
+--collectgarbage("setpause", 110)
+--collectgarbage("setstepmul", 200)
 
 -------------------
 -- Splash Screen --

@@ -30,48 +30,78 @@ local function unpremultiply(x, y, r, g, b, a)
 end
 
 local old_style = make_cache_table {
-	"assets/image/tap_circle/red.png",
-	"assets/image/tap_circle/green.png",
-	"assets/image/tap_circle/cyan.png",
-	"assets/image/tap_circle/blue.png",
-	"assets/image/tap_circle/yellow.png",
-	"assets/image/tap_circle/orange.png",
-	"assets/image/tap_circle/pink.png",
-	"assets/image/tap_circle/purple.png",
-	"assets/image/tap_circle/gray.png",
-	"assets/image/tap_circle/rainbow.png",
-	"assets/image/tap_circle/black.png",
+	"assets/image/tap_circle/default/red.png",
+	"assets/image/tap_circle/default/green.png",
+	"assets/image/tap_circle/default/cyan.png",
+	"assets/image/tap_circle/default/blue.png",
+	"assets/image/tap_circle/default/yellow.png",
+	"assets/image/tap_circle/default/orange.png",
+	"assets/image/tap_circle/default/pink.png",
+	"assets/image/tap_circle/default/purple.png",
+	"assets/image/tap_circle/default/gray.png",
+	"assets/image/tap_circle/default/rainbow.png",
+	"assets/image/tap_circle/default/black.png",
 	
-	Simultaneous = "assets/image/tap_circle/timing_normal.png",
-	Slide = "assets/image/tap_circle/slide_normal.png"
+	Simultaneous = "assets/image/tap_circle/default/timing_normal.png",
+	Slide = "assets/image/tap_circle/default/slide_normal.png"
 }
 local new_style = make_cache_table {
-	"assets/image/tap_circle/pink_v5.png",
-	"assets/image/tap_circle/green_v5.png",
-	"assets/image/tap_circle/cyan_v5.png",
-	"assets/image/tap_circle/blue_v5.png",
-	"assets/image/tap_circle/yellow_v5.png",
-	"assets/image/tap_circle/orange_v5.png",
-	"assets/image/tap_circle/red_v5.png",
-	"assets/image/tap_circle/purple_v5.png",
-	"assets/image/tap_circle/gray_v5.png",
-	"assets/image/tap_circle/rainbow_v5.png",
-	"assets/image/tap_circle/black_v5.png",
+	"assets/image/tap_circle/neon/pink_v5.png",
+	"assets/image/tap_circle/neon/green_v5.png",
+	"assets/image/tap_circle/neon/cyan_v5.png",
+	"assets/image/tap_circle/neon/blue_v5.png",
+	"assets/image/tap_circle/neon/yellow_v5.png",
+	"assets/image/tap_circle/neon/orange_v5.png",
+	"assets/image/tap_circle/neon/red_v5.png",
+	"assets/image/tap_circle/neon/purple_v5.png",
+	"assets/image/tap_circle/neon/gray_v5.png",
+	"assets/image/tap_circle/neon/rainbow_v5.png",
+	"assets/image/tap_circle/neon/black_v5.png",
 	
-	Simultaneous = "assets/image/tap_circle/timing_v5.png"
+	Simultaneous = "assets/image/tap_circle/neon/timing_v5.png"
 }
 local new_style_slide = make_cache_table {
-	"assets/image/tap_circle/slide_pink.png",
-	"assets/image/tap_circle/slide_green.png",
-	"assets/image/tap_circle/slide_cyan.png",
-	"assets/image/tap_circle/slide_blue.png",
-	"assets/image/tap_circle/slide_yellow.png",
-	"assets/image/tap_circle/slide_orange.png",
-	"assets/image/tap_circle/slide_red.png",
-	"assets/image/tap_circle/slide_purple.png",
-	"assets/image/tap_circle/slide_gray.png",
-	"assets/image/tap_circle/slide_rainbow.png",
-	"assets/image/tap_circle/slide_black.png"
+	"assets/image/tap_circle/neon/slide_pink.png",
+	"assets/image/tap_circle/neon/slide_green.png",
+	"assets/image/tap_circle/neon/slide_cyan.png",
+	"assets/image/tap_circle/neon/slide_blue.png",
+	"assets/image/tap_circle/neon/slide_yellow.png",
+	"assets/image/tap_circle/neon/slide_orange.png",
+	"assets/image/tap_circle/neon/slide_red.png",
+	"assets/image/tap_circle/neon/slide_purple.png",
+	"assets/image/tap_circle/neon/slide_gray.png",
+	"assets/image/tap_circle/neon/slide_rainbow.png",
+	"assets/image/tap_circle/neon/slide_black.png"
+}
+
+local matte_style = make_cache_table {
+	"assets/image/tap_circle/matte/00.png",
+	"assets/image/tap_circle/matte/01.png",
+	"assets/image/tap_circle/matte/02.png",
+	"assets/image/tap_circle/matte/06.png",
+	"assets/image/tap_circle/matte/05.png",
+	"assets/image/tap_circle/matte/04.png",
+	"assets/image/tap_circle/matte/03.png",
+	"assets/image/tap_circle/matte/07.png",
+	"assets/image/tap_circle/matte/08.png",
+	"assets/image/tap_circle/matte/09.png",
+	"assets/image/tap_circle/matte/20.png",
+	
+	Simultaneous = "assets/image/tap_circle/matte/simul.png"
+}
+
+local matte_style_slide = make_cache_table {
+	"assets/image/tap_circle/matte/10.png",
+	"assets/image/tap_circle/matte/11.png",
+	"assets/image/tap_circle/matte/12.png",
+	"assets/image/tap_circle/matte/16.png",
+	"assets/image/tap_circle/matte/15.png",
+	"assets/image/tap_circle/matte/14.png",
+	"assets/image/tap_circle/matte/13.png",
+	"assets/image/tap_circle/matte/17.png",
+	"assets/image/tap_circle/matte/18.png",
+	"assets/image/tap_circle/matte/19.png",
+	"assets/image/tap_circle/matte/21.png"
 }
 
 local new_style_rotation = {
@@ -90,6 +120,49 @@ local color_temp = table.new(4, 0)
 
 local function drawNoteBase(image, this, rot)
 	love.graphics.draw(image, this.FirstCircle[1], this.FirstCircle[2], rot or 0, this.CircleScale, this.CircleScale, 64, 64)
+end
+
+function NoteImageLoader.DrawNoteMatteStyle(this)
+	local noteimg, noteimg_swing
+	color_temp[1] = 1
+	color_temp[2] = 1
+	color_temp[3] = 1
+	color_temp[4] = DEPLS.LiveOpacity * this.Opacity
+	
+	if bit.band(this.Attribute, 15) == 15 then
+		noteimg = matte_style[9]
+		noteimg_swing = matte_style_slide[9]
+		color_temp[1] = bit.band(bit.rshift(this.Attribute, 23), 511) / 255
+		color_temp[2] = bit.band(bit.rshift(this.Attribute, 14), 511) / 255
+		color_temp[3] = bit.band(bit.rshift(this.Attribute, 5), 511) / 255
+	else
+		noteimg = assert(matte_style[this.Attribute], "Invalid note attribute")
+		noteimg_swing = matte_style_slide[this.Attribute]
+	end
+	
+	love.graphics.setColor(color_temp)
+	drawNoteBase(noteimg, this)
+	love.graphics.setColor(1, 1, 1, color_temp[4])
+	
+	if this.TokenNote then
+		drawNoteBase(DEPLS.Images.Note.Token, this)
+	elseif this.StarNote then
+		drawNoteBase(star_icon, this)
+	end
+	
+	if this.SlideNote then
+		drawNoteBase(noteimg_swing, this, this.Rotation)
+	end
+	
+	if this.SimulNote then
+		love.graphics.draw(
+			matte_style.Simultaneous,
+			this.FirstCircle[1],
+			this.FirstCircle[2],
+			0, this.CircleScale, this.CircleScale,
+			128, 128
+		)
+	end
 end
 
 function NoteImageLoader.DrawNoteV5Style(this)
@@ -171,11 +244,15 @@ function NoteImageLoader.DrawNoteOldStyle(this)
 	end
 end
 
-local notes_draw_handler = {NoteImageLoader.DrawNoteOldStyle, NoteImageLoader.DrawNoteV5Style}
+local notes_draw_handler = {
+	NoteImageLoader.DrawNoteOldStyle,
+	NoteImageLoader.DrawNoteV5Style,
+	NoteImageLoader.DrawNoteMatteStyle
+}
 
 function NoteImageLoader.GetNoteImageFunction()
 	local nstyle = AquaShine.GetCommandLineConfig("notestyle") or DEPLS.ForceNoteStyle
-	return assert(notes_draw_handler[nstyle], "Invalid note style. Only 1 (old) or 2 (new) note styles are allowed")
+	return assert(notes_draw_handler[nstyle], "Invalid note style")
 end
 
 return NoteImageLoader

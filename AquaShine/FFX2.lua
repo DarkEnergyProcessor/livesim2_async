@@ -2,72 +2,76 @@
 -- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
-local AquaShine = ...
-local love = love
+-- Check if we're loading it using AquaShine or standalone
+local isAqs = ...
+local AquaShine, LOG
+if type(isAqs) == "table" then
+	AquaShine = isAqs
+	LOG = AquaShine.Log
+else
+	function LOG() end
+end
+
+local jit = _G.jit
+local love = require("love")
 local ffi = require("ffi")
 local bit = require("bit")
+local osString = AquaShine and AquaShine.OperatingSystem or love._os
 local stringstream
 local load_ffmpeg_library
 
 -- iOS, or using Lua 5.1 is not supported
-if AquaShine.OperatingSystem == "iOS" then
-	AquaShine.Log("AquaShineFFmpeg", "AquaShine FFX is not supported")
+if osString == "iOS" then
+	LOG("AquaShineFFmpeg", "AquaShine FFX is not supported")
 	return
-elseif AquaShine.OperatingSystem == "Android" then
+elseif osString == "Android" then
 	-- We have to find our "internal" save directory at first
 	-- so we can determine our "lib" dir
-	
-	if not(AquaShine._AndroidAppDir) then
-		if AquaShine.Config.LOVE.AndroidExternalStorage then
-			love.filesystem._setAndroidSaveExternal(false)
-			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
-		end
-		
-		AquaShine._AndroidAppDir = love.filesystem.getSaveDirectory().."/../../.."
-		
-		-- Reset back to external storage mode
-		if AquaShine.Config.LOVE.AndroidExternalStorage then
-			love.filesystem._setAndroidSaveExternal(true)
-			love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
-		end
+	local saveDir = love.filesystem.getSaveDirectory()
+
+	if saveDir:find("/Android/data/", 1, true) then
+		-- Android externalstorage mode is used
+		love.filesystem._setAndroidSaveExternal(false)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+		saveDir = love.filesystem.getSaveDirectory()
 	end
-	local lib_dir = AquaShine._AndroidAppDir.."/lib"
-	
+
+	local lib_dir = saveDir.."/../../../lib"
+
 	function load_ffmpeg_library(libname, ver)
-		AquaShine.Log("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
-		local _, out = pcall(ffi.load, lib_dir.."/lib"..libname.."-"..ver..".so")
-		
-		if _ then
+		LOG("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
+
+		local s, out = pcall(ffi.load, lib_dir.."/lib"..libname.."-"..ver..".so")
+		if s then
 			return out
 		end
-		
-		_, out = pcall(ffi.load, libname.."-"..ver)
-		
-		if _ then
+
+		s, out = pcall(ffi.load, libname.."-"..ver)
+		if s then
 			return out
 		end
-		
+
 		return nil
 	end
 else
 	-- For desktop, we just need "ffi.load" it
 	function load_ffmpeg_library(libname, ver)
-		AquaShine.Log("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
+		LOG("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
 		local name = libname.."-"..ver
-		local _, out = pcall(ffi.load, name)
-		
-		if _ then
+		local s, out = pcall(ffi.load, name)
+
+		if s then
 			return out
 		end
-		
-		AquaShine.Log("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
-		_, out = pcall(ffi.load, libname)
-		
-		if _ then
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
+		s, out = pcall(ffi.load, libname)
+
+		if s then
 			return out
 		end
-		
-		AquaShine.Log("AquaShineFFmpeg", "Failed to load %s: %s", libname, out)
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", libname, out)
 		return nil
 	end
 end
@@ -78,41 +82,40 @@ do
 	function stringstream.create(str)
 		local out = newproxy(true)
 		local meta = getmetatable(out)
-		
+
 		meta.buffer = str or ""
 		meta.pos = 0
 		meta.__index = stringstream
-		
+
 		return out
 	end
 
 	function stringstream.read(ss, num)
 		local meta = getmetatable(ss)
-		
+
 		if num == "*a" then
 			if meta.pos == #meta.buffer then
 				return nil
 			end
-			
+
 			local out = meta.buffer:sub(meta.pos + 1)
-			
+
 			meta.pos = #meta.buffer
 			return out
 		elseif num <= 0 then
 			return ""
 		end
-		
-		local meta = getmetatable(ss)
+
 		local out = meta.buffer:sub(meta.pos + 1, meta.pos + num)
-		
+
 		if #out == 0 then return nil end
-		
+
 		meta.pos = meta.pos + num
-		
+
 		if meta.pos > #meta.buffer then
-			pos = #meta.buffer
+			meta.pos = #meta.buffer
 		end
-		
+
 		return out
 	end
 
@@ -121,23 +124,22 @@ do
 		local gap1 = meta.buffer:sub(1, meta.pos)
 		local gap2 = meta.buffer:sub(meta.pos + 1)
 		local con = {}
-		
-		for n, v in pairs({...}) do
-			table.insert(con, tostring(v))
+
+		for _, v in pairs({...}) do
+			con[#con + 1] = tostring(v)
 		end
-		
+
 		con = table.concat(con)
 		meta.pos = meta.pos + #con
 		meta.buffer = gap1..con..gap2
-		
+
 		return true
 	end
 
 	function stringstream.seek(ss, whence, offset)
 		local meta = getmetatable(ss)
-		
 		whence = whence or "cur"
-		
+
 		if whence == "set" then
 			meta.pos = offset or 0
 		elseif whence == "cur" then
@@ -147,13 +149,13 @@ do
 		else
 			error("bad argument #1 to 'seek' (invalid option '"..tostring(whence).."')", 2)
 		end
-		
+
 		if meta.pos < 0 then
 			meta.pos = 0
 		elseif meta.pos > #meta.buffer then
 			meta.pos = #meta.buffer
 		end
-		
+
 		return meta.pos
 	end
 
@@ -175,12 +177,21 @@ local swscale = load_ffmpeg_library("swscale", 4)
 
 if not(avutil and swresample and avcodec and avformat and swscale) then
 	-- FFmpeg library not found/can't be loaded
-	AquaShine.Log("AquaShineFFmpeg", "FFmpeg library not found/can't be loaded")
+	LOG("AquaShineFFmpeg", "FFmpeg library not found/can't be loaded")
 	return
 end
 
-AquaShine.Log("AquaShineFFmpeg", "Loading include files")
-local include = love.data.decompress("string", "zlib", love.filesystem.read("ffmpeg_include_compressed"))
+local function decompressHeader(file)
+	local c = love.filesystem.read(file)
+	if AquaShine or love._version >= "0.11.0" then
+		return love.data.decompress("string", "zlib", c)
+	else
+		return love.math.decompress(c, "zlib")
+	end
+end
+
+LOG("AquaShineFFmpeg", "Loading include files")
+local include = decompressHeader("ffmpeg_include_compressed")
 local vidshader = love.graphics.newShader [[
 vec4 effect(mediump vec4 vcolor, Image tex, vec2 texcoord, vec2 pixcoord) {
 	return VideoTexel(texcoord) * vcolor;
@@ -239,30 +250,30 @@ end
 local function FreeAVFrame(frame)
 	local x = ffi.new("AVFrame*[1]")
 	x[0] = frame
-	
+
 	avutil.av_frame_free(x)
 end
 
 -- Reading callback
 local read_callback = ffi.typeof("int(*)(void *opaque, uint8_t *buf, int buf_size)")
 local function make_read_callback(file)
-	local x = function(_unused, buf, buf_size)
+	local x = function(_, buf, buf_size)
 		jit.off(true)
 		local readed = file:read(buf_size)
-		
+
 		ffi.copy(buf, readed, #readed)
 		return #readed
 	end
 	local y = ffi.cast(read_callback, x)
-	
+
 	return y, x
 end
 
 -- Seeking callback
 local seek_callback = ffi.typeof("int64_t(*)(void *opaque, int64_t offset, int whence)")
 local function make_seek_callback(file)
-	local filestreamsize = nil 
-	local x = function(_unused, pos, whence)
+	local filestreamsize = nil
+	local x = function(_, pos, whence)
 		jit.off(true)
 		local success = false
 		if whence == 0x10000 then
@@ -270,7 +281,7 @@ local function make_seek_callback(file)
 			if not(filestreamsize) then
 				filestreamsize = file:getSize()
 			end
-			
+
 			return filestreamsize
 		elseif whence == 0 then
 			-- SEEK_SET
@@ -283,14 +294,14 @@ local function make_seek_callback(file)
 			if not(filestreamsize) then
 				filestreamsize = file:getSize()
 			end
-			
+
 			success = file:seek(tonumber(pos) + filestreamsize)
 		end
-		
+
 		return success and file:tell() or -1
 	end
 	local y = ffi.cast(seek_callback, x)
-	
+
 	return y, x
 end
 
@@ -298,21 +309,20 @@ end
 local function make_seek_callback_mem(file)
 	local filestreamsize = nil
 	local whence_str = {[0] = "set", [1] = "cur", [2] = "end"}
-	local x = function(_unused, pos, whence)
-		local success = false
+	local x = function(_, pos, whence)
 		if whence == 0x10000 then
 			-- AVSEEK_SIZE
 			if not(filestreamsize) then
 				filestreamsize = #file:string()
 			end
-			
+
 			return filestreamsize
 		else
 			return file:seek(assert(whence_str[whence], "invalid seek position"), pos)
 		end
 	end
 	local y = ffi.cast(seek_callback, x)
-	
+
 	jit.off(x)
 	return y, x
 end
@@ -322,26 +332,26 @@ local function DeleteAquaShineFFXData(this)
 	if this.SwsCtx ~= nil then
 		swscale.sws_freeContext(this.SwsCtx)
 	end
-	
+
 	if this.FrameVideo ~= nil then
 		FreeAVFrame(this.FrameVideo)
 	end
-	
+
 	if this.FrameYUV420P ~= nil then
 		FreeAVFrame(this.FrameYUV420P)
 	end
-	
+
 	if this.CodecContext ~= nil then
 		avcodec.avcodec_close(this.CodecContext)
 	end
-	
+
 	if this.FmtContext ~= nil then
 		local x = ffi.new("AVFormatContext*[1]")
 		x[0] = this.FmtContext
-		
+
 		avformat.avformat_close_input(x)
 	end
-	
+
 	if this.IOContext ~= nil then
 		avutil.av_free(this.IOContext)
 	end
@@ -364,9 +374,9 @@ if
 then
 	avformat.av_register_all()
 	avcodec.avcodec_register_all()
-	AquaShine.Log("AquaShineFFmpeg", "FFmpeg initialized")
+	LOG("AquaShineFFmpeg", "FFmpeg initialized")
 else
-	AquaShine.Log("AquaShineFFmpeg", "FFmpeg version not supported")
+	LOG("AquaShineFFmpeg", "FFmpeg version not supported")
 	return
 end
 
@@ -380,7 +390,17 @@ local FFX = {
 	swscale = swscale
 }
 
-local class = AquaShine.Class
+-- Image refresh function
+local function RefreshImage(image, imagedata)
+	if AquaShine or love._version >= "0.11.0" then
+		-- AquaShine uses replacePixels
+		image:replacePixels(imagedata)
+	else
+		image:refresh()
+	end
+end
+
+local class = AquaShine and AquaShine.Class or require("30log")
 local AquaShineVideo = class("AquaShineVideo")
 local AV_PIX_FMT_YUV420P = tonumber(ffi.cast("enum AVPixelFormat", "AV_PIX_FMT_YUV420P"))
 
@@ -389,23 +409,23 @@ function AquaShineVideo.init(this, path)
 	this.FileStream = assert(love.filesystem.newFile(path, "r"))
 	this.ReadType, this.ReadFunc = make_read_callback(this.FileStream)
 	this.SeekType, this.SeekFunc = make_seek_callback(this.FileStream)
-	
+
 	this.FFXData = ffi.gc(
 		ffi.new("AquaShineFFX2"),
 		CreateFFXCleanupFunction(this.ReadType, this.SeekType)
 	)
-	
+
 	-- Create AVIOContext
 	this.FFXData.IOContext = avformat.avio_alloc_context(
 		nil, 0, 0, nil,
 		this.ReadType, nil, this.SeekType
 	)
-	
+
 	-- Allocate AVFormatContext
 	local tempfmtctx = ffi.new("AVFormatContext*[1]")
 	tempfmtctx[0] = avformat.avformat_alloc_context()
 	tempfmtctx[0].pb = this.FFXData.IOContext
-	
+
 	-- Open input
 	if avformat.avformat_open_input(tempfmtctx, path, nil, nil) < 0 then
 		this.ReadType:free()
@@ -413,7 +433,7 @@ function AquaShineVideo.init(this, path)
 		assert(false, "Cannot open input file")
 	end
 	this.FFXData.FmtContext = tempfmtctx[0]
-	
+
 	-- Find video stream
 	if avformat.avformat_find_stream_info(tempfmtctx[0], nil) < 0 then
 		this.ReadType:free()
@@ -422,7 +442,7 @@ function AquaShineVideo.init(this, path)
 	end
 	for i = 1, tempfmtctx[0].nb_streams do
 		local codec_type = tempfmtctx[0].streams[i - 1].codec.codec_type
-		
+
 		if codec_type == "AVMEDIA_TYPE_VIDEO" then
 			this.VideoStreamIndex = i - 1
 			break
@@ -434,16 +454,16 @@ function AquaShineVideo.init(this, path)
 		assert(false, "Video stream not found")
 	end
 	local videostream = tempfmtctx[0].streams[this.VideoStreamIndex]
-	
+
 	-- Find video decoder
 	local codec = avcodec.avcodec_find_decoder(videostream.codec.codec_id)
 	assert(codec ~= nil, "Codec not found")
-	
+
 	-- Create CodecContext
 	this.FFXData.CodecContext = avcodec.avcodec_alloc_context3(codec)
 	assert(avcodec.avcodec_copy_context(this.FFXData.CodecContext, videostream.codec) >= 0, "Failed to copy context")
 	assert(avcodec.avcodec_open2(this.FFXData.CodecContext, codec, nil) >= 0, "Cannot open codec")
-	
+
 	-- Init frame
 	this.FFXData.FrameVideo = avutil.av_frame_alloc()
 	assert(this.FFXData.FrameVideo ~= nil, "Failed to initialize frame")
@@ -455,7 +475,7 @@ function AquaShineVideo.init(this, path)
 		this.FFXData.CodecContext.height,
 		64
 	))
-	
+
 	-- Create 3 ImageData consist of Y, U, and V channel
 	this.ImageData = {}
 	this.ImageData[1] = {love.image.newImageData(this.FFXData.CodecContext.width, this.FFXData.CodecContext.height)}
@@ -469,7 +489,7 @@ function AquaShineVideo.init(this, path)
 		b[3] = ffi.cast("uint8_t*", a:getPointer())
 		this.ImageData[i] = b
 	end
-	
+
 	-- Initialize image
 	avutil.av_image_fill_arrays(
 		this.FFXData.FrameYUV420P.data,
@@ -479,7 +499,7 @@ function AquaShineVideo.init(this, path)
 		this.FFXData.CodecContext.width,
 		this.FFXData.CodecContext.height, 32
 	)
-	
+
 	-- Create our SwsContext
 	this.FFXData.SwsCtx = swscale.sws_getContext(
 		this.FFXData.CodecContext.width,
@@ -491,7 +511,7 @@ function AquaShineVideo.init(this, path)
 		2, 						-- SWS_BILINEAR
 		nil, nil, nil
 	)
-	
+
 	-- Post init
 	this.Packet = ffi.new("AVPacket[1]")
 	this.GotFrame = ffi.new("int[1]")
@@ -510,24 +530,24 @@ function AquaShineVideo._readPacket(this)
 			return true
 		end
 	end
-	
+
 	return false
 end
-jit.off(AquaShineVideo._readPacket)
 
 function AquaShineVideo._readFrame(this)
 	this.GotFrame[0] = 0
-	
+	local FFXData = this.FFXData
+
 	while this.GotFrame[0] == 0 do
 		if this:_readPacket() then
-			if avcodec.avcodec_decode_video2(this.FFXData.CodecContext, this.FFXData.FrameVideo, this.GotFrame, this.Packet) < 0 then
+			if avcodec.avcodec_decode_video2(FFXData.CodecContext, FFXData.FrameVideo, this.GotFrame, this.Packet) < 0 then
 				return false
 			end
 		else
 			return false
 		end
 	end
-	
+
 	return true
 end
 
@@ -556,38 +576,38 @@ end
 
 function AquaShineVideo._stepVideo(this, dt)
 	this.CurrentTime = this.CurrentTime + dt
-	
+
 	-- If we've drawn a frame past the current timestamp, we must have rewound
 	if this.CurrentTime < this.PresentationTS then
 		this:seek(this.CurrentTime)
 		this:_readFrame()
-		
+
 		-- Now we're at the keyframe before our target, look for the actual frame
 		this:_tinySeek(this.CurrentTime)
 		this.EOS = false
 	end
-	
+
 	if this.EOS then return end
-	
+
 	local pts = this:_translateTS(this.FFXData.FrameVideo.pkt_pts)
-	
+
 	if this.CurrentTime < pts then
 		return
 	end
-	
+
 	if this.CurrentTime > pts + 15 then
 		-- We're far behind, do a large seek
 		this:seek(this.CurrentTime)
 		this:_readFrame()
 	end
-	
+
 	if this.CurrentTime > pts + 0.2 then
 		-- We're a bit behind, do a tiny seek
 		this:_tinySeek(this.CurrentTime)
 	end
-	
+
 	this.PresentationTS = pts
-	
+
 	-- Refresh the image buffer
 	-- Don't forget to do sws_scale first
 	local usedFrame = this:_selectUsedFrameData()
@@ -595,43 +615,44 @@ function AquaShineVideo._stepVideo(this, dt)
 	local idx2 = 0
 	local iy, iu, iv = this.ImageData[1][3], this.ImageData[2][3], this.ImageData[3][3]
 	-- Y first
-	for y = 0, this.FFXData.CodecContext.height - 1 do
+	for _ = 0, this.FFXData.CodecContext.height - 1 do
 		for x = 0, usedFrame.linesize[0] - 1 do
 			if x < this.FFXData.CodecContext.width then
 				iy[idx2 * 4] = usedFrame.data[0][idx]
 				idx2 = idx2 + 1
 			end
-			
+
 			idx = idx + 1
 		end
 	end
 	-- Same for U and V
 	idx = 0
 	idx2 = 0
-	for y = 0, this.FFXData.CodecContext.height * 0.5 - 1 do
+	for _ = 0, this.FFXData.CodecContext.height * 0.5 - 1 do
 		for x = 0, usedFrame.linesize[1] - 1 do
 			if x < this.FFXData.CodecContext.width * 0.5 then
 				iu[idx2 * 4] = usedFrame.data[1][idx]
 				iv[idx2 * 4] = usedFrame.data[2][idx]
 				idx2 = idx2 + 1
 			end
-			
+
 			idx = idx + 1
 		end
 	end
-	
+
 	-- Reload Image object
-	this.ImageData[1][2]:replacePixels(this.ImageData[1][1])
-	this.ImageData[2][2]:replacePixels(this.ImageData[2][1])
-	this.ImageData[3][2]:replacePixels(this.ImageData[3][1])
-	
+	RefreshImage(this.ImageData[1][2], this.ImageData[1][1])
+	RefreshImage(this.ImageData[2][2], this.ImageData[2][1])
+	RefreshImage(this.ImageData[3][2], this.ImageData[3][1])
+
 	if this:_readFrame() == false then
 		this.EOS = true
 	end
 end
 
+local shaderExistName = love._version >= "0.11.0" and "hasUniform" or "getExternVariable"
 local function sendShaderSafe(shader, name, ...)
-	if shader:hasUniform(name) then
+	if shader[shaderExistName](shader, name) then
 		shader:send(name, select(1, ...))
 	end
 end
@@ -640,11 +661,12 @@ local graphics_draw = love.graphics.draw
 function AquaShineVideo._draw(this, ...)
 	local prevshdr = love.graphics.getShader()
 	local curshader = prevshdr or vidshader
-	
+
 	if not(prevshdr) then
 		love.graphics.setShader(vidshader)
 	end
-	
+
+	-- Yes, that channel name is used for VideoTexel in LOVE 0.10.0 and later
 	sendShaderSafe(curshader, "love_VideoYChannel", this.ImageData[1][2])
 	sendShaderSafe(curshader, "love_VideoCbChannel", this.ImageData[2][2])
 	sendShaderSafe(curshader, "love_VideoCrChannel", this.ImageData[3][2])
@@ -656,7 +678,7 @@ end
 --! @param this AquaShineVideo object
 function AquaShineVideo.play(this)
 	if this.EOS or this:isPlaying() then return end
-	
+
 	-- Insert to playing queue
 	FFX._playing[#FFX._playing + 1] = this
 end
@@ -667,7 +689,7 @@ function AquaShineVideo.pause(this)
 	for i = 1, #FFX._playing do
 		if FFX._playing[i] == this then
 			table.remove(FFX._playing, i)
-			
+
 			return
 		end
 	end
@@ -695,7 +717,7 @@ function AquaShineVideo.isPlaying(this)
 			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -744,43 +766,45 @@ end
 
 function FFX.Update(deltaT)
 	deltaT = deltaT * 0.001
-	
+
 	for i = #FFX._playing, 1, -1 do
 		local obj = FFX._playing[i]
 		obj:_stepVideo(deltaT)
-		
+
 		if obj.EOS then
 			table.remove(FFX._playing, i)
 		end
 	end
 end
 
+local audioPacket = ffi.new("AVPacket[1]")
+local audioFrameFinished = ffi.new("int[1]")
 function FFX.LoadAudio(path, memstr)
 	-- Load the file with love.filesystem API
 	local filestream
-	local seektype, seekfunc
-	
+	local seektype
+
 	if memstr then
 		filestream = stringstream.create(path)
-		seektype, seekfunc = make_seek_callback_mem(filestream, true)
+		seektype = make_seek_callback_mem(filestream, true)
 	else
 		filestream = assert(love.filesystem.newFile(path, "r"))
-		seektype, seekfunc = make_seek_callback(filestream, true)
+		seektype = make_seek_callback(filestream, true)
 	end
-	
-	local readtype, readfunc = make_read_callback(filestream, true)
-	
+
+	local readtype = make_read_callback(filestream, true)
+
 	-- Create AVIOContext
 	local IOContext = avformat.avio_alloc_context(
 		nil, 0, 0, nil,
 		readtype, nil, seektype
 	)
-	
+
 	-- Allocate AVFormatContext
 	local tempfmtctx = ffi.new("AVFormatContext*[1]")
 	tempfmtctx[0] = avformat.avformat_alloc_context()
 	tempfmtctx[0].pb = IOContext
-	
+
 	-- Open input
 	if avformat.avformat_open_input(tempfmtctx, path, nil, nil) < 0 then
 		avutil.av_free(IOContext)
@@ -789,10 +813,10 @@ function FFX.LoadAudio(path, memstr)
 		filestream:close()
 		assert(false, "Cannot open input file")
 	end
-	
+
 	-- Find audio stream
 	local audiostreamidx
-	
+
 	if avformat.avformat_find_stream_info(tempfmtctx[0], nil) < 0 then
 		avformat.avformat_close_input(tempfmtctx)
 		avutil.av_free(IOContext)
@@ -801,16 +825,16 @@ function FFX.LoadAudio(path, memstr)
 		filestream:close()
 		assert(false, "Failed to determine stream info")
 	end
-	
+
 	for i = 1, tempfmtctx[0].nb_streams do
 		local codec_type = tempfmtctx[0].streams[i - 1].codec.codec_type
-		
+
 		if codec_type == "AVMEDIA_TYPE_AUDIO" then
 			audiostreamidx = i - 1
 			break
 		end
 	end
-	
+
 	if not(audiostreamidx) then
 		avformat.avformat_close_input(tempfmtctx)
 		avutil.av_free(IOContext)
@@ -819,9 +843,9 @@ function FFX.LoadAudio(path, memstr)
 		filestream:close()
 		assert(false, "Audio stream not found")
 	end
-	
+
 	local audiostream = tempfmtctx[0].streams[audiostreamidx]
-	
+
 	-- Find decoder
 	local codec = avcodec.avcodec_find_decoder(audiostream.codec.codec_id)
 	if codec == nil then
@@ -832,10 +856,10 @@ function FFX.LoadAudio(path, memstr)
 		filestream:close()
 		assert(false, "Codec not found")
 	end
-	
+
 	-- Create CodecContext
 	local CodecContext = avcodec.avcodec_alloc_context3(codec)
-	
+
 	if avcodec.avcodec_copy_context(CodecContext, audiostream.codec) < 0 then
 		avcodec.avcodec_close(CodecContext)
 		avformat.avformat_close_input(tempfmtctx)
@@ -843,10 +867,10 @@ function FFX.LoadAudio(path, memstr)
 		readtype:free()
 		seektype:free()
 		filestream:close()
-		
+
 		assert(false, "Failed to copy context")
 	end
-	
+
 	if avcodec.avcodec_open2(CodecContext, codec, nil) < 0 then
 		avcodec.avcodec_close(CodecContext)
 		avformat.avformat_close_input(tempfmtctx)
@@ -854,10 +878,10 @@ function FFX.LoadAudio(path, memstr)
 		readtype:free()
 		seektype:free()
 		filestream:close()
-		
+
 		assert(false, "Cannot open codec")
 	end
-	
+
 	-- Create SwrContext
 	local SwrCtx = ffi.new("SwrContext*[1]")
 	SwrCtx[0] = swresample.swr_alloc_set_opts(nil,
@@ -869,7 +893,7 @@ function FFX.LoadAudio(path, memstr)
 		audiostream.codec.sample_rate,
 		0, nil
 	)
-	
+
 	if swresample.swr_init(SwrCtx[0]) < 0 then
 		avcodec.avcodec_close(CodecContext)
 		avformat.avformat_close_input(tempfmtctx)
@@ -877,16 +901,16 @@ function FFX.LoadAudio(path, memstr)
 		readtype:free()
 		seektype:free()
 		filestream:close()
-		
+
 		assert(false, "Failed to initialize swresample")
 	end
-	
+
 	-- Create new SoundData
 	local SampleCountLove2D = math.ceil((tonumber(tempfmtctx[0].duration) / 1000000 + 1) * 44100)
 	local SoundData = love.sound.newSoundData(SampleCountLove2D, 44100, 16, 2)
 	local SoundDataPointer = ffi.cast("uint8_t*", SoundData:getPointer())
 	local AudioFrame = avutil.av_frame_alloc()
-	
+
 	if AudioFrame == nil then
 		swresample.swr_free(SwrCtx)
 		avcodec.avcodec_close(CodecContext)
@@ -895,23 +919,23 @@ function FFX.LoadAudio(path, memstr)
 		readtype:free()
 		seektype:free()
 		filestream:close()
-		
+
 		assert(false, "Failed to initialize frame")
 	end
-	
+
 	local outbuf = ffi.new("uint8_t*[2]")
 	local out_size = SampleCountLove2D
 	outbuf[0] = SoundDataPointer
-	
+
 	-- Decode audio
-	local readframe = avformat.av_read_frame(tempfmtctx[0], packet)
+	local readframe = avformat.av_read_frame(tempfmtctx[0], audioPacket)
 	while readframe >= 0 do
-		if packet[0].stream_index == audiostreamidx then
-			local decodelen = avcodec.avcodec_decode_audio4(CodecContext, AudioFrame, framefinished, packet)
-			
+		if audioPacket[0].stream_index == audiostreamidx then
+			local decodelen = avcodec.avcodec_decode_audio4(CodecContext, AudioFrame, audioFrameFinished, audioPacket)
+
 			if decodelen < 0 then
 				FreeAVFrame(AudioFrame)
-				avcodec.av_free_packet(packet)
+				avcodec.av_free_packet(audioPacket)
 				swresample.swr_free(SwrCtx)
 				avcodec.avcodec_close(CodecContext)
 				avformat.avformat_close_input(tempfmtctx)
@@ -919,20 +943,20 @@ function FFX.LoadAudio(path, memstr)
 				readtype:free()
 				seektype:free()
 				filestream:close()
-				
+
 				assert(false, "Audio decoding error")
 			end
-			
-			if framefinished[0] > 0 then
+
+			if audioFrameFinished[0] > 0 then
 				local samples = swresample.swr_convert(SwrCtx[0],
 					outbuf, AudioFrame.nb_samples,
 					ffi.cast("const uint8_t**", AudioFrame.extended_data),
 					AudioFrame.nb_samples
 				)
-				
+
 				if samples < 0 then
 					FreeAVFrame(AudioFrame)
-					avcodec.av_free_packet(packet)
+					avcodec.av_free_packet(audioPacket)
 					swresample.swr_free(SwrCtx)
 					avcodec.avcodec_close(CodecContext)
 					avformat.avformat_close_input(tempfmtctx)
@@ -940,25 +964,25 @@ function FFX.LoadAudio(path, memstr)
 					readtype:free()
 					seektype:free()
 					filestream:close()
-					
+
 					assert(false, "Resample error")
 				end
-				
+
 				outbuf[0] = outbuf[0] + samples * 4
 				out_size = out_size - samples
 			end
 		end
-		
-		avcodec.av_free_packet(packet)
-		readframe = avformat.av_read_frame(tempfmtctx[0], packet)
+
+		avcodec.av_free_packet(audioPacket)
+		readframe = avformat.av_read_frame(tempfmtctx[0], audioPacket)
 	end
-	
+
 	-- Flush buffer
 	swresample.swr_convert(SwrCtx[0], outbuf, out_size, nil, 0)
-	
+
 	-- Free
 	FreeAVFrame(AudioFrame)
-	avcodec.av_free_packet(packet)
+	avcodec.av_free_packet(audioPacket)
 	swresample.swr_free(SwrCtx)
 	avcodec.avcodec_close(CodecContext)
 	avformat.avformat_close_input(tempfmtctx)
@@ -966,7 +990,7 @@ function FFX.LoadAudio(path, memstr)
 	readtype:free()
 	seektype:free()
 	filestream:close()
-	
+
 	return SoundData
 end
 
@@ -980,4 +1004,19 @@ function love.graphics.draw(obj, ...)
 end
 
 -- Set the AquaShine variable
-AquaShine.FFmpegExt = FFX
+if AquaShine then
+	AquaShine.FFmpegExt = FFX
+else
+	-- Need to inject update code in `love.timer.step`
+	if love.timer then
+		local step = love.timer.step
+		function love.timer.step()
+			step()
+			local dt = love.timer.getDelta()
+			FFX.Update(dt * 1000)
+			return dt
+		end
+	end
+end
+
+return FFX

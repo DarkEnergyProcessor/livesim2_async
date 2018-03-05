@@ -156,19 +156,7 @@ function DLBeatmap.MovePage(inc)
 	DLBeatmap.MainNode.brother = DLBeatmap.NodePageList[DLBeatmap.CurrentPage + 1]
 end
 
-function DLBeatmap.IsLLPOK()
-	return AquaShine.Download.HasHTTPS() or love.filesystem.getInfo("external/download_beatmap_llp.lua")
-end
-
-function DLBeatmap.GetLLPDestination()
-	if AquaShine.Download.HasHTTPS() then
-		return "download_beatmap_llp.lua"
-	else
-		return "external/download_beatmap_llp.lua"
-	end
-end
-
-function DLBeatmap.Start(arg)
+function DLBeatmap.Start()
 	local maps_info = love.filesystem.getInfo("maps.json")
 	local s_button_03 = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
 	local s_button_03se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
@@ -184,18 +172,6 @@ function DLBeatmap.Start(arg)
 		:addChild(TextShadow(descFont, "", 52, 536)
 			:setShadow(1, 1, true)
 		)
-	
-	if DLBeatmap.IsLLPOK() then
-		DLBeatmap.MainNode:addChild(SimpleButton(s_button_03, s_button_03se, function()
-				local dest = DLBeatmap.GetLLPDestination()
-				AquaShine.SaveConfig("DL_CURRENT", dest)
-				AquaShine.LoadEntryPoint(dest)
-			end, 0.5)
-			:setPosition(696, 18)
-			:initText(AquaShine.LoadFont("MTLmr3m.ttf", 14), "LLP Download Beatmap")
-			:setTextPosition(8, 8)
-		)
-	end
 	
 	-- If there was previously cached maps data, use that
 	-- Otherwise, download it.

@@ -2,8 +2,13 @@
 -- Part of AquaShine loader
 -- See copyright notice in AquaShine.lua
 
-local AquaShine = ...
-local class = AquaShine.Class
+local isAqs = ...
+local AquaShine
+if type(isAqs) == "table" then
+	AquaShine = isAqs
+end
+
+local class = AquaShine and AquaShine.Class or require("30log")
 local love = require("love")
 local supportHTTPS = pcall(require, "ssl")
 local Download = class("AquaShine.Download")
@@ -22,7 +27,7 @@ local chunk_handler = {
 	HEDR = function(this, headers)
 		this.HeaderData = headers
 	end,
-	DONE = function(this, data)
+	DONE = function(this, _)
 		this.downloading = false
 		DownloadList[this.channelin] = nil
 		this:ok()
@@ -44,17 +49,16 @@ local function createFinalizer(this)
 	local x = newproxy(true)
 	local y = getmetatable(x)
 	local cin = this.channelin
-	local t = this.thread
 	local gccall = false
 	y.__gc = function()
 		if gccall then return end
 		gccall = true
-		
+
 		DownloadList[cin] = nil
 		cin:push("QUIT")
 	end
 	y.__call = y.__gc
-	
+
 	return x
 end
 
@@ -62,11 +66,11 @@ local function reInitDownload(this)
 	this.thread = love.thread.newThread("AquaShine/DownloadThread.lua")
 	this.channelin = assert(love.thread.newChannel())
 	this.finalizer = createFinalizer(this)
-	
+
 	this.thread:start(this.channelin)
 end
 
-function Download.DefaultErrorCallback(this, data)
+function Download.DefaultErrorCallback(_, data)
 	error(data)
 end
 
@@ -111,7 +115,7 @@ end
 function Download.Download(this, url, additional_headers)
 	assert(this.err and this.recv and this.ok, "No callback")
 	assert(not(this.downloading), "Download is in progress")
-	
+
 	this.channelin:push(assert(url))
 	this.channelin:push(additional_headers or {})
 	this.downloading = true
@@ -133,12 +137,15 @@ end
 function love.handlers.aqs_download(input, name, data)
 	if DownloadList[input] then
 		local dl = DownloadList[input]
-		
+
 		if dl.downloading then
 			assert(chunk_handler[name])(dl, data)
 		end
 	end
 end
 
-AquaShine.Download = Download
+if AquaShine then
+	AquaShine.Download = Download
+end
+
 return Download
