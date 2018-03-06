@@ -31,7 +31,7 @@ Live Simulator: 2 uses these external libraries to run:
 
 Live Simulator: 2 uses these external libraries if available:
 
-* [FFmpeg 3.2](http://ffmpeg.org/) (Windows & Android)
+* [FFmpeg 3.x](http://ffmpeg.org/) (libavcodec 57) (always available in Windows)
 
 Controls
 ========
@@ -69,19 +69,6 @@ Supported Beatmaps
 
 * SIFTrain beatmap, both original one and "extended" one were supported.
 
-Screenshots
-===========
-
-Beatmap: [Thrilling One Way Custom Beatmap](https://www.youtube.com/watch?v=xfWGjFo5dy8)
-
-Note circle Pre-5.0
-
-![Note circle Pre-5.0](http://i.imgur.com/qTe7zaW.png)
-
-Note circle 5.0 style
-
-![Note circle 5.0 style](http://i.imgur.com/6GbKrrw.png)
-
 Disclaimer
 ==========
 
@@ -102,6 +89,6 @@ Motoya L Maru font license.
 
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 
-Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3
+Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3 (or GNU LGPL, depending on used binaries). Windows version ships with FFmpeg 3.0 which is licensed under GNU LGPLv3 or later
 
 Please see respective files (or website) for license of those libraries.

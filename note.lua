@@ -2,9 +2,10 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local AquaShine = ...
-local love = require("love")
+local DEPLS, AquaShine = ...
+local love = love
 local EffectPlayer = require("effect_player")
+local bit = require("bit")
 local Yohane = require("Yohane")
 local tween = require("tween")
 local Note = {
@@ -36,7 +37,6 @@ local Note = {
 	},
 	TimingRotation = math.random(0, 11)	-- Like clock
 }
-local NoteBombEffect = AquaShine.LoadModule("note.bomb", Note)
 
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
@@ -47,6 +47,7 @@ local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
 local floor = math.floor
+local notes_bomb = Yohane.newFlashFromFilename("flash/live_notes_bomb.flsh", "ef_317")
 local hold_effect = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
 
 local NoteSoundAccumulation = AquaShine.LoadConfig("NS_ACCUMULATION", 0) == 1
@@ -77,10 +78,37 @@ local PredefinedLNEffectRotation = {
 	0
 }
 
+local NoteBombEffect = {}
+NoteBombEffect._common_meta = {__index = NoteBombEffect}
+
+function NoteBombEffect.Create(x, y)
+	local out = {}
+	out.flash = notes_bomb:clone()
+	out.x = x
+	out.y = y
+	
+	out.flash:jumpToLabel("bomb")
+	return (setmetatable(out, NoteBombEffect._common_meta))
+end
+
+function NoteBombEffect:Update(deltaT)
+	if not(self.flash:isFrozen()) then
+		self.flash:update(deltaT)
+		
+		return false
+	else
+		return true
+	end
+end
+
+function NoteBombEffect:Draw()
+	self.flash:draw(self.x, self.y)
+end
+
 local function internal_simulnote_check(timing_sec, i, is_swing)
 	local j = 1
 	local notedata = Note[i][j]
-
+	
 	while notedata ~= nil do
 		if
 			floor(notedata.ZeroAccuracyTime) == floor(timing_sec) and
@@ -89,7 +117,7 @@ local function internal_simulnote_check(timing_sec, i, is_swing)
 			notedata.SimulNote = true
 			return true
 		end
-
+		
 		j = j + 1
 		notedata = Note[i][j]
 	end
@@ -104,7 +132,7 @@ end
 --! @param swing Is the note we're comparing to is swing note?
 --! @returns `true` if there's one, false otherwise
 --! @note This function modifies the note object that already queued if necessary
-function Note.CheckSimulNote(timing_sec, swing)
+local function CheckSimulNote(timing_sec, swing)
 	return
 		internal_simulnote_check(timing_sec, 1, swing) or
 		internal_simulnote_check(timing_sec, 2, swing) or
@@ -1009,11 +1037,11 @@ function Note.SetTouch(pos, touchid, release, previous)
 	
 	if ElapsedTime >= noteobj.ZeroAccuracyTime - noteobj.NotesSpeed then
 		noteobj:SetTouchID(touchid)
-
+		
 		if noteobj.Delete then
 			score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.SlideNote and 0.5 or 1)
 			table.remove(Note[pos], 1)
-
+			
 			-- Update combo counter
 			if ComboCounter.Reset == true then
 				ComboCounter.CurrentCombo = 0
@@ -1023,7 +1051,7 @@ function Note.SetTouch(pos, touchid, release, previous)
 			end
 			Note.NoteRemaining = Note.NoteRemaining - 1
 			Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
-
+			
 			ComboCounter.Replay = true
 		end
 	end

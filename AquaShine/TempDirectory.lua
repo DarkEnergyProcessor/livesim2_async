@@ -8,7 +8,8 @@
 -- standard Lua io.* and (FILE*):* methods
 
 local AquaShine = ...
-local has_ffi, ffi = pcall(require, "ffi")
+local love = require("love")
+local ffi = require("ffi")
 local temp_dir
 
 if AquaShine.OperatingSystem == "iOS" then
@@ -26,31 +27,32 @@ if AquaShine.OperatingSystem == "iOS" then
 	end
 elseif AquaShine.OperatingSystem == "Windows" then
 	-- Two techniques (the former is more reliable)
-	if has_ffi then
-		ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
-		
-		local buf = ffi.new("char[260]")
-		local size = ffi.C.GetTempPathA(259, buf)
-		assert(size > 0, "GetTempPathA fail")
-		
-		for i = 0, size - 1 do
-			if buf[i] == 92 then
-				buf[i] = 47
-			end
+	ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
+	
+	local buf = ffi.new("char[260]")
+	local size = ffi.C.GetTempPathA(259, buf)
+	assert(size > 0, "GetTempPathA fail")
+	
+	for i = 0, size - 1 do
+		if buf[i] == 92 then
+			buf[i] = 47
 		end
-		
-		if buf[size - 1] == 47 then
-			buf[size - 1] = 0
-			size = size - 1
-		end
-		
-		temp_dir = ffi.string(buf, size)
-	else
-		temp_dir = os.getenv("TMP") or os.getenv("TEMP") or os.getenv("SYSTEMDRIVE").."/Windows/temp"
 	end
+	
+	if buf[size - 1] == 47 then
+		buf[size - 1] = 0
+		size = size - 1
+	end
+	
+	temp_dir = ffi.string(buf, size)
 elseif AquaShine.OperatingSystem == "Android" then
-	-- Make sure to load FFmpegExt at first
-	temp_dir = AquaShine._AndroidAppDir.."/cache"
+	-- Just read /proc/self/cmdline then construct /data/data/package/cache
+	-- FIXME: Probably not work in Android 6.0 or later!
+	local f = io.open("/proc/self/cmdline", "r")
+	local package = f:read("*a")
+
+	temp_dir = "/data/data/"..package.."/cache"
+	f:close()
 else	-- Linux & Mac OS X
 	temp_dir = (os.getenv("TMPDIR") or
 	            os.getenv("TMP") or
