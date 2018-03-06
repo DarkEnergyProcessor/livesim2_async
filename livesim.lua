@@ -526,7 +526,7 @@ function DEPLS.StoryboardFunctions.SetPostProcessingShader(...)
 		DEPLS.PostShader = nil
 	else		
 		for i = 1, #arg do
-			assert(type(arg[i]) == "userdata" and arg[i]:typeOf("Shader"), "Invalid value passed")
+			assert(type(arg[i]) == "userdata" and arg[i]:typeOf("Shader"), "bad argument to SetPostProcessingShader (invalid value passed)")
 		end
 		
 		DEPLS.PostShader = arg

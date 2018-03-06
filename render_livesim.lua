@@ -4,8 +4,6 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-assert(jit, "Render mode is unavailable in Lua 5.1")
-
 local AquaShine = ...
 local love = love
 local lsys = require("love.system")
@@ -83,8 +81,6 @@ local function resample_data(oldsd, newsd)
 	local ratemul = oldsd:getSampleRate() / 44100
 	
 	for i = 0, len do
-		counter = i
-		
 		local interp = i * ratemul
 		local mo = interp % 1
 		local idx = math.floor(interp)
