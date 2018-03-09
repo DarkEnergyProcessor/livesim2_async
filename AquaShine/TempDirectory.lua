@@ -25,6 +25,7 @@ if AquaShine.OperatingSystem == "iOS" then
 		temp_dir = love.filesystem.getSaveDirectory().."/temp"
 		assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
 	end
+	print("Temp dir i", temp_dir)
 elseif AquaShine.OperatingSystem == "Windows" then
 	-- Two techniques (the former is more reliable)
 	ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
@@ -45,14 +46,22 @@ elseif AquaShine.OperatingSystem == "Windows" then
 	end
 	
 	temp_dir = ffi.string(buf, size)
+	print("Temp dir w", temp_dir)
 elseif AquaShine.OperatingSystem == "Android" then
-	-- Just read /proc/self/cmdline then construct /data/data/package/cache
-	-- FIXME: Probably not work in Android 6.0 or later!
-	local f = io.open("/proc/self/cmdline", "r")
-	local package = f:read("*a")
-
-	temp_dir = "/data/data/"..package.."/cache"
-	f:close()
+	-- Get internal storage
+	if AquaShine.Config.LOVE.AndroidExternalStorage then
+		love.filesystem._setAndroidSaveExternal(false)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	end
+	
+	temp_dir = love.filesystem.getSaveDirectory().."/../../../cache"
+	
+	-- Reset back to external storage mode
+	if AquaShine.Config.LOVE.AndroidExternalStorage then
+		love.filesystem._setAndroidSaveExternal(true)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	end
+	print("Temp dir a", temp_dir)
 else	-- Linux & Mac OS X
 	temp_dir = (os.getenv("TMPDIR") or
 	            os.getenv("TMP") or
@@ -62,6 +71,7 @@ else	-- Linux & Mac OS X
 	
 	if os.execute("[ -d \""..temp_dir.."\" ]") ~= 0 then
 		temp_dir = "/tmp"
+		print("Temp dir lx", temp_dir)
 	end
 end
 

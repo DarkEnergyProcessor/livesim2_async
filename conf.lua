@@ -5,115 +5,62 @@
 ----------------------
 -- AquaShine loader --
 ----------------------
-local AquaShine = assert(love.filesystem.load("AquaShine/AquaShine.lua"))()
-AquaShine.ParseCommandLineConfig(assert(arg))
-
-------------------
--- /gles switch --
-------------------
-local gles = AquaShine.GetCommandLineConfig("gles")
-local integrated = AquaShine.GetCommandLineConfig("integrated") or AquaShine.GetCommandLineConfig("igpu")
-do
-	local s, ffi = pcall(require, "ffi")
-
-	if s then
-		local setenv_load = function(x) return x.setenv end
-		local putenv_load = function(x) return x.SetEnvironmentVariableA end
-		local dpiaware = function(x) return x.SetProcessDPIAware end
-		ffi.cdef [[
-			int setenv(const char *envname, const char *envval, int overwrite);
-			int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
-			int __stdcall SetProcessDPIAware();
-		]]
-		
-		local ss, setenv = pcall(setenv_load, ffi.C)
-		local ps, putenv = pcall(putenv_load, ffi.C)
-		local dp, setdpiaware = pcall(dpiaware, ffi.C)
-        
-        if ss then
-            if gles then setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1) end
-            if integrated then setenv("SHIM_MCCOMPAT", "0x800000000", 1) setenv("DRI_PRIME", "0", 1) end
-			-- Always request compatibility profile
-			setenv("LOVE_GRAPHICS_USE_GL2", "1", 1)
-        elseif ps then
-            if gles then putenv("LOVE_GRAPHICS_USE_OPENGLES", "1") end
-            if integrated then putenv("SHIM_MCCOMPAT", "0x800000000") end
-			-- Always request compatibility profile
-			putenv("LOVE_GRAPHICS_USE_GL2", "1")
-        end
-        
-        if dp then setdpiaware() end
-	end
-end
-
-local function gcfgn(n, m)
-	return tonumber(AquaShine.GetCommandLineConfig(n)) or m
-end
-
-local function gcfgb(n)
-	return not(not(AquaShine.GetCommandLineConfig(n)))
-end
-
-local function vsync(v)
-	if AquaShine.NewLove then
-		return v == true and 1 or 0
-	end
+local love = require("love")
+assert(love.filesystem.load("AquaShine/AquaShine.lua"))({
+	Entries = {
+		-- List of entry points in form
+		-- name = {minarg, "scriptfile.lua"}
+		-- if minarg is -1, it can't be invoked from command-line
+		livesim = {1, "livesim2_cliwrap.lua"},
+		livesim_main = {-1, "livesim.lua"},
+		settings = {0, "setting_view.lua"},
+		main_menu = {0, "main_menu2.lua"},
+		beatmap_select = {0, "beatmap_select_node.lua"},
+		unit_editor = {0, "unit_editor.lua"},
+		unit_selection = {-1, "unit_selection.lua"},
+		about = {0, "about_screen.lua"},
+		render = {3, "render_livesim.lua"},
+		noteloader = {1, "invoke_noteloader.lua"},
+		llpbeatmap = {1, "tollp.lua"},
+		unit_create = {0, "unit_create.lua"},
+	},
+	-- Default entry point to be used if there's none specificed in command-line
+	DefaultEntry = "main_menu",
+	-- Allow entry points to be preloaded?
+	-- Disabling entry preloading allows code that changed to be reflected without restarting
+	-- Enabling entry preloading increases the performance slightly but increase loading times slightly
+	EntryPointPreload = true,
 	
-	return v
-end
-
------------------------------
--- Check JIT compiler mode --
------------------------------
-
--- A note, JIT compiler must be disabled before love.conf so that other
--- LOVE function which uses "fast paths if JIT is on" is not taken.
-do
-	local defaultJIT = (love._os == "Android" or love._os == "iOS") and "off" or "on"
-	local jit_mode = AquaShine.LoadConfig("JIT_COMPILER", defaultJIT)
+	-- If this table present, letterboxing is enabled.
+	-- Otherwise, if it's not present, letterboxing is disabled.
+	Letterboxing = {
+		-- Logical screen width. Letterboxed if necessary.
+		LogicalWidth = 960,
+		-- Logical screen height. Letterboxed if necessary.
+		LogicalHeight = 640
+	},
 	
-	if jit_mode == "off" then
-		jit.off()
-	elseif jit_mode == "on" then
-		jit.on()
-	end
-end
-
-------------------------
--- Configuration file --
-------------------------
-function love.conf(t)
-	local conf = AquaShine.Config
-	
-	t.identity              = assert(conf.LOVE.Identity)
-	t.version               = assert(conf.LOVE.Version) > love._version and conf.LOVE.Version or love._version
-	t.console               = false
-	t.accelerometerjoystick = false
-	t.externalstorage       = conf.LOVE.AndroidExternalStorage
-	t.gammacorrect          = false
-	
-	t.window.title          = assert(conf.LOVE.WindowTitle)
-	t.window.icon           = conf.LOVE.WindowIcon
-	t.window.width          = gcfgn("width", assert(conf.LOVE.Width))
-	t.window.height         = gcfgn("height", assert(conf.LOVE.Height))
-	t.window.borderless     = false
-	t.window.resizable      = conf.LOVE.Resizable
-	t.window.minwidth       = conf.LOVE.MinWidth
-	t.window.minheight      = conf.LOVE.MinHeight
-	t.window.fullscreen     = love._os == "iOS" or gcfgb("fullscreen")
-	t.window.fullscreentype = "desktop"
-	t.window.vsync          = vsync(not(gcfgb("novsync")))
-	t.window.msaa           = gcfgn("msaa", 0)
-	t.window.display        = 1
-	t.window.highdpi        = false
-	t.window.x              = nil
-	t.window.y              = nil
-	
-	t.modules.audio         = not(conf.Extensions.DisableAudio)
-	t.modules.joystick      = false
-	t.modules.physics       = false
-	t.modules.sound         = not(conf.Extensions.DisableAudio)
-	t.modules.video         = not(conf.Extensions.DisableVideo)
-	t.modules.touch         = not(conf.Extensions.NoMultiTouch)
-	t.modules.thread        = not(conf.Extensions.DisableThreads)
-end
+	-- LOVE-specific configuration
+	LOVE = {
+		-- The name of the save directory
+		Identity = "DEPLS",
+		-- The LÖVE version this game was made for
+		Version = "0.10.1",
+		-- Enable external storage for Android
+		AndroidExternalStorage = true,
+		-- Window title name
+		WindowTitle = "Live Simulator: 2",
+		-- Window icon path
+		WindowIcon = "assets/image/icon/icon.png",
+		-- Default window width
+		Width = 960,
+		-- Default window height
+		Height = 640,
+		-- Let the window be user-resizable
+		Resizable = true,
+		-- Minimum window width if the window is resizable
+		MinWidth = 320,
+		-- Minimum window height if the window is resizable
+		MinHeight = 240
+	},
+})
