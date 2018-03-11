@@ -66,6 +66,22 @@ else
 		end
 
 		LOG("AquaShineFFmpeg", "Failed to load %s: %s", libname, out)
+		name = "lib"..libname..".so."..ver
+		s, out = pcall(ffi.load, name)
+
+		if s then
+			return out
+		end
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
+		name = "lib"..libname..".dylib."..ver
+		s, out = pcall(ffi.load, name)
+
+		if s then
+			return out
+		end
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
 		return nil
 	end
 end
