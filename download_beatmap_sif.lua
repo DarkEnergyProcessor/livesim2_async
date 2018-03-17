@@ -17,7 +17,7 @@ local address = "http://r.llsif.win/"
 DLBeatmap.DLCB = {
 	Response = {},
 	RespLen = 0,
-	Error = function(this, msg)
+	Error = function(_, msg)
 		DLBeatmap.SetStatus("Cannot get beatmap list: "..msg)
 		DLBeatmap.DLCB.Response = {}
 		DLBeatmap.DLCB.RespLen = 0
@@ -25,21 +25,36 @@ DLBeatmap.DLCB = {
 	Receive = function(this, data)
 		DLBeatmap.DLCB.RespLen = DLBeatmap.DLCB.RespLen + #data
 		DLBeatmap.DLCB.Response[#DLBeatmap.DLCB.Response + 1] = data
-		
+
 		-- If ContentLength is provided, show progress as percent
 		if this.ContentLength then
 			DLBeatmap.SetStatus(string.format("Downloading Beatmap List... (%d%%)", DLBeatmap.DLCB.RespLen / this.ContentLength * 100))
 		end
 	end,
 	Done = function(this)
-		-- Setup beatmap list, sort by live track ID
-		local str = table.concat(DLBeatmap.DLCB.Response)
-		local json = JSON:decode(str)
-		assert(love.filesystem.write("maps.json", love.data.compress("string", "zlib", str, 9)))
-		DLBeatmap.DLCB.RespLen = 0
+		-- If the response code is 304, that means our previous copy is good.
+		if this.StatusCode == 304 then
+			DLBeatmap.SetStatus("Local copy is used")
+			-- resplen will be 0 anyway
+			return
+		elseif this.StatusCode == 200 then
+			-- Setup beatmap list, sort by live track ID
+			local str = table.concat(DLBeatmap.DLCB.Response)
+			local json = JSON:decode(str)
+			local etag = this.HeaderData["ETag"] or this.HeaderData["etag"]
+			assert(love.filesystem.write("maps.json", love.data.compress("string", "zlib", str, 9)))
+			assert(love.filesystem.write("maps.json.etag", etag))
+			DLBeatmap.DLCB.RespLen = 0
+			DLBeatmap.DLCB.Response = {}
+			DLBeatmap.SetStatus("List refreshed!")
+			DLBeatmap.SetupList(json)
+		else
+			-- Error
+			DLBeatmap.SetStatus("Cannot get beatmap list: Status code "..this.StatusCode)
+		end
+
 		DLBeatmap.DLCB.Response = {}
-		DLBeatmap.SetStatus()
-		DLBeatmap.SetupList(json)
+		DLBeatmap.DLCB.RespLen = 0
 	end,
 }
 
@@ -156,26 +171,13 @@ function DLBeatmap.MovePage(inc)
 	DLBeatmap.MainNode.brother = DLBeatmap.NodePageList[DLBeatmap.CurrentPage + 1]
 end
 
-function DLBeatmap.IsLLPOK()
-	return AquaShine.Download.HasHTTPS() or love.filesystem.getInfo("external/download_beatmap_llp.lua")
-end
-
-function DLBeatmap.GetLLPDestination()
-	if AquaShine.Download.HasHTTPS() then
-		return "download_beatmap_llp.lua"
-	else
-		return "external/download_beatmap_llp.lua"
-	end
-end
-
-function DLBeatmap.Start(arg)
-	local maps_info = love.filesystem.getInfo("maps.json")
-	local s_button_03 = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
-	local s_button_03se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
+function DLBeatmap.Start()
+	local maps_info = love.filesystem.getInfo("maps.json.etag")
 	local descFont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	DLBeatmap.SwipeData = {nil, nil}
 	DLBeatmap.SwipeThreshold = 128
 	DLBeatmap.CurrentPage = 0
+	DLBeatmap.Download = AquaShine.GetCachedData("BeatmapDLHandle", AquaShine.Download)
 	DLBeatmap.MainNode = BackgroundImage(13)
 		:addChild(BackNavigation("SIF Download Beatmap", ":beatmap_select"))
 		:addChild(TextShadow(descFont, "", 52, 500)
@@ -185,33 +187,27 @@ function DLBeatmap.Start(arg)
 			:setShadow(1, 1, true)
 		)
 	
-	if DLBeatmap.IsLLPOK() then
-		DLBeatmap.MainNode:addChild(SimpleButton(s_button_03, s_button_03se, function()
-				local dest = DLBeatmap.GetLLPDestination()
-				AquaShine.SaveConfig("DL_CURRENT", dest)
-				AquaShine.LoadEntryPoint(dest)
-			end, 0.5)
-			:setPosition(696, 18)
-			:initText(AquaShine.LoadFont("MTLmr3m.ttf", 14), "LLP Download Beatmap")
-			:setTextPosition(8, 8)
-		)
-	end
-	
-	-- If there was previously cached maps data, use that
-	-- Otherwise, download it.
-	if not(maps_info) or (maps_info.modtime or 0) + 86400 < os.time() then
-		DLBeatmap.SetStatus("Downloading Beatmap List...")
-		DLBeatmap.Download = AquaShine.GetCachedData("BeatmapDLHandle", AquaShine.Download)
-	else
+	-- If maps.json.etag exist, that means we downloaded a previous copy
+	-- and we keep attempt to download it, but by specifying If-None-Match.
+	-- In case of failure, if previous copy exist, use it anyway.
+	if maps_info then
 		local json = JSON:decode(love.data.decompress("string", "zlib", love.filesystem.read("maps.json")))
+		DLBeatmap.LastCopy = love.filesystem.read("maps.json.etag")
 		DLBeatmap.SetupList(json)
 	end
 end
 
-function DLBeatmap.Update(deltaT)
-	if not(DLBeatmap.BeatmapListRaw) and DLBeatmap.Download and not(DLBeatmap.Download.downloading) then
+function DLBeatmap.Update()
+	if not(DLBeatmap.Download.downloading) and not(DLBeatmap.IsDownloaded) then
+		local header
+		if DLBeatmap.LastCopy then
+			header = {["If-None-Match"] = DLBeatmap.LastCopy}
+		end
+
+		DLBeatmap.SetStatus("Downloading Beatmap List...")
 		DLBeatmap.Download:SetCallback(DLBeatmap.DLCB)
-		DLBeatmap.Download:Download(address.."maps.json")
+		DLBeatmap.Download:Download(address.."maps.json", header)
+		DLBeatmap.IsDownloaded = true
 	end
 end
 

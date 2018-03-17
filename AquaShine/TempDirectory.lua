@@ -8,7 +8,8 @@
 -- standard Lua io.* and (FILE*):* methods
 
 local AquaShine = ...
-local has_ffi, ffi = pcall(require, "ffi")
+local love = require("love")
+local ffi = require("ffi")
 local temp_dir
 
 if AquaShine.OperatingSystem == "iOS" then
@@ -24,33 +25,43 @@ if AquaShine.OperatingSystem == "iOS" then
 		temp_dir = love.filesystem.getSaveDirectory().."/temp"
 		assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
 	end
+	print("Temp dir i", temp_dir)
 elseif AquaShine.OperatingSystem == "Windows" then
 	-- Two techniques (the former is more reliable)
-	if has_ffi then
-		ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
-		
-		local buf = ffi.new("char[260]")
-		local size = ffi.C.GetTempPathA(259, buf)
-		assert(size > 0, "GetTempPathA fail")
-		
-		for i = 0, size - 1 do
-			if buf[i] == 92 then
-				buf[i] = 47
-			end
+	ffi.cdef "uint32_t __stdcall GetTempPathA(uint32_t, char*);"
+	
+	local buf = ffi.new("char[260]")
+	local size = ffi.C.GetTempPathA(259, buf)
+	assert(size > 0, "GetTempPathA fail")
+	
+	for i = 0, size - 1 do
+		if buf[i] == 92 then
+			buf[i] = 47
 		end
-		
-		if buf[size - 1] == 47 then
-			buf[size - 1] = 0
-			size = size - 1
-		end
-		
-		temp_dir = ffi.string(buf, size)
-	else
-		temp_dir = os.getenv("TMP") or os.getenv("TEMP") or os.getenv("SYSTEMDRIVE").."/Windows/temp"
 	end
+	
+	if buf[size - 1] == 47 then
+		buf[size - 1] = 0
+		size = size - 1
+	end
+	
+	temp_dir = ffi.string(buf, size)
+	print("Temp dir w", temp_dir)
 elseif AquaShine.OperatingSystem == "Android" then
-	-- Make sure to load FFmpegExt at first
-	temp_dir = AquaShine._AndroidAppDir.."/cache"
+	-- Get internal storage
+	if AquaShine.Config.LOVE.AndroidExternalStorage then
+		love.filesystem._setAndroidSaveExternal(false)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	end
+	
+	temp_dir = love.filesystem.getSaveDirectory().."/../../../cache"
+	
+	-- Reset back to external storage mode
+	if AquaShine.Config.LOVE.AndroidExternalStorage then
+		love.filesystem._setAndroidSaveExternal(true)
+		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
+	end
+	print("Temp dir a", temp_dir)
 else	-- Linux & Mac OS X
 	temp_dir = (os.getenv("TMPDIR") or
 	            os.getenv("TMP") or
@@ -60,6 +71,7 @@ else	-- Linux & Mac OS X
 	
 	if os.execute("[ -d \""..temp_dir.."\" ]") ~= 0 then
 		temp_dir = "/tmp"
+		print("Temp dir lx", temp_dir)
 	end
 end
 

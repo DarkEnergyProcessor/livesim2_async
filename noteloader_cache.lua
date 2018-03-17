@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
+local love = require("love")
 local NCache = {}
 
 function NCache.CreateCache(note, filename)
@@ -176,7 +176,6 @@ function NCache.ParseCache(file)
 	
 	ncache.has_storyboard = storycover[1] >= 1
 	
-	
 	return ncache
 end
 
@@ -190,9 +189,8 @@ end
 
 function NCache._SaveCache(desired_name, beatmap_path, cache)
 	local f = assert(io.open(desired_name, "wb"))
-	
+
 	cache._mtime = assert(love.filesystem.getLastModified(beatmap_path))
-	
 	f:write(
 		"2\n",
 		cache._mtime, "\n",

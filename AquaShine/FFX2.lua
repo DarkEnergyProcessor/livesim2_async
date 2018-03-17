@@ -25,18 +25,12 @@ if osString == "iOS" then
 	LOG("AquaShineFFmpeg", "AquaShine FFX is not supported")
 	return
 elseif osString == "Android" then
-	-- We have to find our "internal" save directory at first
-	-- so we can determine our "lib" dir
-	local saveDir = love.filesystem.getSaveDirectory()
-
-	if saveDir:find("/Android/data/", 1, true) then
-		-- Android externalstorage mode is used
-		love.filesystem._setAndroidSaveExternal(false)
-		love.filesystem.setIdentity(love.filesystem.getIdentity(), true)
-		saveDir = love.filesystem.getSaveDirectory()
-	end
-
-	local lib_dir = saveDir.."/../../../lib"
+	-- Just read /proc/self/cmdline then construct /data/data/package/lib
+	-- FIXME: Probably not work in Android 6.0 or later!
+	local f = io.open("/proc/self/cmdline", "r")
+	local package = f:read("*a")
+	local lib_dir = "/data/data/"..package.."/lib"
+	f:close()
 
 	function load_ffmpeg_library(libname, ver)
 		LOG("AquaShineFFmpeg", "Loading library %s ver %d", libname, ver)
@@ -72,6 +66,22 @@ else
 		end
 
 		LOG("AquaShineFFmpeg", "Failed to load %s: %s", libname, out)
+		name = "lib"..libname..".so."..ver
+		s, out = pcall(ffi.load, name)
+
+		if s then
+			return out
+		end
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
+		name = "lib"..libname..".dylib."..ver
+		s, out = pcall(ffi.load, name)
+
+		if s then
+			return out
+		end
+
+		LOG("AquaShineFFmpeg", "Failed to load %s: %s", name, out)
 		return nil
 	end
 end

@@ -19,10 +19,10 @@ local defaultJIT = (love._os == "Android" or love._os == "iOS") and "off" or "on
 local SettingSelection = {
 	{
 		Name = "NOTE_STYLE", Default = 1,
-		Caption = "SIF-v5 Note Style",
-		Type = "switch",
-		On = 2,
-		Off = 1
+		Caption = "Note Style",
+		Type = "number",
+		Min = 1,
+		Max = 3
 	},
 	{
 		Name = "CBF_UNIT_LOAD", Default = 1,
@@ -65,7 +65,7 @@ local SettingSelection = {
 	},
 	{
 		Name = "LLP_SIFT_DEFATTR", Default = 10,
-		Caption = "Default LLP Attribute",
+		Caption = "Def. Note Attribute",
 		Type = "number",
 		Min = 1,
 		Max = 11
@@ -168,9 +168,6 @@ function Settings.Draw(deltaT)
 	love.graphics.draw(Settings.Background[4], 0, -43)
 	love.graphics.draw(Settings.Background[5], 0, 640)
 	
-	-- Limit drawing
-	AquaShine.SetScissor(0, 0, 960, 640)
-	
 	-- Draw back button and image
 	love.graphics.draw(Settings.BackImage, -98, 0)
 	
@@ -219,27 +216,25 @@ function Settings.Draw(deltaT)
 		if idx then
 			local yp = (i - settings_index_multipler * 8) * 72
 			
-			love.graphics.draw(Settings.BackImage, idx.Type == "number" and -38 or -98, yp)
+			love.graphics.draw(Settings.BackImage, -110, yp)
 			
 			if idx.Type == "switch" then
-				love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 185, yp - 20)
+				love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 190, yp - 20)
 				love.graphics.draw(idx.Value == idx.Off and OffButtonSe or OffButton, 275, yp - 20)
 				
 				love.graphics.setColor(0, 0, 0)
 			elseif idx.Type == "number" then
 				love.graphics.draw(minus, 240, yp + 10)
-				love.graphics.draw(plus, 400, yp + 10)
+				love.graphics.draw(plus, 360, yp + 10)
 				
 				love.graphics.setColor(0, 0, 0)
-				love.graphics.print(tostring(idx.Value), 320, yp + 10)
+				love.graphics.print(tostring(idx.Value), 300, yp + 10)
 			end
 			
 			love.graphics.print(idx.Caption, 5, yp + 10)
 			love.graphics.setColor(1, 1, 1)
 		end
 	end
-	
-	AquaShine.ClearScissor()
 end
 
 function Settings.MousePressed(x, y, button)
@@ -301,7 +296,7 @@ function Settings.MouseReleased(x, y, button)
 						if idx.Changed then
 							idx:Changed(oldval)
 						end
-					elseif x >= 384 and x < 432 then
+					elseif x >= 364 and x < 412 then
 						-- Add
 						idx.Value = math.min(idx.Value + (idx.Increment or 1), idx.Max)
 						
