@@ -18,7 +18,6 @@ bar_data.tween:update(300)
 local function init()
 	-- Load score eclipse related image
 	ScoreEclipseF.Img = AquaShine.LoadImage("assets/image/live/l_etc_46.png")
-	ScoreEclipseF.Img2 = AquaShine.LoadImage("assets/image/live/l_gauge_17.png")
 
 	return ScoreEclipseF
 end
@@ -35,14 +34,15 @@ function ScoreEclipseF.Update(deltaT)
 end
 
 function ScoreEclipseF.Draw()
-	if ScoreEclipseF.BarDataStats then
+	if ScoreEclipseF.EclipseStats then
 		love.graphics.setColor(1, 1, 1, eclipse_data.opacity * DEPLS.LiveOpacity)
-		love.graphics.draw(ScoreEclipseF.Img, 484, 72, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
+		love.graphics.draw(ScoreEclipseF.Img, 480, 39, 0, eclipse_data.scale, eclipse_data.scale, 159, 34)
 	end
 
-	if ScoreEclipseF.EclipseStats and ScoreEclipseF.ScoreBar.BarTapFlash then
+	if ScoreEclipseF.BarDataStats then
 		love.graphics.setColor(1, 1, 1, bar_data.opacity * DEPLS.LiveOpacity)
-		love.graphics.draw(ScoreEclipseF.Img2, 5, 8)
+		love.graphics.rectangle("fill", 44, 88, 872, 8)
+		love.graphics.rectangle("line", 44, 88, 872, 8)
 	end
 end
 

@@ -2,11 +2,9 @@
 -- High-performance LL!SIF Live Simulator
 -- See copyright notice in main.lua
 
-local love = love
+local love = require("love")
 local AquaShine = ...
-local tween = require("tween")
 local EffectPlayer = require("effect_player")
-local JSON = require("JSON")
 local Yohane = require("Yohane")
 local DEPLS = {
 	ElapsedTime = 0,            -- Elapsed time, in milliseconds
@@ -18,7 +16,7 @@ local DEPLS = {
 	HasCoverImage = false,      -- Used to get livesim delay
 	CoverShown = 0,             -- Cover shown if this value starts at 3167
 	CoverData = {},
-	
+
 	DefaultColorMode = 255,     -- Color range
 	BackgroundOpacity = 1,      -- User background opacity set from storyboard
 	BackgroundImage = {         -- Index 0 is the main background
@@ -31,14 +29,14 @@ local DEPLS = {
 	},
 	LiveOpacity = 1,	-- Live opacity
 	AutoPlay = false,	-- Autoplay?
-	
-	LiveShowCleared = Yohane.newFlashFromFilename("flash/live_clear.flsh"),
-	FullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh"),
-	
+
+	LiveShowCleared = AquaShine.GetCachedData("lclrflsh", Yohane.newFlashFromFilename, "flash/live_clear.flsh"),
+	FullComboAnim = AquaShine.GetCachedData("fcflsh", Yohane.newFlashFromFilename, "flash/live_fullcombo.flsh"),
+
 	StoryboardErrorMsg = "",
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
 	Routines = {},			-- Table to store all DEPLS effect routines
-	
+
 	IdolPosition = {	-- Idol position. 9 is leftmost
 		{816, 96 }, {785, 249}, {698, 378},
 		{569, 465}, {416, 496}, {262, 465},
@@ -63,11 +61,9 @@ local DEPLS = {
 		3,
 		4
 	},
-	
+
 	Images = {		-- Lists of loaded images
-		Note = {},
-		ScoreNode = {},
-		ComboNumbers = AquaShine.LoadModule("combo_num")
+		Note = {}
 	},
 	Sound = {}
 }
@@ -87,14 +83,11 @@ local EllipseRot = {
 -----------------------
 -- Private functions --
 -----------------------
---! @brief Function to calculate distance of 2 position.
---! @code distance(x2 - x1, y2 - y1)
---! @endcode
+
 local function distance(a, b)
 	return math.sqrt(a ^ 2 + b ^ 2)
 end
 
---! Function to calculate angle of 2 position
 local function angle_from(x1, y1, x2, y2)
 	return math.atan2(y2 - y1, x2 - x1) - math.pi / 2
 end
@@ -103,22 +96,12 @@ end
 -- Animation routines --
 ------------------------
 
--- Circletap aftertap effect namespace
-DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS, AquaShine)
--- Combo counter effect namespace
-DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS, AquaShine)
+-- These are base routines which does cause problem when
+-- loaded late. But it doesn't affect UI (Lovewing or SIF)
+-- so it's good to load it early.
+
 -- Tap accuracy display routine
 DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/judgement.lua"))(DEPLS, AquaShine)
--- Score flash animation routine
-DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS, AquaShine)
--- Note icon (note spawn pos) animation
-DEPLS.Routines.NoteIcon = assert(love.filesystem.load("livesim/noteicon.lua"))(DEPLS, AquaShine)
--- Score display routine
-DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("livesim/scoreupdate.lua"))(DEPLS, AquaShine)
--- Score bar routine. Depends on score display
-DEPLS.Routines.ScoreBar = assert(love.filesystem.load("livesim/scorebar.lua"))(DEPLS, AquaShine)
--- Added score, update routine effect
-DEPLS.Routines.ScoreNode = assert(love.filesystem.load("livesim/scorenode_effect.lua"))(DEPLS, AquaShine)
 -- Spot effect
 DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua"))(DEPLS, AquaShine)
 -- Live show complete animation routine (incl. FULLCOMBO)
@@ -134,7 +117,108 @@ DEPLS.Routines.ResultScreen = assert(love.filesystem.load("livesim/reward.lua"))
 -- Pause info
 DEPLS.Routines.PauseScreen = assert(love.filesystem.load("livesim/pause.lua"))(DEPLS, AquaShine)
 
-DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
+function DEPLS.LoadRoutinesSIF()
+	-- Live header
+	DEPLS.Routines.LiveHeader = assert(love.filesystem.load("livesim/liveheader.lua"))(DEPLS, AquaShine)
+	-- Circletap aftertap effect namespace
+	DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS, AquaShine)
+	-- Combo counter effect namespace
+	DEPLS.Routines.ComboCounter = assert(love.filesystem.load("livesim/combocounter.lua"))(DEPLS, AquaShine)
+	-- Score flash animation routine
+	DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("livesim/score_eclipsef.lua"))(DEPLS, AquaShine)
+	-- Note icon (note spawn pos) animation
+	DEPLS.Routines.NoteIcon = assert(love.filesystem.load("livesim/noteicon.lua"))(DEPLS, AquaShine)
+	-- Score display routine
+	DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("livesim/scoreupdate.lua"))(DEPLS, AquaShine)
+	-- Score bar routine. Depends on score display
+	DEPLS.Routines.ScoreBar = assert(love.filesystem.load("livesim/scorebar.lua"))(DEPLS, AquaShine)
+	-- Added score, update routine effect
+	DEPLS.Routines.ScoreNode = assert(love.filesystem.load("livesim/scorenode_effect.lua"))(DEPLS, AquaShine)
+
+	DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
+end
+
+function DEPLS.LoadRoutinesLovewing()
+	-- Live header
+	DEPLS.Routines.LiveHeader = assert(love.filesystem.load("lovewing/liveheader.lua"))(DEPLS, AquaShine)
+	-- Circletap aftertap effect namespace
+	DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("lovewing/circletap_effect.lua"))(DEPLS, AquaShine)
+	-- Combo counter effect namespace
+	DEPLS.Routines.ComboCounter = assert(love.filesystem.load("lovewing/combocounter.lua"))(DEPLS, AquaShine)
+	-- Note icon (note spawn pos) animation
+	DEPLS.Routines.NoteIcon = assert(love.filesystem.load("lovewing/noteicon.lua"))(DEPLS, AquaShine)
+	-- Score display routine
+	DEPLS.Routines.ScoreUpdate = assert(love.filesystem.load("lovewing/scoreupdate.lua"))(DEPLS, AquaShine)
+	-- Score bar routine. Depends on score display
+	DEPLS.Routines.ScoreBar = assert(love.filesystem.load("lovewing/scorebar.lua"))(DEPLS, AquaShine)
+	-- Score flash animation routine
+	DEPLS.Routines.ScoreEclipseF = assert(love.filesystem.load("lovewing/score_eclipsef.lua"))(DEPLS, AquaShine)
+	DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
+end
+
+function DEPLS.Routines.UpdateSIF(deltaT)
+	DEPLS.Routines.LiveHeader.Update(deltaT)
+	DEPLS.Routines.ComboCounter.Update(deltaT)
+	DEPLS.Routines.NoteIcon.Update(deltaT)
+	DEPLS.Routines.ScoreEclipseF.Update(deltaT)
+	DEPLS.Routines.ScoreUpdate.Update(deltaT)
+	DEPLS.Routines.ScoreBar.Update(deltaT)
+	DEPLS.Routines.SkillPopups.Update(deltaT)
+	DEPLS.Routines.PerfectNode.Update(deltaT)
+end
+
+function DEPLS.Routines.DrawSIF()
+	DEPLS.Routines.ComboCounter.Draw()
+	DEPLS.Routines.NoteIcon.Draw()
+	DEPLS.Routines.ScoreBar.Draw()
+	DEPLS.Routines.ScoreEclipseF.Draw()
+	DEPLS.Routines.ScoreUpdate.Draw()
+	DEPLS.Routines.PerfectNode.Draw()
+end
+
+function DEPLS.Routines.CheckPausePosSIF(x, y)
+	return x >= 916 and y >= 6 and x < 952 and y < 42
+end
+
+function DEPLS.Routines.UpdateLovewing(deltaT)
+	DEPLS.Routines.LiveHeader.Update(deltaT)
+	DEPLS.Routines.ComboCounter.Update(deltaT)
+	DEPLS.Routines.NoteIcon.Update(deltaT)
+	DEPLS.Routines.ScoreEclipseF.Update(deltaT)
+	DEPLS.Routines.ScoreUpdate.Update(deltaT)
+	DEPLS.Routines.ScoreBar.Update(deltaT)
+	DEPLS.Routines.SkillPopups.Update(deltaT)
+	DEPLS.Routines.PerfectNode.Update(deltaT)
+end
+
+function DEPLS.Routines.DrawLovewing()
+	DEPLS.Routines.ComboCounter.Draw()
+	DEPLS.Routines.NoteIcon.Draw()
+	DEPLS.Routines.ScoreBar.Draw()
+	DEPLS.Routines.ScoreUpdate.Draw()
+	DEPLS.Routines.ScoreEclipseF.Draw()
+	DEPLS.Routines.PerfectNode.Draw()
+end
+
+function DEPLS.Routines.CheckPausePosLovewing(x, y)
+	return x >= 34 and y >= 17 and x < 63 and y < 46
+end
+
+function DEPLS.LoadRoutines()
+	local uimode = "lovewing"
+
+	if uimode == "lovewing" then
+		DEPLS.Routines.Update = DEPLS.Routines.UpdateLovewing
+		DEPLS.Routines.Draw = DEPLS.Routines.DrawLovewing
+		DEPLS.Routines.CheckPausePos = DEPLS.Routines.CheckPausePosLovewing
+		return DEPLS.LoadRoutinesLovewing()
+	else
+		DEPLS.Routines.Update = DEPLS.Routines.UpdateSIF
+		DEPLS.Routines.Draw = DEPLS.Routines.DrawSIF
+		DEPLS.Routines.CheckPausePos = DEPLS.Routines.CheckPausePosSIF
+		return DEPLS.LoadRoutinesSIF()
+	end
+end
 
 --------------------------------
 -- Another public functions   --
@@ -146,9 +230,9 @@ DEPLS.Routines.ScoreEclipseF.ScoreBar = DEPLS.Routines.ScoreBar
 function DEPLS.AddScore(score)
 	local ComboCounter = DEPLS.Routines.ComboCounter
 	local added_score = score
-	
+
 	if ComboCounter.CurrentCombo < 50 then
-		-- noop
+		added_score = added_score
 	elseif ComboCounter.CurrentCombo < 100 then
 		added_score = added_score * 1.1
 	elseif ComboCounter.CurrentCombo < 200 then
@@ -162,20 +246,22 @@ function DEPLS.AddScore(score)
 	else
 		added_score = added_score * 1.35
 	end
-	
+
 	return DEPLS.AddScoreDirect(math.floor(added_score))
 end
 
 --! @brief Add score, directly without additional calculation
 --! @param score The score value
 function DEPLS.AddScoreDirect(score)
-	local ComboCounter = DEPLS.Routines.ComboCounter
 	score = math.floor(score)
-	
+
 	DEPLS.Routines.ScoreUpdate.CurrentScore = DEPLS.Routines.ScoreUpdate.CurrentScore + score
-	DEPLS.Routines.ScoreEclipseF.Replay = true
-	
-	if not(DEPLS.MinimalEffect) then
+
+	if DEPLS.Routines.ScoreEclipseF then
+		DEPLS.Routines.ScoreEclipseF.Replay = true
+	end
+
+	if not(DEPLS.MinimalEffect) and DEPLS.Routines.ScoreNode then
 		EffectPlayer.Spawn(DEPLS.Routines.ScoreNode.Create(score))
 	end
 end
@@ -183,7 +269,7 @@ end
 do
 	local dummy_image
 	local list = {}
-	
+
 	--! @brief Loads image, specialized for unit icon
 	--! @param path The unit image path, relative to save_dir/unit_icon folder
 	--! @returns Requested unit icon or placeholder unit icon (dummy.png)
@@ -191,19 +277,19 @@ do
 		if list[path] then
 			return list[path]
 		end
-		
+
 		if dummy_image == nil then
 			dummy_image = AquaShine.LoadImage("assets/image/dummy.png")
 		end
-		
+
 		if path == nil then return dummy_image end
-		
+
 		local _, img = pcall(love.graphics.newImage, "unit_icon/"..path)
-		
+
 		if _ == false then
 			return dummy_image
 		end
-		
+
 		list[path] = img
 		return img
 	end
@@ -224,7 +310,6 @@ end
 --! @param opacity Transparency. 0 = full black, 255 = full light
 function DEPLS.StoryboardFunctions.SetBackgroundDimOpacity(opacity)
 	opacity = math.max(math.min(opacity or DEPLS.DefaultColorMode, DEPLS.DefaultColorMode), 0)
-	
 	DEPLS.BackgroundOpacity = 1 - opacity / DEPLS.DefaultColorMode
 end
 
@@ -258,7 +343,7 @@ function DEPLS.StoryboardFunctions.SpawnSpotEffect(pos, r, g, b)
 	r = r or 255
 	g = g or 255
 	b = b or 255
-	
+
 	local obj = DEPLS.Routines.SpotEffect.Create(pos, r, g, b)
 	EffectPlayer.Spawn(obj)
 end
@@ -271,7 +356,7 @@ end
 function DEPLS.StoryboardFunctions.SpawnCircleTapEffect(pos, r, g, b)
 	local x, y = DEPLS.IdolPosition[pos][1] + 64, DEPLS.IdolPosition[pos][2] + 64
 	local effect = DEPLS.Routines.CircleTapEffect.Create(x, y, r, g, b)
-	
+
 	EffectPlayer.Spawn(effect)
 end
 
@@ -285,17 +370,17 @@ end
 
 do
 	local channels
-	
+
 	local function getsample_safe(sound_data, pos)
-		local _, sample = pcall(sound_data.getSample, sound_data, pos)
-		
-		if _ == false then
+		local s, sample = pcall(sound_data.getSample, sound_data, pos)
+
+		if s == false then
 			return 0
 		end
-		
+
 		return sample
 	end
-	
+
 	--! @brief Gets current playing audio sample with specificed size
 	--! @param size The sample size (1 default = 1 sample)
 	--! @returns table containing the samples with size `size`
@@ -303,29 +388,29 @@ do
 	--!       if no audio is found, where in that case the sample is simply 0
 	function DEPLS.StoryboardFunctions.GetCurrentAudioSample(size)
 		size = size or 1
-		
+
 		local audio = DEPLS.Sound.BeatmapAudio
 		local sample_list = {}
-		
+
 		if not(audio) then
 			for i = 1, size do
 				sample_list[#sample_list + 1] = {0, 0}
 			end
-			
+
 			return sample_list
 		end
-		
+
 		if not(channels) then
 			channels = audio:getChannelCount()
 		end
-		
+
 		local pos = DEPLS.Sound.LiveAudio:tell("samples")
-		
+
 		if channels == 1 then
 			for i = pos, pos + size - 1 do
 				-- Mono
 				local sample = getsample_safe(audio, i)
-				
+
 				sample_list[#sample_list + 1] = {sample, sample}
 			end
 		elseif channels == 2 then
@@ -337,7 +422,7 @@ do
 				}
 			end
 		end
-		
+
 		return sample_list
 	end
 end
@@ -346,17 +431,17 @@ end
 --! @returns Audio sample rate (or 22050 if there's no sound)
 function DEPLS.StoryboardFunctions.GetCurrentAudioSampleRate()
 	local a = DEPLS.Sound.BeatmapAudio
-	
+
 	if not(a) then
 		return 22050
 	end
-	
+
 	local _, v = pcall(a.getSampleRate, a)
-	
+
 	if _ == false then
 		return 22050
 	end
-	
+
 	return v * 0.5
 end
 
@@ -365,11 +450,11 @@ end
 --! @returns Image handle or nil on failure
 function DEPLS.StoryboardFunctions.LoadDEPLS2Image(path)
 	local _, a = pcall(love.graphics.newImage, path)
-	
+
 	if _ then
 		return a
 	end
-	
+
 	return nil
 end
 
@@ -378,7 +463,7 @@ end
 --!       multiple times is a waste of CPU
 function DEPLS.StoryboardFunctions.DisablePlaySpeedAlteration()
 	DEPLS.PlaySpeedAlterDisabled = true
-	
+
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:setPitch(1)
 	end
@@ -390,15 +475,15 @@ end
 --! @warning This function throws error if speed_factor is zero
 function DEPLS.StoryboardFunctions.SetPlaySpeed(speed_factor)
 	assert(not(DEPLS.RenderingMode), "SetPlaySpeed can't be used in rendering mode")
-	
+
 	if speed_factor then
 		assert(speed_factor > 0, "speed_factor can't be zero")
 	end
-	
+
 	local factorrest = speed_factor or DEPLS.PlaySpeed
-	
+
 	DEPLS.PlaySpeed = factorrest
-	
+
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:setPitch(factorrest)
 	end
@@ -417,7 +502,9 @@ function DEPLS.StoryboardFunctions.IsRenderingMode()
 	return not(not(DEPLS.RenderingMode))
 end
 
-DEPLS.StoryboardFunctions.SkillPopup = DEPLS.Routines.SkillPopups.Spawn
+function DEPLS.StoryboardFunctions.SkillPopup(...)
+	return DEPLS.Routines.SkillPopups.Spawn(select(1, ...))
+end
 
 --! @brief Allow combo cheer/star effects in the background
 function DEPLS.StoryboardFunctions.AllowComboCheer()
@@ -467,7 +554,7 @@ function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
 		for i = 0, 4 do
 			a[i] = DEPLS.BackgroundImage[i][1]
 		end
-		
+
 		return a
 	end
 end
@@ -521,17 +608,17 @@ end
 function DEPLS.StoryboardFunctions.SetPostProcessingShader(...)
 	local arg = {...}
 	local prev = DEPLS.PostShader
-	
+
 	if #arg == 0 then
 		DEPLS.PostShader = nil
-	else		
+	else
 		for i = 1, #arg do
 			assert(type(arg[i]) == "userdata" and arg[i]:typeOf("Shader"), "bad argument to SetPostProcessingShader (invalid value passed)")
 		end
-		
+
 		DEPLS.PostShader = arg
 	end
-	
+
 	if prev then
 		return unpack(prev)
 	else
@@ -597,16 +684,16 @@ function DEPLS.Pause()
 	if DEPLS.VideoBackgroundData then
 		DEPLS.VideoBackgroundData[1]:pause()
 	end
-	
+
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardCallback("Pause")
 		DEPLS.StoryboardHandle:Pause()
 	end
-	
+
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:pause()
 	end
-	
+
 	DEPLS.Routines.PauseScreen.InitiatePause(DEPLS.Resume)
 end
 
@@ -615,17 +702,17 @@ function DEPLS.Resume()
 	if DEPLS.VideoBackgroundData then
 		DEPLS.VideoBackgroundData[1]:play()
 	end
-	
+
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Resume()
 		DEPLS.StoryboardCallback("Resume")
 	end
-	
+
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
 		DEPLS.Sound.LiveAudio:play()
 	end
-	
+
 	if DEPLS.VideoBackgroundData then
 		DEPLS.VideoBackgroundData[1]:seek(DEPLS.ElapsedTime * 0.001)
 		DEPLS.VideoBackgroundData[1]:play()
@@ -785,20 +872,20 @@ function DEPLS.Start(argv)
 			AquaShine.Log("livesim2", msg)
 		end
 	end
-	
+
 	-- Load cover art
 	local noteloader_coverdata = noteloader_data:GetCoverArt()
 	if noteloader_coverdata then
 		local new_coverdata = {}
-		
+
 		DEPLS.HasCoverImage = true
 		DEPLS.CoverShown = 3167
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime - 3167
-		
+
 		new_coverdata.arrangement = noteloader_coverdata.arrangement
 		new_coverdata.title = noteloader_coverdata.title or argv[1]
 		new_coverdata.image = noteloader_coverdata.image
-		
+
 		AquaShine.Log("livesim2", "Cover art init")
 		DEPLS.Routines.CoverPreview.Initialize(new_coverdata)
 	end
@@ -875,6 +962,9 @@ function DEPLS.Start(argv)
 	----------------------
 	-- Load image start --
 	----------------------
+
+	-- Load base routines, handles whenever it uses SIF or Lovewing UI
+	DEPLS.LoadRoutines()
 	
 	-- Load background if no storyboard present
 	if not(DEPLS.StoryboardHandle) and not(custom_background) then
@@ -884,50 +974,6 @@ function DEPLS.Start(argv)
 			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("assets/image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
 		end
 	end
-	
-	-- Tap circle effect
-	DEPLS.Images.ef_316_000 = AquaShine.LoadImage("assets/image/live/ef_316_000.png")
-	DEPLS.Images.ef_316_001 = AquaShine.LoadImage("assets/image/live/ef_316_001.png")
-	
-	-- Load live header images
-	DEPLS.Images.Header = AquaShine.LoadImage("assets/image/live/live_header.png")
-	DEPLS.Images.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
-	DEPLS.Images.Pause = AquaShine.LoadImage("assets/image/live/live_pause.png")
-	
-	-- Load stamina image (bar and number)
-	DEPLS.Images.StaminaRelated = {
-		Bar = AquaShine.LoadImage("assets/image/live/live_gauge_02_02.png")
-	}
-	do
-		local stamina_display_str = tostring(DEPLS.Stamina)
-		local matcher = stamina_display_str:gmatch("%d")
-		local temp
-		local temp_num
-		local stamina_number_image = {}
-		
-		for i = 1, #stamina_display_str do
-			temp = matcher()
-			temp_num = tonumber(temp)
-			
-			if DEPLS.Images.StaminaRelated[temp_num] == nil then
-				DEPLS.Images.StaminaRelated[temp_num] = AquaShine.LoadImage("assets/image/live/hp_num/live_num_"..temp..".png")
-			end
-			
-			stamina_number_image[i] = DEPLS.Images.StaminaRelated[temp_num]
-		end
-		
-		DEPLS.Images.StaminaRelated.DrawTarget = stamina_number_image
-	end
-	
-	-- Load score eclipse related image
-	DEPLS.Routines.ScoreEclipseF.Img = AquaShine.LoadImage("assets/image/live/l_etc_46.png")
-	DEPLS.Routines.ScoreEclipseF.Img2 = AquaShine.LoadImage("assets/image/live/l_gauge_17.png")
-	
-	-- Load score node number
-	for i = 21, 30 do
-		DEPLS.Images.ScoreNode[i - 21] = AquaShine.LoadImage("assets/image/live/score_num/l_num_"..i..".png")
-	end
-	DEPLS.Images.ScoreNode.Plus = AquaShine.LoadImage("assets/image/live/score_num/l_num_31.png")
 	
 	-- Tap accuracy image
 	DEPLS.Images.Perfect = AquaShine.LoadImage("assets/image/live/ef_313_004_w2x.png")
@@ -946,10 +992,6 @@ function DEPLS.Start(argv)
 	-- Initialize tap accuracy routine
 	DEPLS.Routines.PerfectNode.Draw()
 	
-	-- Load NoteIcon image
-	DEPLS.Images.NoteIcon = AquaShine.LoadImage("assets/image/live/ef_308_000.png")
-	DEPLS.Images.NoteIconCircle = AquaShine.LoadImage("assets/image/live/ef_308_001.png")
-	
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 	DEPLS.ErrorFont = AquaShine.LoadFont("MTLmr3m.ttf", 14)
@@ -961,8 +1003,6 @@ end
 -- Used internally
 local persistent_bg_opacity = 0
 local audioplaying = false
-local audiodeltaT = 0
-local audiolasttime = 0
 
 --! @brief DEPLS Update function. It is separated to allow offline rendering
 --! @param deltaT Delta-time in milliseconds
@@ -1000,7 +1040,7 @@ function DEPLS.Update(deltaT)
 			DEPLS.VideoBackgroundData[1]:play()
 		end
 		
-		if deltaT > 500 then
+		if deltaT > 100 then
 			-- We can get out of sync when the dT is very high
 			if DEPLS.Sound.LiveAudio and audioplaying then
 				DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
@@ -1024,21 +1064,15 @@ function DEPLS.Update(deltaT)
 		end
 		
 		-- Update routines
-		Routines.ComboCounter.Update(deltaT)
-		Routines.NoteIcon.Update(deltaT)
-		Routines.ScoreEclipseF.Update(deltaT)
-		Routines.ScoreUpdate.Update(deltaT)
-		Routines.ScoreBar.Update(deltaT)
-		Routines.SkillPopups.Update(deltaT)
-		Routines.PerfectNode.Update(deltaT)
-		
+		DEPLS.Routines.Update(deltaT)
+
 		-- Update effect player
 		EffectPlayer.Update(deltaT)
-		
+
 		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Update(deltaT)
 		end
-		
+
 		Routines.PauseScreen.Update(deltaT)
 	end
 end
@@ -1047,22 +1081,17 @@ end
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Draw(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
-	-- Localize love functions
-	-- TODO: Remove localize
-	local graphics = love.graphics
-	local rectangle = graphics.rectangle
-	local draw = graphics.draw
-	local setColor = graphics.setColor
+
 	local Images = DEPLS.Images
-	
+
 	local Routines = DEPLS.Routines
 	local AllowedDraw = DEPLS.ElapsedTime > 0
 	local lastCanvas = love.graphics.getCanvas()
-	
+
 	love.graphics.push("all")
 	love.graphics.setCanvas(DEPLS.MainCanvas)
 	love.graphics.clear()
-	
+
 	-- If there's storyboard, draw the storyboard instead.
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Draw(deltaT)
@@ -1079,8 +1108,8 @@ function DEPLS.Draw(deltaT)
 	else
 		-- No storyboard & video still not allowed to draw. Draw background
 		local BackgroundImage = DEPLS.BackgroundImage
-		
-		draw(
+
+		love.graphics.draw(
 			BackgroundImage[0][1],
 			BackgroundImage[0][2],
 			BackgroundImage[0][3],
@@ -1088,23 +1117,23 @@ function DEPLS.Draw(deltaT)
 			BackgroundImage[0][4] or 1,
 			BackgroundImage[0][5] or 1
 		)
-		
+
 		for i = 1, 4 do
 			if BackgroundImage[i][1] then
-				graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+				love.graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
 			end
 		end
 	end
-	
+
 	-- Draw background blackness
 	if DEPLS.CoverShown > 0 then
 		DEPLS.Routines.CoverPreview.Draw()
 	else
-		setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity)
-		rectangle("fill", -88, -43, 1136, 726)
-		setColor(1, 1, 1)
+		love.graphics.setColor(0, 0, 0, DEPLS.BackgroundOpacity * persistent_bg_opacity)
+		love.graphics.rectangle("fill", -88, -43, 1136, 726)
+		love.graphics.setColor(1, 1, 1)
 	end
-	
+
 	if DEPLS.ElapsedTime < 0 and #DEPLS.StoryboardErrorMsg > 0 then
 		local y = 638 - (select(2, DEPLS.StoryboardErrorMsg:gsub("\n", "")) + 1) * 14
 		love.graphics.setFont(DEPLS.ErrorFont)
@@ -1113,49 +1142,37 @@ function DEPLS.Draw(deltaT)
 		love.graphics.setColor(1, 1, 1)
 		love.graphics.print(DEPLS.StoryboardErrorMsg, 0, y)
 	end
-		
+
 	if AllowedDraw then
 		-- Draw combo cheer
 		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
 			Routines.ComboCheer.Draw()
 		end
-		
+
 		-- Draw cut-in
 		Routines.SkillPopups.Draw()
-		
+
 		-- Draw header
-		setColor(1, 1, 1, DEPLS.LiveOpacity)
-		draw(Images.Header, 0, 0)
-		draw(Images.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
-		
-		draw(Images.StaminaRelated.Bar, 14, 60)
-		for i = 1, #Images.StaminaRelated.DrawTarget do
-			draw(Images.StaminaRelated.DrawTarget[i], 290 + 16 * i, 66)
-		end
-		
+		DEPLS.Routines.LiveHeader.Draw()
+
 		-- Draw idol unit
 		local IdolData = DEPLS.IdolImageData
 		local IdolPos = DEPLS.IdolPosition
-		
+
 		for i = 1, 9 do
-			setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
-			draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
+			love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
+			love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 		end
-		
+
 		-- Draw timing icon
 		DEPLS.NoteManager.TimingIconDraw()
-		
+
 		-- Update note
 		DEPLS.NoteManager.Draw()
-		
+
 		-- Draw routines
-		Routines.ComboCounter.Draw()
-		Routines.NoteIcon.Draw()
-		Routines.ScoreBar.Draw()
-		Routines.ScoreEclipseF.Draw()
-		Routines.ScoreUpdate.Draw()
-		Routines.PerfectNode.Draw()
-		
+		DEPLS.Routines.Draw()
+
 		-- Update effect player
 		EffectPlayer.Draw()
 
@@ -1163,19 +1180,18 @@ function DEPLS.Draw(deltaT)
 		if DEPLS.IsLiveEnded() then
 			Routines.LiveClearAnim.Draw()
 		else
-			setColor(1, 1, 1, DEPLS.LiveOpacity)
-			draw(Images.Pause, 916, 5, 0, 0.6)
+			Routines.LiveHeader.DrawPause()
 		end
 	end
-	
+
 	-- Post-processing draw first so the pause overlay
 	-- and the debug display doesn't affected.
 	DEPLS.PostProcessingDraw(lastCanvas)
-	graphics.pop()
-	
+	love.graphics.pop()
+
 	-- Pause overlay
 	Routines.PauseScreen.Draw()
-	
+
 	if DEPLS.DebugDisplay then
 		DEPLS.DrawDebugInfo()
 	end
@@ -1283,7 +1299,7 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 		AquaShine.LoadEntryPoint(":beatmap_select", {Random = DEPLS.Arg.Random})
 	end
 	
-	if not(DEPLS.IsLiveEnded()) and x >= 916 and y >= 6 and x < 952 and y < 42 then
+	if not(DEPLS.IsLiveEnded()) and DEPLS.Routines.CheckPausePos(x, y) then
 		DEPLS.Pause()
 	end
 end

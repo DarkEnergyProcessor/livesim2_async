@@ -3,14 +3,19 @@
 -- See copyright notice in main.lua
 
 local tween = require("tween")
-local love = love
-local DEPLS = ...
+local love = require("love")
+local DEPLS, AquaShine = ...
 local ComboCounter = {CurrentCombo = 0}
 
 local combo_scale = {s = 1.15}
 local combo_tween = tween.new(150, combo_scale, {s = 1}, "inOutSine")
 local combo_boom = {s = 1.25, op = 127}
 local combo_boom_tween = tween.new(330, combo_boom, {s = 1.65, op = 0})
+
+local function init()
+	ComboCounter.Numbers = AquaShine.LoadModule("combo_num")
+	return ComboCounter
+end
 
 local function get_combo_num_idx(combo)
 	if combo < 50 then
@@ -65,10 +70,10 @@ function ComboCounter.Draw()
 	local cc = ComboCounter.CurrentCombo
 	if cc > 0 then
 		-- "combo" pos: 541x267+61+17
-		-- number pos: 451x267+24+24; aligh right; subtract by 43 for distance
+		-- number pos: 451x267+24+24; align right; subtract by 43 for distance
 		-- ImageMagick coordinate notation is used
 		local combo_str = {string.byte(tostring(cc), 1, 20)}
-		local img = DEPLS.Images.ComboNumbers[get_combo_num_idx(cc)]
+		local img = ComboCounter.Numbers[get_combo_num_idx(cc)]
 		
 		love.graphics.push()
 		love.graphics.translate(480, 320)
@@ -88,4 +93,4 @@ function ComboCounter.Draw()
 	end
 end
 
-return ComboCounter
+return init()

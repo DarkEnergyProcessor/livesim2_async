@@ -36,8 +36,6 @@ v2.1
 
 v2.2
 - Unit creation
-- New note icon
-- Working stamina
 - Restart button (live show)
 - Better live clear
 - Lovewing UI

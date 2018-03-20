@@ -3,27 +3,26 @@
 -- See copyright notice in main.lua
 
 local DEPLS, AquaShine = ...
-local love = love
+local love = require("love")
 local EffectPlayer = require("effect_player")
-local bit = require("bit")
 local Yohane = require("Yohane")
 local tween = require("tween")
 local Note = {
 	-- Note queue
 	{}, {}, {}, {}, {}, {}, {}, {}, {},
-	
+
 	-- Judgement
 	Perfect = 0,
 	Great = 0,
 	Good = 0,
 	Bad = 0,
 	Miss = 0,
-	
+
 	-- Note info
 	NoteRemaining = 0,
 	HighestCombo = 0,
 	TotalNotes = 0,
-	
+
 	-- Timing system
 	YellowTiming = {
 		Image = AquaShine.LoadImage("assets/image/live/tl_skill_02.png"),
@@ -40,9 +39,6 @@ local Note = {
 
 -- Import some data from DEPLS
 local ScoreBase = DEPLS.ScoreBase
-local AddScore = DEPLS.AddScore
-local NoteAccuracy = DEPLS.NoteAccuracy
-local ComboCounter = DEPLS.Routines.ComboCounter
 local distance = DEPLS.Distance
 local angle_from = DEPLS.AngleFrom
 local storyboard_callback = DEPLS.StoryboardCallback
@@ -86,7 +82,7 @@ function NoteBombEffect.Create(x, y)
 	out.flash = notes_bomb:clone()
 	out.x = x
 	out.y = y
-	
+
 	out.flash:jumpToLabel("bomb")
 	return (setmetatable(out, NoteBombEffect._common_meta))
 end
@@ -94,7 +90,7 @@ end
 function NoteBombEffect:Update(deltaT)
 	if not(self.flash:isFrozen()) then
 		self.flash:update(deltaT)
-		
+
 		return false
 	else
 		return true
@@ -108,7 +104,7 @@ end
 local function internal_simulnote_check(timing_sec, i, is_swing)
 	local j = 1
 	local notedata = Note[i][j]
-	
+
 	while notedata ~= nil do
 		if
 			floor(notedata.ZeroAccuracyTime) == floor(timing_sec) and
@@ -117,7 +113,7 @@ local function internal_simulnote_check(timing_sec, i, is_swing)
 			notedata.SimulNote = true
 			return true
 		end
-		
+
 		j = j + 1
 		notedata = Note[i][j]
 	end
@@ -863,6 +859,7 @@ end
 --! @brief Function to update the note
 --! @param deltaT The delta time
 function Note.Update(deltaT)
+	local ComboCounter = DEPLS.Routines.ComboCounter
 	local ElapsedTime = DEPLS.ElapsedTime
 	local score = 0
 	
@@ -992,6 +989,7 @@ function Note.SetTouch(pos, touchid, release, previous)
 	if DEPLS.AutoPlay then return end
 	
 	local ElapsedTime = DEPLS.ElapsedTime
+	local ComboCounter = DEPLS.Routines.ComboCounter
 	local noteobj
 	local score = 0
 	
@@ -1051,11 +1049,11 @@ function Note.SetTouch(pos, touchid, release, previous)
 			end
 			Note.NoteRemaining = Note.NoteRemaining - 1
 			Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
-			
+
 			ComboCounter.Replay = true
 		end
 	end
-	
+
 	if score > 0 then
 		DEPLS.AddScore(score)
 	end
