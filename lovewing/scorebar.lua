@@ -40,11 +40,11 @@ function ScoreBar.Draw()
 	-- No matter what happend, we just need to draw rectangle
 	local w = math.min(ScoreUpdate.CurrentScore / ScoreData[4], 1) * 872
 	love.graphics.setColor(207/255, 207/255, 207/255, DEPLS.LiveOpacity)
-	love.graphics.rectangle("fill", 44, 88, 872, 8)
-	love.graphics.rectangle("line", 44, 88, 872, 8)
+	love.graphics.rectangle("fill", 44, 84, 872, 8)
+	love.graphics.rectangle("line", 44, 84, 872, 8)
 	love.graphics.setColor(ScoreBar.CurrentColor[1], ScoreBar.CurrentColor[2], ScoreBar.CurrentColor[3], DEPLS.LiveOpacity)
-	love.graphics.rectangle("fill", 44, 88, w, 8)
-	love.graphics.rectangle("line", 44, 88, w, 8)
+	love.graphics.rectangle("fill", 44, 84, w, 8)
+	love.graphics.rectangle("line", 44, 84, w, 8)
 end
 
 return ScoreBar

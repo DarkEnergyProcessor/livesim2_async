@@ -41,8 +41,8 @@ function ScoreEclipseF.Draw()
 
 	if ScoreEclipseF.BarDataStats then
 		love.graphics.setColor(1, 1, 1, bar_data.opacity * DEPLS.LiveOpacity)
-		love.graphics.rectangle("fill", 44, 88, 872, 8)
-		love.graphics.rectangle("line", 44, 88, 872, 8)
+		love.graphics.rectangle("fill", 44, 84, 872, 8)
+		love.graphics.rectangle("line", 44, 84, 872, 8)
 	end
 end
 
