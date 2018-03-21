@@ -156,13 +156,6 @@ ls2.setstreamwrapper {
 local LuaStoryboard = require("luastoryboard2")
 LuaStoryboard._SetAquaShine(AquaShine)
 
-----------------------
--- Certificate List --
-----------------------
-if not(love.filesystem.getInfo("cacert.pem")) then
-	assert(love.filesystem.write("cacert.pem", assert(love.filesystem.read("ca_cert.pem"))))
-end
-
 ----------------------------
 -- Force Create Directory --
 ----------------------------
