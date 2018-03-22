@@ -76,7 +76,31 @@ local PauseOverlayButton = AquaShine.Composition.Create {
 			return this:_draw_text()
 		end,
 		click = function(this)
-			DEPLS.KeyReleased("escape")
+			return DEPLS.KeyReleased("escape")
+		end
+	},
+	-- Restart button
+	{
+		x = 416, y = 444, w = 128, h = 48,
+		_draw_text = function(this)
+			love.graphics.setColor(1, 1, 1, 0.5)
+			love.graphics.setFont(PauseScreen.Font)
+			love.graphics.print("Restart", 3, 6)
+		end,
+		draw = function(this)
+			love.graphics.setColor(1, 28/255, 124/255, 0.5)
+			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
+			return this:_draw_text()
+		end,
+		draw_se = function(this)
+			love.graphics.setColor(1, 113/255, 173/255, 0.5)
+			love.graphics.rectangle("fill", 0, 0, this.w, this.h)
+			love.graphics.setColor(1, 28/255, 124/255, 0.5)
+			love.graphics.rectangle("line", 0, 0, this.w, this.h)
+			return this:_draw_text()
+		end,
+		click = function(this)
+			return DEPLS.KeyReleased("backspace")
 		end
 	}
 }
