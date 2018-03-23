@@ -20,11 +20,11 @@ function NoteIcon.Update()
 	NoteIcon.Scale = 0
 
 	for i = 1, 4 do
-		NoteIcon.Scale = NoteIcon.Scale + math.abs(smp[i][1]) + math.abs(smp[i][2])
+		NoteIcon.Scale = NoteIcon.Scale + math.abs(smp[i][1]) ^ 2 + math.abs(smp[i][2]) ^ 2
 	end
 
-	NoteIcon.Scale = NoteIcon.Scale / 32 -- 16 samples * 2 channels
-	NoteIcon.Scale = 0.47 + NoteIcon.Scale * 0.25 -- Min is 0.47, max is 0.72
+	NoteIcon.Scale = math.min(math.sqrt(NoteIcon.Scale / 32), 1) -- 16 samples * 2 channels
+	NoteIcon.Scale = 0.47 + NoteIcon.Scale * 0.35 -- Min is 0.47, max is 0.72
 end
 
 function NoteIcon.Draw()

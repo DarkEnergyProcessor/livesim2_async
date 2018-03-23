@@ -305,9 +305,9 @@ for _, f in ipairs(love.filesystem.getDirectoryItems("noteloader/")) do
 	if f:find("load_", 1, true) == 1 and select(2, f:find(".lua", 4, true)) == #f then
 		local loader = assert(love.filesystem.load("noteloader/"..f))(AquaShine, NoteLoader, class)
 		local dest = loader.ProjectLoader and NoteLoader.ProjectLoaders or NoteLoader.FileLoaders
-		
+
 		dest[#dest + 1] = loader
-		
+
 		AquaShine.Log("NoteLoader2", "Registered note loader %s", loader.GetLoaderName())
 	end
 end

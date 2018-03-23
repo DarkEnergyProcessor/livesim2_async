@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
+local love = require("love")
 local ls2 = require("ls2")
 local LuaStoryboard = require("luastoryboard2")
 ls2.has_ffmpegext = AquaShine.FFmpegExt

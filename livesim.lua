@@ -205,7 +205,7 @@ function DEPLS.Routines.CheckPausePosLovewing(x, y)
 end
 
 function DEPLS.LoadRoutines()
-	local uimode = "lovewing"
+	local uimode = AquaShine.LoadConfig("PLAY_UI", "sif")
 
 	if uimode == "lovewing" then
 		DEPLS.Routines.Update = DEPLS.Routines.UpdateLovewing

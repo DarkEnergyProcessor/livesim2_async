@@ -17,6 +17,12 @@ ScoreBar.Colors = {
 }
 ScoreBar.CurrentColor = ScoreBar.Colors[1]
 
+local function init()
+	ScoreBar.Glow = AquaShine.LoadImage("assets/image/lovewing/glow_score.png")
+
+	return ScoreBar
+end
+
 function ScoreBar.Update()
 	if ScoreUpdate.CurrentScore >= ScoreData[4] then
 		-- S score
@@ -45,6 +51,7 @@ function ScoreBar.Draw()
 	love.graphics.setColor(ScoreBar.CurrentColor[1], ScoreBar.CurrentColor[2], ScoreBar.CurrentColor[3], DEPLS.LiveOpacity)
 	love.graphics.rectangle("fill", 44, 84, w, 8)
 	love.graphics.rectangle("line", 44, 84, w, 8)
+	love.graphics.draw(ScoreBar.Glow, 44, 84, 0, 1, 1, 44, 44)
 end
 
-return ScoreBar
+return init()

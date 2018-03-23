@@ -124,6 +124,13 @@ local SettingSelection = {
 		Type = "switch",
 		On = 1,
 		Off = 0
+	},
+	{
+		Name = "PLAY_UI", Default = "sif",
+		Caption = "Lovewing UI",
+		Type = "switch",
+		On = "lovewing",
+		Off = "sif"
 	}
 }
 

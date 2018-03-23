@@ -9,6 +9,7 @@ local LiveHeader = {}
 local function init()
 	LiveHeader.Venera = AquaShine.LoadFont("Venera-700.otf", 14)
 	LiveHeader.Pause = AquaShine.LoadImage("assets/image/lovewing/pause.png")
+	LiveHeader.Stamina = AquaShine.LoadImage("assets/image/lovewing/circ.png")
 
 	return LiveHeader
 end
@@ -29,6 +30,8 @@ function LiveHeader.DrawPause()
 end
 
 function LiveHeader.Draw()
+	love.graphics.setColor(1, 1, 1)
+	love.graphics.draw(LiveHeader.Stamina, 480, 160, 0, 0.75, 0.75, 75, 75)
 	love.graphics.setColor(1, 56/255, 2/255, DEPLS.LiveOpacity)
 	love.graphics.circle("fill", 121, 72, 7)
 	love.graphics.circle("line", 121, 72, 7)
