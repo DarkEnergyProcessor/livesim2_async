@@ -101,8 +101,6 @@ end
 -- loaded late. But it doesn't affect UI (Lovewing or SIF)
 -- so it's good to load it early.
 
--- Tap accuracy display routine
-DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/judgement.lua"))(DEPLS, AquaShine)
 -- Spot effect
 DEPLS.Routines.SpotEffect = assert(love.filesystem.load("livesim/spot_effect.lua"))(DEPLS, AquaShine)
 -- Live show complete animation routine (incl. FULLCOMBO)
@@ -121,6 +119,8 @@ DEPLS.Routines.PauseScreen = assert(love.filesystem.load("livesim/pause.lua"))(D
 function DEPLS.LoadRoutinesSIF()
 	-- Live header
 	DEPLS.Routines.LiveHeader = assert(love.filesystem.load("livesim/liveheader.lua"))(DEPLS, AquaShine)
+	-- Tap accuracy display routine
+	DEPLS.Routines.PerfectNode = assert(love.filesystem.load("livesim/judgement.lua"))(DEPLS, AquaShine)
 	-- Circletap aftertap effect namespace
 	DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("livesim/circletap_effect.lua"))(DEPLS, AquaShine)
 	-- Combo counter effect namespace
@@ -142,6 +142,8 @@ end
 function DEPLS.LoadRoutinesLovewing()
 	-- Live header
 	DEPLS.Routines.LiveHeader = assert(love.filesystem.load("lovewing/liveheader.lua"))(DEPLS, AquaShine)
+	-- Tap accuracy display routine
+	DEPLS.Routines.PerfectNode = assert(love.filesystem.load("lovewing/judgement.lua"))(DEPLS, AquaShine)
 	-- Circletap aftertap effect namespace
 	DEPLS.Routines.CircleTapEffect = assert(love.filesystem.load("lovewing/circletap_effect.lua"))(DEPLS, AquaShine)
 	-- Combo counter effect namespace
@@ -206,9 +208,7 @@ function DEPLS.Routines.CheckPausePosLovewing(x, y)
 end
 
 function DEPLS.LoadRoutines()
-	local uimode = AquaShine.LoadConfig("PLAY_UI", "sif")
-
-	if uimode == "lovewing" then
+	if DEPLS.LiveUI == "lovewing" then
 		DEPLS.Routines.Update = DEPLS.Routines.UpdateLovewing
 		DEPLS.Routines.Draw = DEPLS.Routines.DrawLovewing
 		DEPLS.Routines.CheckPausePos = DEPLS.Routines.CheckPausePosLovewing
@@ -630,8 +630,18 @@ end
 --! @brief Get the screen dimensions
 --! @returns Screen dimensions
 function DEPLS.StoryboardFunctions.GetScreenDimensions()
-	return DEPLS.PostShader:getDimensions()
+	return AquaShine.MainCanvas:getDimensions()
 end
+
+--! @brief Get the current live user interface
+--! @return Live user interface string
+function DEPLS.StoryboardFunctions.GetLiveUI()
+	return DEPLS.LiveUI
+end
+
+--! @brief Check if current simulator runs in desktop
+--! @return boolean
+DEPLS.StoryboardFunctions.IsDesktopSystem = AquaShine.IsDesktopSystem
 
 -----------------------------
 -- The Live simuator logic --
@@ -651,7 +661,7 @@ function DEPLS.DrawDebugInfo()
 	local status = love.graphics.getStats()
 	local sample = DEPLS.StoryboardFunctions.GetCurrentAudioSample()[1]
 	local text = string.format([[
-%d FPS
+%d FPS LOVE %s
 RENDERER = %s %s
 DRAWCALLS = %d
 TEXTUREMEMORY = %d Bytes
@@ -668,7 +678,7 @@ AUDIO_SAMPLE = (%.2f) %5.2f, %5.2f
 REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]		, love.timer.getFPS(), AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls, status.texturememory
+]]		, love.timer.getFPS(), love._version, AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls, status.texturememory
 		, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
 		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity * 255
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
@@ -736,6 +746,7 @@ function DEPLS.Start(argv)
 	AquaShine.DisableSleep()
 	AquaShine.DisableTouchEffect()
 	EffectPlayer.Clear()
+	DEPLS.LiveUI = AquaShine.LoadConfig("PLAY_UI", "sif")
 
 	-- Create canvas
 	DEPLS.Resize()
@@ -949,55 +960,38 @@ function DEPLS.Start(argv)
 		for i = 1, #notes_list do
 			s_score = s_score + (notes_list[i].effect > 10 and 370 or 739)
 		end
-		
+
 		DEPLS.ScoreData[1] = math.floor(s_score * 0.285521 + 0.5)
 		DEPLS.ScoreData[2] = math.floor(s_score * 0.71448 + 0.5)
 		DEPLS.ScoreData[3] = math.floor(s_score * 0.856563 + 0.5)
 		DEPLS.ScoreData[4] = s_score
 	end
-	
+
 	-- BeatmapAudio is actually SoundData, LiveAudio is the real Source
 	if DEPLS.Sound.BeatmapAudio then
 		DEPLS.Sound.LiveAudio = love.audio.newSource(DEPLS.Sound.BeatmapAudio)
 	end
-	
+
 	----------------------
 	-- Load image start --
 	----------------------
 
 	-- Load base routines, handles whenever it uses SIF or Lovewing UI
 	DEPLS.LoadRoutines()
-	
+
 	-- Load background if no storyboard present
 	if not(DEPLS.StoryboardHandle) and not(custom_background) then
 		DEPLS.BackgroundImage[0][1] = AquaShine.LoadImage("assets/image/background/liveback_"..BackgroundID..".png")
-		
+
 		for i = 1, 4 do
 			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("assets/image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
 		end
 	end
-	
-	-- Tap accuracy image
-	DEPLS.Images.Perfect = AquaShine.LoadImage("assets/image/live/ef_313_004_w2x.png")
-	DEPLS.Images.Great = AquaShine.LoadImage("assets/image/live/ef_313_003_w2x.png")
-	DEPLS.Images.Good = AquaShine.LoadImage("assets/image/live/ef_313_002_w2x.png")
-	DEPLS.Images.Bad = AquaShine.LoadImage("assets/image/live/ef_313_001_w2x.png")
-	DEPLS.Images.Miss = AquaShine.LoadImage("assets/image/live/ef_313_000_w2x.png")
-		DEPLS.Routines.PerfectNode.Center = {
-		[DEPLS.Images.Perfect] = {198, 38},
-		[DEPLS.Images.Great] = {147, 35},
-		[DEPLS.Images.Good] = {127, 35},
-		[DEPLS.Images.Bad] = {86, 33},
-		[DEPLS.Images.Miss] = {93, 30}
-	}
-	DEPLS.Routines.PerfectNode.Image = DEPLS.Images.Perfect
-	-- Initialize tap accuracy routine
-	DEPLS.Routines.PerfectNode.Draw()
-	
+
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 	DEPLS.ErrorFont = AquaShine.LoadFont("MTLmr3m.ttf", 14)
-	
+
 	-- Set NoteLoader object
 	DEPLS.NoteLoaderObject = noteloader_data
 end

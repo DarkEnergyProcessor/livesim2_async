@@ -22,6 +22,8 @@ function LiveHeader.Update()
 			LiveHeader.BeatmapName = LiveHeader.BeatmapName:sub(1, 22).."..."
 		end
 	end
+
+	LiveHeader.NotesString = string.format("Notes %d/%d", DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.TotalNotes)
 end
 
 function LiveHeader.DrawPause()
@@ -30,15 +32,15 @@ function LiveHeader.DrawPause()
 end
 
 function LiveHeader.Draw()
-	love.graphics.setColor(1, 1, 1)
+	love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
 	love.graphics.draw(LiveHeader.Stamina, 480, 160, 0, 0.75, 0.75, 75, 75)
 	love.graphics.setColor(1, 56/255, 2/255, DEPLS.LiveOpacity)
-	love.graphics.circle("fill", 121, 72, 7)
-	love.graphics.circle("line", 121, 72, 7)
+	love.graphics.circle("fill", 51, 72, 7)
+	love.graphics.circle("line", 51, 72, 7)
 	love.graphics.setFont(LiveHeader.Venera)
-	love.graphics.print(LiveHeader.BeatmapName, 131, 62)
+	love.graphics.print(LiveHeader.BeatmapName, 62, 62)
 	love.graphics.setColor(1, 252/255, 2/255, DEPLS.LiveOpacity)
-	love.graphics.print(tostring(DEPLS.NoteManager.NoteRemaining), 44, 62)
+	love.graphics.print(LiveHeader.NotesString, 62, 48)
 	love.graphics.setColor(58/255, 244/255, 102/255)
 	love.graphics.print(DEPLS.AutoPlay and "Autoplay" or "Live!", 800, 62)
 end

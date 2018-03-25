@@ -44,14 +44,14 @@ function complex.to( num )
       end
       local real,imag = tonumber( num[1] ),tonumber( num[2] )
       if real and imag then
-         return setmetatable( { real,imag }, complex_meta )
+         return complex.new ( real, imag )
       end
       return
    end
    -- check for number
    local isnum = tonumber( num )
    if isnum then
-      return setmetatable( { isnum,0 }, complex_meta )
+      return complex.new ( isnum, 0 )
    end
    if type( num ) == "string" then
       -- check for real and complex
@@ -75,7 +75,7 @@ function complex.to( num )
          end
          real = loadstring("return tonumber("..real..")")
          if real and imag then
-            return setmetatable( { real(),imag() }, complex_meta )
+            return complex.new( real(), imag() )
          end
          return
       end
@@ -83,14 +83,14 @@ function complex.to( num )
       local imag = string.match( num,"^([%-%+%*%^%d%./Ee]*)i$" )
       if imag then
          if imag == "" then
-            return setmetatable( { 0,1 }, complex_meta )
+            return complex.new( 0, 1 )
          elseif imag == "-" then
-            return setmetatable( { 0,-1 }, complex_meta )
+            return complex.new( 0, -1 )
          end
          if string.lower(string.sub(imag,1,1)) ~= "e" then
             imag = loadstring("return tonumber("..imag..")")
             if imag then
-               return setmetatable( { 0,imag() }, complex_meta )
+               return complex.new( 0, imag() )
             end
          end
          return
@@ -100,7 +100,7 @@ function complex.to( num )
       if real then
          real = loadstring( "return tonumber("..real..")" )
          if real then
-            return setmetatable( { real(),0 }, complex_meta )
+            return complex.new( real(), 0 )
          end
       end
    end
@@ -113,8 +113,9 @@ setmetatable( complex, { __call = function( _,num ) return complex.to( num ) end
 
 -- complex.new( real, complex )
 -- fast function to get a complex number, not invoking any checks
-function complex.new( ... )
-   return setmetatable( { ... }, complex_meta )
+function complex.new( r, i )
+   i = i or 0
+   return setmetatable( { r, i, r = r, i = i }, complex_meta )
 end
 
 -- complex.type( arg )
@@ -130,16 +131,16 @@ end
 -- r (radius) is a number
 -- phi (angle) must be in radians; e.g. [0 - 2pi]
 function complex.convpolar( radius, phi )
-   return setmetatable( { radius * math.cos( phi ), radius * math.sin( phi ) }, complex_meta )
+   return complex.new( radius * math.cos( phi ), radius * math.sin( phi ) )
 end
 
 -- complex.convpolardeg( r, phi )
 -- convert polar coordinates ( r*e^(i*phi) ) to carthesic complex number
 -- r (radius) is a number
--- phi must be in degrees; e.g. [0° - 360°]
+-- phi must be in degrees; e.g. [0ï¿½ - 360ï¿½]
 function complex.convpolardeg( radius, phi )
    phi = phi/180 * math.pi
-   return setmetatable( { radius * math.cos( phi ), radius * math.sin( phi ) }, complex_meta )
+   return complex.new( radius * math.cos( phi ), radius * math.sin( phi ) )
 end
 
 --// complex number functions only
@@ -185,7 +186,7 @@ end
 
 -- complex.polardeg( cx )
 -- from complex number to polar coordinates
--- output in degrees; [-180°,180°]
+-- output in degrees; [-180ï¿½,180ï¿½]
 -- returns r (radius), phi (angle)
 function complex.polardeg( cx )
    return math.sqrt( cx[1]^2 + cx[2]^2 ), math.atan2( cx[2], cx[1] ) / math.pi * 180
@@ -230,31 +231,31 @@ end
 -- complex.copy( cx )
 -- copy complex number
 function complex.copy( cx )
-   return setmetatable( { cx[1],cx[2] }, complex_meta )
+   return complex.new( cx[1],cx[2] )
 end
 
 -- complex.add( cx1, cx2 )
 -- add two numbers; cx1 + cx2
 function complex.add( cx1,cx2 )
-   return setmetatable( { cx1[1]+cx2[1], cx1[2]+cx2[2] }, complex_meta )
+   return complex.new( cx1[1]+cx2[1], cx1[2]+cx2[2] )
 end
 
 -- complex.sub( cx1, cx2 )
 -- subtract two numbers; cx1 - cx2
 function complex.sub( cx1,cx2 )
-   return setmetatable( { cx1[1]-cx2[1], cx1[2]-cx2[2] }, complex_meta )
+   return complex.new( cx1[1]-cx2[1], cx1[2]-cx2[2] )
 end
 
 -- complex.mul( cx1, cx2 )
 -- multiply two numbers; cx1 * cx2
 function complex.mul( cx1,cx2 )
-   return setmetatable( { cx1[1]*cx2[1] - cx1[2]*cx2[2],cx1[1]*cx2[2] + cx1[2]*cx2[1] }, complex_meta )
+   return complex.new( cx1[1]*cx2[1] - cx1[2]*cx2[2],cx1[1]*cx2[2] + cx1[2]*cx2[1] )
 end
 
 -- complex.mulnum( cx, num )
 -- multiply complex with number; cx1 * num
 function complex.mulnum( cx,num )
-   return setmetatable( { cx[1]*num,cx[2]*num }, complex_meta )
+   return complex.new( cx[1]*num,cx[2]*num )
 end
 
 -- complex.div( cx1, cx2 )
@@ -263,13 +264,13 @@ function complex.div( cx1,cx2 )
    -- get complex value
    local val = cx2[1]^2 + cx2[2]^2
    -- multiply cx1 with conjugate complex of cx2 and divide through val
-   return setmetatable( { (cx1[1]*cx2[1]+cx1[2]*cx2[2])/val,(cx1[2]*cx2[1]-cx1[1]*cx2[2])/val }, complex_meta )
+   return complex.new( (cx1[1]*cx2[1]+cx1[2]*cx2[2])/val,(cx1[2]*cx2[1]-cx1[1]*cx2[2])/val )
 end
 
 -- complex.divnum( cx, num )
 -- divide through a number
 function complex.divnum( cx,num )
-   return setmetatable( { cx[1]/num,cx[2]/num }, complex_meta )
+   return complex.new( cx[1]/num,cx[2]/num )
 end
 
 -- complex.pow( cx, num )
@@ -285,13 +286,13 @@ function complex.pow( cx,num )
       for i = 2,num do
          real,imag = real*cx[1] - imag*cx[2],real*cx[2] + imag*cx[1]
       end
-      return setmetatable( { real,imag }, complex_meta )
+      return complex.new( real,imag )
    end
    -- we calculate the polar complex number now
    -- since then we have the versatility to calc any potenz of the complex number
    -- then we convert it back to a carthesic complex number, we loose precision here
    local length,phi = math.sqrt( cx[1]^2 + cx[2]^2 )^num, math.atan2( cx[2], cx[1] )*num
-   return setmetatable( { length * math.cos( phi ), length * math.sin( phi ) }, complex_meta )
+   return complex.new( length * math.cos( phi ), length * math.sin( phi ) )
 end
 
 -- complex.sqrt( cx )
@@ -299,35 +300,35 @@ end
 function complex.sqrt( cx )
    local len = math.sqrt( cx[1]^2+cx[2]^2 )
    local sign = (cx[2]<0 and -1) or 1
-   return setmetatable( { math.sqrt((cx[1]+len)/2), sign*math.sqrt((len-cx[1])/2) }, complex_meta )
+   return complex.new( math.sqrt((cx[1]+len)/2), sign*math.sqrt((len-cx[1])/2) )
 end
 
 -- complex.ln( cx )
 -- natural logarithm of cx
 function complex.ln( cx )
-   return setmetatable( { math.log(math.sqrt( cx[1]^2 + cx[2]^2 )),
-      math.atan2( cx[2], cx[1] ) }, complex_meta )
+   return complex.new( math.log(math.sqrt( cx[1]^2 + cx[2]^2 )),
+      math.atan2( cx[2], cx[1] ) )
 end
 
 -- complex.exp( cx )
 -- exponent of cx (e^cx)
 function complex.exp( cx )
    local expreal = math.exp(cx[1])
-   return setmetatable( { expreal*math.cos(cx[2]), expreal*math.sin(cx[2]) }, complex_meta )
+   return complex.new( expreal*math.cos(cx[2]), expreal*math.sin(cx[2]) )
 end
 
 -- complex.conjugate( cx )
 -- get conjugate complex of number
 function complex.conjugate( cx )
-   return setmetatable( { cx[1], -cx[2] }, complex_meta )
+   return complex.new( cx[1], -cx[2] )
 end
 
 -- complex.round( cx [,idp] )
 -- round complex numbers, by default to 0 decimal points
 function complex.round( cx,idp )
    local mult = 10^( idp or 0 )
-   return setmetatable( { math.floor( cx[1] * mult + 0.5 ) / mult,
-      math.floor( cx[2] * mult + 0.5 ) / mult }, complex_meta )
+   return complex.new( math.floor( cx[1] * mult + 0.5 ) / mult,
+      math.floor( cx[2] * mult + 0.5 ) / mult )
 end
 
 --// metatable functions
@@ -355,7 +356,7 @@ complex_meta.__pow = function( cx,num )
    return complex.pow( cx,num )
 end
 complex_meta.__unm = function( cx )
-   return setmetatable( { -cx[1], -cx[2] }, complex_meta )
+   return complex.new(  -cx[1], -cx[2] )
 end
 complex_meta.__eq = function( cx1,cx2 )
    if cx1[1] == cx2[1] and cx1[2] == cx2[2] then

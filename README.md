@@ -87,6 +87,8 @@ Live Simulator: 2 is licensed under MIT License. See `LICENSE.md` for more detai
 Live Simulator: 2 uses Motoya L Maru font. Please see `LICENSE.MTLmr3m` for
 Motoya L Maru font license.
 
+Live Simulator: 2 uses Venera-700 font by Joe Prince and licensed under The Lost Type.
+
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 
 Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3 (or GNU LGPL, depending on used binaries). Windows version ships with FFmpeg 3.0 which is licensed under GNU LGPLv3 or later

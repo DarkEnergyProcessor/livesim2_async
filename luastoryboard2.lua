@@ -31,7 +31,7 @@ local function setup_env(story, lua)
 	-- Copy environment
 	local env = {
 		RequireDEPLSVersion = function(ver)
-			if ver < _G.DEPLS_VERSION then
+			if ver < _G.DEPLS_VERSION_NUMBER then
 				error("Incompatible storyboard!", 2)
 			end
 		end,
@@ -74,6 +74,7 @@ local function setup_env(story, lua)
 		DrawObject = love.graphics.draw,
 		DrawRectangle = love.graphics.rectangle,
 		DrawCircle = love.graphics.circle,
+		DrawEllipse = love.graphics.ellipse,
 		DrawArc = love.graphics.arc,
 		PrintText = love.graphics.print,
 		SetColor = function(r, g, b, a)
@@ -84,6 +85,12 @@ local function setup_env(story, lua)
 			end
 		end,
 		SetFont = love.graphics.setFont,
+		SetCanvas = function(canvas)
+			love.graphics.setCanvas(canvas or story.Canvas)
+		end,
+		SetBlendMode = love.graphics.setBlendMode,
+		SetShader = love.graphics.setShader,
+		ClearDrawing = love.graphics.clear,
 		LoadShader = love.graphics.newShader,
 		LoadFont = function(path, size)
 			if not(path) then
@@ -104,7 +111,8 @@ local function setup_env(story, lua)
 			end
 
 			return nil
-		end
+		end,
+		NewCanvas = love.graphics.newCanvas
 	}
 
 	for n, v in pairs(_G) do
@@ -147,9 +155,7 @@ local function setup_env(story, lua)
 			newVideo = env.LoadVideo,
 
 			setBlendMode = love.graphics.setBlendMode,
-			setCanvas = function(canvas)
-				love.graphics.setCanvas(canvas or story.Canvas)
-			end,
+			setCanvas = env.SetCanvas,
 			setColor = env.SetColor,
 			setColorMask = love.graphics.setColorMask,
 			setLineStyle = love.graphics.setLineStyle,

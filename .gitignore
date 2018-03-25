@@ -1,6 +1,1 @@
-Makefile 
 jit/
-external/
-make*
-ssl.lua
-https.lua
