@@ -6,6 +6,7 @@ local love = require("love")
 local AquaShine = ...
 local EffectPlayer = require("effect_player")
 local Yohane = require("Yohane")
+local TapSound = require("tap_sound")
 local DEPLS = {
 	ElapsedTime = 0,            -- Elapsed time, in milliseconds
 	DebugDisplay = false,
@@ -735,23 +736,24 @@ function DEPLS.Start(argv)
 	AquaShine.DisableSleep()
 	AquaShine.DisableTouchEffect()
 	EffectPlayer.Clear()
-	
+
 	-- Create canvas
 	DEPLS.Resize()
-	
+
 	-- Load tap sound. High priority
+	local tapIdx = TapSound[AquaShine.LoadConfig("TAP_SOUND", TapSound.Default)]
 	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008
-	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData("sound/SE_306.ogg", love.audio.newSource, "sound/SE_306.ogg", "static")
+	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData(tapIdx.Perfect, love.audio.newSource, tapIdx.Perfect, "static")
 	DEPLS.Sound.PerfectTap:setVolume(se_volume * (DEPLS.RenderingMode and 0.5 or 1))
-	DEPLS.Sound.GreatTap = AquaShine.GetCachedData("sound/SE_307.ogg", love.audio.newSource, "sound/SE_307.ogg", "static")
+	DEPLS.Sound.GreatTap = AquaShine.GetCachedData(tapIdx.Great, love.audio.newSource, tapIdx.Great, "static")
 	DEPLS.Sound.GreatTap:setVolume(se_volume)
-	DEPLS.Sound.GoodTap = AquaShine.GetCachedData("sound/SE_308.ogg", love.audio.newSource, "sound/SE_308.ogg", "static")
+	DEPLS.Sound.GoodTap = AquaShine.GetCachedData(tapIdx.Good, love.audio.newSource, tapIdx.Good, "static")
 	DEPLS.Sound.GoodTap:setVolume(se_volume)
-	DEPLS.Sound.BadTap = AquaShine.GetCachedData("sound/SE_309.ogg", love.audio.newSource, "sound/SE_309.ogg", "static")
+	DEPLS.Sound.BadTap = AquaShine.GetCachedData(tapIdx.Bad, love.audio.newSource, tapIdx.Bad, "static")
 	DEPLS.Sound.BadTap:setVolume(se_volume)
-	DEPLS.Sound.StarExplode = AquaShine.GetCachedData("sound/SE_326.ogg", love.audio.newSource, "sound/SE_326.ogg", "static")
+	DEPLS.Sound.StarExplode = AquaShine.GetCachedData(tapIdx.StarExplode, love.audio.newSource, tapIdx.StarExplode, "static")
 	DEPLS.Sound.StarExplode:setVolume(se_volume)
-	
+
 	-- Load notes image. High Priority
 	DEPLS.Images.Note = {
 		NoteEnd = AquaShine.LoadImage("assets/image/tap_circle/end_note.png"),

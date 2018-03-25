@@ -12,7 +12,7 @@ local function init()
 	ComboCounter.VeneraComboX = AquaShine.LoadFont("Venera-700.otf", 14)
 
 	ComboCounter.Scale = 1.5
-	ComboCounter.ScaleData = tween.new(250, ComboCounter, {Scale = 1})
+	ComboCounter.ScaleData = tween.new(250, ComboCounter, {Scale = 1}, "outSine")
 	ComboCounter.ScaleData:update(1000)
 
 	return ComboCounter

@@ -3,8 +3,9 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = love
 local AquaShine = ...
+local love = require("love")
+local TapSound = require("tap_sound")
 local Settings = {
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
@@ -109,6 +110,13 @@ local SettingSelection = {
 		Min = 0.5,
 		Max = 1,
 		Increment = 0.1
+	},
+	{
+		Name = "TAP_SOUND", Default = TapSound.Default,
+		Caption = "SE ID",
+		Type = "number",
+		Min = 1,
+		Max = #TapSound
 	},
 	{
 		Name = "SE_VOLUME", Default = 80,

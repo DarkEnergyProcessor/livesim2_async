@@ -39,6 +39,8 @@ function LiveHeader.Draw()
 	love.graphics.print(LiveHeader.BeatmapName, 131, 62)
 	love.graphics.setColor(1, 252/255, 2/255, DEPLS.LiveOpacity)
 	love.graphics.print(tostring(DEPLS.NoteManager.NoteRemaining), 44, 62)
+	love.graphics.setColor(58/255, 244/255, 102/255)
+	love.graphics.print(DEPLS.AutoPlay and "Autoplay" or "Live!", 800, 62)
 end
 
 return init()
