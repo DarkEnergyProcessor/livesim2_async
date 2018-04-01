@@ -17,7 +17,17 @@ return {
 		Great = "sound/time_lapse/00004.wav",
 		Good = "sound/time_lapse/00002.wav",
 		Bad = "sound/time_lapse/00003.wav",
+		LongHold = "sound/time_lapse/00000.wav",
 		StarExplode = "sound/SE_326.ogg" -- except this :P
+	},
+	-- Girls Band Party tap SFX, but with Michelle remix :P
+	{
+		Perfect = "sound/time_lapse/michelle/00005.wav",
+		Great = "sound/time_lapse/michelle/00004.wav",
+		Good = "sound/time_lapse/michelle/00002.wav",
+		Bad = "sound/time_lapse/michelle/00003.wav",
+		LongHold = "sound/time_lapse/michelle/00000.wav",
+		StarExplode = "sound/SE_326.ogg" -- As usual, this one is usual SIF
 	},
 
 	Default = 1
