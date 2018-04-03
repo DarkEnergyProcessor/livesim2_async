@@ -52,7 +52,7 @@ local AquaShine = {
 	-- Preload entry points
 	PreloadedEntryPoint = {},
 	-- LOVE 0.11 (NewLove) or LOVE 0.10
-	NewLove = love._version >= "0.11.0"
+	NewLove = love._version >= "11.0"
 }
 
 local ScreenshotThreadCode = [[
@@ -332,7 +332,7 @@ end
 --! @param imagedata Returns ImageData instead of Image object?
 --! @returns New Image/ImageData object
 function AquaShine.ComposeImage(w, h, layers, imagedata)
-	local canvas = love.graphics.newCanvas(w, h)
+	local canvas = love.graphics.newCanvas(w, h, {dpiscale = 1})
 
 	love.graphics.push("all")
 	love.graphics.setCanvas(canvas)
@@ -692,195 +692,6 @@ function AquaShine.MainLoop()
 	end
 end
 
--- Some LOVE 0.11.x functions in LOVE 0.10.x
--- Game which uses AquaShine expects to use LOVE 0.11 API at some degree
-function AquaShine.NewLoveCompat()
-	local method = debug.getregistry()
-
-	-- love.errorhandler is love.errhand
-	love.errorhandler = love.errhand
-
-	-- love.timer.step returns deltaT
-	local step_time = love.timer.step
-	function love.timer.step()
-		step_time()
-		return love.timer.getDelta()
-	end
-
-	-- 0..1 range for love.graphics.setColor
-	local setColor = love.graphics.setColor
-	function love.graphics.setColor(r, g, b, a)
-		if type(r) == "table" then
-			return setColor(r[1] * 255, r[2] * 255, r[3] * 255, (r[4] or 1) * 255)
-		else
-			return setColor(r * 255, g * 255, b * 255, (a or 1) * 255)
-		end
-	end
-
-	-- 0..1 range for love.graphics.getColor
-	local getColor = love.graphics.getColor
-	function love.graphics.getColor()
-		local r, g, b, a = getColor()
-		return r / 255, g / 255, b / 255, a / 255
-	end
-
-	-- 0..1 range for love.graphics.clear
-	local clear = love.graphics.clear
-	function love.graphics.clear(r, g, b, a, ...)
-		if type(r) == "table" then
-			-- Canvas clear (table)
-			local tablist = {r, g, b, a}
-
-			for i = 1, select("#", ...) do
-				tablist[i + 4] = select(i, ...)
-			end
-
-			for i, v in ipairs(tablist) do
-				local t = {}
-
-				t[1] = v[1] * 255
-				t[2] = v[2] * 255
-				t[3] = v[3] * 255
-				t[4] = (v[4] or 1) * 255
-				tablist[i] = t
-			end
-
-			return clear(unpack(tablist))
-		elseif r then
-			return clear(r * 255, g * 255, b * 255, (a or 1) * 255)
-		else
-			return clear()
-		end
-	end
-
-	-- 0..1 range for SpriteBatch:set/getColor
-	local SpriteBatch = method.SpriteBatch
-	local SpriteBatch_getColor = SpriteBatch.getColor
-	local SpriteBatch_setColor = SpriteBatch.setColor
-	function SpriteBatch.getColor(this)
-		local r, g, b, a = SpriteBatch_getColor(this)
-		return r / 255, g / 255, b / 255, a / 255
-	end
-
-	function SpriteBatch.setColor(this, r, g, b, a)
-		if r then
-			return SpriteBatch_setColor(this, r * 255, g * 255, b * 255, (a or 1) * 255)
-		else
-			return SpriteBatch_setColor(this)
-		end
-	end
-
-	-- 0..1 color range for Text:add/addf
-	local Text = method.Text
-	local Text_add = Text.add
-	local Text_addf = Text.addf
-
-	local function patchTextString(textstring)
-		local newtab = {}
-
-		for i = 1, #textstring, 2 do
-			-- First index is color
-			local col = textstring[i]
-			local newcol = {}
-			for j = 1, #col do
-				newcol[j] = col[j] * 255
-			end
-			newtab[#newtab + 1] = newcol
-			newtab[#newtab + 1] = textstring[i + 1]
-		end
-
-		return newtab
-	end
-
-	function Text.add(this, textstring, x, y, angle, sx, sy, ox, oy, kx, ky)
-		if type(textstring) == "table" then
-			textstring = patchTextString(textstring)
-		end
-
-		return Text_add(this, textstring, x, y, angle, sx, sy, ox, oy, kx, ky)
-	end
-
-	function Text.addf(this, textstring, wraplimit, alignmode, x, y, angle, sx, sy, ox, oy, kx, ky)
-		if type(textstring) == "table" then
-			textstring = patchTextString(textstring)
-		end
-
-		return Text_addf(this, textstring, wraplimit, alignmode, x, y, angle, sx, sy, ox, oy, kx, ky)
-	end
-
-	-- Image:replacePixels function
-	local Image = method.Image
-	function Image.replacePixels(this, imagedata)
-		local id = this:getData()
-
-		if id ~= imagedata then
-			id:paste(imagedata, 0, 0)
-		end
-
-		return this:refresh()
-	end
-
-	-- 0..1 range for ImageData:get/setPixel
-	local ImageData = method.ImageData
-	local ID_getPixel = ImageData.getPixel
-	local ID_setPixel = ImageData.setPixel
-
-	function ImageData.getPixel(this, x, y)
-		local r, g, b, a = ID_getPixel(this, x, y)
-		return r / 255, g / 255, b / 255, a / 255
-	end
-
-	function ImageData.setPixel(this, x, y, r, g, b, a)
-		return ID_setPixel(this, x, y, r * 255, g * 255, b * 255, a * 255)
-	end
-
-	-- 0..1 range for ImageData:mapPixel
-	local ID_mapPixel = ImageData.mapPixel
-
-	function ImageData.mapPixel(this, func, s, t, p, q)
-		return ID_mapPixel(this, function(x, y, r, g, b, a)
-			local ar, ag, ab, aa = func(x, y, r / 255, g / 255, b / 255, a / 255)
-			return ar * 255, ag * 255, ab * 255, aa * 255
-		end, s, t, p, q)
-	end
-
-	-- SoundData:getChannelCount function
-	if method.SoundData then
-		method.SoundData.getChannelCount = method.SoundData.getChannels
-	end
-
-	-- love.data emulation
-	love.data = {}
-
-	-- love.math.decompress is deprecated, replaced by love.data.decompress
-	function love.data.decompress(data_or_string, fmt, data)
-		-- Notice the argument order
-		if data_or_string == "data" then
-			return love.filesystem.newFileData(love.math.decompress(data, fmt), "")
-		elseif data_or_string == "string" then
-			return love.math.decompress(data, fmt)
-		else
-			error("Invalid return type: expected 'data' or 'string'", 2)
-		end
-	end
-
-	-- love.math.compress is deprecated, replaced by love.data.compress
-	function love.data.compress(data_or_string, fmt, data, level)
-		if data_or_string == "data" then
-			return love.filesystem.newFileData(love.math.compress(data, fmt, level), "")
-		elseif data_or_string == "string" then
-			return love.math.compress(data, fmt, level)
-		else
-			error("Invalid return type: expected 'data' or 'string'", 2)
-		end
-	end
-
-	-- Shader:hasUniform
-	function method.Shader.hasUniform(shader, name)
-		return not(not(shader:getExternVariable(name)))
-	end
-end
-
 ------------------------------------
 -- AquaShine love.* override code --
 ------------------------------------
@@ -1078,52 +889,8 @@ end
 -- When running low memory
 love.lowmemory = jit.flush
 
--- love.filesystem always loaded, so put it outside of AquaShine.NewLoveCompat
-if not(AquaShine.NewLove) then
-	-- love.filesystem.getInfo combines these:
-	-- * love.filesystem.exists
-	-- * love.filesystem.isDirectory
-	-- * love.filesystem.isFile
-	-- * love.filesystem.isSymlink
-	-- * love.filesystem.getSize
-	-- * love.filesystem.getLastModified
-	function love.filesystem.getInfo(dir, t)
-		if love.filesystem.exists(dir) then
-			t = t or {}
-
-			-- Type
-			if love.filesystem.isFile(dir) then
-				t.type = "file"
-			elseif love.filesystem.isDirectory(dir) then
-				t.type = "directory"
-			elseif love.filesystem.isSymlink(dir) then
-				t.type = "symlink"
-			else
-				t.type = "other"
-			end
-
-			if t.type == "directory" then
-				t.size = 0
-			else
-				t.size = love.filesystem.getSize(dir)
-			end
-
-			t.modtime = love.filesystem.getLastModified(dir)
-			return t
-		end
-
-		return nil
-	end
-end
-
 -- Initialization
 function love.load(arg)
-	-- If we're running LOVE 0.10, add some functions
-	-- which present in LOVE 0.11
-	if not(AquaShine.NewLove) then
-		AquaShine.NewLoveCompat()
-	end
-
 	function love.handlers.filedropped(file)
 		FileDroppedList[#FileDroppedList + 1] = file
 	end
@@ -1249,7 +1016,7 @@ local function vsync(v)
 	if AquaShine.NewLove then
 		return v == true and 1 or 0
 	end
-	
+
 	return v
 end
 
@@ -1294,7 +1061,7 @@ function love.conf(t)
 	t.window.vsync          = vsync(not(gcfgb("novsync")))
 	t.window.msaa           = gcfgn("msaa", 0)
 	t.window.display        = 1
-	t.window.highdpi        = false
+	t.window.highdpi        = true -- It's always enabled in Android anyway.
 	t.window.x              = nil
 	t.window.y              = nil
 	

@@ -45,10 +45,10 @@ This Live Simulator uses these external libraries:
 	* Lua FFT library		  	License
 	* Yohane FLSH Abstraction  	License
 	* FFmpeg (when available)  	License
-	* LuaSec				   	License
-	* OpenSSL (need by LuaSec)	 License
 
-LOVE Version:				  ]]..love._version..[[
+
+
+LOVE Version:				  ]]..love._version..[[ - ]]..love._version_codename..[[
 
 Repository:					https://github.com/MikuAuahDark/livesim2
 Live Simulator: 2 Version:	 ]].._G.DEPLS_VERSION

@@ -753,7 +753,7 @@ function DEPLS.Start(argv)
 
 	-- Load tap sound. High priority
 	local tapIdx = TapSound[AquaShine.LoadConfig("TAP_SOUND", TapSound.Default)]
-	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.008
+	local se_volume = AquaShine.LoadConfig("SE_VOLUME", 80) * 0.01 * tapIdx.VolumeMultipler
 	DEPLS.Sound.PerfectTap = AquaShine.GetCachedData(tapIdx.Perfect, love.audio.newSource, tapIdx.Perfect, "static")
 	DEPLS.Sound.PerfectTap:setVolume(se_volume * (DEPLS.RenderingMode and 0.5 or 1))
 	DEPLS.Sound.GreatTap = AquaShine.GetCachedData(tapIdx.Great, love.audio.newSource, tapIdx.Great, "static")

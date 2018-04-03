@@ -27,6 +27,7 @@ The font used in this splash is "Handy Andy" by www.andrzejgdula.com]]
 local current_module = (...):gsub("%.init$", "")
 local current_folder = current_module:gsub("%.", "/")
 
+local love = require("love")
 local timer = require(current_module .. ".timer")
 
 local colors = {
@@ -48,6 +49,8 @@ function splashlib.new(init)
   init = init or {}
   local self = {}
   local width, height = love.graphics.getDimensions()
+  local pxw, pxh = love.graphics.getPixelDimensions()
+  local dpi = love.graphics.getDPIScale()
 
   self.background = init.background == nil and colors.bg or init.background
   self.delay_before = init.delay_before or 0.3
@@ -190,7 +193,7 @@ function splashlib.new(init)
   }
   ]]
 
-  self.canvas = love.graphics.newCanvas(width, height)
+  self.canvas = love.graphics.newCanvas(width, height, {dpiscale = 1})
 
   self.elapsed = 0
   self.alpha = 1
@@ -222,7 +225,7 @@ function splashlib.new(init)
   }
   self.logo.width, self.logo.height = self.logo.sprite:getDimensions()
 
-  safesend(self.maskshader, "radius",  width*height)
+  safesend(self.maskshader, "radius",  pxw * pxh)
   safesend(self.maskshader, "lighten", 0)
   safesend(self.maskshader, "shadow",  0)
   safesend(self.maskshader, "blur",    1)
@@ -246,7 +249,7 @@ function splashlib.new(init)
 
     -- hackety hack: execute timer to update shader every frame
     timer.every(0, function()
-      safesend(self.maskshader, "radius",  self.stripes.radius)
+      safesend(self.maskshader, "radius",  self.stripes.radius * dpi)
       safesend(self.maskshader, "lighten", self.stripes.lighten)
       safesend(self.maskshader, "shadow",  self.stripes.shadow)
       safesend(self.textshader, "alpha",   self.text.alpha)

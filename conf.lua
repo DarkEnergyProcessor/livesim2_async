@@ -30,7 +30,7 @@ assert(love.filesystem.load("AquaShine/AquaShine.lua"))({
 	-- Disabling entry preloading allows code that changed to be reflected without restarting
 	-- Enabling entry preloading increases the performance slightly but increase loading times slightly
 	EntryPointPreload = true,
-	
+
 	-- If this table present, letterboxing is enabled.
 	-- Otherwise, if it's not present, letterboxing is disabled.
 	Letterboxing = {
@@ -39,13 +39,13 @@ assert(love.filesystem.load("AquaShine/AquaShine.lua"))({
 		-- Logical screen height. Letterboxed if necessary.
 		LogicalHeight = 640
 	},
-	
+
 	-- LOVE-specific configuration
 	LOVE = {
 		-- The name of the save directory
 		Identity = "DEPLS",
 		-- The LÖVE version this game was made for
-		Version = "0.10.1",
+		Version = "11.0",
 		-- Enable external storage for Android
 		AndroidExternalStorage = true,
 		-- Window title name

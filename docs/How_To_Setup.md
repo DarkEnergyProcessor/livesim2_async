@@ -1,7 +1,7 @@
 How To Start
 ============
 
-Live Simulator: 2 requires minimum LOVE 0.10.1 (LOVE 0.11.0 is also supported). Most of the time this thing is already taken care
+Live Simulator: 2 requires LOVE 11.0. Most of the time this thing is already taken care
 by the distributed version, but you need to take this into account if you're under Linux.
 
 System Requirements
@@ -23,13 +23,13 @@ Before you proceed, make sure your device comply these requirements
 
 * Mobile: OpenGLES 2 capable graphics card.
 
-* Android: Android v4.0 or above (x86 is natively supported). **ARMv5 and ARMv6 CPUs is not supported**
+* Android: Android v4.1 or above (x86 is natively supported). **ARMv5 and ARMv6 CPUs is not supported**
 
 * iOS: Live Simulator: 2 only tested under iOS 9, but older version should be possible, down to iOS 6. **Jailbreak needed**
 
 \* More complex storyboard system requires more CPU, GPU, and RAM
 
-Getting LOVE2D and run Live Simulator: 2
+Getting LOVE and run Live Simulator: 2
 ----------------------------------------
 
 If your device comply with requirements above, then proceed.
