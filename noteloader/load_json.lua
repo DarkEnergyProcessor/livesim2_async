@@ -45,15 +45,10 @@ function JSONLoader.LoadNoteFromTable(bm, file)
 end
 
 function JSONLoader.LoadNoteFromFilename(f, file)
-	local fs, bm, loader
-	
 	assert(f:read(30):find("%s*{"), "Not a valid JSON beatmap")
 	f:seek(0)
-	
-	fs = f:read()
-	bm = JSON:decode(fs)
-	
-	return JSONLoader.LoadNoteFromTable(bm, file)
+
+	return JSONLoader.LoadNoteFromTable(JSON:decode(f:read()), file)
 end
 
 return JSONLoader

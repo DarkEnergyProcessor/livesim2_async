@@ -71,7 +71,7 @@ public:
 	/// Returns: 1 = old, 2 = v5, 0 = no enforcing
 	virtual int GetNotesStyle();
 	
-	virtual love::sound::SoundData* GetBeatmapAudio();
+	virtual love::sound::Decoder* GetBeatmapAudio();
 	virtual love::sound::SoundData* GetLiveClearSound();
 	
 	/// \brief Get star difficulty information.
@@ -131,7 +131,7 @@ function NoteLoader._GetBasenameWOExt(file)
 end
 
 function NoteLoader._LoadDefaultAudioFromFilename(file)
-	return AquaShine.LoadAudio("audio/"..NoteLoader._GetBasenameWOExt(file)..".wav")
+	return AquaShine.LoadAudio("audio/"..NoteLoader._GetBasenameWOExt(file)..".wav", false, "decoder")
 end
 
 --! @brief Load note object from specificed path

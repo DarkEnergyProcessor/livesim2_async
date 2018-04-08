@@ -26,12 +26,7 @@ function SIFBeatmap.GetScoreInformation(this)
 end
 
 function SIFBeatmap.GetBeatmapAudio(this)
-	if not(this.song_file_loaded) then
-		this.song_file = AquaShine.LoadAudio("audio/"..this.name..".wav")
-		this.song_file_loaded = true
-	end
-	
-	return this.song_file
+	return AquaShine.LoadAudio("audio/"..this.name..".wav", false, "decoder")
 end
 
 return function(sif, file)

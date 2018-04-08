@@ -51,16 +51,11 @@ function LLPBeatmap.GetBeatmapTypename()
 end
 
 function LLPBeatmap.GetBeatmapAudio(this)
-	if not(this.song_file_loaded) then
-		if this.llp.audiofile then
-			this.song_file = AquaShine.LoadAudio("audio/"..this.llp.audiofile..".wav")
-		end
-		
-		this.song_file = this.song_file or NoteLoader._LoadDefaultAudioFromFilename(file)
-		this.song_file_loaded = true
+	if this.llp.audiofile then
+		return AquaShine.LoadAudio("audio/"..this.llp.audiofile..".wav", false, "decoder")
 	end
-	
-	return this.song_file
+
+	return NoteLoader._LoadDefaultAudioFromFilename(file)
 end
 
 return function(json, filename)

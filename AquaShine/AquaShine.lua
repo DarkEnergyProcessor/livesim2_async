@@ -22,9 +22,11 @@
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
 
-local jit = _G.jit
+local jit = require("jit")
 local table = require("table")
 local love = require("love")
+
+assert(love._version >= "11.0", "LOVE 0.10.2 and earlier are no longer supported!")
 
 if not(pcall(require, "table.new")) then
 	function table.new()
@@ -51,8 +53,9 @@ local AquaShine = {
 	CacheTable = setmetatable({}, weak_table),
 	-- Preload entry points
 	PreloadedEntryPoint = {},
-	-- LOVE 0.11 (NewLove) or LOVE 0.10
-	NewLove = love._version >= "11.0"
+	-- LOVE 11.0 (NewLove) or LOVE 0.10.
+	-- Always true, since we stop supporting 0.10.2
+	NewLove = true
 }
 
 local ScreenshotThreadCode = [[
@@ -260,21 +263,31 @@ end
 --! @param path The audio path
 --! @param noorder Force existing extension?
 --! @returns Audio handle or `nil` plus error message on failure
-function AquaShine.LoadAudio(path, noorder)
+function AquaShine.LoadAudio(path, noorder, type)
 	local s, token_image
 
 	if not(noorder) then
-		local a = AquaShine.LoadAudio(substitute_extension(path, "wav"), true)
+		local a = AquaShine.LoadAudio(substitute_extension(path, "wav"), true, type)
 
 		if a == nil then
-			a = AquaShine.LoadAudio(substitute_extension(path, "ogg"), true)
+			a = AquaShine.LoadAudio(substitute_extension(path, "ogg"), true, type)
 
 			if a == nil then
-				return AquaShine.LoadAudio(substitute_extension(path, "mp3"), true)
+				return AquaShine.LoadAudio(substitute_extension(path, "mp3"), true, type)
 			end
 		end
 
 		return a
+	end
+
+	if type == "decoder" then
+		s, token_image = pcall(love.sound.newDecoder, path)
+
+		if s then
+			return token_image
+		else
+			return nil, token_image
+		end
 	end
 
 	s, token_image = pcall(love.sound.newSoundData, path)
@@ -676,22 +689,6 @@ function AquaShine.StepLoop()
 	end
 end
 
-function AquaShine.MainLoop()
-	AquaShine.MainFont = AquaShine.LoadFont(nil, 14)
-
-	if AquaShine.NewLove then
-		return AquaShine.StepLoop
-	end
-
-	while true do
-		AquaShine.StepLoop()
-
-		if AquaShine.ExitStatus then
-			return AquaShine.ExitStatus
-		end
-	end
-end
-
 ------------------------------------
 -- AquaShine love.* override code --
 ------------------------------------
@@ -707,7 +704,8 @@ function love.run()
 	love.timer.step()
 
 	-- Main loop time.
-	return AquaShine.MainLoop()
+	AquaShine.MainFont = AquaShine.LoadFont(nil, 14)
+	return AquaShine.StepLoop
 end
 
 local function error_printer(msg, layer)
@@ -757,7 +755,7 @@ function love.errhand(msg)
 	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
 
 	AquaShine.LoadEntryPoint("AquaShine/ErrorHandler.lua", {p})
-	return AquaShine.MainLoop()
+	return AquaShine.StepLoop
 end
 
 -- Inputs
@@ -1013,11 +1011,7 @@ local function gcfgb(n)
 end
 
 local function vsync(v)
-	if AquaShine.NewLove then
-		return v == true and 1 or 0
-	end
-
-	return v
+	return v == true and 1 or 0
 end
 
 -----------------------------

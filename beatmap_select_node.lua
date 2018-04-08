@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
-local love = love
+local love = require("love")
 local NoteLoader = AquaShine.LoadModule("note_loader2")
 local BackgroundImage = AquaShine.LoadModule("uielement.background_image")
 local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
@@ -22,7 +22,7 @@ function BeatmapSelect.CreateRandomString()
 		local c = math.random(1, #b)
 		a[#a + 1] = b:sub(c, c)
 	end
-	
+
 	return table.concat(a)
 end
 
@@ -35,44 +35,44 @@ function BeatmapSelect.Start(arg)
 	BeatmapSelect.Page = 0
 	BeatmapSelect.SwipeData = {nil, nil}	-- Touch handle (or 0 for mouse click), x1
 	BeatmapSelect.SwipeThreshold = 128
-	
+
 	if AquaShine.LoadConfig("BEATMAP_SELECT_CACHED", 0) == 1 then
 		beatmap_list = NoteLoader.EnumerateCached()
-		
+
 		-- Sort by name
 		table.sort(beatmap_list, function(a, b)
 			return a.name < b.name
 		end)
 	else
 		beatmap_list = NoteLoader.Enumerate()
-		
+
 		-- Sort by name
 		table.sort(beatmap_list, function(a, b)
 			return a:GetName() < b:GetName()
 		end)
 	end
-	
+
 	-- Back button
 	BeatmapSelect.MainNode:addChild(BackNavigation("Select Beatmap", ":main_menu"))
-	
+
 	-- Beatmap info
 	BeatmapSelect.Info = BeatmapInfo(arg.RandomWasTicked, NoteLoader)
 	BeatmapSelect.MainNode:addChild(BeatmapSelect.Info)
-	
+
 	-- Each node contain 8 buttons
 	for i = 1, math.ceil(#beatmap_list / 8) do
 		local node = AquaShine.Node()
-		
+
 		for j = 1, 8 do
 			local idx = (i - 1) * 8 + j
 			if not(beatmap_list[idx]) then break end
-			
+
 			node:addChild(BeatmapSelButton(beatmap_list[idx], BeatmapSelect.Info):setPosition(60, j * 60 + 20))
 		end
-		
+
 		BeatmapSelect.NodeList[i] = node
 	end
-	
+
 	-- Page text
 	BeatmapSelect.PageNumber = TextShadow(AquaShine.LoadFont("MTLmr3m.ttf", 22), "Page 1/"..#BeatmapSelect.NodeList, 64, 560):setShadow(1, 1, true)
 	BeatmapSelect.MainNode:addChild(BeatmapSelect.PageNumber)
@@ -145,7 +145,8 @@ function BeatmapSelect.BeatmapInstall(list)
 		
 		if f then
 			local output = "temp/"..BeatmapSelect.CreateRandomString()
-			local fh, h = love.filesystem.newFile(output, "w")
+			local fh
+			fh, h = love.filesystem.newFile(output, "w")
 			
 			if fh then
 				

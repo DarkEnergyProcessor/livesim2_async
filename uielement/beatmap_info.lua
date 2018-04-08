@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
-local love = love
+local love = require("love")
 local BeatmapInfo = AquaShine.Node:extend("Livesim2.BeatmapInfo")
 local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
@@ -14,7 +14,7 @@ function BeatmapInfo.init(this, random_tick, NoteLoader)
 	this.infofont = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	this.arrangementfont = AquaShine.LoadFont("MTLmr3m.ttf", 16)
 	this.layoutimage = AquaShine.LoadImage("assets/image/ui/com_win_40.png")
-	
+
 	-- Title text
 	this.child[1] = TextShadow(AquaShine.LoadFont("MTLmr3m.ttf", 30), "", 64, 560)
 		:setShadow(1, 1, true)
@@ -26,7 +26,7 @@ function BeatmapInfo.init(this, random_tick, NoteLoader)
 			if this.userdata.beatmap.song then
 				this.userdata.beatmap.song:stop()
 			end
-			
+
 			-- 5th child is Random checkbox
 			local params = {
 				Beatmap = this.userdata.beatmap.data,
@@ -34,7 +34,7 @@ function BeatmapInfo.init(this, random_tick, NoteLoader)
 				NoStoryboard = not(this.child[6]:isChecked()),
 				NoVideo = not(this.child[7]:isChecked())
 			}
-			
+
 			if not(this.userdata.beatmap.data) then
 				params.Beatmap = NoteLoader.NoteLoader(this.userdata.beatmap.filename)
 			end
@@ -139,7 +139,8 @@ function BeatmapInfo.setBeatmapData(this, beatmap)
 		-- Song file
 		local sounddata = beatmap:GetBeatmapAudio()
 		if sounddata then
-			mapdata.song = love.audio.newSource(sounddata)
+			mapdata.song = love.audio.newSource(sounddata, "stream")
+			mapdata.song:setLooping(true)
 			this.child[3]:enable()
 		end
 		

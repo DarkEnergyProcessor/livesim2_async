@@ -4,7 +4,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
+local love = require("love")
 local SIFSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.SIFSLoader", {ProjectLoader = false})
 local SIFSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.SIFSBeatmap")
 
@@ -23,7 +23,7 @@ end
 function SIFSLoader.LoadNoteFromFilename(f)
 	local lines = f:lines()
 	local this = SIFSBeatmap()
-	
+
 	this.bpm = sifs_fetch_number(lines, "BPM") or 120
 	this.offset = (sifs_fetch_number(lines, "OFFSET") or 0) * 1250 / this.bpm
 	lines()
@@ -36,8 +36,7 @@ function SIFSLoader.LoadNoteFromFilename(f)
 	this.comment = assert(lines():match("^COMMENT = \"([^\"]+)\";"))
 	lines()
 	this.beatmap_data = lines()
-	
-	lines = nil
+
 	return this
 end
 
@@ -54,10 +53,10 @@ function SIFSBeatmap.GetNotesList(this)
 		local last_timing_sec = 0
 		local last_tick = 0
 		local attribute = this.attribute
-		
+
 		for a, b, c in this.beatmap_data:gmatch("([^,]+),([^,]+),([^,]+)") do
 			a, b, c = assert(tonumber(a)) + stop_time_count - last_tick, assert(tonumber(b)), assert(tonumber(c))
-			
+
 			if b == 10 then
 				-- BPM change
 				last_timing_sec = (a * 1250 / this.bpm + last_timing_sec)
@@ -77,14 +76,14 @@ function SIFSBeatmap.GetNotesList(this)
 				local effect = 1
 				local effect_value = 2
 				local c_abs = math.abs(c)
-				
+
 				if c == 2 or c == 3 then
 					effect = 4
 				elseif c_abs >= 4 then
 					effect = 3
 					effect_value = c_abs * 1.25 / this.bpm
 				end
-				
+
 				notes_data[#notes_data + 1] = {
 					timing_sec = (a * 1250 / this.bpm - this.offset + last_timing_sec) * 0.001,
 					notes_attribute = attribute,
@@ -96,10 +95,10 @@ function SIFSBeatmap.GetNotesList(this)
 				}
 			end
 		end
-		
+
 		this.notes_data = notes_data
 	end
-	
+
 	return this.notes_data
 end
 
@@ -113,30 +112,24 @@ end
 
 function SIFSBeatmap.GetCoverArt(this)
 	local art_img_name = "live_icon/"..this.cover_image
-	
+
 	if not(this.cover) and love.filesystem.isFile(art_img_name) then
 		this.cover = {}
 		this.cover.title = this.title
 		this.cover.arrangement = this.comment
 		this.cover.image = love.graphics.newImage(art_img_name, {mipmaps = true})
 	end
-	
+
 	return this.cover
 end
 
 
 function SIFSBeatmap.GetBeatmapAudio(this)
-	if not(this.audio_loaded) then
-		local name = "audio/"..this.audio_file
-		
-		if love.filesystem.isFile(name) then
-			this.audio = AquaShine.LoadAudio(name)
-		end
-		
-		this.audio_loaded = true
+	local name = "audio/"..this.audio_file
+
+	if love.filesystem.isFile(name) then
+		return AquaShine.LoadAudio(name, false, "decoder")
 	end
-	
-	return this.audio
 end
 
 function SIFSBeatmap.GetStarDifficultyInfo(this)

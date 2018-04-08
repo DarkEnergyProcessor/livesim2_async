@@ -45,8 +45,8 @@ local SettingSelection = {
 		Type = "number",
 		Min = 1,
 		Max = 15,
-		Changed = function(this, oldval)
-			-- When initialized, `oldval` is nil
+		Changed = function(this)
+			-- When initialized, second argument is nil
 			Settings.Background = {AquaShine.LoadImage(
 				"assets/image/background/liveback_"..this.Value..".png",
 				string.format("assets/image/background/b_liveback_%03d_01.png", this.Value),
@@ -139,6 +139,13 @@ local SettingSelection = {
 		Type = "switch",
 		On = "lovewing",
 		Off = "sif"
+	},
+	{
+		Name = "AUDIO_LOWMEM", Default = 0,
+		Caption = "Low Memory Audio",
+		Type = "switch",
+		On = 1,
+		Off = 0
 	}
 }
 

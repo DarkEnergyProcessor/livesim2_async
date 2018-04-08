@@ -66,7 +66,14 @@ local DEPLS = {
 	Images = {		-- Lists of loaded images
 		Note = {}
 	},
-	Sound = {}
+	Sound = {},
+
+	-- Contains audio information
+	AudioInfo = {
+		SampleRate = 44100,
+		Depth = 16,
+		Channels = 2
+	}
 }
 
 local EllipseRot = {
@@ -370,8 +377,7 @@ function DEPLS.StoryboardFunctions.SetUnitOpacity(pos, opacity)
 end
 
 do
-	local channels
-
+	-- Wrapper function to return empty sample if it's out of range
 	local function getsample_safe(sound_data, pos)
 		local s, sample = pcall(sound_data.getSample, sound_data, pos)
 
@@ -382,18 +388,15 @@ do
 		return sample
 	end
 
-	--! @brief Gets current playing audio sample with specificed size
-	--! @param size The sample size (1 default = 1 sample)
-	--! @returns table containing the samples with size `size`
-	--! @note This function handles mono/stereo input and this function still works even
-	--!       if no audio is found, where in that case the sample is simply 0
-	function DEPLS.StoryboardFunctions.GetCurrentAudioSample(size)
-		size = size or 1
+	local function getSampleSoundData(size)
+		-- Default size
+		size = size or 512
 
 		local audio = DEPLS.Sound.BeatmapAudio
 		local sample_list = {}
 
 		if not(audio) then
+			-- There's no audio. Fill it with empty samples
 			for i = 1, size do
 				sample_list[#sample_list + 1] = {0, 0}
 			end
@@ -401,20 +404,16 @@ do
 			return sample_list
 		end
 
-		if not(channels) then
-			channels = audio:getChannelCount()
-		end
-
 		local pos = DEPLS.Sound.LiveAudio:tell("samples")
 
-		if channels == 1 then
+		if DEPLS.AudioInfo.Channels == 1 then
 			for i = pos, pos + size - 1 do
 				-- Mono
 				local sample = getsample_safe(audio, i)
 
 				sample_list[#sample_list + 1] = {sample, sample}
 			end
-		elseif channels == 2 then
+		elseif DEPLS.AudioInfo.Channels == 2 then
 			for i = pos, pos + size - 1 do
 				-- Stereo
 				sample_list[#sample_list + 1] = {
@@ -426,33 +425,87 @@ do
 
 		return sample_list
 	end
+
+	local function getSampleQueue(size)
+		size = size or 512
+
+		local sample_list = {}
+
+		if not(DEPLS.Sound.BeatmapDecoder) then
+			for _ = 1, size do
+				sample_list[#sample_list + 1] = {0, 0}
+			end
+
+			return sample_list
+		end
+
+		-- From my observation, in queued audio source, Source:tell("samples") returns
+		-- the internal buffer sample position.
+		local currentIndex = DEPLS.Sound.LiveAudio:getFreeBufferCount() + 1
+		local curPos = DEPLS.Sound.LiveAudio:tell("samples")
+		local sample = DEPLS.Sound.QueueBuffer[currentIndex]
+		local sampleLen = sample:getSampleCount()
+
+		for i = 1, size do
+			if DEPLS.AudioInfo.Channels == 1 then
+					local smp = getsample_safe(sample, curPos)
+
+					sample_list[#sample_list + 1] = {smp, smp}
+			elseif DEPLS.AudioInfo.Channels == 2 then
+					-- Stereo
+					sample_list[#sample_list + 1] = {
+						getsample_safe(sample, curPos * 2),
+						getsample_safe(sample, curPos * 2 + 1),
+					}
+			end
+
+			curPos = curPos + 1
+			if curPos >= sampleLen then
+				-- Fetch next sample
+				currentIndex = currentIndex + 1
+				sample = DEPLS.Sound.QueueBuffer[currentIndex]
+				curPos = 0
+			end
+
+			if sample == nil then
+				-- No more samples. Fill with zeros and we're done
+				for _ = i + 1, size do
+					sample_list[#sample_list + 1] = {0, 0}
+				end
+				break
+			end
+		end
+
+		return sample_list
+	end
+
+	--! @brief Gets current playing audio sample with specificed size
+	--! @param size The sample size (1 default = 1 sample)
+	--! @returns table containing the samples with size `size`
+	--! @note This function handles mono/stereo input and this function still works even
+	--!       if no audio is found, where in that case the sample is simply 0
+	function DEPLS.StoryboardFunctions.GetCurrentAudioSample(size)
+		if DEPLS.Sound.BeatmapAudio then
+			return getSampleSoundData(size)
+		else
+			return getSampleQueue(size)
+		end
+	end
 end
 
 --! @brief Get current audio sample rate
---! @returns Audio sample rate (or 22050 if there's no sound)
+--! @returns Audio sample rate (or 44100 if there's no sound)
 function DEPLS.StoryboardFunctions.GetCurrentAudioSampleRate()
-	local a = DEPLS.Sound.BeatmapAudio
-
-	if not(a) then
-		return 22050
-	end
-
-	local _, v = pcall(a.getSampleRate, a)
-
-	if _ == false then
-		return 22050
-	end
-
-	return v * 0.5
+	return DEPLS.AudioInfo.SampleRate
 end
 
 --! @brief Loads Live Simulator: 2 image file
 --! @param path The image path
 --! @returns Image handle or nil on failure
 function DEPLS.StoryboardFunctions.LoadDEPLS2Image(path)
-	local _, a = pcall(love.graphics.newImage, path)
+	local s, a = pcall(love.graphics.newImage, path)
 
-	if _ then
+	if s then
 		return a
 	end
 
@@ -678,11 +731,12 @@ AUDIO_SAMPLE = (%.2f) %5.2f, %5.2f
 REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
-]]		, love.timer.getFPS(), love._version, AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls, status.texturememory
-		, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
+]]		, love.timer.getFPS(), love._version, AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls
+		, status.texturememory, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
 		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity * 255
 		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
-		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
+		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss
+		, tostring(DEPLS.AutoPlay))
 	love.graphics.setFont(DEPLS.MTLmr3m)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(text, 1, 1)
@@ -739,6 +793,67 @@ function DEPLS.IsLiveEnded()
 			DEPLS.NoteManager.NoteRemaining == 0
 end
 
+--! @brief Update audio in low memory mode
+function DEPLS.UpdateAudioLowMemory()
+	if not(DEPLS.Sound.BeatmapAudio) then
+		local freebufcount = DEPLS.Sound.LiveAudio:getFreeBufferCount()
+
+		for _ = 1, freebufcount do
+			local buf = DEPLS.Sound.BeatmapDecoder:decode()
+			if not(buf) then return end
+			table.remove(DEPLS.Sound.QueueBuffer, 1)
+			DEPLS.Sound.QueueBuffer[#DEPLS.Sound.QueueBuffer + 1] = buf
+			DEPLS.Sound.LiveAudio:queue(buf)
+		end
+	end
+end
+
+--! @brief Load audio, normal mode
+function DEPLS.FinalizeAudio()
+	-- Normalize song volume
+	-- Enabled on fast system by default
+	-- Disabled if "low memory" mode is on to provide consistency.
+	if not(DEPLS.Sound.BeatmapDecoder) then return end
+
+	DEPLS.AudioInfo.SampleRate = DEPLS.Sound.BeatmapDecoder:getSampleRate()
+	DEPLS.AudioInfo.Depth = DEPLS.Sound.BeatmapDecoder:getBitDepth()
+	DEPLS.AudioInfo.Channels = DEPLS.Sound.BeatmapDecoder:getChannelCount()
+
+	if DEPLS.AudioLowMemory and not(DEPLS.RenderingMode) then
+		-- Low memory mode "streams" the Decoder!
+		-- This path won't be used when rendering.
+		DEPLS.Sound.LiveAudio = love.audio.newQueueableSource(
+			DEPLS.AudioInfo.SampleRate,
+			DEPLS.AudioInfo.Depth,
+			DEPLS.AudioInfo.Channels,
+			16
+		)
+		DEPLS.Sound.QueueBuffer = {}
+		DEPLS.Sound.QueueCount = DEPLS.Sound.LiveAudio:getFreeBufferCount()
+
+		for _ = 1, DEPLS.Sound.QueueCount do
+			local buf = DEPLS.Sound.BeatmapDecoder:decode()
+			DEPLS.Sound.QueueBuffer[#DEPLS.Sound.QueueBuffer + 1] = buf
+			DEPLS.Sound.LiveAudio:queue(buf)
+		end
+		return
+	end
+
+	DEPLS.Sound.BeatmapAudio = love.sound.newSoundData(DEPLS.Sound.BeatmapDecoder)
+
+	if
+		(
+			not(AquaShine.IsSlowSystem()) and
+			not(AquaShine.GetCommandLineConfig("norg"))
+		) or
+		AquaShine.GetCommandLineConfig("forcerg")
+	then
+		require("volume_normalizer")(DEPLS.Sound.BeatmapAudio)
+	end
+
+	DEPLS.Sound.LiveAudio = love.audio.newSource(DEPLS.Sound.BeatmapAudio)
+end
+
 --! @brief DEPLS Initialization function
 --! @param argv The arguments passed to the game via command-line
 function DEPLS.Start(argv)
@@ -774,11 +889,12 @@ function DEPLS.Start(argv)
 	DEPLS.Images.Spotlight = AquaShine.LoadImage("assets/image/live/popn.png")
 	DEPLS.SaveDirectory = love.filesystem.getSaveDirectory()
 	DEPLS.NoteImageLoader = love.filesystem.load("noteimage.lua")(DEPLS, AquaShine)
-	
+
 	-- Load configuration
 	local BackgroundID = AquaShine.LoadConfig("BACKGROUND_IMAGE", 11)
 	local GlobalOffset = AquaShine.LoadConfig("GLOBAL_OFFSET", 0)
 	local Keys = AquaShine.LoadConfig("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
+	DEPLS.AudioLowMemory = AquaShine.LoadConfig("AUDIO_LOWMEM", 0) == 1
 	DEPLS.AutoPlay = assert(tonumber(AquaShine.LoadConfig("AUTOPLAY", 0))) == 1
 	DEPLS.LiveDelay = math.max(AquaShine.LoadConfig("LIVESIM_DELAY", 1000), 1000)
 	DEPLS.ElapsedTime = -DEPLS.LiveDelay
@@ -793,21 +909,22 @@ function DEPLS.Start(argv)
 		local i = 9
 		for w in Keys:gmatch("[^\t]+") do
 			DEPLS.Keys[i] = w
-			
+
 			i = i - 1
 		end
 	end
-	
+
 	if DEPLS.MinimalEffect == nil then
 		DEPLS.MinimalEffect = AquaShine.LoadConfig("MINIMAL_EFFECT", 0) == 1
 	end
-	
+
 	-- Load beatmap
 	local noteloader_data = argv.Beatmap
 	local notes_list = noteloader_data:GetNotesList()
 	local custom_background = false
-	DEPLS.Sound.BeatmapAudio = noteloader_data:GetBeatmapAudio()
+	DEPLS.Sound.BeatmapDecoder = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
+	DEPLS.FinalizeAudio()
 	
 	if noteloader_data:GetScorePerTap() > 0 then
 		DEPLS.ScoreBase = noteloader_data:GetScorePerTap()
@@ -1015,14 +1132,14 @@ function DEPLS.Update(deltaT)
 	
 	local ElapsedTime = DEPLS.ElapsedTime
 	local Routines = DEPLS.Routines
-	
+
 	if DEPLS.CoverShown > 0 then
 		DEPLS.Routines.CoverPreview.Update(deltaT)
 		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
 	end
-	
+
 	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 0.7451
-	
+
 	if ElapsedTime > 0 then
 		if DEPLS.Sound.LiveAudio and audioplaying == false then
 			DEPLS.Sound.LiveAudio:setVolume(DEPLS.BeatmapAudioVolume)
@@ -1030,35 +1147,35 @@ function DEPLS.Update(deltaT)
 			DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
 			audioplaying = true
 		end
-		
+
 		if DEPLS.VideoBackgroundData and not(DEPLS.VideoBackgroundData[5]) then
 			DEPLS.VideoBackgroundData[5] = true
 			DEPLS.VideoBackgroundData[1]:play()
 		end
-		
+
 		if deltaT > 100 then
 			-- We can get out of sync when the dT is very high
 			if DEPLS.Sound.LiveAudio and audioplaying then
 				DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
 				DEPLS.Sound.LiveAudio:play()
 			end
-			
+
 			if DEPLS.VideoBackgroundData and DEPLS.VideoBackgroundData[5] then
 				DEPLS.VideoBackgroundData[1]:seek(ElapsedTime * 0.001)
 				DEPLS.VideoBackgroundData[1]:play()
 			end
 		end
-		
+
 		-- Update note if it's not paused
 		if not(DEPLS.Routines.PauseScreen.IsPaused()) then
 			DEPLS.NoteManager.Update(deltaT)
 		end
-		
+
 		-- Update combo cheer if no storyboard or storyboard allows it
 		if not(DEPLS.StoryboardHandle) or DEPLS.ComboCheerForced then
 			Routines.ComboCheer.Update(deltaT)
 		end
-		
+
 		-- Update routines
 		DEPLS.Routines.Update(deltaT)
 
@@ -1077,8 +1194,6 @@ end
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Draw(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
-
-	local Images = DEPLS.Images
 
 	local Routines = DEPLS.Routines
 	local AllowedDraw = DEPLS.ElapsedTime > 0
@@ -1191,6 +1306,8 @@ function DEPLS.Draw(deltaT)
 	if DEPLS.DebugDisplay then
 		DEPLS.DrawDebugInfo()
 	end
+
+	return DEPLS.UpdateAudioLowMemory()
 end
 
 -- Post-processing draw. Shaders can be chained here

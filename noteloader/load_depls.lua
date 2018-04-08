@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
+local love = require("love")
 local LuaStoryboard = require("luastoryboard2")
 local DEPLSLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.DEPLSLoader", {ProjectLoader = true})
 local DEPLSBeatmap = NoteLoader.NoteLoaderNoteObject:extend("NoteLoader.DEPLSBeatmap")
@@ -256,24 +256,20 @@ function DEPLSBeatmap.GetNotesStyle(this)
 end
 
 function DEPLSBeatmap.GetBeatmapAudio(this)
-	if not(this.audio_loaded) then
-		-- 1. Load songFile.wav/ogg/mp3 file
-		this.audio = AquaShine.LoadAudio(this.project_dir.."/songFile.wav")
-		
-		if not(this.audio) then
-			-- 2. Load embedded audio from beatmap
-			this.audio = this.note_object:GetBeatmapAudio()
-			
-			if not(this.audio) then
-				-- 3. Load from audio/ folder
-				this.audio = AquaShine.LoadAudio("audio/"..AquaShine.Basename(this.project_dir)..".wav")
-			end
+	-- 1. Load songFile.wav/ogg/mp3 file
+	local audio = AquaShine.LoadAudio(this.project_dir.."/songFile.wav", false, "decoder")
+
+	if not(audio) then
+		-- 2. Load embedded audio from beatmap
+		audio = this.note_object:GetBeatmapAudio()
+
+		if not(audio) then
+			-- 3. Load from audio/ folder
+			audio = AquaShine.LoadAudio("audio/"..AquaShine.Basename(this.project_dir)..".wav", false, "decoder")
 		end
-		
-		this.audio_loaded = true
 	end
-	
-	return this.audio
+
+	return audio
 end
 
 function DEPLSBeatmap.GetLiveClearSound(this)

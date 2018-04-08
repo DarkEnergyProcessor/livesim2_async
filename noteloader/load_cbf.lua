@@ -602,14 +602,14 @@ function CBFBeatmap.GetVideoBackground(this)
 				if not(this.video) then
 					AquaShine.Log("NoteLoader2/load_cbf", "Failed to load video: %s", message)
 				end
-				
+
 				break
 			end
 		end
-		
+
 		this.video_loaded = true
 	end
-	
+
 	return this.video
 end
 
@@ -625,21 +625,14 @@ end
 -- But actually Live Simulator: 2 also supports MP3
 local supported_audio_fmts = {".wav", ".ogg"}
 function CBFBeatmap.GetBeatmapAudio(this)
-	if not(this.audio_loaded) then
-		for _, v in ipairs(supported_audio_fmts) do
-			local name = this.project_folder.."/songFile"..v
-			local name_info = love.filesystem.getInfo(name)
-			
-			if name_info and name_info.type == "file" then
-				this.audio = love.sound.newSoundData(name)
-				break
-			end
+	for _, v in ipairs(supported_audio_fmts) do
+		local name = this.project_folder.."/songFile"..v
+		local name_info = love.filesystem.getInfo(name)
+
+		if name_info and name_info.type == "file" then
+			return love.sound.newDecoder(name)
 		end
-		
-		this.audio_loaded = true
 	end
-	
-	return this.audio
 end
 
 function CBFBeatmap.GetLiveClearSound(this)
@@ -647,16 +640,16 @@ function CBFBeatmap.GetLiveClearSound(this)
 		for _, v in ipairs(supported_audio_fmts) do
 			local name = this.project_folder.."/liveShowClearSFX"..v
 			local name_info = love.filesystem.getInfo(name)
-			
+
 			if name_info and name_info.type == "file" then
 				this.lclr = love.sound.newSoundData(name)
 				break
 			end
 		end
-		
+
 		this.lclr_loaded = true
 	end
-	
+
 	return this.lclr
 end
 

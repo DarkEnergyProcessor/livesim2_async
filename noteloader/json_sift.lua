@@ -153,23 +153,16 @@ function SIFTBeatmap.GetComboInformation(this)
 end
 
 function SIFTBeatmap.GetBeatmapAudio(this)
-	if not(this.song_file_loaded) then
-		if this.sift.music_file then
-			this.song_file = AquaShine.LoadAudio("audio/"..this.sift.music_file)
-		else
-			local bn = AquaShine.Basename(this.filename)
-			local a, b = bn:match("(.)_(%d+)")
-			
-			if a and b then
-				this.song_file = AquaShine.LoadAudio("audio/"..a.."_"..b..".wav")
-			end
-		end
+	if this.sift.music_file then
+		return AquaShine.LoadAudio("audio/"..this.sift.music_file, false, "decoder")
+	else
+		local bn = AquaShine.Basename(this.filename)
+		local a, b = bn:match("(.)_(%d+)")
 		
-		this.song_file = this.song_file or NoteLoader._LoadDefaultAudioFromFilename(this.filename)
-		this.song_file_loaded = true
+		if a and b then
+			return AquaShine.LoadAudio("audio/"..a.."_"..b..".wav", false, "decoder")
+		end
 	end
-	
-	return this.song_file
 end
 
 function SIFTBeatmap.GetStarDifficultyInfo(this, random)

@@ -252,18 +252,18 @@ end
 LS2Beatmap.GetCustomBackground = _wrapFileHandle(function(this)
 	if not(this.background_loaded) and this.ls2.sections.BIMG then
 		local backgrounds = {}
-		
+
 		for _, v in ipairs(this.ls2.sections.BIMG) do
 			this.file:seek(v)
 			local idx, img = ls2.section_processor.BIMG[1](this.file, this.ls2.version_2)
-			
+
 			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img, ""))
 		end
-		
+
 		this.background_loaded = true
 		this.background = backgrounds
 	end
-	
+
 	return this.background
 end)
 
@@ -279,34 +279,32 @@ function LS2Beatmap.GetNotesStyle(this)
 	return this.ls2.note_style
 end
 
+-- FIXME: Integrate LVEP
 LS2Beatmap.GetBeatmapAudio = _wrapFileHandle(function(this)
-	if not(this.audio_loaded) then
-		if this.ls2.sections.ADIO then
-			-- Embedded audio available
-			this.file:seek(this.ls2.sections.ADIO[1])
-			local ext, data, ff = ls2.section_processor.ADIO[1](this.file, this.ls2.version_2)
-			local fdata = love.filesystem.newFileData(data, "_."..ext)
-			
-			if ff then
-				this.audio = AquaShine.FFmpegExt.LoadAudio(data, true)
-			else
-				this.audio = love.sound.newSoundData(love.filesystem.newFileData(data, "_."..ext))
-			end
+	if this.ls2.sections.ADIO then
+		-- Embedded audio available
+		this.file:seek(this.ls2.sections.ADIO[1])
+		local ext, data, ff = ls2.section_processor.ADIO[1](this.file, this.ls2.version_2)
+
+		-- FIXME: FFX can't create "Decoder" object yet.
+		--[[
+		if ff then
+			this.audio = AquaShine.FFmpegExt.LoadAudio(data, true)
+		else
+			this.audio = love.sound.newSoundData(love.filesystem.newFileData(data, "_."..ext))
 		end
-		
-		if not(this.audio) then
-			-- Get from metadata
-			local meta = this:_GetMetadata()
-			
-			if meta.song_file then
-				this.audio = AquaShine.LoadAudio("audio/"..meta.song_file)
-			end
-		end
-		
-		this.audio_loaded = true
+		]]
+		return love.sound.newDecoder(love.filesystem.newFileData(data, "_."..ext))
 	end
-	
-	return this.audio
+
+	if not(this.audio) then
+		-- Get from metadata
+		local meta = this:_GetMetadata()
+
+		if meta.song_file then
+			return AquaShine.LoadAudio("audio/"..meta.song_file, false, "decoder")
+		end
+	end
 end)
 
 LS2Beatmap.GetLiveClearSound = _wrapFileHandle(function(this)
@@ -314,7 +312,6 @@ LS2Beatmap.GetLiveClearSound = _wrapFileHandle(function(this)
 		-- Embedded audio available
 		this.file:seek(this.ls2.sections.LCLR[1])
 		local ext, data, ff = ls2.section_processor.LCLR[1](this.file, this.ls2.version_2)
-		local fdata = love.filesystem.newFileData(data, "_."..ext)
 		
 		if ff then
 			return AquaShine.FFmpegExt.LoadAudio(data, true)
