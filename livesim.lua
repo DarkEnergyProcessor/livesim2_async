@@ -7,6 +7,7 @@ local AquaShine = ...
 local EffectPlayer = require("effect_player")
 local Yohane = require("Yohane")
 local TapSound = require("tap_sound")
+local BackgroundLoader = AquaShine.LoadModule("background_loader")
 local DEPLS = {
 	ElapsedTime = 0,            -- Elapsed time, in milliseconds
 	DebugDisplay = false,
@@ -374,6 +375,7 @@ end
 function DEPLS.StoryboardFunctions.SetUnitOpacity(pos, opacity)
 	local data = assert(DEPLS.IdolImageData[pos], "Invalid pos specificed")
 	data[2] = math.min(math.max(opacity or DEPLS.DefaultColorMode, 0), DEPLS.DefaultColorMode)
+	DEPLS.IdolCanvasDirty = true
 end
 
 do
@@ -430,8 +432,13 @@ do
 		size = size or 512
 
 		local sample_list = {}
+		local currentIndex = DEPLS.Sound.LiveAudio:getFreeBufferCount() + 1
+		local curPos = DEPLS.Sound.LiveAudio:tell("samples")
+		local sample = DEPLS.Sound.QueueBuffer[currentIndex]
 
-		if not(DEPLS.Sound.BeatmapDecoder) then
+		-- If there are no decoder, or there are no more samples
+		-- then fill with empty
+		if not(DEPLS.Sound.BeatmapDecoder) or sample == nil then
 			for _ = 1, size do
 				sample_list[#sample_list + 1] = {0, 0}
 			end
@@ -441,11 +448,7 @@ do
 
 		-- From my observation, in queued audio source, Source:tell("samples") returns
 		-- the internal buffer sample position.
-		local currentIndex = DEPLS.Sound.LiveAudio:getFreeBufferCount() + 1
-		local curPos = DEPLS.Sound.LiveAudio:tell("samples")
-		local sample = DEPLS.Sound.QueueBuffer[currentIndex]
 		local sampleLen = sample:getSampleCount()
-
 		for i = 1, size do
 			if DEPLS.AudioInfo.Channels == 1 then
 					local smp = getsample_safe(sample, curPos)
@@ -600,6 +603,10 @@ end
 --! @returns LOVE `Image` object of specificed index, or nil, or table containing
 --!          all of background image in LOVE `Image` object (index 0-4)
 function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
+	if DEPLS.StockBackgroundImage then
+		return DEPLS.StockBackgroundImage:clone()
+	end
+
 	if idx then
 		assert(idx >= 0 and idx < 5, "Invalid index")
 		return DEPLS.BackgroundImage[idx][1]
@@ -774,7 +781,10 @@ function DEPLS.Resume()
 	end
 
 	if DEPLS.Sound.LiveAudio then
-		DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
+		if not(DEPLS.AudioLowMemory) then
+			DEPLS.Sound.LiveAudio:seek(DEPLS.ElapsedTime * 0.001)
+		end
+
 		DEPLS.Sound.LiveAudio:play()
 	end
 
@@ -852,6 +862,26 @@ function DEPLS.FinalizeAudio()
 	end
 
 	DEPLS.Sound.LiveAudio = love.audio.newSource(DEPLS.Sound.BeatmapAudio)
+end
+
+function DEPLS.UpdateIdolIcon()
+	if DEPLS.IdolCanvasDirty then
+		DEPLS.IdolCanvasDirty = false
+		love.graphics.push("all")
+		love.graphics.setCanvas(DEPLS.IdolCanvas)
+		love.graphics.clear()
+		love.graphics.setBlendMode("alpha", "premultiplied")
+
+		-- Draw idol unit
+		local IdolData = DEPLS.IdolImageData
+		local IdolPos = DEPLS.IdolPosition
+
+		for i = 1, 9 do
+			love.graphics.setColor(1, 1, 1, IdolData[i][2])
+			love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
+		end
+		love.graphics.pop()
+	end
 end
 
 --! @brief DEPLS Initialization function
@@ -992,7 +1022,7 @@ function DEPLS.Start(argv)
 	end
 	
 	-- Load storyboard
-	if not(argv.NoStoryboard) then
+	if not(AquaShine.GetCommandLineConfig("nostory")) and not(argv.NoStoryboard) then
 		local s, msg = pcall(noteloader_data.GetStoryboard, noteloader_data)
 		
 		if s then
@@ -1098,11 +1128,7 @@ function DEPLS.Start(argv)
 
 	-- Load background if no storyboard present
 	if not(DEPLS.StoryboardHandle) and not(custom_background) then
-		DEPLS.BackgroundImage[0][1] = AquaShine.LoadImage("assets/image/background/liveback_"..BackgroundID..".png")
-
-		for i = 1, 4 do
-			DEPLS.BackgroundImage[i][1] = AquaShine.LoadImage(string.format("assets/image/background/b_liveback_%03d_%02d.png", BackgroundID, i))
-		end
+		DEPLS.StockBackgroundImage = assert(BackgroundLoader.Load(BackgroundID))
 	end
 
 	-- Load Font
@@ -1121,15 +1147,15 @@ local audioplaying = false
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Update(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
-	
+
 	if AquaShine.FFmpegExt then
 		AquaShine.FFmpegExt.Update(deltaT)
 	end
-	
+
 	if not(DEPLS.Routines.PauseScreen.IsPaused()) then
 		DEPLS.ElapsedTime = DEPLS.ElapsedTime + deltaT
 	end
-	
+
 	local ElapsedTime = DEPLS.ElapsedTime
 	local Routines = DEPLS.Routines
 
@@ -1137,6 +1163,8 @@ function DEPLS.Update(deltaT)
 		DEPLS.Routines.CoverPreview.Update(deltaT)
 		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
 	end
+
+	DEPLS.UpdateIdolIcon()
 
 	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 0.7451
 
@@ -1155,7 +1183,7 @@ function DEPLS.Update(deltaT)
 
 		if deltaT > 100 then
 			-- We can get out of sync when the dT is very high
-			if DEPLS.Sound.LiveAudio and audioplaying then
+			if DEPLS.Sound.LiveAudio and audioplaying and not(DEPLS.AudioLowMemory) then
 				DEPLS.Sound.LiveAudio:seek(ElapsedTime * 0.001)
 				DEPLS.Sound.LiveAudio:play()
 			end
@@ -1218,20 +1246,23 @@ function DEPLS.Draw(deltaT)
 		)
 	else
 		-- No storyboard & video still not allowed to draw. Draw background
-		local BackgroundImage = DEPLS.BackgroundImage
+		if DEPLS.StockBackgroundImage then
+			love.graphics.draw(DEPLS.StockBackgroundImage)
+		else
+			local BackgroundImage = DEPLS.BackgroundImage
+			love.graphics.draw(
+				BackgroundImage[0][1],
+				BackgroundImage[0][2],
+				BackgroundImage[0][3],
+				0,
+				BackgroundImage[0][4] or 1,
+				BackgroundImage[0][5] or 1
+			)
 
-		love.graphics.draw(
-			BackgroundImage[0][1],
-			BackgroundImage[0][2],
-			BackgroundImage[0][3],
-			0,
-			BackgroundImage[0][4] or 1,
-			BackgroundImage[0][5] or 1
-		)
-
-		for i = 1, 4 do
-			if BackgroundImage[i][1] then
-				love.graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+			for i = 1, 4 do
+				if BackgroundImage[i][1] then
+					love.graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
+				end
 			end
 		end
 	end
@@ -1267,6 +1298,7 @@ function DEPLS.Draw(deltaT)
 		DEPLS.Routines.LiveHeader.Draw()
 
 		-- Draw idol unit
+		--[[
 		local IdolData = DEPLS.IdolImageData
 		local IdolPos = DEPLS.IdolPosition
 
@@ -1274,6 +1306,9 @@ function DEPLS.Draw(deltaT)
 			love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
 			love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 		end
+		]]
+		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
+		love.graphics.draw(DEPLS.IdolCanvas)
 
 		-- Draw timing icon
 		DEPLS.NoteManager.TimingIconDraw()
@@ -1366,23 +1401,23 @@ function DEPLS.MouseMoved(x, y, dx, dy, touch_id)
 	if DEPLS.Routines.PauseScreen.IsPaused() then
 		return DEPLS.Routines.PauseScreen.MouseMoved(x, y, dx, dy, touch_id)
 	end
-	
+
 	if DEPLS.AutoPlay then return end
 	if isMousePress or touch_id then
 		touch_id = touch_id or 0
-		
+
 		local lastpos = TouchTracking[touch_id]
-		
+
 		for i = 1, 9 do
 			if i ~= lastpos then
 				local idolpos = DEPLS.IdolPosition[i]
 				local xp = (math.cos(EllipseRot[i]) * (x - (idolpos[1] + 64)) + math.sin(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchXRadius
 				local yp = (math.sin(EllipseRot[i]) * (x - (idolpos[1] + 64)) - math.cos(EllipseRot[i]) * (y - (idolpos[2] + 64))) / TouchYRadius
-				
+
 				if xp * xp + yp * yp <= 1 then
 					TouchTracking[touch_id] = i
 					DEPLS.NoteManager.SetTouch(i, touch_id, false, lastpos)
-					
+
 					break
 				end
 			end
@@ -1394,24 +1429,29 @@ function DEPLS.MouseReleased(x, y, button, touch_id)
 	if DEPLS.Routines.PauseScreen.IsPaused() then
 		return DEPLS.Routines.PauseScreen.MouseReleased(x, y, button, touch_id)
 	end
-	
+
 	if DEPLS.ElapsedTime <= 0 then return end
-	
+
 	if isMousePress and touch_id == false and button == 1 then
 		isMousePress = false
 	end
-	
+
 	touch_id = touch_id or 0
-	
+
+	if x < 0 and y >= 480 then
+		DEPLS.DebugDisplay = not(DEPLS.DebugDisplay)
+		return
+	end
+
 	-- Send unset touch message
 	TouchTracking[touch_id] = nil
 	DEPLS.NoteManager.SetTouch(nil, touch_id, true)
-	
+
 	if DEPLS.Routines.ResultScreen.CanExit then
 		-- Back
 		AquaShine.LoadEntryPoint(":beatmap_select", {Random = DEPLS.Arg.Random})
 	end
-	
+
 	if not(DEPLS.IsLiveEnded()) and DEPLS.Routines.CheckPausePos(x, y) then
 		DEPLS.Pause()
 	end
@@ -1425,7 +1465,7 @@ end
 
 function DEPLS.KeyPressed(key, scancode, repeat_bit)
 	if DEPLS.Routines.PauseScreen.IsPaused() then return end
-	
+
 	if key == "f6" then
 		DEPLS.BeatmapAudioVolume = math.min(DEPLS.BeatmapAudioVolume + 0.05, 1)
 		update_audio_volume()
@@ -1473,7 +1513,8 @@ function DEPLS.KeyReleased(key)
 	end
 end
 
-function DEPLS.Resize(w, h)
+function DEPLS.Resize()
+	DEPLS.IdolCanvas = love.graphics.newCanvas(960, 640) DEPLS.IdolCanvasDirty = true
 	DEPLS.MainCanvas = love.graphics.newCanvas()
 	DEPLS.SecondaryCanvas = love.graphics.newCanvas()
 end
@@ -1483,12 +1524,12 @@ function DEPLS.Exit()
 	if DEPLS.Sound.LiveAudio then
 		DEPLS.Sound.LiveAudio:stop()
 	end
-	
+
 	-- Cleanup storyboard
 	if DEPLS.StoryboardHandle then
 		DEPLS.StoryboardHandle:Cleanup()
 	end
-	
+
 	if DEPLS.VideoBackgroundData then
 		DEPLS.VideoBackgroundData[1]:pause()
 		DEPLS.VideoBackgroundData = nil
@@ -1498,6 +1539,7 @@ end
 
 function DEPLS.Focus(focus)
 	if
+		not(DEPLS.AudioLowMemory) and
 		not(AquaShine.IsDesktopSystem()) and
 		not(DEPLS.Routines.PauseScreen.IsPaused()) and
 		focus and

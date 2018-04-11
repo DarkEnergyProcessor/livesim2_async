@@ -10,11 +10,11 @@ local ScoreNode = {}
 local _common_meta = {__index = ScoreNode}
 
 local function init()
-	-- Load score node number
-	for i = 21, 30 do
-		ScoreNode[i - 21] = AquaShine.LoadImage("assets/image/live/score_num/l_num_"..i..".png")
-	end
-	ScoreNode.Plus = AquaShine.LoadImage("assets/image/live/score_num/l_num_31.png")
+	ScoreNode.Font = AquaShine.GetCachedData(
+		"score_list_add",
+		love.graphics.newImageFont,
+		"assets/image/live/score_num/addscore.png", "0123456789+", -5
+	)
 
 	return ScoreNode
 end
@@ -26,19 +26,9 @@ function ScoreNode.Create(score)
 	out.main_tween = tween.new(100, out.score_info, {x = 570, scale = 1})
 	out.opacity_tween = tween.new(200, out.score_info, {opacity = 0})
 	out.elapsed_time = 0
-	out.elements = {}
-	out.elements[#out.elements + 1] = ScoreNode.Plus
+	out.text = love.graphics.newText(ScoreNode.Font, "+"..score)
 
-	do
-		local i = 1
-		for w in tostring(score):gmatch("%d") do
-			love.graphics.draw(ScoreNode[tonumber(w)], i * 24, 0)
-			i = i + 1
-			out.elements[i] = ScoreNode[tonumber(w)]
-		end
-	end
-
-	return (setmetatable(out, _common_meta))
+	return setmetatable(out, _common_meta)
 end
 
 function ScoreNode.Update(this, deltaT)
@@ -49,20 +39,17 @@ function ScoreNode.Update(this, deltaT)
 		this.opacity_tween:update(deltaT)
 	end
 
-	return this.elapsed_time >= 450
+	return this.score_info.opacity == 0
 end
 
 function ScoreNode.Draw(this)
 	love.graphics.setColor(1, 1, 1, this.score_info.opacity * DEPLS.LiveOpacity)
-	for i = 1, #this.elements do
-		local j = i - 1
-		love.graphics.draw(
-			this.elements[i],
-			this.score_info.x + j * 24 * this.score_info.scale, 72, 0,
-			this.score_info.scale, this.score_info.scale,
-			0, 16
-		)
-	end
+	love.graphics.draw(
+		this.text,
+		this.score_info.x, 72, 0,
+		this.score_info.scale, this.score_info.scale,
+		0, 16
+	)
 end
 
 return init()

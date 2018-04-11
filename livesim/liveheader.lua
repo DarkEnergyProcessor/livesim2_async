@@ -12,6 +12,8 @@ local function init()
 	LiveHeader.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
 	LiveHeader.Pause = AquaShine.LoadImage("assets/image/live/live_pause.png")
 
+	LiveHeader.HeaderAll = love.graphics.newCanvas(960, 640, {dpiscale = 1})
+
 	return LiveHeader
 end
 
@@ -35,8 +37,23 @@ function LiveHeader.Update()
 			stamina_number_image[i] = stamina_num[temp_num]
 		end
 
-		LiveHeader.StaminaDrawTarget = stamina_number_image
 		LiveHeader.StaminaBar = AquaShine.LoadImage("assets/image/live/live_gauge_02_02.png")
+
+		love.graphics.push("all")
+		love.graphics.setBlendMode("alpha", "premultiplied")
+		love.graphics.setCanvas(LiveHeader.HeaderAll)
+
+		-- Live header
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.draw(LiveHeader.Header, 0, 0)
+		love.graphics.draw(LiveHeader.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
+
+		-- Stamina
+		love.graphics.draw(LiveHeader.StaminaBar, 14, 60)
+		for i = 1, #stamina_number_image do
+			love.graphics.draw(stamina_number_image[i], 290 + 16 * i, 66)
+		end
+		love.graphics.pop()
 		LiveHeader.Init2 = true
 	end
 end
@@ -47,16 +64,8 @@ function LiveHeader.DrawPause()
 end
 
 function LiveHeader.Draw()
-	-- Live header
 	love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-	love.graphics.draw(LiveHeader.Header, 0, 0)
-	love.graphics.draw(LiveHeader.ScoreGauge, 5, 8, 0, 0.99545454, 0.86842105)
-
-	-- Stamina
-	love.graphics.draw(LiveHeader.StaminaBar, 14, 60)
-	for i = 1, #LiveHeader.StaminaDrawTarget do
-		love.graphics.draw(LiveHeader.StaminaDrawTarget[i], 290 + 16 * i, 66)
-	end
+	love.graphics.draw(LiveHeader.HeaderAll)
 end
 
 return init()

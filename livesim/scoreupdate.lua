@@ -7,7 +7,11 @@ local ScoreUpdate = {CurrentScore = 0}
 
 local love = require("love")
 local score_str = tostring(ScoreUpdate.CurrentScore)
-local score_images = AquaShine.GetCachedData("score_list", love.graphics.newImageFont, "assets/image/live/score_num/score.png", "0123456789", -4)
+local score_images = AquaShine.GetCachedData(
+	"score_list",
+	love.graphics.newImageFont,
+	"assets/image/live/score_num/score.png", "0123456789", -4
+)
 
 function ScoreUpdate.Update()
 	score_str = tostring(ScoreUpdate.CurrentScore)

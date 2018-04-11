@@ -23,6 +23,7 @@
 --]]---------------------------------------------------------------------------
 
 local jit = require("jit")
+local ffi = require("ffi")
 local table = require("table")
 local love = require("love")
 
@@ -644,11 +645,10 @@ function AquaShine.StepLoop()
 	local dt = love.timer.step()
 
 	if love.graphics.isActive() then
-		--local t = love.timer.getTime()
 		love.graphics.clear()
 
 		do
-			love.graphics.setCanvas(AquaShine.MainCanvas)
+			love.graphics.setCanvas {AquaShine.MainCanvas, stencil = true}
 			love.graphics.clear()
 
 			if AquaShine.CurrentEntryPoint then
@@ -674,17 +674,6 @@ function AquaShine.StepLoop()
 			love.graphics.setCanvas()
 		end
 		love.graphics.draw(AquaShine.MainCanvas)
-		--[[
-		accumulateDT = accumulateDT + (-t + love.timer.getTime())
-		frameCounter = frameCounter + 1
-
-		if frameCounter == 60 then
-			io.write("Avg. draw time: ", accumulateDT * 1000 / 60, "ms\n")
-			frameCounter = 0
-			accumulateDT = 0
-		end
-		]]
-
 		love.graphics.present()
 	end
 end
@@ -964,42 +953,62 @@ do
 end
 AquaShine.ParseCommandLineConfig(assert(rawget(_G, "arg")))
 
+----------------------------
+-- High DPI patch Windows --
+----------------------------
+ffi.cdef [[
+int32_t __stdcall SetProcessDpiAwareness(int32_t );
+int32_t __stdcall SetProcessDPIAware();
+]]
+
+local function enableHighDPI()
+	-- Attempt 1: Use Windows 8.1 API
+	local Shcore = ffi.load("Shcore")
+	local s, setprocessdpiawareness = pcall(function() return Shcore.SetProcessDpiAwareness end)
+	if s then
+		local r = setprocessdpiawareness(2)
+		if r == 0 then return end
+		r = setprocessdpiawareness(1)
+		if r == 0 then return end
+	end
+
+	-- Attempt 2: Use usual WinAPI
+	local setprocessdpiaware
+	s, setprocessdpiaware = pcall(function() return ffi.C.SetProcessDPIAware end)
+	if s then
+		setprocessdpiaware()
+	end
+end
+
 ------------------
 -- /gles switch --
 ------------------
 local gles = AquaShine.GetCommandLineConfig("gles")
 local integrated = AquaShine.GetCommandLineConfig("integrated") or AquaShine.GetCommandLineConfig("igpu")
 do
-	local s, ffi = pcall(require, "ffi")
+	local setenv_load = function(x) return x.setenv end
+	local putenv_load = function(x) return x.SetEnvironmentVariableA end
+	ffi.cdef [[
+		int setenv(const char *envname, const char *envval, int overwrite);
+		int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
+	]]
 
-	if s then
-		local setenv_load = function(x) return x.setenv end
-		local putenv_load = function(x) return x.SetEnvironmentVariableA end
-		local dpiaware = function(x) return x.SetProcessDPIAware end
-		ffi.cdef [[
-			int setenv(const char *envname, const char *envval, int overwrite);
-			int __stdcall SetEnvironmentVariableA(const char* envname, const char* envval);
-			int __stdcall SetProcessDPIAware();
-		]]
-		
-		local ss, setenv = pcall(setenv_load, ffi.C)
-		local ps, putenv = pcall(putenv_load, ffi.C)
-		local dp, setdpiaware = pcall(dpiaware, ffi.C)
-        
-        if ss then
-            if gles then setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1) end
-            if integrated then setenv("SHIM_MCCOMPAT", "0x800000000", 1) setenv("DRI_PRIME", "0", 1) end
-			-- Always request compatibility profile
-			setenv("LOVE_GRAPHICS_USE_GL2", "1", 1)
-        elseif ps then
-            if gles then putenv("LOVE_GRAPHICS_USE_OPENGLES", "1") end
-            if integrated then putenv("SHIM_MCCOMPAT", "0x800000000") end
-			-- Always request compatibility profile
-			putenv("LOVE_GRAPHICS_USE_GL2", "1")
-        end
-        
-        if dp then setdpiaware() end
+	local ss, setenv = pcall(setenv_load, ffi.C)
+	local ps, putenv = pcall(putenv_load, ffi.C)
+
+	if ss then
+	    if gles then setenv("LOVE_GRAPHICS_USE_OPENGLES", "1", 1) end
+	    if integrated then setenv("SHIM_MCCOMPAT", "0x800000000", 1) setenv("DRI_PRIME", "0", 1) end
+		-- Always request compatibility profile
+		setenv("LOVE_GRAPHICS_USE_GL2", "1", 1)
+	elseif ps then
+	    if gles then putenv("LOVE_GRAPHICS_USE_OPENGLES", "1") end
+	    if integrated then putenv("SHIM_MCCOMPAT", "0x800000000") end
+		-- Always request compatibility profile
+		putenv("LOVE_GRAPHICS_USE_GL2", "1")
 	end
+
+	if love._os == "Windows" then enableHighDPI() end
 end
 
 local function gcfgn(n, m)
@@ -1023,7 +1032,7 @@ end
 do
 	local defaultJIT = (love._os == "Android" or love._os == "iOS") and "off" or "on"
 	local jit_mode = AquaShine.LoadConfig("JIT_COMPILER", defaultJIT)
-	
+
 	if jit_mode == "off" then
 		jit.off()
 	elseif jit_mode == "on" then
@@ -1041,7 +1050,7 @@ function love.conf(t)
 	t.accelerometerjoystick = false
 	t.externalstorage       = conf.LOVE.AndroidExternalStorage
 	t.gammacorrect          = false
-	
+
 	t.window.title          = assert(conf.LOVE.WindowTitle)
 	t.window.icon           = conf.LOVE.WindowIcon
 	t.window.width          = gcfgn("width", assert(conf.LOVE.Width))
@@ -1058,7 +1067,7 @@ function love.conf(t)
 	t.window.highdpi        = true -- It's always enabled in Android anyway.
 	t.window.x              = nil
 	t.window.y              = nil
-	
+
 	t.modules.audio         = not(conf.Extensions.DisableAudio)
 	t.modules.joystick      = false
 	t.modules.physics       = false

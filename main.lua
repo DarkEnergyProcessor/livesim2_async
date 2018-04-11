@@ -26,7 +26,7 @@
 local love = require("love")
 
 -- Version  string
-DEPLS_VERSION = "2.1.3"
+DEPLS_VERSION = "3.0.0-beta1"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
 DEPLS_VERSION_NUMBER = 02010300

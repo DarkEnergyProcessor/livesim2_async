@@ -6,11 +6,12 @@
 local AquaShine = ...
 local love = require("love")
 local TapSound = require("tap_sound")
+local BackgroundLoader = AquaShine.LoadModule("background_loader")
 local Settings = {
 	BackImage = AquaShine.LoadImage("assets/image/ui/com_win_02.png"),
 	BackButton = AquaShine.LoadImage("assets/image/ui/com_button_01.png"),
 	BackButtonSe = AquaShine.LoadImage("assets/image/ui/com_button_01se.png"),
-	
+
 	FontConfig = AquaShine.LoadFont("MTLmr3m.ttf", 30),
 	FontDesc = AquaShine.LoadFont("MTLmr3m.ttf", 22),
 	DescImage = AquaShine.LoadImage("assets/image/ui/com_win_42.png"),
@@ -47,13 +48,7 @@ local SettingSelection = {
 		Max = 15,
 		Changed = function(this)
 			-- When initialized, second argument is nil
-			Settings.Background = {AquaShine.LoadImage(
-				"assets/image/background/liveback_"..this.Value..".png",
-				string.format("assets/image/background/b_liveback_%03d_01.png", this.Value),
-				string.format("assets/image/background/b_liveback_%03d_02.png", this.Value),
-				string.format("assets/image/background/b_liveback_%03d_03.png", this.Value),
-				string.format("assets/image/background/b_liveback_%03d_04.png", this.Value)
-			)}
+			Settings.Background = BackgroundLoader.Load(this.Value)
 		end
 	},
 	{
@@ -184,11 +179,7 @@ function Settings.Update(deltaT) end
 
 function Settings.Draw(deltaT)
 	-- Draw background
-	love.graphics.draw(Settings.Background[1])
-	love.graphics.draw(Settings.Background[2], -88, 0)
-	love.graphics.draw(Settings.Background[3], 960, 0)
-	love.graphics.draw(Settings.Background[4], 0, -43)
-	love.graphics.draw(Settings.Background[5], 0, 640)
+	love.graphics.draw(Settings.Background)
 	
 	-- Draw back button and image
 	love.graphics.draw(Settings.BackImage, -98, 0)

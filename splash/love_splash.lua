@@ -2,6 +2,7 @@
 -- Demonstration of AquaShine.SetSplashScreen
 
 local AquaShine = ...
+local love = require("love")
 local SplashScreen = {}
 local o_ten_one = require("splash.o-ten-one")
 
