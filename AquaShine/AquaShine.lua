@@ -286,9 +286,13 @@ function AquaShine.LoadAudio(path, noorder, type)
 
 		if s then
 			return token_image
-		else
-			return nil, token_image
+		elseif AquaShine.FFmpegExt and AquaShine.FFmpegExt.Native then
+			s, token_image = pcall(AquaShine.FFmpegExt.LoadAudioDecoder, path)
+			if s then
+				return token_image
+			end
 		end
+		return nil, token_image
 	end
 
 	s, token_image = pcall(love.sound.newSoundData, path)
@@ -699,52 +703,6 @@ end
 
 local function error_printer(msg, layer)
 	print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
-end
-
--- TODO: Optimize error handler
-function love.errhand(msg)
-	msg = tostring(msg)
-	error_printer(msg, 2)
-
-	if not love.window or not love.graphics or not love.event then
-		return
-	end
-
-	if not love.graphics.isCreated() or not love.window.isOpen() then
-		local success, status = pcall(love.window.setMode, 800, 600)
-		if not success or not status then
-			return
-		end
-	end
-
-	love.audio.stop()
-	love.graphics.reset()
-
-	local trace = debug.traceback()
-
-	love.graphics.clear(love.graphics.getBackgroundColor())
-	love.graphics.origin()
-
-	local err = {}
-
-	table.insert(err, "AquaShine Error Handler. An error has occured during execution")
-	table.insert(err, "Press Ctrl+C or tap to copy error message to clipboard.")
-	table.insert(err, msg.."\n")
-
-	for l in string.gmatch(trace, "(.-)\n") do
-		if not string.match(l, "boot.lua") then
-			l = string.gsub(l, "stack traceback:", "Traceback\n")
-			table.insert(err, l)
-		end
-	end
-
-	local p = table.concat(err, "\n")
-
-	p = string.gsub(p, "\t", "")
-	p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
-
-	AquaShine.LoadEntryPoint("AquaShine/ErrorHandler.lua", {p})
-	return AquaShine.StepLoop
 end
 
 -- Inputs

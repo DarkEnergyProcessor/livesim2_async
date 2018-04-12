@@ -43,7 +43,7 @@ function MainMenu.ConstructVersionText()
 	end
 	
 	if AquaShine.FFmpegExt then
-		bld[#bld + 1] = "FFX "
+		bld[#bld + 1] = AquaShine.FFmpegExt.Native and "FFXNative " or "FFX "
 	end
 	
 	if AquaShine.Download.HasHTTPS() then

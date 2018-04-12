@@ -18,9 +18,13 @@ if not(ext.DisableFileDialog) then
 end
 
 if not(ext.DisableVideo) and not(ext.DisableFFX) then
-	AquaShine.LoadModule("AquaShine.FFX2")
-
-	if not(ext.DisableTempDirectory) then
-		AquaShine.LoadModule("AquaShine.TempDirectory")
+	if pcall(require, "lvep") then
+		AquaShine.LoadModule("AquaShine.FFXNative")
+	else
+		AquaShine.LoadModule("AquaShine.FFX2")
 	end
+end
+
+if not(ext.DisableTempDirectory) then
+	AquaShine.LoadModule("AquaShine.TempDirectory")
 end
