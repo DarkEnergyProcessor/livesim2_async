@@ -17,7 +17,7 @@ local usableChar = {"0123456789", "abcdefghijklmnopqrstuvwxyz"}
 usableChar[3] = usableChar[2]:upper()
 function BeatmapSelect.CreateRandomString()
 	local a = {}
-	for i = 1, 16 do
+	for _ = 1, 16 do
 		local b = usableChar[math.random(1, 3)]
 		local c = math.random(1, #b)
 		a[#a + 1] = b:sub(c, c)
@@ -76,7 +76,7 @@ function BeatmapSelect.Start(arg)
 	-- Page text
 	BeatmapSelect.PageNumber = TextShadow(AquaShine.LoadFont("MTLmr3m.ttf", 22), "Page 1/"..#BeatmapSelect.NodeList, 64, 560):setShadow(1, 1, true)
 	BeatmapSelect.MainNode:addChild(BeatmapSelect.PageNumber)
-	
+
 	-- Open beatmap directory
 	BeatmapSelect.MainNode:addChild(
 		SimpleButton(
@@ -91,7 +91,7 @@ function BeatmapSelect.Start(arg)
 		:initText(AquaShine.LoadFont("MTLmr3m.ttf", 18), "Open Beatmap Directory")
 		:setTextPosition(8, 6)
 	)
-	
+
 	-- Insert beatmap, if FileSelection is available
 	if AquaShine.FileSelection then
 		BeatmapSelect.MainNode:addChild(
@@ -109,7 +109,7 @@ function BeatmapSelect.Start(arg)
 			:setTextPosition(8, 6)
 		)
 	end
-	
+
 	-- Download beatmap
 	BeatmapSelect.MainNode:addChild(
 		SimpleButton(
@@ -124,7 +124,7 @@ function BeatmapSelect.Start(arg)
 		:initText(AquaShine.LoadFont("MTLmr3m.ttf", 18), "Download Beatmap(s)")
 		:setTextPosition(8, 6)
 	)
-	
+
 	-- Set brother button
 	BeatmapSelect.MainNode.brother = BeatmapSelect.NodeList[1]
 end
@@ -134,30 +134,30 @@ function BeatmapSelect.FileDropped(list)
 	for i = 1, #list do
 		out[i] = list[i]:getFilename()
 	end
-	
+
 	return BeatmapSelect.BeatmapInstall(out)
 end
 
 function BeatmapSelect.BeatmapInstall(list)
 	local hasInstalled = false
-	for i, v in ipairs(list) do
+	for _, v in ipairs(list) do
 		local f, h = io.open(v, "rb")
-		
+
 		if f then
 			local output = "temp/"..BeatmapSelect.CreateRandomString()
 			local fh
 			fh, h = love.filesystem.newFile(output, "w")
-			
+
 			if fh then
-				
+
 				repeat
 					local contents = f:read(8192)
 					fh:write(contents)
 				until #contents < 8192
-				
+
 				fh:close()
 				local test = NoteLoader.NoteLoader(output)
-				
+
 				if test then
 					local source_path = BeatmapSelect.SaveDir..output
 					local dest_path = BeatmapSelect.SaveDir.."beatmap/"..AquaShine.Basename(v)
@@ -166,18 +166,18 @@ function BeatmapSelect.BeatmapInstall(list)
 					assert(os.rename(source_path, dest_path))
 					hasInstalled = true
 				end
-				
+
 				love.filesystem.remove(output)
 			else
 				AquaShine.Log("BeatmapSelect", "Cannot open file %s: %s", output, h)
 			end
-			
+
 			f:close()
 		else
 			AquaShine.Log("BeatmapSelect", "Cannot open file %s: %s", v, h)
 		end
 	end
-	
+
 	if hasInstalled then
 		AquaShine.LoadEntryPoint(":beatmap_select", BeatmapSelect.TempArg)
 	end
@@ -204,13 +204,13 @@ function BeatmapSelect.MousePressed(x, y, b, t)
 		BeatmapSelect.SwipeData[1] = t or 0
 		BeatmapSelect.SwipeData[2] = x
 	end
-	
+
 	return BeatmapSelect.MainNode:triggerEvent("MousePressed", x, y, b, t)
 end
 
 function BeatmapSelect.MouseMoved(x, y, dx, dy, t)
 	BeatmapSelect.MainNode:triggerEvent("MouseMoved", x, y, dx, dy, t)
-	
+
 	if BeatmapSelect.SwipeData[1] and math.abs(BeatmapSelect.SwipeData[2] - x) >= BeatmapSelect.SwipeThreshold then
 		BeatmapSelect.MainNode:triggerEvent("MouseMoved", -200, -200, -1, -1, t)
 		BeatmapSelect.MainNode:triggerEvent("MouseReleased", -200, -200, 1, t)
@@ -221,13 +221,12 @@ function BeatmapSelect.MouseReleased(x, y, b, t)
 	if BeatmapSelect.SwipeData[1] then
 		if math.abs(BeatmapSelect.SwipeData[2] - x) >= BeatmapSelect.SwipeThreshold then
 			-- Switch page
-			local is_left = BeatmapSelect.SwipeData[2] - x < 0
 			BeatmapSelect.MovePage(BeatmapSelect.SwipeData[2] - x < 0 and -1 or 1)
 			BeatmapSelect.SwipeData[2] = nil
 		else
 			BeatmapSelect.MainNode:triggerEvent("MouseReleased", x, y, b, t)
 		end
-		
+
 		BeatmapSelect.SwipeData[1] = nil
 	end
 end

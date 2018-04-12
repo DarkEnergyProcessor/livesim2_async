@@ -39,15 +39,16 @@ local DEPLS = {
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
 	Routines = {},			-- Table to store all DEPLS effect routines
 
-	IdolPosition = {	-- Idol position. 9 is leftmost
+	IdolPosition = {	-- Idol position. 9 is leftmost. Relative to top-left corner
 		{816, 96 }, {785, 249}, {698, 378},
 		{569, 465}, {416, 496}, {262, 465},
 		{133, 378}, {46 , 249}, {16 , 96 },
 	},
-	IdolImageData = {	-- [idol positon] = {image handle, opacity}
-		{nil, 1}, {nil, 1}, {nil, 1},
-		{nil, 1}, {nil, 1}, {nil, 1},
-		{nil, 1}, {nil, 1}, {nil, 1}
+	IdolQuads = {},
+	IdolImageData = {	-- [idol positon] = {image handle, opacity, spritebatch id}
+		{nil, 1, 0}, {nil, 1, 0}, {nil, 1, 0},
+		{nil, 1, 0}, {nil, 1, 0}, {nil, 1, 0},
+		{nil, 1, 0}, {nil, 1, 0}, {nil, 1, 0}
 	},
 	MinimalEffect = nil,		-- True means decreased dynamic effects
 	NoteAccuracy = {16, 40, 64, 112, 128},	-- Note accuracy
@@ -88,6 +89,10 @@ local EllipseRot = {
 	7 * math.pi / 8,
 	math.pi,
 }
+
+for i = 1, #DEPLS.IdolPosition do
+	DEPLS.IdolQuads[i] = love.graphics.newQuad(DEPLS.IdolPosition[i][1], DEPLS.IdolPosition[i][2], 128, 128, 960, 640)
+end
 
 -----------------------
 -- Private functions --
@@ -374,8 +379,12 @@ end
 --! @param opacity The desired opacity. 0 is fully transparent, 255 is fully opaque (255 default)
 function DEPLS.StoryboardFunctions.SetUnitOpacity(pos, opacity)
 	local data = assert(DEPLS.IdolImageData[pos], "Invalid pos specificed")
-	data[2] = math.min(math.max(opacity or DEPLS.DefaultColorMode, 0), DEPLS.DefaultColorMode)
-	DEPLS.IdolCanvasDirty = true
+	data[2] = math.min(math.max(opacity or DEPLS.DefaultColorMode, 0), DEPLS.DefaultColorMode) / DEPLS.DefaultColorMode
+	DEPLS.IdolImageSpriteBatch:setColor(1, 1, 1, data[2])
+	DEPLS.IdolImageSpriteBatch:set(
+		data[3], DEPLS.IdolQuads[pos],
+		DEPLS.IdolPosition[pos][1], DEPLS.IdolPosition[pos][2]
+	)
 end
 
 do
@@ -546,11 +555,18 @@ function DEPLS.StoryboardFunctions.SetPlaySpeed(speed_factor)
 	end
 end
 
---! @brief Force set the note style between old ones and new ones
---! @param new_style Force new style (true) or force old style (false)
+--! @brief Force set the note style
+--! @param note_style Force note style (1, 2, or 3)
 --! @note This function can only be called in pre-initialize or in Initialize function
-function DEPLS.StoryboardFunctions.ForceNewNoteStyle(new_style)
-	DEPLS.ForceNoteStyle = new_style and 2 or 1
+function DEPLS.StoryboardFunctions.ForceNoteStyle(note_style)
+	note_style = assert(tonumber(note_style), "Invalid note style ID")
+	note_style = assert(note_style > 0 and note_style < 4 and note_style, "Invalid note style ID")
+	DEPLS.ForceNoteStyle = note_style
+end
+
+-- Backward compatibility
+function DEPLS.StoryboardFunctions.ForceNewNoteStyle(ns)
+	return DEPLS.StoryboardFunctions.ForceNoteStyle(ns and 2 or 1)
 end
 
 --! @brief Check if current storyboard is under rendering mode
@@ -604,7 +620,7 @@ end
 --!          all of background image in LOVE `Image` object (index 0-4)
 function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
 	if DEPLS.StockBackgroundImage then
-		return DEPLS.StockBackgroundImage:clone()
+		return DEPLS.StockBackgroundImage
 	end
 
 	if idx then
@@ -680,6 +696,7 @@ function DEPLS.StoryboardFunctions.SetPostProcessingShader(...)
 		DEPLS.PostShader = arg
 	end
 
+	DEPLS.UpdatePostProcessingCanvas()
 	if prev then
 		return unpack(prev)
 	else
@@ -723,10 +740,10 @@ function DEPLS.DrawDebugInfo()
 	local text = string.format([[
 %d FPS LOVE %s
 RENDERER = %s %s
-DRAWCALLS = %d
+DRAWCALLS = %d (BATCHED %d)
 TEXTUREMEMORY = %d Bytes
 LOADED_IMAGES = %d
-LOADED_CANVAS = %d
+LOADED_CANVAS = %d (SWITCHES = %d)
 LOADED_FONTS = %d
 ELAPSED_TIME = %d ms
 SPEED_FACTOR = %.2f%%
@@ -739,11 +756,11 @@ REMAINING_NOTES = %d
 PERFECT = %d GREAT = %d GOOD = %d BAD = %d MISS = %d
 AUTOPLAY = %s
 ]]		, love.timer.getFPS(), love._version, AquaShine.RendererInfo[1], AquaShine.RendererInfo[2], status.drawcalls
-		, status.texturememory, status.images, status.canvases, status.fonts, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100
-		, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity * 255
-		, DEPLS.BeatmapAudioVolume, sample[1], sample[2], DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect
-		, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss
-		, tostring(DEPLS.AutoPlay))
+		, status.drawcallsbatched, status.texturememory, status.images, status.canvases, status.canvasswitches, status.fonts
+		, DEPLS.ElapsedTime, DEPLS.PlaySpeed * 100, DEPLS.Routines.ComboCounter.CurrentCombo, #EffectPlayer.list
+		, DEPLS.LiveOpacity, DEPLS.BackgroundOpacity * 255, DEPLS.BeatmapAudioVolume, sample[1], sample[2]
+		, DEPLS.NoteManager.NoteRemaining, DEPLS.NoteManager.Perfect, DEPLS.NoteManager.Great, DEPLS.NoteManager.Good
+		, DEPLS.NoteManager.Bad, DEPLS.NoteManager.Miss, tostring(DEPLS.AutoPlay))
 	love.graphics.setFont(DEPLS.MTLmr3m)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(text, 1, 1)
@@ -865,23 +882,21 @@ function DEPLS.FinalizeAudio()
 end
 
 function DEPLS.UpdateIdolIcon()
-	if DEPLS.IdolCanvasDirty then
-		DEPLS.IdolCanvasDirty = false
-		love.graphics.push("all")
-		love.graphics.setCanvas(DEPLS.IdolCanvas)
-		love.graphics.clear()
-		love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.push("all")
+	love.graphics.setCanvas(DEPLS.IdolCanvas)
+	love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.origin()
+	love.graphics.clear()
 
-		-- Draw idol unit
-		local IdolData = DEPLS.IdolImageData
-		local IdolPos = DEPLS.IdolPosition
+	-- Draw idol unit
+	local IdolData = DEPLS.IdolImageData
+	local IdolPos = DEPLS.IdolPosition
 
-		for i = 1, 9 do
-			love.graphics.setColor(1, 1, 1, IdolData[i][2])
-			love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
-		end
-		love.graphics.pop()
+	for i = 1, 9 do
+		love.graphics.setColor(1, 1, 1, IdolData[i][2])
+		love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
 	end
+	love.graphics.pop()
 end
 
 --! @brief DEPLS Initialization function
@@ -955,31 +970,31 @@ function DEPLS.Start(argv)
 	DEPLS.Sound.BeatmapDecoder = noteloader_data:GetBeatmapAudio()
 	DEPLS.Sound.LiveClear = noteloader_data:GetLiveClearSound()
 	DEPLS.FinalizeAudio()
-	
+
 	if noteloader_data:GetScorePerTap() > 0 then
 		DEPLS.ScoreBase = noteloader_data:GetScorePerTap()
 	end
-	
+
 	if noteloader_data:GetStamina() > 0 then
 		DEPLS.Stamina = noteloader_data:GetStamina()
 	end
-	
+
 	-- Load modules
 	DEPLS.NoteManager = assert(love.filesystem.load("note.lua"))(DEPLS, AquaShine)
-	
+
 	-- Live Show! Cleared voice
 	if DEPLS.Sound.LiveClear then DEPLS.Sound.LiveClear = love.audio.newSource(DEPLS.Sound.LiveClear) end
-	
+
 	-- Normalize song volume
 	-- Enabled on fast system by default
 	if DEPLS.Sound.BeatmapAudio and (not(AquaShine.IsSlowSystem()) and not(AquaShine.GetCommandLineConfig("norg"))) or AquaShine.GetCommandLineConfig("forcerg") then
 		require("volume_normalizer")(DEPLS.Sound.BeatmapAudio)
 	end
-	
+
 	-- Randomize note
 	if argv.Random or AquaShine.GetCommandLineConfig("random") then
 		local new_notes_list, msg = (require("randomizer3"))(notes_list)
-		
+
 		if not(new_notes_list) then
 			AquaShine.Log("livesim2", "Can't be randomized: %s", msg)
 		else
@@ -987,15 +1002,16 @@ function DEPLS.Start(argv)
 			notes_list = new_notes_list
 		end
 	end
-	
+
 	-- Load background
 	if  AquaShine.LoadConfig("AUTO_BACKGROUND", 1) == 1 then
 		local noteloader_background = noteloader_data:GetBackgroundID(DEPLS.NoteRandomized)
-		
+
 		if noteloader_background > 0 then
 			BackgroundID = noteloader_background
 		elseif noteloader_background == -1 then
 			local cbackground = noteloader_data:GetCustomBackground()
+			--[[
 			DEPLS.BackgroundImage[0][1] = cbackground[0]
 			DEPLS.BackgroundImage[0][4] = 960 / cbackground[0]:getWidth()
 			DEPLS.BackgroundImage[0][5] = 640 / cbackground[0]:getHeight()
@@ -1003,28 +1019,48 @@ function DEPLS.Start(argv)
 			DEPLS.BackgroundImage[2][1] = cbackground[2]
 			DEPLS.BackgroundImage[3][1] = cbackground[3]
 			DEPLS.BackgroundImage[4][1] = cbackground[4]
+			]]
+			DEPLS.StockBackgroundImage = BackgroundLoader.Compose(
+				cbackground[0],
+				cbackground[1],
+				cbackground[2],
+				cbackground[3],
+				cbackground[4]
+			)
 			custom_background = true
 		end
 	end
-	
+
+	-- Load background if no custom background present
+	if not(custom_background) then
+		DEPLS.StockBackgroundImage = assert(BackgroundLoader.Load(BackgroundID))
+	end
+
 	-- Load unit icons
 	local noteloader_units = noteloader_data:GetCustomUnitInformation()
 	local IdolImagePath = {}
+	DEPLS.IdolImageSpriteBatch = love.graphics.newSpriteBatch(DEPLS.IdolCanvas, 9, "dynamic")
 	do
 		local idol_img = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
-		
+
 		for w in idol_img:gmatch("[^\t]+") do
 			IdolImagePath[#IdolImagePath + 1] = w
 		end
 	end
 	for i = 1, 9 do
 		DEPLS.IdolImageData[i][1] = noteloader_units[i] or DEPLS.LoadUnitIcon(IdolImagePath[10 - i])
+		DEPLS.IdolImageData[i][3] = DEPLS.IdolImageSpriteBatch:add(
+			DEPLS.IdolQuads[i],
+			DEPLS.IdolPosition[i][1], DEPLS.IdolPosition[i][2]
+		)
 	end
-	
+	DEPLS.UpdateIdolIcon()
+	DEPLS.IdolImageSpriteBatch:flush()
+
 	-- Load storyboard
 	if not(AquaShine.GetCommandLineConfig("nostory")) and not(argv.NoStoryboard) then
 		local s, msg = pcall(noteloader_data.GetStoryboard, noteloader_data)
-		
+
 		if s then
 			DEPLS.StoryboardHandle = msg
 		else
@@ -1049,22 +1085,22 @@ function DEPLS.Start(argv)
 		AquaShine.Log("livesim2", "Cover art init")
 		DEPLS.Routines.CoverPreview.Initialize(new_coverdata)
 	end
-	
+
 	-- Initialize storyboard
 	if DEPLS.StoryboardHandle then
 		AquaShine.Log("livesim2", "Storyboard init")
 		local s, msg = pcall(DEPLS.StoryboardHandle.Initialize, DEPLS.StoryboardHandle, DEPLS.StoryboardFunctions)
-		
+
 		if not(s) then
 			DEPLS.StoryboardHandle = nil
 			DEPLS.StoryboardErrorMsg = msg
 			AquaShine.Log("livesim2", "Storyboard error: %s", msg)
 		end
 	end
-	
+
 	if not(DEPLS.StoryboardHandle) and not(argv.NoVideo) then
 		local video = noteloader_data:GetVideoBackground()
-		
+
 		if video then
 			-- We have video. Letterbox the video accordingly
 			local w, h = video:getDimensions()
@@ -1072,13 +1108,13 @@ function DEPLS.Start(argv)
 			DEPLS.VideoBackgroundData = {video, w * 0.5, h * 0.5, math.max(960 / w, 640 / h)}
 		end
 	end
-	
+
 	-- If note style forcing is not enabled, get from config
 	if not(DEPLS.ForceNoteStyle) then
 		local ns = noteloader_data:GetNotesStyle()
 		DEPLS.ForceNoteStyle = ns > 0 and ns or AquaShine.LoadConfig("NOTE_STYLE", 1)
 	end
-	
+
 	-- Add to note manager
 	AquaShine.Log("livesim2", "Note data init")
 	do
@@ -1088,11 +1124,11 @@ function DEPLS.Start(argv)
 		end
 	end
 	DEPLS.NoteManager.InitializeImage()
-	
+
 	-- Initialize flash animation
 	DEPLS.LiveShowCleared:setMovie("ef_311")
 	DEPLS.FullComboAnim:setMovie("ef_329")
-	
+
 	-- Calculate score bar
 	local score_info = noteloader_data:GetScoreInformation()
 	if score_info then
@@ -1103,7 +1139,7 @@ function DEPLS.Start(argv)
 	else
 		-- Calculate using master difficulty preset
 		local s_score = 0
-		
+
 		for i = 1, #notes_list do
 			s_score = s_score + (notes_list[i].effect > 10 and 370 or 739)
 		end
@@ -1126,17 +1162,15 @@ function DEPLS.Start(argv)
 	-- Load base routines, handles whenever it uses SIF or Lovewing UI
 	DEPLS.LoadRoutines()
 
-	-- Load background if no storyboard present
-	if not(DEPLS.StoryboardHandle) and not(custom_background) then
-		DEPLS.StockBackgroundImage = assert(BackgroundLoader.Load(BackgroundID))
-	end
-
 	-- Load Font
 	DEPLS.MTLmr3m = AquaShine.LoadFont("MTLmr3m.ttf", 24)
 	DEPLS.ErrorFont = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 
 	-- Set NoteLoader object
 	DEPLS.NoteLoaderObject = noteloader_data
+
+	-- Clean
+	return collectgarbage()
 end
 
 -- Used internally
@@ -1163,8 +1197,6 @@ function DEPLS.Update(deltaT)
 		DEPLS.Routines.CoverPreview.Update(deltaT)
 		DEPLS.CoverShown = DEPLS.CoverShown - deltaT
 	end
-
-	DEPLS.UpdateIdolIcon()
 
 	persistent_bg_opacity = math.min(ElapsedTime + DEPLS.LiveDelay, DEPLS.LiveDelay) / DEPLS.LiveDelay * 0.7451
 
@@ -1298,17 +1330,8 @@ function DEPLS.Draw(deltaT)
 		DEPLS.Routines.LiveHeader.Draw()
 
 		-- Draw idol unit
-		--[[
-		local IdolData = DEPLS.IdolImageData
-		local IdolPos = DEPLS.IdolPosition
-
-		for i = 1, 9 do
-			love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity * IdolData[i][2])
-			love.graphics.draw(IdolData[i][1], IdolPos[i][1], IdolPos[i][2])
-		end
-		]]
 		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-		love.graphics.draw(DEPLS.IdolCanvas)
+		love.graphics.draw(DEPLS.IdolImageSpriteBatch)
 
 		-- Draw timing icon
 		DEPLS.NoteManager.TimingIconDraw()
@@ -1347,11 +1370,11 @@ end
 
 -- Post-processing draw. Shaders can be chained here
 function DEPLS.PostProcessingDraw(curcanv)
-	love.graphics.push("all")
-	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.origin()
-	
-	if DEPLS.PostShader then
+	if DEPLS.PostShader and #DEPLS.PostShader > 0 then
+		love.graphics.push("all")
+		love.graphics.setBlendMode("alpha", "premultiplied")
+		love.graphics.origin()
+		
 		for i = 1, #DEPLS.PostShader do
 			love.graphics.setCanvas(DEPLS.SecondaryCanvas)
 			love.graphics.clear()
@@ -1359,11 +1382,13 @@ function DEPLS.PostProcessingDraw(curcanv)
 			love.graphics.draw(DEPLS.MainCanvas)
 			DEPLS.MainCanvas, DEPLS.SecondaryCanvas = DEPLS.SecondaryCanvas, DEPLS.MainCanvas
 		end
-		love.graphics.setShader()
+		love.graphics.pop()
 	end
-	
+
 	love.graphics.setCanvas(curcanv)
 	love.graphics.clear()
+	love.graphics.push()
+	love.graphics.origin()
 	love.graphics.draw(DEPLS.MainCanvas)
 	love.graphics.pop()
 end
@@ -1513,10 +1538,18 @@ function DEPLS.KeyReleased(key)
 	end
 end
 
+function DEPLS.UpdatePostProcessingCanvas()
+	if DEPLS.PostShader then
+		DEPLS.SecondaryCanvas = love.graphics.newCanvas()
+	else
+		DEPLS.SecondaryCanvas = nil
+	end
+end
+
 function DEPLS.Resize()
 	DEPLS.IdolCanvas = love.graphics.newCanvas(960, 640) DEPLS.IdolCanvasDirty = true
 	DEPLS.MainCanvas = love.graphics.newCanvas()
-	DEPLS.SecondaryCanvas = love.graphics.newCanvas()
+	DEPLS.UpdatePostProcessingCanvas()
 end
 
 function DEPLS.Exit()

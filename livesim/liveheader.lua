@@ -12,7 +12,7 @@ local function init()
 	LiveHeader.ScoreGauge = AquaShine.LoadImage("assets/image/live/live_gauge_03_02.png")
 	LiveHeader.Pause = AquaShine.LoadImage("assets/image/live/live_pause.png")
 
-	LiveHeader.HeaderAll = love.graphics.newCanvas(960, 640, {dpiscale = 1})
+	LiveHeader.HeaderAll = love.graphics.newCanvas(960, 100)
 
 	return LiveHeader
 end
@@ -42,6 +42,8 @@ function LiveHeader.Update()
 		love.graphics.push("all")
 		love.graphics.setBlendMode("alpha", "premultiplied")
 		love.graphics.setCanvas(LiveHeader.HeaderAll)
+		love.graphics.clear()
+		love.graphics.origin()
 
 		-- Live header
 		love.graphics.setColor(1, 1, 1)

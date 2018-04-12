@@ -42,12 +42,12 @@ BackgroundLoader.Cache = setmetatable({}, {mode = "v"})
 
 local function quadToTriangle(pos)
 	local triangle = {}
-	triangle[#triangle + 1] = {pos[1][1], pos[1][2], pos[1][3]/1024, pos[1][4]/1024}
-	triangle[#triangle + 1] = {pos[2][1], pos[2][2], pos[2][3]/1024, pos[2][4]/1024}
-	triangle[#triangle + 1] = {pos[3][1], pos[3][2], pos[3][3]/1024, pos[3][4]/1024}
-	triangle[#triangle + 1] = {pos[3][1], pos[3][2], pos[3][3]/1024, pos[3][4]/1024}
-	triangle[#triangle + 1] = {pos[4][1], pos[4][2], pos[4][3]/1024, pos[4][4]/1024}
-	triangle[#triangle + 1] = {pos[1][1], pos[1][2], pos[1][3]/1024, pos[1][4]/1024}
+	triangle[#triangle + 1] = {pos[1][1], pos[1][2], (pos[1][3]+.5)/1024, (pos[1][4]+.5)/1024}
+	triangle[#triangle + 1] = {pos[2][1], pos[2][2], (pos[2][3]+.5)/1024, (pos[2][4]+.5)/1024}
+	triangle[#triangle + 1] = {pos[3][1], pos[3][2], (pos[3][3]+.5)/1024, (pos[3][4]+.5)/1024}
+	triangle[#triangle + 1] = {pos[3][1], pos[3][2], (pos[3][3]+.5)/1024, (pos[3][4]+.5)/1024}
+	triangle[#triangle + 1] = {pos[4][1], pos[4][2], (pos[4][3]+.5)/1024, (pos[4][4]+.5)/1024}
+	triangle[#triangle + 1] = {pos[1][1], pos[1][2], (pos[1][3]+.5)/1024, (pos[1][4]+.5)/1024}
 	return triangle
 end
 
@@ -66,37 +66,37 @@ BackgroundLoader.MeshData = mergeTable(
 	-- Main background
 	quadToTriangle {
 		{0, 0, 0, 43},
-		{0, 640, 0, 683},
-		{960, 640, 960, 683},
-		{960, 0, 960, 43}
+		{0, 640, 0, 682},
+		{960, 640, 959, 682},
+		{960, 0, 959, 43}
 	},
 	-- Left patch
 	quadToTriangle {
-		{-88, 0, 640, 750},
+		{-88, 0, 639, 750},
 		{-88, 640, 0, 750},
-		{0, 640, 0, 838},
-		{0, 0, 640, 838}
+		{0, 640, 0, 837},
+		{0, 0, 639, 837}
 	},
 	-- Right patch
 	quadToTriangle {
-		{960, 0, 640, 864},
+		{960, 0, 639, 864},
 		{960, 640, 0, 864},
-		{1048, 640, 0, 952},
-		{1048, 0, 640, 952}
+		{1048, 640, 0, 951},
+		{1048, 0, 639, 951}
 	},
 	-- Top patch
 	quadToTriangle {
 		{0, -43, 0, 0},
-		{0, 0, 0, 43},
-		{960, 0, 960, 43},
-		{960, -43, 960, 0}
+		{0, 0, 0, 42},
+		{960, 0, 959, 42},
+		{960, -43, 959, 0}
 	},
 	-- Bottom patch
 	quadToTriangle {
 		{0, 640, 0, 683},
-		{0, 683, 0, 726},
-		{960, 683, 960, 726},
-		{960, 640, 960, 683},
+		{0, 683, 0, 725},
+		{960, 683, 959, 725},
+		{960, 640, 959, 683},
 	}
 )
 
@@ -112,6 +112,28 @@ function BackgroundLoader.Load(id)
 		BackgroundLoader.Cache[id] = BackgroundLoader.LoadDirect(id)
 	end
 	return BackgroundLoader.Cache[id]
+end
+
+function BackgroundLoader.Compose(main, left, right, top, bottom)
+	local framebuffer = love.graphics.newCanvas(1024, 1024)
+
+	love.graphics.push("all")
+	love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.setCanvas(framebuffer)
+	love.graphics.clear()
+	love.graphics.origin()
+
+	-- Draw background
+	love.graphics.draw(main, 0, 43, 0, 960 / main:getWidth(), 640 / main:getHeight())
+	if left   then love.graphics.draw(left  , 639, 750, math.pi/2) end
+	if right  then love.graphics.draw(right , 639, 864, math.pi/2) end
+	if top    then love.graphics.draw(top   , 0  , 0  , 0        ) end
+	if bottom then love.graphics.draw(bottom, 0  , 683, 0        ) end
+	love.graphics.pop()
+
+	local mesh = love.graphics.newMesh(BackgroundLoader.MeshData, "triangles", "static")
+	mesh:setTexture(framebuffer)
+	return mesh
 end
 
 return BackgroundLoader

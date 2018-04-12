@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local DEPLS, AquaShine = ...
-local love = love
+local love = require("love")
 local PauseScreen = {
 	Paused = -1,
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 36),
@@ -20,7 +20,7 @@ local PauseOverlay = AquaShine.Composition.Create {
 		x = 0, y = 0,
 		draw = function(this)
 			local name = DEPLS.NoteLoaderObject:GetName()
-			
+
 			love.graphics.setColor(0, 0, 0, 190 / 255)
 			love.graphics.rectangle("fill", -88, -43, 1136, 726)
 			love.graphics.setColor(1, 1, 1)
@@ -111,16 +111,14 @@ function PauseScreen.Update(deltaT)
 		if PauseScreen.Paused <= 3000 then
 			-- Resume initiated. Decreaase counter
 			PauseScreen.Paused = PauseScreen.Paused - deltaT
-			
+
 			if PauseScreen.Paused <= 0 then
 				if PauseScreen.ResumeCallback then
 					PauseScreen.ResumeCallback()
 				end
-				
+
 				PauseScreen.ResumeCallback = nil
 			end
-		elseif PauseScreen.Paused == math.huge then
-			-- Fully paused state
 		end
 	end
 end
@@ -129,7 +127,7 @@ function PauseScreen.Draw()
 	-- 0 or -1 pause value is not considered as paused.
 	if PauseScreen.Paused > 0 then
 		PauseOverlay:Draw()
-		
+
 		if PauseScreen.Paused <= 3000 then
 			-- Draw pause counter
 			love.graphics.setColor(1, 1, 1)

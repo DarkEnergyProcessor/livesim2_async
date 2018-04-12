@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local AquaShine, NoteLoader = ...
-local love = love
+local love = require("love")
 local bit = require("bit")
 
 local CBFLoader = NoteLoader.NoteLoaderLoader:extend("NoteLoader.CBFLoader", {ProjectLoader = true})
@@ -524,28 +524,28 @@ function CBFBeatmap.GetCustomBackground(this)
 		for _, v in ipairs(supported_image_fmts) do
 			local name = this.project_folder.."/background"..v
 			local name_info = love.filesystem.getInfo(name)
-			
+
 			if name_info and name_info.type == "file" then
 				local bg = {}
 				local img = love.graphics.newImage(name)
 				local w, h = img:getDimensions()
 				local ratio = w / h
-				
+
 				if ratio >= 1.770 then
 					-- We can make the background to be 16:9
 					local canvas = love.graphics.newCanvas(1136, 640)
 					local scale = 640 / h
-					
+
 					love.graphics.push("all")
 					love.graphics.setCanvas(canvas)
 					love.graphics.setColor(1, 1, 1)
 					love.graphics.clear(0, 0, 0)
 					love.graphics.draw(img, 568, 320, 0, scale, scale, w * 0.5, h * 0.5)
 					love.graphics.pop()
-					
-					bg[0] = love.graphics.newImage(canvas:newImageData(88, 0, 960, 640))
-					bg[1] = love.graphics.newImage(canvas:newImageData(0, 0, 88, 640))
-					bg[2] = love.graphics.newImage(canvas:newImageData(1048, 0, 88, 640))
+
+					bg[0] = love.graphics.newImage(canvas:newImageData(0, 1, 88, 0, 960, 640))
+					bg[1] = love.graphics.newImage(canvas:newImageData(0, 1, 0, 0, 88, 640))
+					bg[2] = love.graphics.newImage(canvas:newImageData(0, 1, 1048, 0, 88, 640))
 				elseif ratio >= 1.5 then
 					-- 2:3 ratio. Put it as-is
 					bg[0] = img
@@ -553,22 +553,22 @@ function CBFBeatmap.GetCustomBackground(this)
 					-- We can make the background to be 4:3
 					local canvas = love.graphics.newCanvas(960, 720)
 					local scale = 960 / w
-					
+
 					love.graphics.push("all")
 					love.graphics.setCanvas(canvas)
 					love.graphics.setColor(1, 1, 1)
 					love.graphics.clear(0, 0, 0)
 					love.graphics.draw(img, 480, 360, 0, scale, scale, w * 0.5, h * 0.5)
 					love.graphics.pop()
-					
-					bg[0] = love.graphics.newImage(canvas:newImageData(0, 40, 960, 640))
-					bg[4] = love.graphics.newImage(canvas:newImageData(0, 0, 960, 40))
-					bg[5] = love.graphics.newImage(canvas:newImageData(0, 640, 960, 40))
+
+					bg[0] = love.graphics.newImage(canvas:newImageData(0, 1, 0, 40, 960, 640))
+					bg[4] = love.graphics.newImage(canvas:newImageData(0, 1, 0, 0, 960, 40))
+					bg[5] = love.graphics.newImage(canvas:newImageData(0, 1, 0, 640, 960, 40))
 				else
 					-- We don't know the ratio. Put it as-is
 					bg[0] = img
 				end
-				
+
 				this.background = bg
 				break
 			end

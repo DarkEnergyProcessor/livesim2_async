@@ -87,7 +87,7 @@ function Yohane.Platform.CloneAudio(audio)
 	if audio then
 		return audio:clone()
 	end
-	
+
 	return nil
 end
 
@@ -100,7 +100,7 @@ end
 
 function Yohane.Platform.Draw(drawdatalist)
 	local r, g, b, a = love.graphics.getColor()
-	
+
 	for _, drawdata in ipairs(drawdatalist) do
 		if drawdata.image then
 			love.graphics.setColor(drawdata.r / 255, drawdata.g / 255, drawdata.b / 255, drawdata.a / 255)
