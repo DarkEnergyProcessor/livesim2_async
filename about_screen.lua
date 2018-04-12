@@ -2,23 +2,18 @@
 -- Part of Live Simulator: 2
 
 local AquaShine = ...
-local love = love
+local love = require("love")
+local BackgroundLoader = AquaShine.LoadModule("background_loader")
 local AboutScreen = {}
 
 local TextFont = AquaShine.LoadFont("MTLmr3m.ttf", 15)
 local TitleFont = AquaShine.LoadFont("MTLmr3m.ttf", 60)
 local TitleIcon = AquaShine.LoadImage("assets/image/icon/icon_128x128.png")
-local Background = {AquaShine.LoadImage(
-	"assets/image/background/liveback_12.png",
-	"assets/image/background/b_liveback_012_01.png",
-	"assets/image/background/b_liveback_012_02.png",
-	"assets/image/background/b_liveback_012_03.png",
-	"assets/image/background/b_liveback_012_04.png"
-)}
+local Background = BackgroundLoader.Load(12)
 local ExternalLicenses = love.filesystem.load("about_screen_license")()
 local Text = [[
 Written By:     AuahDark
-Special Thanks: @yuyu0127_ for the SIF v5-style note images.
+Special Thanks: @yuyu0127_ for the note images
                 @RayFirefist for the contribution to Live Simulator: 2
 				/u/MilesElectric168 for the note randomizer algorithm
 License:
@@ -58,40 +53,36 @@ function AboutScreen.Update() end
 
 function AboutScreen.Draw()
 	local mx, my = AquaShine.CalculateTouchPosition(love.mouse.getPosition())
-	
+
 	-- Background
 	love.graphics.setColor(0.25, 0.25, 0.25)
-	love.graphics.draw(Background[1])
-	love.graphics.draw(Background[2], -88, 0)
-	love.graphics.draw(Background[3], 960, 0)
-	love.graphics.draw(Background[4], 0, -43)
-	love.graphics.draw(Background[5], 0, 640)
+	love.graphics.draw(Background)
 	love.graphics.setColor(1, 1, 1)
-	
+
 	-- Title
 	love.graphics.setFont(TitleFont)
 	love.graphics.draw(TitleIcon, 5, 0, 0, 0.9, 0.9)
 	love.graphics.print("Live Simulator: 2", 140, 30)
-	
+
 	-- Text
 	love.graphics.setFont(TextFont)
 	love.graphics.print(Text, 5, 120)
-	
+
 	for i = 1, #ExternalLicenses do
 		local a = ExternalLicenses[i]
-		
+
 		if mx >= a[1] and my >= a[2] and mx < a[1] + 56 and my < a[2] + 12 then
 			love.graphics.setColor(0, 0, 0, 0.75)
 			love.graphics.rectangle("fill", -88, -43, 1136, 726)
 			love.graphics.setColor(1, 1, 1)
 			love.graphics.print(a[3], 5, 150)
-			
+
 			break
 		end
 	end
 end
 
-function AboutScreen.KeyReleased(key, scancode)
+function AboutScreen.KeyReleased(key)
 	if key == "escape" then
 		AquaShine.LoadEntryPoint(":main_menu")
 	end
