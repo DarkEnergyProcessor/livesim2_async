@@ -21,4 +21,6 @@ function FFXNative.LoadAudioDecoder(path)
 	return lvep.newDecoder(path)
 end
 
+function FFXNative.Update() end
+
 AquaShine.FFmpegExt = FFXNative
