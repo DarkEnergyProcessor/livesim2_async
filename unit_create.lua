@@ -1,6 +1,7 @@
 -- Unit creation from custom image
 -- Part of Live Simulator: 2
 
+local AquaShine = ...
 local UnitCreate = {}
 local love = love
 local HSL

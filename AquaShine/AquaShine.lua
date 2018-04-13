@@ -43,6 +43,22 @@ if not(pcall(require, "table.clear")) then
 	end
 end
 
+local ScreenshotThreadCode = [[
+local lt = require("love.timer")
+local li = require("love.image")
+local channel = ...
+
+while true do
+	local imagedata = channel:demand()
+	local name = string.format("screenshots/screenshot_%s_%d.png",
+		os.date("%Y_%m_%d_%H_%M_%S"),
+		math.floor((love.timer.getTime() % 1) * 1000)
+	)
+	imagedata:encode("png", name)
+	print("Screenshot saved", name)
+end
+]]
+
 local weak_table = {__mode = "v"}
 local conf = ...
 local AquaShine = {
@@ -58,19 +74,6 @@ local AquaShine = {
 	-- Always true, since we stop supporting 0.10.2
 	NewLove = true
 }
-
-local ScreenshotThreadCode = [[
-local lt = require("love.timer")
-local li = require("love.image")
-local arg = ...
-local name = string.format("screenshots/screenshot_%s_%d.png",
-	os.date("%Y_%m_%d_%H_%M_%S"),
-	math.floor((lt.getTime() % 1) * 1000)
-)
-
-require("debug").getregistry().ImageData.encode(arg, "png", name)
-print("Screenshot saved as", name)
-]]
 
 ----------------------------------
 -- AquaShine Utilities Function --
@@ -650,34 +653,24 @@ function AquaShine.StepLoop()
 
 	if love.graphics.isActive() then
 		love.graphics.clear()
+		love.graphics.push("all")
 
-		do
-			love.graphics.setCanvas {AquaShine.MainCanvas, stencil = true}
-			love.graphics.clear()
-
-			if AquaShine.CurrentEntryPoint then
-				dt = dt * 1000
-
-				AquaShine.CurrentEntryPoint.Update(dt)
-				love.graphics.push("all")
-
-				if AquaShine.LogicalScale then
-					love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
-					love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
-					AquaShine.CurrentEntryPoint.Draw(dt)
-				else
-					AquaShine.CurrentEntryPoint.Draw(dt)
-				end
-
-				love.graphics.pop()
-				love.graphics.setColor(1, 1, 1)
+		if AquaShine.CurrentEntryPoint then
+			dt = dt * 1000
+			AquaShine.CurrentEntryPoint.Update(dt)
+			if AquaShine.LogicalScale then
+				love.graphics.translate(AquaShine.LogicalScale.OffX, AquaShine.LogicalScale.OffY)
+				love.graphics.scale(AquaShine.LogicalScale.ScaleOverall)
+				AquaShine.CurrentEntryPoint.Draw(dt)
 			else
-				love.graphics.setFont(AquaShine.MainFont)
-				love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
+				AquaShine.CurrentEntryPoint.Draw(dt)
 			end
-			love.graphics.setCanvas()
+		else
+			love.graphics.setFont(AquaShine.MainFont)
+			love.graphics.print("AquaShine loader: No entry point specificed/entry point rejected", 10, 10)
 		end
-		love.graphics.draw(AquaShine.MainCanvas)
+
+		love.graphics.pop()
 		love.graphics.present()
 	end
 end
@@ -692,6 +685,12 @@ function love.run()
 	end
 
 	love.load(arg)
+
+	if love.thread then
+		AquaShine.ScreenshotThread = love.thread.newThread(ScreenshotThreadCode)
+		AquaShine.ScreenshotThreadChannel = love.thread.newChannel()
+		AquaShine.ScreenshotThread:start(AquaShine.ScreenshotThreadChannel)
+	end
 
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
@@ -775,7 +774,7 @@ end
 
 function love.keyreleased(key, scancode)
 	if key == "f12" and love.thread then
-		love.thread.newThread(ScreenshotThreadCode):start(AquaShine.MainCanvas:newImageData())
+		love.graphics.captureScreenshot(AquaShine.ScreenshotThreadChannel)
 	elseif key == "f10" then
 		AquaShine.Log("AquaShine", "F10: collectgarbage")
 		if jit then jit.flush() end
@@ -823,8 +822,6 @@ function love.resize(w, h)
 		AquaShine.LogicalScale.OffX = (AquaShine.LogicalScale.ScreenX - AquaShine.LogicalScale.ScaleOverall * lx) / 2
 		AquaShine.LogicalScale.OffY = (AquaShine.LogicalScale.ScreenY - AquaShine.LogicalScale.ScaleOverall * ly) / 2
 	end
-
-	AquaShine.MainCanvas = love.graphics.newCanvas()
 
 	if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Resize then
 		AquaShine.CurrentEntryPoint.Resize(w, h)

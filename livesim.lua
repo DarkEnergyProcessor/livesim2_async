@@ -615,25 +615,9 @@ function DEPLS.StoryboardFunctions.MultiVideoFormatSupported()
 end
 
 --! @brief Get the current beatmap background
---! @param idx The index to retrieve it's background image or nil for all index
---! @returns LOVE `Image` object of specificed index, or nil, or table containing
---!          all of background image in LOVE `Image` object (index 0-4)
-function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage(idx)
-	if DEPLS.StockBackgroundImage then
-		return DEPLS.StockBackgroundImage
-	end
-
-	if idx then
-		assert(idx >= 0 and idx < 5, "Invalid index")
-		return DEPLS.BackgroundImage[idx][1]
-	else
-		local a = {}
-		for i = 0, 4 do
-			a[i] = DEPLS.BackgroundImage[i][1]
-		end
-
-		return a
-	end
+--! @returns LOVE `Mesh` object which can be drawn for full background
+function DEPLS.StoryboardFunctions.GetCurrentBackgroundImage()
+	return DEPLS.StockBackgroundImage
 end
 
 --! @brief Get the current unit image
@@ -1250,17 +1234,25 @@ function DEPLS.Update(deltaT)
 	end
 end
 
---! @brief DEPLS Draw function. It is separated to allow offline rendering
+-- Used to setting up framebuffer
+function DEPLS.BeforeDrawSetup()
+	local fbo = love.graphics.getCanvas()
+	if fbo or (DEPLS.PostShader and #DEPLS.PostShader > 0) then
+		DEPLS.PreviousFBO = fbo
+		love.graphics.setCanvas(DEPLS.MainCanvas)
+	end
+end
+
+--! @brief DEPLS Draw function.
 --! @param deltaT Delta-time in milliseconds
 function DEPLS.Draw(deltaT)
 	deltaT = deltaT * DEPLS.PlaySpeed
 
 	local Routines = DEPLS.Routines
 	local AllowedDraw = DEPLS.ElapsedTime > 0
-	local lastCanvas = love.graphics.getCanvas()
 
 	love.graphics.push("all")
-	love.graphics.setCanvas(DEPLS.MainCanvas)
+	DEPLS.BeforeDrawSetup()
 	love.graphics.clear()
 
 	-- If there's storyboard, draw the storyboard instead.
@@ -1355,7 +1347,7 @@ function DEPLS.Draw(deltaT)
 
 	-- Post-processing draw first so the pause overlay
 	-- and the debug display doesn't affected.
-	DEPLS.PostProcessingDraw(lastCanvas)
+	DEPLS.PostProcessingDraw()
 	love.graphics.pop()
 
 	-- Pause overlay
@@ -1369,12 +1361,15 @@ function DEPLS.Draw(deltaT)
 end
 
 -- Post-processing draw. Shaders can be chained here
-function DEPLS.PostProcessingDraw(curcanv)
+-- 13/04/2018: I don't know how slow will be this one
+-- in A cruel Angel Thesis beatmap. Those canvas switching
+-- hell must be done every frame.
+function DEPLS.PostProcessingDraw()
 	if DEPLS.PostShader and #DEPLS.PostShader > 0 then
 		love.graphics.push("all")
 		love.graphics.setBlendMode("alpha", "premultiplied")
 		love.graphics.origin()
-		
+
 		for i = 1, #DEPLS.PostShader do
 			love.graphics.setCanvas(DEPLS.SecondaryCanvas)
 			love.graphics.clear()
@@ -1382,15 +1377,20 @@ function DEPLS.PostProcessingDraw(curcanv)
 			love.graphics.draw(DEPLS.MainCanvas)
 			DEPLS.MainCanvas, DEPLS.SecondaryCanvas = DEPLS.SecondaryCanvas, DEPLS.MainCanvas
 		end
+		love.graphics.setCanvas(DEPLS.PreviousFBO)
+		love.graphics.clear()
+		love.graphics.draw(DEPLS.MainCanvas)
+		love.graphics.pop()
+	elseif DEPLS.PreviousFBO then
+		love.graphics.push("all")
+		love.graphics.setBlendMode("alpha", "premultiplied")
+		love.graphics.origin()
+		love.graphics.setCanvas(DEPLS.PreviousFBO)
+		love.graphics.draw(DEPLS.MainCanvas)
 		love.graphics.pop()
 	end
 
-	love.graphics.setCanvas(curcanv)
-	love.graphics.clear()
-	love.graphics.push()
-	love.graphics.origin()
-	love.graphics.draw(DEPLS.MainCanvas)
-	love.graphics.pop()
+	DEPLS.PreviousFBO = nil
 end
 
 -- LOVE2D mouse/touch pressed

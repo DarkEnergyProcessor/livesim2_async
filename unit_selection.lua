@@ -2,8 +2,9 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = love
 local AquaShine = ...
+local love = require("love")
+local BackgroundLoader = AquaShine.LoadModule("background_loader")
 local UnitSelect = {CurrentPage = 0}
 local MouseState = {0, 0, false}	-- x, y, is click?
 
@@ -23,23 +24,23 @@ local CurrentSelectedCardIdx = 0
 function UnitSelect.Start(arg)
 	UnitSelect.Options = arg
 	UnitSelect.UnitList = {}
-	
-	for i, v in ipairs(love.filesystem.getDirectoryItems("unit_icon")) do
+
+	for _, v in ipairs(love.filesystem.getDirectoryItems("unit_icon")) do
 		local name = "unit_icon/"..v
 		if v:sub(-4) == ".png" then
 			local name_info = love.filesystem.getInfo(name)
-			
+
 			if name_info and name_info.type == "file" then
 				local temp = {}
-				
+
 				-- Load image. Do not use AquaShine.LoadImage for images in R/W dir
 				-- Instead, use traditional love.graphics.newImage
 				temp.Image = love.graphics.newImage(name)
 				temp.Filename = v
-				
+
 				if temp.Image:getWidth() == 128 and temp.Image:getHeight() == 128 then
 					UnitSelect.UnitList[#UnitSelect.UnitList + 1] = temp
-					
+
 					if temp.Filename == arg[1] then
 						CurrentSelectedCardIdx = #UnitSelect.UnitList
 						UnitSelect.CurrentPage = math.floor(CurrentSelectedCardIdx / 28)
@@ -48,14 +49,8 @@ function UnitSelect.Start(arg)
 			end
 		end
 	end
-	
-	background_5 = {AquaShine.LoadImage(
-		"assets/image/background/liveback_5.png",
-		"assets/image/background/b_liveback_005_01.png",
-		"assets/image/background/b_liveback_005_02.png",
-		"assets/image/background/b_liveback_005_03.png",
-		"assets/image/background/b_liveback_005_04.png"
-	)}
+
+	background_5 = BackgroundLoader.Load(5)
 	com_etc_117 = AquaShine.LoadImage("assets/image/ui/com_etc_117.png")
 	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	com_button_14 = AquaShine.LoadImage("assets/image/ui/com_button_14.png")
@@ -67,36 +62,32 @@ function UnitSelect.Start(arg)
 	com_button_12se = AquaShine.LoadImage("assets/image/ui/com_button_12se.png")
 	com_button_13 = AquaShine.LoadImage("assets/image/ui/com_button_13.png")
 	com_button_13se = AquaShine.LoadImage("assets/image/ui/com_button_13se.png")
-	
+
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
 	love.graphics.setFont(Font)
 end
 
-function UnitSelect.Update(deltaT)
+function UnitSelect.Update()
 	if NewUnitsInstalled then
 		local SelIdx
-		
+
 		if CurrentSelectedCardIdx > 0 then
 			SelIdx = assert(UnitSelect.UnitList[CurrentSelectedCardIdx]).Filename
 		end
-		
+
 		AquaShine.LoadEntryPoint(":unit_selection", {SelIdx})
 	end
 end
 
 function UnitSelect.Draw()
 	love.graphics.setColor(1, 1, 1)
-	love.graphics.draw(background_5[1])
-	love.graphics.draw(background_5[2], -88, 0)
-	love.graphics.draw(background_5[3], 960, 0)
-	love.graphics.draw(background_5[4], 0, -43)
-	love.graphics.draw(background_5[5], 0, 640)
+	love.graphics.draw(background_5)
 	love.graphics.draw(com_win_02, -98, 0)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Unit Select", 95, 13)
 	love.graphics.print(string.format("Page %d", UnitSelect.CurrentPage + 1), 34, 576)
 	love.graphics.setColor(1, 1, 1)
-	
+
 	if MouseState[3] then
 		if
 			MouseState[1] >= 0 and MouseState[1] < 86 and
