@@ -182,7 +182,7 @@ function NoteImageLoader.DrawNoteV5Style(this)
 		noteimg = assert(new_style[this.Attribute], "Invalid note attribute")
 		noteimg_swing = new_style_slide[this.Attribute]
 	end
-	
+
 	love.graphics.setColor(color_temp)
 	love.graphics.setShader(newstyle_opacitymul)
 	newstyle_opacitymul:send("enable", true)
@@ -195,13 +195,13 @@ function NoteImageLoader.DrawNoteV5Style(this)
 	end
 	newstyle_opacitymul:send("enable", false)
 	love.graphics.setColor(1, 1, 1, color_temp[4])
-	
+
 	if this.TokenNote then
 		drawNoteBase(DEPLS.Images.Note.Token, this)
 	elseif this.StarNote then
 		drawNoteBase(star_icon, this)
 	end
-	
+
 	if this.SimulNote then
 		drawNoteBase(new_style.Simultaneous, this)
 	end

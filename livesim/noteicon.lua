@@ -1,4 +1,4 @@
--- Note icon and it's circle
+-- Note icon and it's circle (note spawn position)
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
@@ -26,8 +26,9 @@ end
 
 local function init()
 	-- Load NoteIcon image
-	NoteIcon.NoteIcon = AquaShine.LoadImage("assets/image/live/ef_308_000.png")
-	NoteIcon.NoteIconCircle = AquaShine.LoadImage("assets/image/live/ef_308_001.png")
+	NoteIcon.Image = AquaShine.LoadImage("assets/image/live/ef_308.png")
+	NoteIcon.NoteIcon = love.graphics.newQuad(0, 0, 108, 104, 256, 128)
+	NoteIcon.NoteIconCircle = love.graphics.newQuad(128, 0, 68, 68, 256, 128)
 
 	return NoteIcon
 end
@@ -37,7 +38,7 @@ local function noteicon_draw(i)
 
 	if ni.time <= 0 then
 		love.graphics.setColor(1, 1, 1, ni.data.opacity * DEPLS.LiveOpacity)
-		love.graphics.draw(NoteIcon.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
+		love.graphics.draw(NoteIcon.Image, NoteIcon.NoteIconCircle, 480, 160, 0, ni.data.scale, ni.data.scale, 34, 34)
 	end
 end
 
@@ -79,7 +80,7 @@ function NoteIcon.Draw()
 	noteicon_draw(3)
 
 	love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-	love.graphics.draw(NoteIcon.NoteIcon, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
+	love.graphics.draw(NoteIcon.Image, NoteIcon.NoteIcon, 480, 160, 0, noteicon_data.scale, noteicon_data.scale, 54, 52)
 end
 
 return init()

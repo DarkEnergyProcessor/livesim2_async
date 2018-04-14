@@ -50,6 +50,7 @@ local channel = ...
 
 while true do
 	local imagedata = channel:demand()
+	if imagedata == true then return end
 	local name = string.format("screenshots/screenshot_%s_%d.png",
 		os.date("%Y_%m_%d_%H_%M_%S"),
 		math.floor((love.timer.getTime() % 1) * 1000)
@@ -634,6 +635,14 @@ function AquaShine.StepLoop()
 		if name == "quit" then
 			if AquaShine.CurrentEntryPoint and AquaShine.CurrentEntryPoint.Exit then
 				AquaShine.CurrentEntryPoint.Exit(true)
+			end
+
+			-- Free up screenshot thread code.
+			-- This can cause the game not to start anymore
+			-- when user exits in Android.
+			if AquaShine.ScreenshotThread then
+				AquaShine.ScreenshotThreadChannel:supply(true)
+				AquaShine.ScreenshotThread:wait()
 			end
 
 			AquaShine.ExitStatus = a or 0

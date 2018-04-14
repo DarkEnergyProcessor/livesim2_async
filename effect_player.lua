@@ -12,7 +12,7 @@ function ep.Spawn(udata, func, func2)
 	temp.Userdata = udata
 	temp.Update = func or udata.Update
 	temp.Draw = func2 or udata.Draw
-	
+
 	ep_list[#ep_list + 1] = temp
 end
 

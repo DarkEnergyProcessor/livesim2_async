@@ -3,6 +3,8 @@
 -- See copyright notice in main.lua
 
 local AquaShine = ...
+local love = require("love")
+local BackgroundLoader = AquaShine.LoadModule("background_loader")
 local UnitEditor = {}
 local MouseState = {0, 0, false}	-- x, y, is click?
 local IdolPosition = {	-- Idol position. 9 is leftmost
@@ -22,7 +24,7 @@ local com_button_15, com_button_15se
 
 local function load_image(w)
 	local x, r = pcall(love.graphics.newImage, "unit_icon/"..w)
-	
+
 	return x == true and r or dummy_image
 end
 
@@ -32,27 +34,20 @@ end
 
 local function applyChanges()
 	local filelist = {}
-	
+
 	for i = 9, 1, -1 do
 		filelist[#filelist + 1] = (UnitEditor.State.Changed[i] or UnitEditor.State[i]).Filename
 		UnitEditor.State[i] = UnitEditor.State.Changed[i] or UnitEditor.State[i]
 	end
-	
+
 	AquaShine.SaveConfig("IDOL_IMAGE", table.concat(filelist, "\t"))
 end
 
 function UnitEditor.Start(arg)
 	UnitEditor.State = AquaShine.GetCachedData("SavedUnitEditorState")
 	Font = AquaShine.LoadFont("MTLmr3m.ttf", 22)
-	
-	background_5 = {AquaShine.LoadImage(
-		"assets/image/background/liveback_5.png",
-		"assets/image/background/b_liveback_005_01.png",
-		"assets/image/background/b_liveback_005_02.png",
-		"assets/image/background/b_liveback_005_03.png",
-		"assets/image/background/b_liveback_005_04.png"
-	)}
-	
+
+	background_5 = BackgroundLoader.Load(5)
 	com_win_02 = AquaShine.LoadImage("assets/image/ui/com_win_02.png")
 	com_button_01 = AquaShine.LoadImage("assets/image/ui/com_button_01.png")
 	com_button_01se = AquaShine.LoadImage("assets/image/ui/com_button_01se.png")
@@ -60,24 +55,24 @@ function UnitEditor.Start(arg)
 	com_button_14se = AquaShine.LoadImage("assets/image/ui/com_button_14se.png")
 	com_button_15 = AquaShine.LoadImage("assets/image/ui/com_button_15.png")
 	com_button_15se = AquaShine.LoadImage("assets/image/ui/com_button_15se.png")
-	
+
 	if not(UnitEditor.State) then
 		local i = 9
 		local units = AquaShine.LoadConfig("IDOL_IMAGE", "dummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy\tdummy")
 		UnitEditor.State = {Changed = {}}
-		
+
 		for w in units:gmatch("[^\t]+") do
 			local temp = {}
 			temp.Image = load_image(w)
 			temp.Filename = w
-			
+
 			UnitEditor.State[i] = temp
 			i = i - 1
 		end
-		
+
 		AquaShine.CacheTable.SavedUnitEditorState = UnitEditor.State
 	end
-	
+
 	if type(arg[1]) == "table" then
 		UnitEditor.State.Changed[UnitEditor.State.LastSelIdx] = arg[1]
 	end
@@ -87,11 +82,7 @@ function UnitEditor.Update() end
 
 function UnitEditor.Draw()
 	love.graphics.setColor(1, 1, 1)
-	love.graphics.draw(background_5[1])
-	love.graphics.draw(background_5[2], -88, 0)
-	love.graphics.draw(background_5[3], 960, 0)
-	love.graphics.draw(background_5[4], 0, -43)
-	love.graphics.draw(background_5[5], 0, 640)
+	love.graphics.draw(background_5)
 	love.graphics.draw(com_win_02, -98, 0)
 	love.graphics.setFont(Font)
 	

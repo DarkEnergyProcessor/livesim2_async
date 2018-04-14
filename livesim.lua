@@ -371,7 +371,7 @@ function DEPLS.StoryboardFunctions.SpawnCircleTapEffect(pos, r, g, b)
 	local x, y = DEPLS.IdolPosition[pos][1] + 64, DEPLS.IdolPosition[pos][2] + 64
 	local effect = DEPLS.Routines.CircleTapEffect.Create(x, y, r, g, b)
 
-	EffectPlayer.Spawn(effect)
+	return EffectPlayer.Spawn(effect)
 end
 
 --! @brief Set unit visibility
@@ -995,15 +995,6 @@ function DEPLS.Start(argv)
 			BackgroundID = noteloader_background
 		elseif noteloader_background == -1 then
 			local cbackground = noteloader_data:GetCustomBackground()
-			--[[
-			DEPLS.BackgroundImage[0][1] = cbackground[0]
-			DEPLS.BackgroundImage[0][4] = 960 / cbackground[0]:getWidth()
-			DEPLS.BackgroundImage[0][5] = 640 / cbackground[0]:getHeight()
-			DEPLS.BackgroundImage[1][1] = cbackground[1]
-			DEPLS.BackgroundImage[2][1] = cbackground[2]
-			DEPLS.BackgroundImage[3][1] = cbackground[3]
-			DEPLS.BackgroundImage[4][1] = cbackground[4]
-			]]
 			DEPLS.StockBackgroundImage = BackgroundLoader.Compose(
 				cbackground[0],
 				cbackground[1],

@@ -29,7 +29,7 @@ local love = require("love")
 DEPLS_VERSION = "3.0.0-beta1"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02010300
+DEPLS_VERSION_NUMBER = 02020000
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then
@@ -101,13 +101,18 @@ end
 function Yohane.Platform.Draw(drawdatalist)
 	local r, g, b, a = love.graphics.getColor()
 
-	for _, drawdata in ipairs(drawdatalist) do
-		if drawdata.image then
-			love.graphics.setColor(drawdata.r / 255, drawdata.g / 255, drawdata.b / 255, drawdata.a / 255)
-			love.graphics.draw(drawdata.image, drawdata.x, drawdata.y, drawdata.rotation, drawdata.scaleX, drawdata.scaleY)
+	for _, dd in ipairs(drawdatalist) do
+		if dd.image then
+			love.graphics.setColor(dd.r / 255 * r, dd.g / 255 * g, dd.b / 255 * b, dd.a / 255 * a)
+			if type(dd.image) == "table" then
+				-- Quad + Image
+				love.graphics.draw(dd.image[1], dd.image[2], dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+			else
+				love.graphics.draw(dd.image, dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+			end
 		end
 	end
-	
+
 	love.graphics.setColor(r, g, b, a)
 end
 

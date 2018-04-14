@@ -2,19 +2,40 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local tween = require("tween")
 local love = require("love")
+local math = require("math")
 local DEPLS, AquaShine = ...
-local CircleTapEffect = {}
-local CircleDest = {scale = 4, opacity = 0}
+local CircleTapEffect = {Cache = {}}
 
 local _common_meta = {__index = CircleTapEffect}
+
+-- For obvious reason, this tap effect is incredibly slow in mobile devices.
+-- So I need to perform some optimizations:
+-- 1. Remove additional, stacked image and use *2 opacity
+-- 2. Cache the object creation
+-- 3. Use x*x*x*x*x instead of math.pow(x, 5) in interpolation calculation
+-- Even with those optimization, using SD625, running BiA MASTER sometimes drop to 30FPS
+local function createObject()
+	local out = {r = 0, g = 0, b = 0, time = 0, pos = {0, 0}}
+	out.spritebatch = love.graphics.newSpriteBatch(CircleTapEffect.Image, 4, "stream")
+	out.stareff_sbid = out.spritebatch:add(CircleTapEffect.ef_316_000, 0, 0, 0, 2, 2, 50, 50)
+	out.circle1_sbid = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
+	out.circle2_sbid = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
+	out.circle3_sbid = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
+
+	CircleTapEffect.Cache[#CircleTapEffect.Cache + 1] = out
+	return setmetatable(out, _common_meta)
+end
 
 local function init()
 	-- Tap circle effect
 	CircleTapEffect.Image = assert(AquaShine.LoadImage("assets/image/live/circleeffect.png") or nil)
 	CircleTapEffect.ef_316_000 = love.graphics.newQuad(0, 0, 100, 100, 256, 128)
 	CircleTapEffect.ef_316_001 = love.graphics.newQuad(128, 0, 75, 75, 256, 128)
+
+	-- Tween data (begin, increment)
+	CircleTapEffect.StarEffect = {{scale = 2, opacity = 1}, {scale = .6, opacity = -1}}
+	CircleTapEffect.CircleEffect = {{scale = 2.427, opacity = 1}, {scale = 1.573, opacity = -1}}
 
 	return CircleTapEffect
 end
@@ -26,48 +47,60 @@ end
 --! @param g The RGB green value. Defaults to 255
 --! @param b The RGB blue value. Defaults to 255
 function CircleTapEffect.Create(x, y, r, g, b)
-	local out = {r = r, g = g, b = b}
+	local out
 
-	out.stareff_data = {scale = 2, opacity = 1}
-	out.circle1_data = {scale = 2.427, opacity = 1}
-	out.circle2_data = {scale = 2.427, opacity = 1}
-	out.circle3_data = {scale = 2.427, opacity = 1}
-	out.spritebatch = love.graphics.newSpriteBatch(CircleTapEffect.Image, 10, "stream")
-	out.stareff_tween = tween.new(800, out.stareff_data, {scale = 2.6, opacity = 0}, "outQuint")
-	out.circle1_tween = tween.new(200, out.circle1_data, CircleDest, "outQuint")
-	out.circle2_tween = tween.new(450, out.circle2_data, CircleDest, "outQuint")
-	out.circle3_tween = tween.new(700, out.circle3_data, CircleDest, "outQuint")
-	out.stareff_data.sbid = out.spritebatch:add(CircleTapEffect.ef_316_000, 0, 0, 0, 2, 2, 50, 50)
-	out.circle1_data.sbid1 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.circle2_data.sbid1 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.circle3_data.sbid1 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.circle1_data.sbid2 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.circle2_data.sbid2 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.circle3_data.sbid2 = out.spritebatch:add(CircleTapEffect.ef_316_001, 0, 0, 0, 2.427, 2.427, 37.5, 37.5)
-	out.pos = {x, y}
+	-- Find cache
+	for i = 1, #CircleTapEffect.Cache do
+		local a = CircleTapEffect.Cache[i]
+		if a.time >= 800 then
+			out = a
+			break
+		end
+	end
 
-	return setmetatable(out, _common_meta)
+	out = out or createObject()
+	out.r, out.g, out.b = r, g, b
+	out.pos[1], out.pos[2] = x, y
+	out.time = 0
+
+	return out
+end
+
+local function pow5(n)
+	return n * n * n * n * n
 end
 
 function CircleTapEffect.Update(this, deltaT)
-	local still_has_render = this.stareff_tween:update(deltaT)
-	still_has_render = this.circle1_tween:update(deltaT) and still_has_render
-	still_has_render = this.circle2_tween:update(deltaT) and still_has_render
-	still_has_render = this.circle3_tween:update(deltaT) and still_has_render
+	this.time = this.time + deltaT
+	return CircleTapEffect.ActualUpdate(this)
+end
 
-	this.spritebatch:setColor(this.r, this.g, this.b, this.stareff_data.opacity)
-	this.spritebatch:set(this.stareff_data.sbid, CircleTapEffect.ef_316_000, 0, 0, 0, this.stareff_data.scale, this.stareff_data.scale, 50, 50)
-	this.spritebatch:setColor(this.r, this.g, this.b, this.circle1_data.opacity)
-	this.spritebatch:set(this.circle1_data.sbid1, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle1_data.scale, this.circle1_data.scale, 37.5, 37.5)
-	this.spritebatch:set(this.circle1_data.sbid2, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle1_data.scale, this.circle1_data.scale, 37.5, 37.5)
-	this.spritebatch:setColor(this.r, this.g, this.b, this.circle2_data.opacity)
-	this.spritebatch:set(this.circle2_data.sbid1, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle2_data.scale, this.circle2_data.scale, 37.5, 37.5)
-	this.spritebatch:set(this.circle2_data.sbid2, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle2_data.scale, this.circle2_data.scale, 37.5, 37.5)
-	this.spritebatch:setColor(this.r, this.g, this.b, this.circle3_data.opacity)
-	this.spritebatch:set(this.circle3_data.sbid1, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle3_data.scale, this.circle3_data.scale, 37.5, 37.5)
-	this.spritebatch:set(this.circle3_data.sbid2, CircleTapEffect.ef_316_001, 0, 0, 0, this.circle3_data.scale, this.circle3_data.scale, 37.5, 37.5)
+function CircleTapEffect.ActualUpdate(this)
+	local ntime = math.min(this.time / 800, 1)
+	local scale = CircleTapEffect.StarEffect[2].scale * (pow5(ntime - 1) + 1) + CircleTapEffect.StarEffect[1].scale
+	local opacity = CircleTapEffect.StarEffect[2].opacity * (pow5(ntime - 1) + 1) + CircleTapEffect.StarEffect[1].opacity
+	this.spritebatch:setColor(this.r, this.g, this.b, opacity)
+	this.spritebatch:set(this.stareff_sbid, CircleTapEffect.ef_316_000, 0, 0, 0, scale, scale, 50, 50)
 
-	return still_has_render
+	ntime = math.min(this.time / 200, 1)
+	scale = CircleTapEffect.CircleEffect[2].scale * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].scale
+	opacity = CircleTapEffect.CircleEffect[2].opacity * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].opacity
+	this.spritebatch:setColor(this.r, this.g, this.b, opacity * 2)
+	this.spritebatch:set(this.circle1_sbid, CircleTapEffect.ef_316_001, 0, 0, 0, scale, scale, 37.5, 37.5)
+
+	ntime = math.min(this.time / 450, 1)
+	scale = CircleTapEffect.CircleEffect[2].scale * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].scale
+	opacity = CircleTapEffect.CircleEffect[2].opacity * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].opacity
+	this.spritebatch:setColor(this.r, this.g, this.b, opacity * 2)
+	this.spritebatch:set(this.circle2_sbid, CircleTapEffect.ef_316_001, 0, 0, 0, scale, scale, 37.5, 37.5)
+
+	ntime = math.min(this.time / 700, 1)
+	scale = CircleTapEffect.CircleEffect[2].scale * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].scale
+	opacity = CircleTapEffect.CircleEffect[2].opacity * (pow5(ntime - 1) + 1) + CircleTapEffect.CircleEffect[1].opacity
+	this.spritebatch:setColor(this.r, this.g, this.b, opacity * 2)
+	this.spritebatch:set(this.circle3_sbid, CircleTapEffect.ef_316_001, 0, 0, 0, scale, scale, 37.5, 37.5)
+
+	return this.time >= 800
 end
 
 function CircleTapEffect.Draw(this)
