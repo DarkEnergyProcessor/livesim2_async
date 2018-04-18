@@ -4,7 +4,7 @@
 
 -- Check if we're loading it using AquaShine or standalone
 local isAqs = ...
-local AquaShine
+local AquaShine, LOG
 if type(isAqs) == "table" then
 	AquaShine = isAqs
 end
@@ -153,8 +153,6 @@ if love._os == "Windows" and package.preload.ffi then
 		if multiple then return {} end
 		return nil
 	end
-	
-	--AquaShine.Log("AquaShineFileDialog", "Using WinAPI as file selection dialog backend")
 elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 	if os.execute("command -v zenity >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] zenity not found.\"; exit 1; }") == 0 then
 		function FileSelection(title, directory, filter, multiple)
@@ -203,8 +201,6 @@ elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 				return list
 			end
 		end
-		
-		--AquaShine.Log("AquaShineFileDialog", "Using \"zenity\" as file selection dialog backend")
 	elseif os.execute("command -v kdialog >/dev/null 2>&1 || { echo >&2 \"[AquaShineFileDialog] kdialog not found.\"; exit 1; }") == 0 then
 		function AquaShine.FileSelection(title, directory, filter, multiple)
 			-- title and multiple is not supported unfortunately
@@ -242,14 +238,11 @@ elseif AquaShine.OperatingSystem == "Linux" and has_shell then
 				end
 			end
 		end
-		
-		--AquaShine.Log("AquaShineFileDialog", "Using \"kdialog\" as file selection dialog backend")
 	end
 end
-
---AquaShine.Log("AquaShineFileDialog", "File dialog is not supported")
 if AquaShine then
 	AquaShine.FileSelection = FileSelection
 end
 
+if not(FileSelection) then FileSelection = false end
 return FileSelection
