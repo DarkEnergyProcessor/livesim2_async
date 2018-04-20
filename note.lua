@@ -809,7 +809,7 @@ function Note.InitializeImage()
 					then
 						applyswing(chainswing)
 					end
-					
+
 					if (chainswing.effect == 13 and
 							chainswing.timing_sec  + chainswing.effect_value or
 							chainswing.timing_sec
@@ -819,7 +819,7 @@ function Note.InitializeImage()
 					end
 				end
 			end
-			
+
 			last_obj.Rotation = (last_pos_2 - last_pos > 0 and 0 or math.pi) + PredefinedSlideRotation[last_pos]
 		end
 	end
@@ -890,12 +890,12 @@ function Note.Update(deltaT)
 					noteobj:UnsetTouchID("")
 				end
 			end
-			
+
 			if noteobj.Delete then
 				-- Calculate score and remove
 				score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.UnsetTouchID and 1.25 or 1) * (noteobj.SlideNote and 0.5 or 1)
 				table.remove(Note[i], j)
-				
+
 				if ComboCounter.Reset == true then
 					ComboCounter.CurrentCombo = 0
 					ComboCounter.Reset = false
@@ -904,7 +904,7 @@ function Note.Update(deltaT)
 				end
 				Note.NoteRemaining = Note.NoteRemaining - 1
 				Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
-				
+
 				ComboCounter.Replay = true
 			else
 				j = j + 1
@@ -1051,6 +1051,9 @@ function Note.SetTouch(pos, touchid, release, previous)
 			Note.HighestCombo = math.max(ComboCounter.CurrentCombo, Note.HighestCombo)
 
 			ComboCounter.Replay = true
+		elseif ComboCounter.Reset == true then
+			ComboCounter.CurrentCombo = 0
+			ComboCounter.Reset = false
 		end
 	end
 

@@ -1,42 +1,43 @@
 v1.1.2
-- Notes Sound Accumulation						OK
-- SIFTrain beatmap loading fix for UTF8-BOM		OK
-- Add IsOpenGLES() storyboard function			OK
+- Notes Sound Accumulation                        OK
+- SIFTrain beatmap loading fix for UTF8-BOM       OK
+- Add IsOpenGLES() storyboard function            OK
 
 v1.1.3
-- SIFTrain beatmap extension					OK
-- /gles switch									OK
-- Improved swing note detection					OK
-- Swing token note								OK
-- Difficulty-Background mapping					OK
-- New note tap accuracy							OK
-- Global offset setting							OK
+- SIFTrain beatmap extension                      OK
+- /gles switch                                    OK
+- Improved swing note detection                   OK
+- Swing token note                                OK
+- Difficulty-Background mapping                   OK
+- New note tap accuracy                           OK
+- Global offset setting                           OK
 - Deprecation of test beatmap
 - Deprecation of SetNotesSpeed
 
 v2.0
-- FFmpeg extension (FFX)						OK
-- NoteLoader2 (advanced loader)					OK
-- Hidden note and sudden note					OK
-- Individual note speed							OK
-- Pause											OK
-- Adjustable combo display size					OK
-- Adjustable SE volume							OK
-- Download SIF beatmaps							OK
-- Album art for SIFTrain beatmap				OK
-- Decrease sensitivity for swing note accuracy	OK
-- LS2 v2.0										OK
-- Removal of Playground TEXB Loader (Shelsha)	OK
-- Removal of test beatmap						OK
-- Removal of SetNotesSpeed						OK
+- FFmpeg extension (FFX)                        OK
+- NoteLoader2 (advanced loader)                 OK
+- Hidden note and sudden note                   OK
+- Individual note speed                         OK
+- Pause                                         OK
+- Adjustable combo display size                 OK
+- Adjustable SE volume                          OK
+- Download SIF beatmaps                         OK
+- Album art for SIFTrain beatmap                OK
+- Decrease sensitivity for swing note accuracy  OK
+- LS2 v2.0                                      OK
+- Removal of Playground TEXB Loader (Shelsha)   OK
+- Removal of test beatmap                       OK
+- Removal of SetNotesSpeed                      OK
 
 v2.1
-- Remove LLP beatmap download					OK
-- Matte note style								OK
+- Remove LLP beatmap download                   OK
+- Matte note style                              OK
 
 v3.0
-- Unit creation
-- Restart button (live show)					OK
-- Better live clear								Not sure what does this mean
-- Lovewing UI									OK
+- Unit creation                                 OK
+- Restart button (live show)                    OK
+- Lovewing UI                                   OK
 - Delete beatmap
+- Performance Graph
+- Beatmap Recording

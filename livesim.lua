@@ -193,7 +193,7 @@ function DEPLS.Routines.DrawSIF()
 end
 
 function DEPLS.Routines.CheckPausePosSIF(x, y)
-	return x >= 916 and y >= 6 and x < 952 and y < 42
+	return x >= 898 and y >= -12 and x < 970 and y < 60
 end
 
 function DEPLS.Routines.UpdateLovewing(deltaT)
