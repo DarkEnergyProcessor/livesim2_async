@@ -26,10 +26,10 @@
 local love = require("love")
 
 -- Version  string
-DEPLS_VERSION = "3.0.0-beta1"
+DEPLS_VERSION = "3.0.0-beta2"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02020000
+DEPLS_VERSION_NUMBER = 02020100
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then

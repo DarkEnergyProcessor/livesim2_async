@@ -1035,11 +1035,11 @@ function Note.SetTouch(pos, touchid, release, previous)
 	
 	if ElapsedTime >= noteobj.ZeroAccuracyTime - noteobj.NotesSpeed then
 		noteobj:SetTouchID(touchid)
-		
+
 		if noteobj.Delete then
 			score = score + ScoreBase * noteobj.ScoreMultipler * noteobj.ScoreMultipler2 * (noteobj.SlideNote and 0.5 or 1)
 			table.remove(Note[pos], 1)
-			
+
 			-- Update combo counter
 			if ComboCounter.Reset == true then
 				ComboCounter.CurrentCombo = 0
