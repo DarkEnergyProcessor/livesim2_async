@@ -8,7 +8,7 @@ class NoteLoaderLoader
 {
 public:
 	bool ProjectLoader;
-	
+
 	/// @brief Load specificed note from filename
 	/// @returns Loaded note object on success, NULL on failure
 	virtual NoteLoaderNoteObject* LoadNoteFromFilename(const char* filename) = 0;
@@ -22,24 +22,25 @@ public:
 	/// \brief Get notes list
 	/// \returns Notes list. This one never return NULL
 	virtual std::vector<Livesim2::Note> GetNotesList() = 0;
-	
+
 	/// \brief Get beatmap name, or filename if no suitable filename found
 	/// \returns Beatmap name. This one never return NULL
 	virtual const char* GetName() = 0;
-	
+
 	/// \brief Get beatmap type name (friendly name)
 	/// \returns Beatmap type name
 	virtual const char* GetBeatmapTypename() = 0;
-	
+
 	/// \brief Get cover art information
 	/// \returns Cover art information (or NULL)
 	virtual Livesim2::CoverArt* GetCoverArt();
-	
+
 	/// \brief Get custom unit informmation
-	/// \returns Custom unit information. Index 0 is rightmost (8 is leftmost). Some index may be NULL, but the returned pointer never NULL.
+	/// \returns Custom unit information. Index 0 is rightmost (8 is leftmost). Some index may be NULL,
+	///          but the returned pointer never NULL.
 	/// \note Lua is 1-based, so it should be index 1 is rightmost.
 	virtual Livesim2::Unit*[9] GetCustomUnitInformation();
-	
+
 	/// \brief Get score information sequence.
 	/// \description This function returns unsigned integer with these index:
 	///              - [0], score needed for C score
@@ -48,41 +49,41 @@ public:
 	///              - [3], score needed for S score
 	/// \returns Score information array (or NULL if no score information present)
 	virtual unsigned int* GetScoreInformation();
-	
+
 	virtual unsigned int* GetComboInformation();
 	virtual bool HasStoryboard();
 	virtual Livesim2::Storyboard* GetStoryboard();
-	
+
 	/// \brief Retrieves background ID
 	/// \returns -1, if custom background present, 0 if no background ID (or video) present, otherwise the background ID
 	virtual int GetBackgroundID();
-	
+
 	/// \brief Retrieves custom background
 	/// \returns NULL if custom background not present, otherwise handle to custom background object
 	virtual Livesim2::Background* GetCustomBackground();
-	
+
 	/// Returns the video handle or NULL if video not found
 	virtual Livesim2::Video* GetVideoBackground();
-	
+
 	/// Returns score per tap or 0 to use from config
 	virtual int GetScorePerTap();
 	/// Returns stamina or 0 to use from config
 	virtual char GetStamina();
 	/// Returns: 1 = old, 2 = v5, 0 = no enforcing
 	virtual int GetNotesStyle();
-	
+
 	virtual love::sound::Decoder* GetBeatmapAudio();
 	virtual love::sound::SoundData* GetLiveClearSound();
-	
+
 	/// \brief Get star difficulty information.
 	/// \param random Retrieve star difficulty information for random notes instead?
 	/// \returns Star difficulty information, or 0 if not available
 	virtual int GetStarDifficultyInfo(bool random);
-	
+
 	/// \brief Get difficulty information as string.
 	/// \returns Difficulty information as string, or NULL if no difficulty information is available.
 	virtual const char* GetDifficultyString();
-	
+
 	/// \deprecated Removed soon
 	virtual void ReleaseBeatmapAudio();
 	/// \deprecated Removed soon
@@ -100,8 +101,7 @@ For file-based loaders: LoadNoteFromFilename(handle, path) returns 2 values:
 ]]
 
 local AquaShine = ...
-local love = love
-local JSON = require("JSON")
+local love = require("love")
 local class = AquaShine.Class
 local NoteLoader = {}
 local NoteLoaderLoader = class("NoteLoader.NoteLoaderLoader")
@@ -112,16 +112,6 @@ NoteLoader.NoteLoaderLoader = NoteLoaderLoader
 NoteLoader.NoteLoaderNoteObject = NoteLoaderNoteObject
 NoteLoader.FileLoaders = {}
 NoteLoader.ProjectLoaders = {}
-
--- Use with string.gsub(str, ".", bin2hex)
-local function bin2hex(x)
-	return string.format("%02X", x:byte())
-end
-
--- Use with string.gsub(str, "%x%x", hex2bin)
-local function hex2bin(x)
-	return string.char(tonumber(x, 16))
-end
 
 ---------------------------
 -- Note Loading Function --
@@ -136,89 +126,88 @@ end
 
 --! @brief Load note object from specificed path
 --! @param file The file path. Can be either file or directory
---! @param noproject Do not attempt to load beatmap as project beatmap?
 --! @returns The note object, or nil on failure
 --! @note Error message is printed to log
-function NoteLoader.NoteLoader(file, noproject)
+function NoteLoader.NoteLoader(file)
 	local project_info_file = love.filesystem.getInfo(file)
-	
+
 	if project_info_file then
 		if project_info_file.type == "directory" then
 			-- Project folder loading
 			for i = 1, #NoteLoader.ProjectLoaders do
 				local ldr = NoteLoader.ProjectLoaders[i]
 				local success, nobj = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file)
-				
+
 				if success then
 					return nobj
 				end
-				
+
 				AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
 			end
 		elseif project_info_file.type == "file" then
 			-- File loading
 			local file_handle = love.filesystem.newFile(file, "r")
-			
+
 			if not(file_handle) then
 				return nil, file..": Beatmap doesn't exist"
 			end
-			
+
 			for i = 1, #NoteLoader.FileLoaders do
 				local ldr = NoteLoader.FileLoaders[i]
 				local success, nobj, noclose = xpcall(ldr.LoadNoteFromFilename, debug.traceback, file_handle, file)
-				
+
 				if success then
 					if not(noclose) then file_handle:close() end
 					return nobj
 				end
-				
+
 				AquaShine.Log("NoteLoader2", "Failed to load %q with loader %s: %s", file, ldr.GetLoaderName(), nobj)
 				file_handle:seek(0)
 			end
-			
+
 			file_handle:close()
 		end
-		
+
 		return nil, file..": No suitable beatmap format found"
 	end
-	
+
 	return nil, file..": Beatmap not found"
 end
 
 function NoteLoader.Enumerate()
 	local a = {}
-	
+
 	for _, f in ipairs(love.filesystem.getDirectoryItems("beatmap/")) do
 		local b = NoteLoader.NoteLoader("beatmap/"..f)
-		
+
 		if b then
 			a[#a + 1] = b
 		end
 	end
-	
+
 	return a
 end
 
 function NoteLoader.EnumerateCached()
 	local a = {}
-	
+
 	for _, f in ipairs(love.filesystem.getDirectoryItems("beatmap/")) do
 		local b = NCache.LoadCache("beatmap/"..f)
-		
+
 		if b then
 			a[#a + 1] = b
 		end
 	end
-	
+
 	return a
 end
 
 function NoteLoader.GetLoader(name, file_first)
 	local path = {NoteLoader.ProjectLoaders, NoteLoader.FileLoaders}
 	if file_first then table.insert(path, 1, table.remove(path, 2)) end
-	
+
 	for i = 1, #path do
-		for n, v in ipairs(path[i]) do
+		for _, v in ipairs(path[i]) do
 			if v.GetLoaderName() == name then
 				return v
 			end
@@ -269,7 +258,7 @@ function NoteLoaderNoteObject.GetDifficultyString(this)
 		local din = this:GetStarDifficultyInfo()
 		if din > 0 then
 			local dir = this:GetStarDifficultyInfo(true)
-			
+
 			if dir ~= din then
 				this.difficulty_str = string.format("%d\226\152\134 (Random %d\226\152\134)", din, dir)
 			else
@@ -277,7 +266,7 @@ function NoteLoaderNoteObject.GetDifficultyString(this)
 			end
 		end
 	end
-	
+
 	return this.difficulty_str
 end
 

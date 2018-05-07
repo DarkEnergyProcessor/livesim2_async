@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = love
+local love = require("love")
 local bit = require("bit")
 local DEPLS, AquaShine = ...
 local NoteImageLoader = {}
@@ -19,15 +19,11 @@ extern bool enable;
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
 {
 	if (!enable) return Texel(texture, texture_coords) * color;
-	
+
 	vec4 c = Texel(texture, texture_coords);
 	return vec4(c.rgb * 1.25, c.a * 1.15) * color;
 }
 ]]
-
-local function unpremultiply(x, y, r, g, b, a)
-	return r / a, g / a, b / a, a
-end
 
 local old_style = make_cache_table {
 	"assets/image/tap_circle/default/red.png",
@@ -41,7 +37,7 @@ local old_style = make_cache_table {
 	"assets/image/tap_circle/default/gray.png",
 	"assets/image/tap_circle/default/rainbow.png",
 	"assets/image/tap_circle/default/black.png",
-	
+
 	Simultaneous = "assets/image/tap_circle/default/timing_normal.png",
 	Slide = "assets/image/tap_circle/default/slide_normal.png"
 }
@@ -57,7 +53,7 @@ local new_style = make_cache_table {
 	"assets/image/tap_circle/neon/gray_v5.png",
 	"assets/image/tap_circle/neon/rainbow_v5.png",
 	"assets/image/tap_circle/neon/black_v5.png",
-	
+
 	Simultaneous = "assets/image/tap_circle/neon/timing_v5.png"
 }
 local new_style_slide = make_cache_table {
@@ -86,7 +82,7 @@ local matte_style = make_cache_table {
 	"assets/image/tap_circle/matte/08.png",
 	"assets/image/tap_circle/matte/09.png",
 	"assets/image/tap_circle/matte/20.png",
-	
+
 	Simultaneous = "assets/image/tap_circle/matte/simul.png"
 }
 
@@ -119,7 +115,7 @@ local star_icon = AquaShine.LoadImage("assets/image/tap_circle/star.png")
 local color_temp = table.new(4, 0)
 
 local function drawNoteBase(image, this, rot)
-	love.graphics.draw(image, this.FirstCircle[1], this.FirstCircle[2], rot or 0, this.CircleScale, this.CircleScale, 64, 64)
+	love.graphics.draw(image, this.Position[1], this.Position[2], rot or 0, this.Scale, this.Scale, 64, 64)
 end
 
 function NoteImageLoader.DrawNoteMatteStyle(this)
@@ -128,7 +124,7 @@ function NoteImageLoader.DrawNoteMatteStyle(this)
 	color_temp[2] = 1
 	color_temp[3] = 1
 	color_temp[4] = DEPLS.LiveOpacity * this.Opacity
-	
+
 	if bit.band(this.Attribute, 15) == 15 then
 		noteimg = matte_style[9]
 		noteimg_swing = matte_style_slide[9]
@@ -139,27 +135,27 @@ function NoteImageLoader.DrawNoteMatteStyle(this)
 		noteimg = assert(matte_style[this.Attribute], "Invalid note attribute")
 		noteimg_swing = matte_style_slide[this.Attribute]
 	end
-	
+
 	love.graphics.setColor(color_temp)
 	drawNoteBase(noteimg, this)
 	love.graphics.setColor(1, 1, 1, color_temp[4])
-	
+
 	if this.TokenNote then
 		drawNoteBase(DEPLS.Images.Note.Token, this)
 	elseif this.StarNote then
 		drawNoteBase(star_icon, this)
 	end
-	
+
 	if this.SlideNote then
 		drawNoteBase(noteimg_swing, this, this.Rotation)
 	end
-	
+
 	if this.SimulNote then
 		love.graphics.draw(
 			matte_style.Simultaneous,
-			this.FirstCircle[1],
-			this.FirstCircle[2],
-			0, this.CircleScale, this.CircleScale,
+			this.Position[1],
+			this.Position[2],
+			0, this.Scale, this.Scale,
 			128, 128
 		)
 	end
@@ -171,7 +167,7 @@ function NoteImageLoader.DrawNoteV5Style(this)
 	color_temp[2] = 1
 	color_temp[3] = 1
 	color_temp[4] = DEPLS.LiveOpacity * this.Opacity
-	
+
 	if bit.band(this.Attribute, 15) == 15 then
 		noteimg = new_style[9]
 		noteimg_swing = new_style_slide[9]
@@ -205,7 +201,7 @@ function NoteImageLoader.DrawNoteV5Style(this)
 	if this.SimulNote then
 		drawNoteBase(new_style.Simultaneous, this)
 	end
-	
+
 	love.graphics.setShader()
 end
 
@@ -215,7 +211,7 @@ function NoteImageLoader.DrawNoteOldStyle(this)
 	color_temp[2] = 1
 	color_temp[3] = 1
 	color_temp[4] = DEPLS.LiveOpacity * this.Opacity
-	
+
 	if bit.band(this.Attribute, 15) == 15 then
 		noteimg = old_style[9]
 		color_temp[1] = bit.band(bit.rshift(this.Attribute, 23), 511) / 255
@@ -224,21 +220,21 @@ function NoteImageLoader.DrawNoteOldStyle(this)
 	else
 		noteimg = assert(old_style[this.Attribute], "Invalid note attribute")
 	end
-	
+
 	love.graphics.setColor(color_temp)
 	drawNoteBase(noteimg, this)
 	love.graphics.setColor(1, 1, 1, color_temp[4])
-	
+
 	if this.TokenNote then
 		drawNoteBase(DEPLS.Images.Note.Token, this)
 	elseif this.StarNote then
 		drawNoteBase(star_icon, this)
 	end
-	
+
 	if this.SlideNote then
 		drawNoteBase(old_style.Slide, this, this.Rotation)
 	end
-	
+
 	if this.SimulNote then
 		drawNoteBase(old_style.Simultaneous, this)
 	end

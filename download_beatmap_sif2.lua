@@ -187,15 +187,15 @@ function DLBeatmap.GetHashedName(path)
 	local filehash = md5(path)
 	local strb = {}
 	local seed = tonumber(keyhash:sub(1, 8), 16) % 2147483648
-	
-	for i = 1, 20 do
+
+	for _ = 1, 20 do
 		local chr = math.floor(seed / 33) % 32
 		local sel = chr >= 16 and keyhash or filehash
 		chr = (chr % 16) + 1
 		strb[#strb + 1] = sel:sub(2 * chr - 1, 2 * chr)
 		seed = (214013 * seed + 2531011) % 2147483648
 	end
-	
+
 	strb[#strb + 1] = path
 	return table.concat(strb)
 end

@@ -149,7 +149,7 @@ local function midi2sif(stream)
 	assert(mid_idx <= 9 and mid_idx % 2 == 1, "Failed to analyze note position. Make sure you only use 9 note keys or odd amount of note keys")
 	
 	-- If it's not 9 and it's odd, automatically adjust
-	if mid_idx ~= 9 and midi_idx % 2 == 1 then
+	if mid_idx ~= 9 and mid_idx % 2 == 1 then
 		local mid_pos = (top_index + bottom_index) / 2
 		
 		top_index = mid_pos + 4

@@ -120,13 +120,13 @@ function BackgroundLoader.Compose(main, left, right, top, bottom)
 	love.graphics.push("all")
 	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.setCanvas(framebuffer)
-	love.graphics.clear()
+	love.graphics.clear(0, 0, 0, 0)
 	love.graphics.origin()
 
-	-- Draw background
+	-- Build texture atlas
 	love.graphics.draw(main, 0, 43, 0, 960 / main:getWidth(), 640 / main:getHeight())
-	if left   then love.graphics.draw(left  , 639, 750, math.pi/2) end
-	if right  then love.graphics.draw(right , 639, 864, math.pi/2) end
+	if left   then love.graphics.draw(left  , 640, 750, math.pi/2) end
+	if right  then love.graphics.draw(right , 640, 864, math.pi/2) end
 	if top    then love.graphics.draw(top   , 0  , 0  , 0        ) end
 	if bottom then love.graphics.draw(bottom, 0  , 683, 0        ) end
 	love.graphics.pop()

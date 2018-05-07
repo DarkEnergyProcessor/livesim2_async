@@ -51,11 +51,11 @@ local DEPLS = {
 		{nil, 1, 0}, {nil, 1, 0}, {nil, 1, 0}
 	},
 	MinimalEffect = nil,		-- True means decreased dynamic effects
-	NoteAccuracy = {16, 40, 64, 112, 128},	-- Note accuracy
 	NoteManager = nil,
 	NoteLoader = nil,
 	NoteRandomized = false,
 	Stamina = 32,
+	TimingOffset = 0,
 	NotesSpeed = 800,
 	ScoreBase = 500,
 	ScoreData = {		-- Contains C score, B score, A score, S score data, in order.
@@ -99,7 +99,7 @@ end
 -----------------------
 
 local function distance(a, b)
-	return math.sqrt(a ^ 2 + b ^ 2)
+	return math.sqrt(a * a + b * b)
 end
 
 local function angle_from(x1, y1, x2, y2)
@@ -439,8 +439,18 @@ do
 
 	local function getSampleQueue(size)
 		size = size or 512
-
 		local sample_list = {}
+
+		-- If there are no sound data, fill with empty.
+		-- This check must be as early as possible.
+		if not(DEPLS.Sound.LiveAudio) then
+			for _ = 1, size do
+				sample_list[#sample_list + 1] = {0, 0}
+			end
+
+			return sample_list
+		end
+
 		local currentIndex = DEPLS.Sound.LiveAudio:getFreeBufferCount() + 1
 		local curPos = DEPLS.Sound.LiveAudio:tell("samples")
 		local sample = DEPLS.Sound.QueueBuffer[currentIndex]
@@ -806,7 +816,7 @@ end
 
 --! @brief Update audio in low memory mode
 function DEPLS.UpdateAudioLowMemory()
-	if not(DEPLS.Sound.BeatmapAudio) then
+	if not(DEPLS.Sound.BeatmapAudio) and DEPLS.Sound.LiveAudio then
 		local freebufcount = DEPLS.Sound.LiveAudio:getFreeBufferCount()
 
 		for _ = 1, freebufcount do
@@ -1263,22 +1273,6 @@ function DEPLS.Draw(deltaT)
 		-- No storyboard & video still not allowed to draw. Draw background
 		if DEPLS.StockBackgroundImage then
 			love.graphics.draw(DEPLS.StockBackgroundImage)
-		else
-			local BackgroundImage = DEPLS.BackgroundImage
-			love.graphics.draw(
-				BackgroundImage[0][1],
-				BackgroundImage[0][2],
-				BackgroundImage[0][3],
-				0,
-				BackgroundImage[0][4] or 1,
-				BackgroundImage[0][5] or 1
-			)
-
-			for i = 1, 4 do
-				if BackgroundImage[i][1] then
-					love.graphics.draw(BackgroundImage[i][1], BackgroundImage[i][2], BackgroundImage[i][3])
-				end
-			end
 		end
 	end
 
