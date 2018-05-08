@@ -1,10 +1,11 @@
--- LOVE 0.10.1 splash screen (fused only)
+-- Live Simulator: 2 splash screen
+-- Part of Live Simulator: 2
+-- See copyright notice in main.lua
 -- Demonstration of AquaShine.SetSplashScreen
 
 local AquaShine = ...
-local love = require("love")
 local SplashScreen = {}
-local o_ten_one = require("splash.o-ten-one")
+local ls2 = require("splash")
 
 function SplashScreen.OnDone()
 	-- SplashScreen.NextArg is correspond to AquaShine.LoadEntryPoint
@@ -15,7 +16,7 @@ function SplashScreen.Start(arg)
 	-- arg is correspond to AquaShine.LoadEntryPoint
 	-- so store it somewhere else
 	SplashScreen.NextArg = arg
-	SplashScreen.Splash = o_ten_one()
+	SplashScreen.Splash = ls2()
 	SplashScreen.Splash.onDone = SplashScreen.OnDone
 end
 
@@ -24,12 +25,7 @@ function SplashScreen.Update(deltaT)
 end
 
 function SplashScreen.Draw()
-	-- Since LOVE splash doesn't respect to AquaShine letterbox
-	-- Push current stack and call origin
-	love.graphics.push()
-	love.graphics.origin()
-	SplashScreen.Splash:draw()
-	love.graphics.pop()
+	return SplashScreen.Splash:draw()
 end
 
 function SplashScreen.KeyPressed(key)

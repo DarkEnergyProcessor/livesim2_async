@@ -22,14 +22,16 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 -- IN THE SOFTWARE.
 --]]---------------------------------------------------------------------------
+-- luacheck: ignore DEPLS_VERSION
+-- luacheck: ignore DEPLS_VERSION_NUMBER
 
 local love = require("love")
 
--- Version  string
-DEPLS_VERSION = "3.0.0-beta2"
+-- Version string
+DEPLS_VERSION = "3.0.0-beta3"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02020100
+DEPLS_VERSION_NUMBER = 02020200
 
 -- We don't want to protect the global table if we run it from LuaJIT/Terra
 if love._exe then
@@ -63,7 +65,7 @@ rawset(_G, "DEPLS_DIST", love.filesystem.getInfo("DEPLS_DIST") or
 
 if (isFused and not(AquaShine.GetCommandLineConfig("nosplash"))) or (not(isFused) and AquaShine.GetCommandLineConfig("splash")) then
 	-- Set splash screen
-	AquaShine.SetSplashScreen("splash/love_splash.lua")
+	AquaShine.SetSplashScreen("ls2_splash.lua")
 end
 
 --------------------------------
