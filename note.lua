@@ -628,51 +628,51 @@ function Note.InitializeImage()
 	for i = 1, #SlideNoteList do
 		local swing = SlideNoteList[i]
 
-		if swing.noteobj.Rotation == nil then
-			local last_level = swing.notes_level
-			local last_pos_2 = swing.position
-			local last_timing = swing.timing_sec
-			local last_pos = swing.position
-			local last_obj = swing.noteobj
-			local last_index = swing.index
+		if swing[2].Rotation == nil then
+			local last_level = swing[1].notes_level
+			local last_pos_2 = swing[1].position
+			local last_timing = swing[1].timing_sec
+			local last_pos = swing[1].position
+			local last_obj = swing[2]
+			local last_index = swing[3]
 
-			if swing.effect == 13 then
-				last_timing = last_timing + swing.effect_value
+			if swing[1].effect == 13 then
+				last_timing = last_timing + swing[1].effect_value
 			end
 
 			local function applyswing(chainswing)
-				last_obj.Rotation = (last_pos - chainswing.position > 0 and 0 or math.pi) + SlideRotation[last_pos]
+				last_obj.Rotation = (last_pos - chainswing[1].position > 0 and 0 or math.pi) + SlideRotation[last_pos]
 
 				last_pos_2 = last_pos
-				last_timing = chainswing.timing_sec
-				last_pos = chainswing.position
-				last_obj = chainswing.noteobj
-				last_index = chainswing.index
+				last_timing = chainswing[1].timing_sec
+				last_pos = chainswing[1].position
+				last_obj = chainswing[2]
+				last_index = chainswing[3]
 
-				if chainswing.effect == 13 then
-					last_timing = last_timing + chainswing.effect_value
+				if chainswing[1].effect == 13 then
+					last_timing = last_timing + chainswing[1].effect_value
 				end
 			end
 
 			for j = i + 1, #SlideNoteList do
 				local chainswing = SlideNoteList[j]
 
-				if chainswing.noteobj.Rotation == nil then
-					if chainswing.notes_level and chainswing.notes_level > 1 then
-						if chainswing.notes_level - last_level == 0 then
+				if chainswing[2].Rotation == nil then
+					if chainswing[1].notes_level and chainswing[1].notes_level > 1 then
+						if chainswing[1].notes_level - last_level == 0 then
 							applyswing(chainswing)
 						end
 					elseif
-						chainswing.timing_sec + 0.001 >= last_timing and
-						math.abs(chainswing.index - last_index) < 3 and
-						math.abs(chainswing.position - last_pos) == 1
+						chainswing[1].timing_sec + 0.001 >= last_timing and
+						math.abs(chainswing[3] - last_index) < 3 and
+						math.abs(chainswing[1].position - last_pos) == 1
 					then
 						applyswing(chainswing)
 					end
 
-					if (chainswing.effect == 13 and
-							chainswing.timing_sec  + chainswing.effect_value or
-							chainswing.timing_sec
+					if (chainswing[1].effect == 13 and
+							chainswing[1].timing_sec  + chainswing[1].effect_value or
+							chainswing[1].timing_sec
 						) - last_timing > 0.25
 					then
 						break

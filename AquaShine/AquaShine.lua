@@ -899,7 +899,7 @@ end
 -- AquaShine config loading code --
 -----------------------------------
 do
-	love.filesystem.setIdentity(conf.LOVE.Identity, true)
+	love.filesystem.setIdentity(conf.LOVE.Identity)
 
 	AquaShine.AllowEntryPointPreload = conf.EntryPointPreload
 	AquaShine.Config = conf
