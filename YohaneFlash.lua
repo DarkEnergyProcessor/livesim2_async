@@ -261,9 +261,9 @@ function YohaneFlash._internal._mt.clone(this)
 	
 	-- Copy audio
 	for i = 1, #this.audios do
-		flsh.audios[i - 1] = {
-			nameIdx = this.audios[i - 1].nameIdx,
-			handle = Yohane.Platform.CloneAudio(this.audios[i - 1].handle)
+		flsh.audios[i] = {
+			nameIdx = this.audios[i].nameIdx,
+			handle = Yohane.Platform.CloneAudio(this.audios[i].handle)
 		}
 	end
 	

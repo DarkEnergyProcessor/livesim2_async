@@ -3,7 +3,6 @@
 -- See copyright notice in main.lua
 
 local DEPLS = ...
-local Yohane = require("Yohane")
 local LiveClear = {}
 
 local ElapsedTime = 0
@@ -20,10 +19,10 @@ function LiveClear.Update(deltaT)
 			-- Full Combo display for 2 seconds.
 			ElapsedTime = 2000
 		end
-		
+
 		isFCDetermined = true
 	end
-	
+
 	if ElapsedTime > 0 then
 		-- Yohane needs the color range from 0..255
 		DEPLS.FullComboAnim:setOpacity(DEPLS.LiveOpacity * 255)
@@ -33,16 +32,16 @@ function LiveClear.Update(deltaT)
 			DEPLS.Sound.LiveClear:play()
 			isVoicePlayed = true
 		end
-		
+
 		-- Yohane needs the color range from 0..255
 		DEPLS.LiveShowCleared:setOpacity(DEPLS.LiveOpacity * 255)
 		DEPLS.LiveShowCleared:update(deltaT)
-		
+
 		if ElapsedTime < -5000 then
 			DEPLS.Routines.ResultScreen.Update(deltaT)
 		end
 	end
-	
+
 	ElapsedTime = ElapsedTime - deltaT
 end
 
@@ -51,7 +50,7 @@ function LiveClear.Draw()
 		DEPLS.FullComboAnim:draw(480, 320)
 	else
 		DEPLS.LiveShowCleared:draw(480, 320)
-		
+
 		if ElapsedTime < -5000 then
 			DEPLS.Routines.ResultScreen.Draw()
 		end

@@ -32,8 +32,8 @@ local DEPLS = {
 	LiveOpacity = 1,	-- Live opacity
 	AutoPlay = false,	-- Autoplay?
 
-	LiveShowCleared = AquaShine.GetCachedData("lclrflsh", Yohane.newFlashFromFilename, "flash/live_clear.flsh"),
-	FullComboAnim = AquaShine.GetCachedData("fcflsh", Yohane.newFlashFromFilename, "flash/live_fullcombo.flsh"),
+	LiveShowClearedReal = AquaShine.GetCachedData("lclrflsh", Yohane.newFlashFromFilename, "flash/live_clear.flsh"),
+	FullComboAnimReal = AquaShine.GetCachedData("fcflsh", Yohane.newFlashFromFilename, "flash/live_fullcombo.flsh"),
 
 	StoryboardErrorMsg = "",
 	StoryboardFunctions = {},	-- Additional function to be added in sandboxed lua storyboard
@@ -1111,7 +1111,9 @@ function DEPLS.Start(argv)
 	DEPLS.NoteManager.InitializeImage()
 
 	-- Initialize flash animation
+	DEPLS.LiveShowCleared = DEPLS.LiveShowClearedReal:clone()
 	DEPLS.LiveShowCleared:setMovie("ef_311")
+	DEPLS.FullComboAnim = DEPLS.FullComboAnimReal:clone()
 	DEPLS.FullComboAnim:setMovie("ef_329")
 
 	-- Calculate score bar

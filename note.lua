@@ -115,6 +115,7 @@ function NoteBombEffect:Update(deltaT)
 end
 
 function NoteBombEffect:Draw()
+	love.graphics.setColor(1, 1, 1)
 	self.flash:draw(self.x, self.y)
 end
 
@@ -476,7 +477,10 @@ local function _internalTapNote(note, judgementIndex, incCounter, audio)
 
 	-- Play star explode effect. Only applicable for single note
 	if note.StarNote and reset then
-		local ef = NoteBombEffect.Create(note.DirectionVector[1] * 400, note.DirectionVector[2] * 400)
+		local ef = NoteBombEffect.Create(
+			480 + note.DirectionVector[1] * note.DirectionVector[3],
+			160 + note.DirectionVector[2] * note.DirectionVector[3]
+		)
 
 		EffectPlayer.Spawn(ef)
 		note.Audio.StarExplode:play()
