@@ -22,6 +22,11 @@ local SettingSelection = {
 	{
 		Name = "NOTE_STYLE", Default = 1,
 		Caption = "Note Style",
+		Description = [[
+Set the Live Simulator: 2 note style
+1. Default, original SIF note style
+2. Neon note style
+3. Matte note style]],
 		Type = "number",
 		Min = 1,
 		Max = 3
@@ -29,6 +34,9 @@ local SettingSelection = {
 	{
 		Name = "CBF_UNIT_LOAD", Default = 1,
 		Caption = "Load CBF Units",
+		Description = [[
+Load Custom Beatmap Festival units or always use
+units from Live Simulator: 2]],
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -36,6 +44,9 @@ local SettingSelection = {
 	{
 		Name = "MINIMAL_EFFECT", Default = 0,
 		Caption = "Minimal Effect",
+		Description = [[
+Reduces visual effect. Enable if you experience
+low framerate or stutter.]],
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -43,6 +54,12 @@ local SettingSelection = {
 	{
 		Name = "BACKGROUND_IMAGE", Default = 11,
 		Caption = "Background Number",
+		Description = [[
+Default background to be used as fallback.
+
+This setting menu background selects the
+background based on this value, so you can see
+the changes immediately.]],
 		Type = "number",
 		Min = 1,
 		Max = 15,
@@ -53,7 +70,14 @@ local SettingSelection = {
 	},
 	{
 		Name = "NOTE_SPEED", Default = 800,
-		Caption = "Notes Speed (ms)",
+		Caption = "Note Speed (ms)",
+		Description = [[
+Set the note travel speed. Quick rule of thumb:
+* 700  - SIF default master speed
+* 800  - SIF default expert speed
+* 1000 - SIF default hard speed
+* 1300 - SIF default normal speed
+* 1600 - SIF default easy speed]],
 		Type = "number",
 		Min = 400,
 		Max = 4500,
@@ -69,6 +93,16 @@ local SettingSelection = {
 	{
 		Name = "JIT_COMPILER", Default = defaultJIT,
 		Caption = "JIT (Needs Restart)",
+		Description = [[
+Set Lua Just-In-Time compiler.
+
+In desktop, this is on by default, and in
+mobile, this is off by default.
+
+There's no reason to alter this setting
+unless you experience frame stutter.
+
+For ARM64 users: Always set this off!]],
 		Type = "switch",
 		On = "on",
 		Off = "off"
@@ -94,8 +128,8 @@ local SettingSelection = {
 		Name = "GLOBAL_OFFSET", Default = 0,
 		Caption = "Beatmap Offset",
 		Type = "number",
-		Min = -4000,
-		Max = 4000,
+		Min = -5000,
+		Max = 5000,
 		Increment = 10
 	},
 	{
@@ -138,6 +172,18 @@ local SettingSelection = {
 	{
 		Name = "AUDIO_LOWMEM", Default = 0,
 		Caption = "Low Memory Audio",
+		Description = [[
+Enable stream audio system.
+
+This option reduces the memory usage when
+enabled, by streaming the beatmap audio
+in-memory or in hard drive, and not loading
+the decoded audio in memory.
+
+Enabling this setting can introduces
+additional audio-beatmap synchronization
+problems which can't be fixed by pausing
+and resuming the live simulator.]],
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -166,26 +212,28 @@ local settings_index_multipler = 0
 function Settings.Start()
 	for i = 1, #SettingSelection do
 		local idx = SettingSelection[i]
-		
+
 		idx.Value = AquaShine.LoadConfig(idx.Name, idx.Default)
-		
+
 		if idx.Changed then
 			idx:Changed()
 		end
-	end	
+	end
 end
 
-function Settings.Update(deltaT) end
+function Settings.Update() end
 
-function Settings.Draw(deltaT)
+function Settings.Draw()
+	local descText
+
 	-- Draw background
 	love.graphics.draw(Settings.Background)
-	
+
 	-- Draw back button and image
 	love.graphics.draw(Settings.BackImage, -98, 0)
-	
+
 	if MouseState[3] then
-		if 
+		if
 			MouseState[1] >= 0 and MouseState[1] <= 86 and
 			MouseState[2] >= 0 and MouseState[2] <= 58
 		then
@@ -193,8 +241,8 @@ function Settings.Draw(deltaT)
 		else
 			love.graphics.draw(Settings.BackButton)
 		end
-		
-		if 
+
+		if
 			MouseState[1] >= 800 and MouseState[2] >= 540 and
 			MouseState[1] < 944 and MouseState[2] < 598
 		then
@@ -202,8 +250,8 @@ function Settings.Draw(deltaT)
 		else
 			love.graphics.draw(set_button_19, 800, 540)
 		end
-		
-		if 
+
+		if
 			MouseState[1] >= 874 and MouseState[2] >= 0 and
 			MouseState[1] < 960 and MouseState[2] < 58
 		then
@@ -222,37 +270,53 @@ function Settings.Draw(deltaT)
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print("Settings", 95, 13)
 	love.graphics.setColor(1, 1, 1)
-	
+
 	for i = settings_index_multipler * 8 + 1, (settings_index_multipler + 1) * 8 do
 		local idx = SettingSelection[i]
-		
+
 		if idx then
 			local yp = (i - settings_index_multipler * 8) * 72
-			
+
 			love.graphics.draw(Settings.BackImage, -110, yp)
-			
+
 			if idx.Type == "switch" then
 				love.graphics.draw(idx.Value == idx.On and OnButtonSe or OnButton, 190, yp - 20)
 				love.graphics.draw(idx.Value == idx.Off and OffButtonSe or OffButton, 275, yp - 20)
-				
+
 				love.graphics.setColor(0, 0, 0)
 			elseif idx.Type == "number" then
 				love.graphics.draw(minus, 240, yp + 10)
 				love.graphics.draw(plus, 360, yp + 10)
-				
+
 				love.graphics.setColor(0, 0, 0)
 				love.graphics.print(tostring(idx.Value), 300, yp + 10)
 			end
-			
+
 			love.graphics.print(idx.Caption, 5, yp + 10)
 			love.graphics.setColor(1, 1, 1)
+
+			if
+				MouseState[1] >= 0 and MouseState[2] >= yp and
+				MouseState[1] < 394 and MouseState[2] < yp + 40
+			then
+				descText = idx.Description or "No description available"
+			end
+		else
+			break
 		end
 	end
+
+	descText = descText or "Hover setting to see it's description"
+	-- Draw description
+	love.graphics.setColor(0, 0, 0)
+	love.graphics.print(descText, 420+1, 70+1)
+	love.graphics.setColor(1, 1, 1)
+	love.graphics.print(descText, 420, 70)
 end
 
 function Settings.MousePressed(x, y, button)
 	if button ~= 1 then return end
-	
+
 	MouseState[1], MouseState[2] = x, y
 	MouseState[3] = true
 end

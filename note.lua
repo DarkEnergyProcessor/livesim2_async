@@ -209,7 +209,7 @@ function NoteObject:init(noteData, offset)
 		SlideNoteList[#SlideNoteList + 1] = {noteData, self, Note.TotalNotes}
 	end
 	-- Hidden/sudden note
-	self.HiddenType = noteData.vanish
+	self.HiddenType = DEPLS.OverrideHiddenType or noteData.vanish
 	-- Simultaneous note
 	self.SimulNote = checkSimulNote(self.ZeroAccuracyTime)
 
@@ -363,8 +363,8 @@ function NoteObject:Update(deltaT)
 			self.Opacity = math.max(math.min(((400 - d1) - 160) * 0.0125, 1), 0)
 		end
 
-		-- Calculate long note distance if it's rendered
-		if self.LN and self.LN.Distance + DEPLS.TimingOffset < self.DistanceVector[3] then
+		-- Calculate long note opacity
+		if self.LN then
 			local d2 = self.LN.Distance + DEPLS.TimingOffset
 			if self.HiddenType == 1 then
 				-- Hidden note
