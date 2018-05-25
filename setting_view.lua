@@ -86,6 +86,9 @@ Set the note travel speed. Quick rule of thumb:
 	{
 		Name = "LLP_SIFT_DEFATTR", Default = 10,
 		Caption = "Def. Note Attribute",
+		Description = [[
+Default note color for some beatmaps,
+mainly SIFTrain beatmap and LLPractice! beatmap.]],
 		Type = "number",
 		Min = 1,
 		Max = 11
@@ -110,6 +113,10 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "NS_ACCUMULATION", Default = 0,
 		Caption = "N.S. Accumulation",
+		Description = [[
+Enable note sound accumulation. Only plays
+note sound at time for simultaneous (or more)
+taps.]],
 		Type = "switch",
 		On = 1,
 		Off = 0
@@ -127,6 +134,11 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "GLOBAL_OFFSET", Default = 0,
 		Caption = "Beatmap Offset",
+		Description = [[
+Set the global beatmap offset. Useful if there
+are latency problems. You only able to set
+the offset from -5 seconds to 5 seconds. The
+unit of this option is in milliseconds.]],
 		Type = "number",
 		Min = -5000,
 		Max = 5000,
@@ -135,6 +147,9 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "TEXT_SCALING", Default = 1,
 		Caption = "Text Scaling",
+		Description = [[
+Set the text scaling of the combo counter and
+the tap judgement.]],
 		Type = "number",
 		Min = 0.5,
 		Max = 1,
@@ -143,6 +158,11 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "TAP_SOUND", Default = TapSound.Default,
 		Caption = "SE ID",
+		Description = [[
+Set the note tap sound. Available tap sound:
+1. Normal, SIF tap sound
+2. Girls Band Party tap sound
+3. Girls Band Party tap sound (Michelle)]],
 		Type = "number",
 		Min = 1,
 		Max = #TapSound
@@ -150,6 +170,8 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "SE_VOLUME", Default = 80,
 		Caption = "SE Volume",
+		Description = [[
+Set the sound effect volume.]],
 		Type = "number",
 		Min = 0,
 		Max = 100,
@@ -165,6 +187,9 @@ For ARM64 users: Always set this off!]],
 	{
 		Name = "PLAY_UI", Default = "sif",
 		Caption = "Lovewing UI",
+		Description = [[
+Switch the live user interface to
+Lovewing! user interface.]],
 		Type = "switch",
 		On = "lovewing",
 		Off = "sif"

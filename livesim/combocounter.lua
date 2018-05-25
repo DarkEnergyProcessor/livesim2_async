@@ -115,23 +115,6 @@ function ComboCounter.Update(deltaT)
 		for i = #combo_str + 1, 10 do
 			ComboCounter.Sprite:set(ComboCounter.ID[i + 2], 0, 0, 0, 0, 0)
 		end
-		--[[
-		love.graphics.push()
-		love.graphics.translate(480, 320)
-		love.graphics.scale(DEPLS.TextScaling)
-		love.graphics.setColor(255, 255, 255, combo_boom.op * DEPLS.LiveOpacity / 255)
-		love.graphics.draw(img.combo, 61, -54, 0, combo_boom.s, combo_boom.s, 61, 18)
-		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-		
-		for i = 1, #combo_str do
-			-- Draw numbers
-			love.graphics.draw(img[combo_str[i] - 47], -29 - (#combo_str - i) * 43, -53, 0, combo_scale.s, combo_scale.s, 24, 24)
-		end
-		
-		love.graphics.draw(img.combo, 61, -54, 0, combo_scale.s, combo_scale.s, 61, 17)
-		love.graphics.setColor(1, 1, 1)
-		love.graphics.pop()
-		]]
 	end
 end
 
@@ -141,7 +124,7 @@ end
 function ComboCounter.Draw()
 	if ComboCounter.CurrentCombo > 0 then
 		love.graphics.setColor(1, 1, 1, DEPLS.LiveOpacity)
-		love.graphics.draw(ComboCounter.Sprite, 480, 320, 0, DEPLS.TextScaling)
+		love.graphics.draw(ComboCounter.Sprite, 480, 320 - 8 * (1 - DEPLS.TextScaling), 0, DEPLS.TextScaling)
 	end
 end
 
