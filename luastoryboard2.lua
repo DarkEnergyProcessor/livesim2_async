@@ -60,6 +60,20 @@ local function setup_env(story, lua)
 
 			return nil
 		end,
+		LoadAudio = function(path)
+			local s, x
+			if story.AdditionalData[path] then
+				s, x = pcall(love.audio.newSource, story.AdditionalData[path], "static")
+			elseif story.BeatmapDir then
+				s, x = pcall(love.audio.newSource, story.BeatmapDir..path, "static")
+			end
+
+			if s then
+				x:setVolume(1)
+				return x
+			end
+			return nil
+		end,
 		ReadFile = function(path)
 			if story.AdditionalData[path] then
 				return story.AdditionalData[path]:getString()

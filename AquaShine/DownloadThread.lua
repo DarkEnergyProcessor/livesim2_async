@@ -36,10 +36,10 @@ end
 -- the response data to LOVE channel
 local function custom_sink(chunk, err)
 	if cin:peek() == "QUIT" then
-		print("QUIT requested")
+		--print("QUIT requested")
 		return nil, "QUIT Requested"
 	elseif chunk then
-		print("recv", chunk:sub(1, 40))
+		--print("recv", chunk:sub(1, 40))
 		push_event("RECV", chunk)
 	end
 	
@@ -80,9 +80,9 @@ end
 
 local request_http = socket.protect(function(url, headers)
 	-- Build request table
-	print("get http")
+	--print("get http")
 	local h, uri, dest = get_http(url)
-	print("http hand", h, uri)
+	--print("http hand", h, uri)
 	
 	-- Adjust
 	local basic_header = {
@@ -90,28 +90,28 @@ local request_http = socket.protect(function(url, headers)
 		["connection"] = "close",
 		["user-agent"] = "AquaShine.Download "..socket._VERSION
 	}
-	print("header base", basic_header, headers)
+	--print("header base", basic_header, headers)
 	
 	-- Override headers
 	for n, v in pairs(headers) do
-		print("add header", n, v)
+		--print("add header", n, v)
 		if v == math.huge then
 			basic_header[n:lower()] = nil
 		else
 			basic_header[n:lower()] = tostring(v)
 		end
 	end
-	print("header modified", basic_header)
+	--print("header modified", basic_header)
 	
 	-- Send
 	do
 		local reqline = string.format("GET %s HTTP/1.1\r\n", uri)
 		
-		print("pre-send req")
+		--print("pre-send req")
 		send_http(h, reqline)
-		print("1st send req")
+		--print("1st send req")
 	end
-	print("pre-send header")
+	--print("pre-send header")
 	do
 		local headerstr = {}
 		for n, v in pairs(basic_header) do
@@ -120,10 +120,10 @@ local request_http = socket.protect(function(url, headers)
 		headerstr[#headerstr + 1] = "\r\n"
 		send_http(h, table.concat(headerstr))
 	end
-	print("post-send header")
+	--print("post-send header")
 	
 	local code, status = h:receivestatusline()
-	print("post-reveice req")
+	--print("post-reveice req")
 	-- if it is an HTTP/0.9 server, simply get the body and we are done
 	if not code then
 		push_event("RESP", 200)
@@ -143,7 +143,7 @@ local request_http = socket.protect(function(url, headers)
 	headers = h:receiveheaders()
 	
 	push_event("RESP", code)
-	print("resp", code)
+	--print("resp", code)
 	push_event("SIZE", headers['content-length'] and tonumber(headers['content-length']) or -1)
 	push_event("HEDR", headers)
 	
@@ -154,7 +154,7 @@ end)
 
 local command = cin:demand()
 while command ~= "QUIT" do
-	print("command", command)
+	--print("command", command)
 	local headers = cin:pop()
 	local a, b, c = pcall(request_http, command, headers)
 	
