@@ -20,6 +20,7 @@ function vires.init(width, height)
 	if vires.isInit then return end
 	vires.data.virtualW, vires.data.virtualH = width, height
 	vires.data.screenX, vires.data.screenY = width, height
+	vires.isInit = true
 end
 
 function vires.update(nw, nh)
