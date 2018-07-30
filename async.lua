@@ -107,9 +107,11 @@ end
 -- Async functions --
 ---------------------
 
-function async.wait(...)
-	if select("#", ...) > 0 then
-		local dt = select(1, ...)
+--- Sends control back to async scheduler
+-- @param dt Time to wait
+-- @return Time since the last update in seconds, or none if dt is specified.
+function async.wait(dt)
+	if dt and dt > 0 then
 		while dt > 0 do
 			dt = dt - async.wait()
 		end
@@ -124,7 +126,8 @@ function async.wait(...)
 	end
 end
 
--- Must be set with rawset.
+--- Calls pending asynchronous task.
+-- @param dt Time since the last update in seconds.
 function async.loop(dt) end -- tricking LCA
 rawset(async, "loop", function(dt)
 	async.backEvents, async.events = async.events, async.backEvents
@@ -141,14 +144,26 @@ end)
 -- Object creation --
 ---------------------
 
+--- Load image in asynchronous way.
+-- @param path Path to image.
+-- @tparam table settings Image loading settings, as per love.graphics.newImage
+-- @treturn WrapLilyClass Asynchronous object (Lily wrapper)
 function async.loadImage(path, settings)
 	return wrapLilyClass(lily.newImage(path, settings))
 end
 
+--- Load font in asynchronous way.
+-- @tparam string path Path to font.
+-- @tparam number size Font size.
+-- @treturn WrapLilyClass Asynchronous object (Lily wrapper)
 function async.loadFont(path, size)
 	return wrapLilyClass(lily.newFont(path, size))
 end
 
+--- Run function as asynchronous task.
+-- You can call async.wait() inside the function
+-- @tparam function func The function to run.
+-- @treturn FunctionAsync object (call `:run(arg)` to run it)
 function async.runFunction(func)
 	return funcAsync(func)
 end

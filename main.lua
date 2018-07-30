@@ -14,9 +14,10 @@
 --    claim that you wrote the original software. If you use this software
 --    in a product, an acknowledgment in the product documentation would be
 --    appreciated but is not required.
--- 2. Altered source versions must be plainly marked as such, and must not be
---    misrepresented as being the original software.
--- 3. This notice may not be removed or altered from any source distribution.
+-- 2. Altered source versions must be plainly marked as such, and must not
+--    be misrepresented as being the original software.
+-- 3. This notice may not be removed or altered from any source
+--    distribution.
 --]]---------------------------------------------------------------------------
 -- luacheck: globals DEPLS_VERSION
 -- luacheck: globals DEPLS_VERSION_NUMBER
@@ -33,30 +34,43 @@ DEPLS_VERSION = "3.0.0-beta5"
 DEPLS_VERSION_NUMBER = 02030000
 
 local function initWindow()
+	-- Our window is 960x640 by default.
 	love.window.setMode(960, 640, {
 		resizable = true,
 		minwidth = 320,
 		minheight = 240,
 		highdpi = true,
+		--RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		fullscreen = love._os == "iOS",
 		fullscreentype = "desktop",
 	})
 	love.window.setTitle("Live Simulator: 2")
 	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
+	-- Initialize virtual resolution
 	vires.init(960, 640)
+	-- Update virtual resolution but using love.graphics.getDimensions value
+	-- because we can't be sure that 960x640 is supported in mobile or
+	-- in lower resolutions.
 	vires.update(love.graphics.getDimensions())
 end
 
 local function registerGamestates()
+	-- Loading screen singleton init
 	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
+	-- Load all gamestates.
 	gamestate.register("dummy", require("game.states.dummy"))
 	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("mainMenu", require("game.states.main_menu"))
 end
 
 function love.load()
+	-- TODO: command-line processing.
+	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
+	-- Initialize window
 	initWindow()
+	-- Register all gamestates
 	registerGamestates()
+	-- Jump to default game state
 	gamestate.enter(nil, "dummy")
 end

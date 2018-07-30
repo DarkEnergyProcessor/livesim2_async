@@ -7,6 +7,10 @@ local vires = require("vires")
 local timer = require("libs.hump.timer")
 local loadingInstance = require("loading_instance")
 
+--------------------------------
+-- LOVE 11.0 argument parsing --
+--------------------------------
+
 love.arg.options = {
 	console = { a = 0 },
 	fused = {a = 0 },
@@ -92,21 +96,34 @@ end
 love.arg.parse_option = love.arg.parseOption
 love.arg.parse_options = love.arg.parseOptions
 
+---------------
+-- Game loop --
+---------------
+
 function love.run()
 	-- At least LOVE 0.10.0 (must be checked here, otherwise window will show up)
 	assert(love._version >= "0.10.0", "Minimum LOVE version needed is LOVE 0.10.0")
 	-- We have to delay-load any script that depends on Lily
+	-- because Lily checks the loaded library
+	-- and doesn't require them.
 	local async = require("async")
 	local lily = require("libs.lily")
 	local gamestate = require("gamestate")
 	-- reparse it because we lose it in above code
 	love.arg.parseOptions(arg)
+	-- Now we have LOVE 11.0 behaviour for argument parsing
 	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
-	-- Delay load fusion ui but after love.load
-	local gui = require("libs.fusion-ui")
+	-- Only load Fusion UI if window is present, also it must
+	-- be after love.load, because love.load may initialize window.
+	local gui
+	if love.window.isOpen() then
+		gui = require("libs.fusion-ui")
+	end
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
 
+	-- We create step function in here
+	-- for portability code path you can see below.
 	local step = function()
 		-- Update dt, as we'll be passing it to update
 		love.timer.step()
@@ -137,17 +154,21 @@ function love.run()
 				end
 			end
 
+			-- Have to quit all instance in here
 			if name == "quit" then
 				gamestate.internal.quit()
 				lily.quit()
 				loadingInstance.exit()
 				return 0
+			-- As lily.lua said about using custom love.run
 			elseif name == "lily_resp" then
 				love.handlers.lily_resp(a, b, c, d, e, f)
 			elseif not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end
 		end
+		-- We have to pass the mouse position to virtual resolution
+		-- screen coordinate to logical coordinate conversion
 		gui.eventHandlers.mousePos(vires.screenToLogical(love.mouse.getPosition()))
 
 		local currentGame = gamestate.internal.getActive()
@@ -166,6 +187,8 @@ function love.run()
 		end
 	end
 
+	-- Portability code
+	-- TODO: Support LOVE 11.0
 	if love._version >= "11.0" then
 		return step
 	else

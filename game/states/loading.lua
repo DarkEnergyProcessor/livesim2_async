@@ -42,6 +42,10 @@ local loadingText = {
 	"1 FPS, 2 FPS, 2 FPS, 50 FPS",
 	"\"livesim2.exe livesim time_lapse\"",
 	"v"..DEPLS_VERSION,
+	"Asking how is NPad...",
+	"Finding rabbits...",
+	"Chasing rabbits...",
+	"This line is suggested by LazyKill for no reason."
 }
 
 function loading:start()
