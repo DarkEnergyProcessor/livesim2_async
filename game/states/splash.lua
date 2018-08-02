@@ -7,6 +7,7 @@ local love = require("love")
 local gamestate = require("gamestate")
 local timer = require("libs.hump.timer")
 local loadingInstance = require("loading_instance")
+local color = require("color")
 
 local splash = gamestate.create {
 	fonts = {
@@ -18,6 +19,10 @@ local splash = gamestate.create {
 	},
 	audios = {},
 }
+
+local function done()
+	gamestate.replace(loadingInstance.getInstance(), "mainMenu")
+end
 
 local function skip(self)
 	local persist = self.persist
@@ -31,16 +36,12 @@ local function skip(self)
 	end
 end
 
-local function done()
-	gamestate.replace(loadingInstance.getInstance(), "mainMenu")
-end
-
 function splash:load()
 	if not(self.data.title) then
 		local title = love.graphics.newText(self.assets.fonts.title)
-		title:add({{0, 0, 0, 127}, "Live Simulator: 2"}, 2, 2)
-		title:add({{0, 0, 0, 127}, "Live Simulator: 2"}, -2, -2)
-		title:add({{255, 255, 255, 255}, "Live Simulator: 2"}, 0, 0)
+		title:add({color.black50PT, "Live Simulator: 2"}, 2, 2)
+		title:add({color.black50PT, "Live Simulator: 2"}, -2, -2)
+		title:add({color.white, "Live Simulator: 2"}, 0, 0)
 		self.data.title = title
 	end
 	if not(self.data.version) then
@@ -83,7 +84,7 @@ function splash:start()
 		wait(0.1)
 
 		-- Show icon in 250ms at +480+320 start at 0ms. linear
-		self.data.timer:tween(0.25, persist, {iconOpacity = 255})
+		self.data.timer:tween(0.25, persist, {iconOpacity = 1})
 		wait(0.25)
 
 		-- Rotate icon 720degree in 500ms and move to left at +166+320 start at 750ms. inOutCubic
@@ -91,7 +92,7 @@ function splash:start()
 		wait(0.5)
 
 		-- Fade "Live Simulator: 2" string in 500ms at +285+284. linear
-		self.data.timer:tween(0.5, persist, {textOpacity = 255})
+		self.data.timer:tween(0.5, persist, {textOpacity = 1})
 		-- Delay 250ms.
 		wait(0.5+0.25)
 
@@ -114,7 +115,7 @@ end
 function splash:draw()
 	local persist = self.persist
 
-	love.graphics.clear(0, 187, 255, 255)
+	love.graphics.clear(color.hex00BBFF)
 	if persist.done then return end
 
 	if persist.setShader then
@@ -122,14 +123,17 @@ function splash:draw()
 	end
 
 	-- Draw icon
-	love.graphics.setColor(255, 255, 255, persist.iconOpacity)
+	love.graphics.setColor(color.get(255, 255, 255, persist.iconOpacity))
 	love.graphics.draw(self.assets.images.icon, persist.iconPosX, 320, persist.iconRot, 128/1024, 128/1024, 512, 512)
 	love.graphics.draw(self.data.version, 5, 600)
 	-- Draw text
-	love.graphics.setColor(255, 255, 255, persist.textOpacity)
+	love.graphics.setColor(color.get(255, 255, 255, persist.textOpacity))
 	love.graphics.draw(self.data.title, 285, 284)
 	-- Clear shader
 	love.graphics.setShader()
 end
+
+splash:registerEvent("keyreleased", skip)
+splash:registerEvent("mousereleased", skip)
 
 return splash

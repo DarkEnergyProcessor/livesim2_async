@@ -280,7 +280,7 @@ function gamestate.internal.handleEvents(name, ...)
 
 	local constructor = current.game.internal.constructor
 	if constructor.events[name] then
-		constructor.events[name](select(1, ...))
+		constructor.events[name](current.game, select(1, ...))
 		return true
 	end
 	return false
