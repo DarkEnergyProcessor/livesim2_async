@@ -6,7 +6,7 @@ local gamestate = require("gamestate")
 
 local dummy = gamestate.create {fonts = {}, images = {}, audios = {}}
 
-dummy:registerEvent("keyreleased", function(key)
+dummy:registerEvent("keyreleased", function(self, key)
 	if key == "return" then
 		gamestate.replace(nil, "splash")
 	end

@@ -20,14 +20,13 @@ local love = require("love")
 local gamestate = require("gamestate")
 local assetCache = require("asset_cache")
 local timer = require("libs.hump.timer")
+local color = require("color")
 
 local loading = gamestate.create {
 	-- Note that for loading screen gamestate
 	-- the contents of these 3 tables are ignored,
 	-- but the table itself must be exist.
-	fonts = {},
-	images = {},
-	audios = {}
+	fonts = {}, images = {}, audios = {}
 }
 
 local loadingText = {
@@ -60,11 +59,13 @@ function loading:resumed()
 	local text = loadingText[math.random(1, #loadingText)]
 	local tobj = self.persist.text
 	local spos = self.data.mainFont:getWidth(text) * -0.5
+	local hpos = self.data.mainFont:getHeight() * -0.5
 	self.persist.rotation = 0 -- in 0..1 range
+	print(hpos)
 	tobj:clear()
-	tobj:add({{0, 0, 0, 127}, text}, spos + -1.25, -1.25)
-	tobj:add({{0, 0, 0, 127}, text}, spos + 1.25, 1.25)
-	tobj:add({{255, 255, 255, 255}, text}, spos, 0)
+	tobj:add({color.black50PT, text}, spos + -1.25, hpos - 1.25)
+	tobj:add({color.black50PT, text}, spos + 1.25, hpos + 1.25)
+	tobj:add({color.white, text}, spos, hpos)
 end
 
 function loading:update(dt)
@@ -76,9 +77,12 @@ end
 
 function loading:draw()
 	local rot = self.persist.inOutCubic(self.persist.rotation) * 2*math.pi
-	love.graphics.clear(0, 187, 255, 255)
+	love.graphics.clear(color.hex00BBFF)
+	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.icon, 480, 320, rot, 1, 1, 64, 64)
 	love.graphics.draw(self.persist.text, 480, 400)
+	love.graphics.setColor(color.get(255, 255, 255, (1 - self.persist.rotation) * 0.4))
+	love.graphics.draw(self.persist.text, 480, 400, 0, 1 + self.persist.rotation)
 end
 
 return loading

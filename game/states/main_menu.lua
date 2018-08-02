@@ -6,7 +6,10 @@
 local love = require("love")
 local gamestate = require("gamestate")
 local async = require("async")
+local color = require("color")
+
 local backgroundLoader = require("game.background_loader")
+
 local gui = require("libs.fusion-ui")
 local menuButtonUI = require("ui.menu_button")
 
@@ -79,8 +82,8 @@ local function initializeVersionText(self)
 	bld = table.concat(bld)
 
 	local text = love.graphics.newText(self.assets.fonts.main)
-	text:add({{0, 0, 0, 255}, bld}, 1.25, 1.25)
-	text:add({{255, 255, 255, 255}, bld}, 0, 0)
+	text:add({color.black, bld}, 1.25, 1.25)
+	text:add({color.white, bld}, 0, 0)
 
 	return text
 end
@@ -101,9 +104,9 @@ function mainMenu:load()
 	-- Load title text
 	if self.data.titleText == nil then
 		local text = love.graphics.newText(self.assets.fonts.title)
-		text:add({{0, 0, 0, 127}, "Live Simulator: 2"}, 2, 2)
-		text:add({{0, 0, 0, 127}, "Live Simulator: 2"}, -2, -2)
-		text:add({{255, 255, 255, 255}, "Live Simulator: 2"}, 0, 0)
+		text:add({color.black50PT, "Live Simulator: 2"}, 2, 2)
+		text:add({color.black50PT, "Live Simulator: 2"}, -2, -2)
+		text:add({color.white, "Live Simulator: 2"}, 0, 0)
 		self.data.titleText = text
 	end
 	for i = 1, 100 do
@@ -112,6 +115,7 @@ function mainMenu:load()
 end
 
 function mainMenu:draw()
+	love.graphics.setColor(color.white)
 	-- Draw background
 	love.graphics.draw(self.data.background)
 	-- Draw version text
