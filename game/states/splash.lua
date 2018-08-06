@@ -72,7 +72,7 @@ function splash:start()
 	local persist = self.persist
 	persist.iconOpacity = 0
 	persist.iconPosX = 480
-	persist.iconRot = 0
+	persist.iconRot = 2*math.pi + 0.60317
 	persist.textOpacity = 0
 	persist.eraser = 1
 	persist.skipped = false
@@ -87,8 +87,8 @@ function splash:start()
 		self.data.timer:tween(0.25, persist, {iconOpacity = 1})
 		wait(0.25)
 
-		-- Rotate icon 720degree in 500ms and move to left at +166+320 start at 750ms. inOutCubic
-		self.data.timer:tween(0.5, persist, {iconRot = -4 * math.pi, iconPosX = 166}, "in-out-cubic")
+		-- Rotate icon in 500ms and move to left at +166+320 start at 750ms. inOutCubic
+		self.data.timer:tween(0.5, persist, {iconRot = 0, iconPosX = 166}, "in-out-cubic")
 		wait(0.5)
 
 		-- Fade "Live Simulator: 2" string in 500ms at +285+284. linear

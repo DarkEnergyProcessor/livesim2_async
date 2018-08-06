@@ -26,7 +26,7 @@ function checkbox:cleanUp()
 	self.box = nil
 end
 
-function checkbox:update(x, y, w, h, sta, style, elem)
+function checkbox:update(x, y, w, h, str, style, elem)
 	self.w = w
 	self.h = h
 

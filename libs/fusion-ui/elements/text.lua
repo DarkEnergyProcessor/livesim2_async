@@ -38,7 +38,7 @@ end
 
 function text:update(x, y, overw, overh, str, style, callbacks, element)
 	str = str or self.str 
-	origStr = self.str
+	local origStr = self.str
 
 	if self.first==nil then
 		self.first = true

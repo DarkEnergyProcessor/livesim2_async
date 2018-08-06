@@ -152,7 +152,11 @@ function love.run()
 				if name == "touchmoved" then
 					d, e = d * vires.data.scaleOverall, e * vires.data.scaleOverall
 				end
+			-- print information (debug). sent from another thread
+			elseif name == "print" then
+				print(a)
 			end
+			assert(name ~= "threaderror", b)
 
 			-- Have to quit all instance in here
 			if name == "quit" then
