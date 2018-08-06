@@ -7,6 +7,7 @@ local love = require("love")
 local gamestate = require("gamestate")
 local async = require("async")
 local color = require("color")
+local timer = require("libs.hump.timer")
 
 local backgroundLoader = require("game.background_loader")
 
@@ -24,16 +25,25 @@ local mainMenu = gamestate.create {
 	audios = {},
 }
 
+local function updateAnimation(style, prog, event, element)
+	element.xoffset = -60 * prog + 60
+	element.canvasColor[4] = 255*prog
+end
+
 local function initializeButtons()
 	local blist = {}
 	-- Play button
 	blist.play = menuButtonUI.new("Play")
+	--blist.play:addAnimation("canvasinit", updateAnimation, 0.2)
 	-- Change units button
 	blist.changeUnits = menuButtonUI.new("Change Units")
+	--blist.changeUnits:addAnimation("canvasinit", updateAnimation, 0.35)
 	-- Settings button
 	blist.settings = menuButtonUI.new("Settings")
+	--blist.settings:addAnimation("canvasinit", updateAnimation, 0.5)
 	-- Exit button
 	blist.exit = menuButtonUI.new("Exit")
+	--blist.exit:addAnimation("canvasinit", updateAnimation, 0.65)
 	blist.exit:addEventListener("released", function()
 		if love._os ~= "iOS" then
 			gamestate.leave()
@@ -109,9 +119,23 @@ function mainMenu:load()
 		text:add({color.white, "Live Simulator: 2"}, 0, 0)
 		self.data.titleText = text
 	end
-	for i = 1, 100 do
-		async.wait()
-	end
+end
+
+function mainMenu:start()
+	local buttons = self.data.buttons
+	local target = {xoffset = 0, canvasColor = {[4] = 255}}
+	buttons.play.xoffset = 60
+	buttons.play.canvasColor[4] = 0
+	timer.tween(0.3, buttons.play, target, "out-quad")
+	buttons.changeUnits.xoffset = 60
+	buttons.changeUnits.canvasColor[4] = 0
+	timer.tween(0.45, buttons.changeUnits, target, "out-quad")
+	buttons.settings.xoffset = 60
+	buttons.settings.canvasColor[4] = 0
+	timer.tween(0.6, buttons.settings, target, "out-quad")
+	buttons.exit.xoffset = 60
+	buttons.exit.canvasColor[4] = 0
+	timer.tween(0.75, buttons.exit, target, "out-quad")
 end
 
 function mainMenu:draw()

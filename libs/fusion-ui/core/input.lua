@@ -228,7 +228,7 @@ function gui.input.addBox(x, y, w, h, z, button, parent, checkFunc, element)
 		--As last resort insert in the table, then sort
 		else
 			table.insert(gui.mouseBoxes, box)
-			print(tostring(box.z))
+
 			table.sort(gui.mouseBoxes, zsort)
 		end
 	end

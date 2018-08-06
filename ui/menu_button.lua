@@ -7,14 +7,6 @@ local gui = require("libs.fusion-ui")
 local assetCache = require("asset_cache")
 local menuButtonUI = {class = nil, w = nil, h = nil}
 
-local buttonStyleNormal = {
-	backgroundImage = nil,
-	font = nil,
-	margins = {16, 16, 16, 32}, -- assume CSS order
-	backgroundSize = 'fit',
-	foregroundColor = {255, 255, 255, 255},
-}
-
 local function initialize()
 	local buttonImages = assetCache.loadMultipleImages({
 		"assets/image/ui/s_button_03.png",

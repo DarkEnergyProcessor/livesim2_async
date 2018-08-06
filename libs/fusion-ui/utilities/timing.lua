@@ -7,7 +7,7 @@ local timing = {
 	},
 	oldTimers = {},
 	startTime = 0,
-	savePasses = 30,
+	savePasses = 100,
 	oldPasses = {}
 }
 
@@ -21,6 +21,7 @@ function timing.start(index)
 	if gui.conf.timing then
 		if timing.timers[index]~=nil then
 			timing.timers[index] = love.timer.getTime() - timing.timers[index]
+
 		else
 			timing.timers[index] = love.timer.getTime()
 		end
@@ -38,7 +39,7 @@ function timing.endPass()
 		table.insert(timing.oldTimers,1,timing.timers)
 		timing.timers = {}
 		if #timing.oldTimers>timing.savePasses then
-			table.remove(timing.oldTimers,savePasses)
+			table.remove(timing.oldTimers,timing.savePasses)
 		end
 	end
 end
@@ -50,17 +51,18 @@ end
 function timing.averageTimers()
 	if gui.conf.timing then
 		local allAvg = {}
-
 		for i, e in pairs(timing.timers) do
 			local total = e
 			local totalPast = 1
+
 			for k, p in ipairs(timing.oldTimers) do
-				totalPast = totalPast+1
-				total = total + p[i]
+				if p[i] then
+					totalPast = totalPast+1
+					total = total + p[i]
+				end
 			end
 			allAvg[i] = total/totalPast
 		end
-
 		return allAvg
 	end
 end

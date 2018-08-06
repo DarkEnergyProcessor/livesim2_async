@@ -137,9 +137,9 @@ function love.run()
  
 		-- Call update and draw
 		if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
-		gui.timing.start('fui: bufferUpdate')
+		gui.timing.start('bufferUpdate')
 		gui.element.bufferUpdate(dt)
-		gui.timing.stop('fui: bufferUpdate')
+		gui.timing.stop('bufferUpdate')
  
 		if love.graphics and love.graphics.isActive() then
 			love.graphics.clear(love.graphics.getBackgroundColor())
@@ -147,16 +147,17 @@ function love.run()
 			gui.timing.start('love.draw')
 			if love.draw then love.draw() end
 			gui.timing.stop('love.draw')
-			gui.timing.start('fui: guiDraw')
+			gui.timing.start('guiDraw')
 			gui.draw()
-			gui.timing.stop('fui: guiDraw')
+			gui.timing.stop('guiDraw')
 			gui.timing.start('present')
 			love.graphics.present()
 			gui.timing.stop('present')
 		end
 
-		avgtimers = gui.timing.averageTimers()
+		gui.avgtimers = gui.timing.averageTimers()
 		gui.timing.endPass()
+
 		if love.timer then love.timer.sleep(0.0001) end
 	end
  

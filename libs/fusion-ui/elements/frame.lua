@@ -263,11 +263,11 @@ function frame:update(x, y, w, h, content, style, elem)
 
 	for i, eCont in ipairs(self.elementContainers) do
 		local p = eCont.props
-		if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 ) or init then
+		if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 ) or self.init then
 			eCont.element:draw(p.x+x, p.y+y+self.vOffset, p.w, p.h, nil, false)
 			eCont.element:update(0,false)
 		end
-		init = false
+		self.init = false
 	end
 
 	if self.slider then

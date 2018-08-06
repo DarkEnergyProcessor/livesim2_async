@@ -16,42 +16,6 @@ local element = {
 }
 element.__index = element
 
-local function copyTableRecursive(tB)
-	local finalTable = {}
-
-	for index, element in pairs(tB) do
-		--Checks if it needs to go one level deeper, making sure that 
-		if type(element) == 'table' then
-			--Makes sure there is a sub table to copy
-			finalTable[index] = copyTableRecursive(element)
-		--Checks if the 'old table' has the same type 
-		else
-			finalTable[index] = element
-		end
-	end
-
-	return finalTable
-end
-
-local function compareTablesRecursive(t1, t2)
-	for index, element in pairs(t1) do
-		if type(element) == 'table' then
-			if t2[index] and type(t2[index])=='table' then
-				if not compareTablesRecursive(element, t2[index]) then
-					return false
-				end
-			else
-				return false
-			end
-		else
-			if not (t2[index]~=nil and type(t2[index])==type(element) and t2[index]==element) then
-				return false
-			end
-		end
-	end
-	return true
-end
-
 ---The function used to update all elements present in the buffer
 --@param dt Downtime
 function element.bufferUpdate(dt)
@@ -66,6 +30,7 @@ function element.bufferUpdate(dt)
 	end
 	element.elementBuffer = finBuffer
 
+	gui.timing.start('bufferUpdate lazy renderer')
 	local lr = love.timer.getTime()
 	local lrIndex = #element.renderQueue
 	--lazy renderer
@@ -78,6 +43,7 @@ function element.bufferUpdate(dt)
 			return
 		end
 	end
+	gui.timing.stop('bufferUpdate lazy renderer')
 end
 
 ---Creates a new element
@@ -204,7 +170,7 @@ function element:update(dt, buffer)
 		return
 	end
 
-	if buffer == nil then
+	if buffer == nil and not self.firstDraw==true then
 		buffer = true
 	end
 
@@ -357,6 +323,16 @@ function element:removeEventListener(eventName, index)
 	end
 end
 
+--[[Element sleep manager]]
+function element:manageSleep()
+
+end
+
+--[[Element property manager]]
+function element:manageProperties()
+
+end
+
 function element:styleOverride(style, priority)
 	local index = tostring(love.timer.getTime())
 	priority = priority or 1
@@ -429,8 +405,7 @@ function element:reRender()
 			w = math.ceil((self.w-self.woffset)*1.5),
 			h = math.ceil((self.h-self.hoffset)*1.5)
 		}
-		--print(self.canvasSize.w)
-		--print(self.canvasSize.h)
+
 		self.canvas = love.graphics.newCanvas(self.canvasSize.w, self.canvasSize.h)
 		self:emitEvent('canvasinit',{canvas = self.canvas})
 	end
