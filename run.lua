@@ -109,6 +109,8 @@ function love.run()
 	local async = require("async")
 	local lily = require("libs.lily")
 	local gamestate = require("gamestate")
+	-- delay-load setting library also
+	local setting = require("setting")
 	-- reparse it because we lose it in above code
 	love.arg.parseOptions(arg)
 	-- Now we have LOVE 11.0 behaviour for argument parsing
@@ -155,7 +157,11 @@ function love.run()
 			-- print information (debug). sent from another thread
 			elseif name == "print" then
 				print(a)
+			-- update setting on focus triggered
+			elseif name == "focus" then
+				setting.update()
 			end
+			-- Error on thread error
 			assert(name ~= "threaderror", b)
 
 			-- Have to quit all instance in here
@@ -163,6 +169,7 @@ function love.run()
 				gamestate.internal.quit()
 				lily.quit()
 				loadingInstance.exit()
+				setting.quit()
 				return 0
 			-- As lily.lua said about using custom love.run
 			elseif name == "lily_resp" then

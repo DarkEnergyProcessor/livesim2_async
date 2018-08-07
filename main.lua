@@ -26,6 +26,7 @@ local love = require("love")
 local vires = require("vires")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local setting = require("setting")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -63,10 +64,16 @@ local function registerGamestates()
 	gamestate.register("mainMenu", require("game.states.main_menu"))
 end
 
+local function initializeSetting()
+	setting.define("LLP_SIFT_DEFATTR", 10)
+end
+
 function love.load()
+	-- Early initialization
+	math.randomseed(os.time())
+	initializeSetting()
 	-- TODO: command-line processing.
 	-- Most codes in livesim2 uses math.random instead of love.math.random
-	math.randomseed(os.time())
 	-- Initialize window
 	initWindow()
 	-- Register all gamestates

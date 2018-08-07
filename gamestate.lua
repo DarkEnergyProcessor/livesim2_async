@@ -9,7 +9,7 @@ local cache = require("cache")
 local gamestate = {
 	list = {}, -- list of registered gamestate
 	cachedInstance = setmetatable({}, {__mode = "kv"}),
-	internal = {},
+	internal = {}, -- internal functions
 	stack = {}, -- the active one is always gamestate.stack[#gamestate.stack]
 	preparedGamestate = nil, -- gamestate which is prepared
 	loadingState = nil, -- loading screen gamestate
@@ -48,17 +48,19 @@ function gamestateConstructorObject.update() end
 function gamestateConstructorObject.draw() end
 
 function gamestateObject:__construct(constructor)
-	self.internal = {
-		constructor = constructor,
-		data = {},
-		assets = {fonts = {}, images = {}},
-		events = {}
-	}
+	local internal = gamestateObject^self
+	internal.constructor = constructor
+	internal.data = {}
+	internal.assets = {fonts = {}, images = {}}
+	internal.events = {}
+	internal.weak = false
 	self.data = setmetatable({}, {
 		__mode = "kv",
 		__newindex = function(d, var, val)
 			rawset(d, var, val)
-			rawset(self.internal.data, var, val)
+			if not(internal.weak) then
+				rawset(internal.data, var, val)
+			end
 		end,
 	})
 	self.assets = {
@@ -71,7 +73,7 @@ end
 do
 	local function makeShortcutMacro(name)
 		gamestateObject[name] = function(self, ...)
-			return self.internal.constructor[name](self, ...)
+			return (gamestateObject^self).constructor[name](self, ...)
 		end
 	end
 	makeShortcutMacro("load")
@@ -88,7 +90,7 @@ end
 -------------------------------------
 
 function gamestate.internal.makeWeak(game)
-	local state = game.internal
+	local state = gamestateObject^game
 	-- Expensive. Use sparingly!
 	for k in pairs(state.data) do
 		state.data[k] = nil
@@ -99,10 +101,11 @@ function gamestate.internal.makeWeak(game)
 	for k in pairs(state.assets.images) do
 		state.assets.images[k] = nil
 	end
+	state.weak = true
 end
 
 function gamestate.internal.makeStrong(game)
-	local state = game.internal
+	local state = gamestateObject^game
 	-- Expensive. Use sparingly!
 	for k, v in pairs(game.data) do
 		state.data[k] = v
@@ -113,6 +116,7 @@ function gamestate.internal.makeStrong(game)
 	for k, v in pairs(game.assets.images) do
 		state.assets.images[k] = v
 	end
+	state.weak = false
 end
 
 local function getCacheByValue(v)
@@ -140,9 +144,10 @@ local function gamestateHandleMultiLily(udata, index, value)
 	local assetUdata = udata.asset
 	local game = udata.game
 	local assetType = assetUdata[index][1]
+	local internal = gamestateObject^game
 
 	game.assets[assetType][assetUdata[index][2]] = value
-	game.internal.assets[assetType][assetUdata[index][2]] = value
+	internal.assets[assetType][assetUdata[index][2]] = value
 	cache.set(assetUdata[index][3], value)
 end
 
@@ -154,7 +159,7 @@ function gamestate.internal.initialize(game, arg)
 end
 
 function gamestate.internal.loadAssets(game)
-	local state = game.internal
+	local state = gamestateObject^game
 	local loadedAssetList = {}
 	local assetUdata = {}
 	-- Get fonts
@@ -278,7 +283,7 @@ function gamestate.internal.handleEvents(name, ...)
 	local current = gamestate.stack[#gamestate.stack]
 	if not(current) then return false end
 
-	local constructor = current.game.internal.constructor
+	local constructor = (gamestateObject^current.game).constructor
 	if constructor.events[name] then
 		constructor.events[name](current.game, select(1, ...))
 		return true
