@@ -10,10 +10,12 @@ end
 function love.errorhandler(msg)
 	local lily = require("libs.lily")
 	local gamestate = require("gamestate")
+	local setting = require("setting")
 
 	lily.quit()
 	gamestate.internal.quit()
 	loadingInstance.exit()
+	setting.quit()
 
 	msg = tostring(msg)
 	error_printer(msg, 2)
