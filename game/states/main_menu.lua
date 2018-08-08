@@ -121,8 +121,7 @@ function mainMenu:load()
 	end
 end
 
-function mainMenu:start()
-	local buttons = self.data.buttons
+local function animateMainMenu(buttons)
 	local target = {xoffset = 0, canvasColor = {[4] = 255}}
 	buttons.play.xoffset = 60
 	buttons.play.canvasColor[4] = 0
@@ -136,6 +135,14 @@ function mainMenu:start()
 	buttons.exit.xoffset = 60
 	buttons.exit.canvasColor[4] = 0
 	timer.tween(0.75, buttons.exit, target, "out-quad")
+end
+
+function mainMenu:start()
+	return animateMainMenu(self.data.buttons)
+end
+
+function mainMenu:resumed()
+	return animateMainMenu(self.data.buttons)
 end
 
 function mainMenu:draw()

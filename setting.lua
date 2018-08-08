@@ -31,14 +31,14 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 		if not(file:open("r")) then
 			file = love.filesystem.newFile("config/"..key..".txt")
-		end
 
-		if not(file:open("r")) then
-			assert(file:open("w"))
-			file:write(assert(setting.default[key]))
-			file:close()
+			if not(file:open("r")) then
+				assert(file:open("w"))
+				file:write(assert(setting.default[key]))
+				file:close()
 
-			return setting.default[key]
+				return setting.default[key]
+			end
 		end
 
 		local data = file:read()
@@ -62,7 +62,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	local function isFileExist(path)
 		if love._version >= "11.0" then
-			return love.filesystem.getInfo(path, "file")
+			return not(not(love.filesystem.getInfo(path, "file")))
 		else
 			return love.filesystem.isFile(path)
 		end
@@ -75,11 +75,18 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			local default = chan:demand()
 			setting.default[name] = default
 
-			-- if the config file is not exists
-			if not(isFileExist("config/"..name..".txt")) then
+			if isFileExist(name..".txt") then
+				-- old, backward compatible livesim2 config
+				setting.list[name] = getConfigImpl(name)
+				setting.modified[name] = true
+				-- TODO: delete
+			elseif not(isFileExist("config/"..name..".txt")) then
 				setting.list[name] = default
 				setting.modified[name] = true
 			end
+		elseif command == "def" then
+			local name = chan:demand():upper()
+			chan:push(setting.default[name])
 		elseif command == "get" then
 			local name = chan:demand()
 			chan:push(getConfigImpl(name))
@@ -129,6 +136,16 @@ end
 function setting.define(key, default)
 	assert(setting.thread, "'define' can only be called in main thread")
 	return setting.channel:performAtomic(defineImpl, key, default)
+end
+
+local function defImpl(chan, key)
+	chan:push("def")
+	chan:push(key)
+end
+
+function setting.default(key)
+	setting.channel:performAtomic(defImpl, key)
+	return setting.channel:demand()
 end
 
 local function getImpl(chan, key)

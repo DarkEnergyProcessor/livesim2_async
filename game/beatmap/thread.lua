@@ -72,6 +72,16 @@ function beatmap.findSuitable(path)
 	end
 end
 
+----------------------------------
+-- Main function past this line --
+----------------------------------
+
+-- see game/beatmap/list.lua for more information about the format
+local function getSummary(beatmap)
+	-- TODO
+	return {}
+end
+
 local function enumerateBeatmap()
 	local list = love.filesystem.getDirectoryItems("beatmap/")
 
@@ -82,20 +92,55 @@ local function enumerateBeatmap()
 		if beatmapObject then
 			beatmap.list[#beatmap.list + 1] = beatmapObject
 			beatmap.list[file] = beatmapObject
-			love.event.push("beatmaploaded", file, beatmapObject:getSummary())
+			love.event.push("beatmaploaded", file)
 		end
 	end
 end
 
-while true do
-	local command = commandChannel:demand()
+-- Initialize beatmap loaders
+do
+	local list = love.filesystem.getDirectoryItems("game/beatmap/loader")
+	for i, v in ipairs(list) do
+		if v:sub(-4) == ".lua" then
+			local s, func = love.filesystem.load("game/beatmap/loader/"..v)
 
+			if s then
+				local type
+				s, func, type = pcall(func)
+
+				if s then
+					if type == "file" then
+						beatmap.fileLoader[#beatmap.fileLoader + 1] = func
+					elseif type == "folder" then
+						beatmap.folderLoader[#beatmap.fileLoader + 1] = func
+					end
+				else
+					love.event.push("print", v..": "..func)
+				end
+			else
+				love.event.push("print", v..": "..func)
+			end
+		end
+	end
+end
+
+local function processCommand(chan, command)
 	if command == "enum" then
 		beatmap.list = {}
 		collectgarbage()
 		collectgarbage()
 		enumerateBeatmap()
+	elseif command == "get" then
+		-- TODO
 	elseif command == "quit" then
+		return "quit"
+	end
+	return ""
+end
+
+while true do
+	local command = commandChannel:demand()
+	if commandChannel:performAtomic(processCommand, command) == "quit" then
 		return
 	end
 end

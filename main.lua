@@ -65,7 +65,16 @@ local function registerGamestates()
 end
 
 local function initializeSetting()
+	setting.define("NOTE_STYLE", 1)
+	setting.define("MINIMAL_EFFECT", 0)
+	setting.define("BACKGROUND_IMAGE", 10)
+	setting.define("NOTE_SPEED", 800) -- backward compatibility
 	setting.define("LLP_SIFT_DEFATTR", 10)
+	setting.define("NS_ACCUMULATION", 0)
+	setting.define("AUTO_BACKGROUND", 1)
+	setting.define("GLOBAL_OFFSET", 0)
+	setting.define("TEXT_SCALING", 1)
+	setting.define("TAP_SOUND", 1)
 end
 
 function love.load()
