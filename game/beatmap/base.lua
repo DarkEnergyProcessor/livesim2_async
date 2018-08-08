@@ -18,6 +18,11 @@ function base.__construct()
 	error("attempt to construct abstract class 'Base'", 2)
 end
 
+function base.getFormatName()
+	error("pure virtual method 'getFormatName'")
+	return "readable name", "internal name"
+end
+
 function base.getNotesList()
 	error("pure virtual method 'getNotesList'", 2)
 end
@@ -39,20 +44,40 @@ function base:getDifficultyString()
 	return nil
 end
 
+function base.getAudioPathList()
+	return {} -- audio path, without extension!
+end
+
+local supportedExtensions = {".wav", ".ogg", ".mp3"} -- in order
+function base:getAudio()
+	local paths = self:getAudioPathList()
+
+	for i = 1, #paths do
+		for _, v in ipairs(supportedExtensions) do
+			local s, fd = pcall(love.filesystem.newFileData, paths[i]..v)
+			if s then
+				return fd
+			end
+		end
+	end
+
+	return nil
+end
+
 local function nilret() return nil end
 local function zeroret() return 0 end
 
 base.getName = nilret
 base.getCoverArt = nilret
-base.getScoreInformation = nilret
-base.getComboInformation = nilret
-base.getStoryboardData = nilret
-base.getBackground = zeroret
+base.getScoreInformation = nilret    -- CBAS order, array
+base.getComboInformation = nilret    -- CBAS order, array
+base.getStoryboardData = nilret      -- {type = storyboard type, data = storyboard data}
+base.getBackground = nilret
 base.getScorePerTap = zeroret
 base.getStamina = zeroret
-base.getNoteStyle = zeroret
-base.getAudio = nilret
-base.getLiveClearVoice = nilret
-base.getStarDifficultyInfo = zeroret
+base.getNoteStyle = zeroret          -- TODO
+base.getAudio = nilret               -- FileData, not decoder
+base.getLiveClearVoice = nilret      -- same as above
+base.getStarDifficultyInfo = zeroret -- star, random_star (2 values, or 1 if random not avail.)
 
 return base

@@ -27,61 +27,35 @@ be printed to user console (debugging purpose)
 ]]
 
 local love = require("love")
-local async = require("async")
 local beatmapList = {
-	threadRunning = false
+	count = 0,
+	thread = nil,
+	channel = nil
 }
 
-local function beatmapListReal(cb)
-	local thread = love.thread.newThread("game/beatmap/listThread.lua")
-	local outChan = love.thread.newChannel()
-	beatmapList.threadRunning = true
-	thread:start(outChan, false)
-
-	while thread:isRunning() do
-		local count = 0
-
-
-		while outChan:getCount() > 0 do
-			if beatmapList.threadRunning == false then
-				outChan:push(false) -- end thread
-				break
-			end
-
-			local value = outChan:pop()
-			if value then cb(value) end
-
-			count = count + 1
-			if count >= 5 then
-				async.wait()
-				count = 0
-			end
-		end
-
-		if beatmapList.threadRunning == false then
-			outChan:push(false) -- end thread
-			break
-		end
-
-		async.wait()
+function beatmapList.push()
+	if beatmapList.count == 0 then
+		beatmapList.thread = love.thread.newThread("game/beatmap/thread.lua")
+		beatmapList.channel = love.thread.newChannel()
+		beatmapList.thread:start(beatmapList.channel)
 	end
-
-	-- On done, call cb with nil
-	-- It doesn't differentiate between "cancel" and "done"
-	beatmapList.threadRunning = false
-	cb(nil)
+	beatmapList.count = beatmapList.count + 1
 end
 
-function beatmapList.list(callback)
-	assert(beatmapList.threadRunning == false, "another enumeration is in progress")
-	local a = async.runFunction(beatmapListReal)
-	a:run(callback)
+function beatmapList.pop()
+	assert(beatmapList.count > 0, "unable to pop")
+
+	beatmapList.count = beatmapList.count - 1
+	if beatmapList.count == 0 then
+		beatmapList.channel:push("quit")
+		beatmapList.channel = nil
+		beatmapList.thread = nil
+	end
 end
 
-function beatmapList.cancel()
-	if beatmapList.threadRunning then
-		beatmapList.threadRunning = false
-	end
+function beatmapList.enumerate()
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.thread:push("enum")
 end
 
 return beatmapList
