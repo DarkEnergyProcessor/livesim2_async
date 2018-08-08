@@ -141,7 +141,7 @@ function frame.new(content)
 		elementContainers = content.elements,
 		layout = content.layout or {},
 		layoutSettings = content.layoutSettings or {},
-		all_nl = content.all_nl or false,
+		all_nl = content.all_nl or true,
 		init = true,
 		vOffset = 0,
 		type = 'frame',
