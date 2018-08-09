@@ -45,7 +45,6 @@ function love.arg.parseOption(m, i)
 end
 
 function love.arg.parseOptions()
-
 	local game
 	local argc = #arg
 
@@ -99,6 +98,10 @@ love.arg.parse_options = love.arg.parseOptions
 ---------------
 -- Game loop --
 ---------------
+
+function love.createhandlers()
+	love.handlers = {}
+end
 
 function love.run()
 	-- At least LOVE 0.10.0 (must be checked here, otherwise window will show up)
@@ -171,9 +174,9 @@ function love.run()
 				loadingInstance.exit()
 				setting.quit()
 				return 0
-			-- As lily.lua said about using custom love.run
-			elseif name == "lily_resp" then
-				love.handlers.lily_resp(a, b, c, d, e, f)
+			-- prioritize love.handlers
+			elseif love.handlers[name] then
+				love.handlers[name](a, b, c, d, e, f)
 			elseif not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end

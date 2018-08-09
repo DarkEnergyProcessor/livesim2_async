@@ -68,7 +68,7 @@ local function nilret() return nil end
 local function zeroret() return 0 end
 
 base.getName = nilret
-base.getCoverArt = nilret
+base.getCoverArt = nilret            -- {title = song title, image = imagedata, info = arr info}
 base.getScoreInformation = nilret    -- CBAS order, array
 base.getComboInformation = nilret    -- CBAS order, array
 base.getStoryboardData = nilret      -- {type = storyboard type, data = storyboard data}

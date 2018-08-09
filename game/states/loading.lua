@@ -61,7 +61,6 @@ function loading:resumed()
 	local spos = self.data.mainFont:getWidth(text) * -0.5
 	local hpos = self.data.mainFont:getHeight() * -0.5
 	self.persist.rotation = 0 -- in 0..1 range
-	print(hpos)
 	tobj:clear()
 	tobj:add({color.black50PT, text}, spos + -1.25, hpos - 1.25)
 	tobj:add({color.black50PT, text}, spos + 1.25, hpos + 1.25)

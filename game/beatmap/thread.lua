@@ -29,6 +29,10 @@ if love._version >= "11.0" then
 	end
 end
 
+local function sendBeatmapData(name, id, ...)
+	return love.event.push("beatmapresponse", name, id, {...})
+end
+
 -- Beatmap-related code
 function beatmap.findSuitableForFile(filename)
 	local file, msg = love.filesystem.newFile(filename, "r")
@@ -76,13 +80,7 @@ end
 -- Main function past this line --
 ----------------------------------
 
--- see game/beatmap/list.lua for more information about the format
-local function getSummary(beatmap)
-	-- TODO
-	return {}
-end
-
-local function enumerateBeatmap()
+local function enumerateBeatmap(id)
 	local list = love.filesystem.getDirectoryItems("beatmap/")
 
 	for i = 1, #list do
@@ -90,11 +88,43 @@ local function enumerateBeatmap()
 		local beatmapObject = beatmap.findSuitable(file)
 
 		if beatmapObject then
-			beatmap.list[#beatmap.list + 1] = beatmapObject
-			beatmap.list[file] = beatmapObject
-			love.event.push("beatmaploaded", file)
+			local value = {name = file, data = beatmapObject}
+			beatmap.list[#beatmap.list + 1] = value
+			beatmap.list[file] = value
+			sendBeatmapData("enum", id, file, beatmapObject:getName() or file, (beatmapObject:getFormatName()))
 		end
 	end
+
+	sendBeatmapData("enum", id, "")
+end
+
+local supportedAudioExtensions = {".wav", ".ogg", ".mp3"} -- in order
+local function substituteAudio(name)
+	for _, v in ipairs(supportedAudioExtensions) do
+		local s, fd = pcall(love.filesystem.newFileData, "audio/"..name..v)
+		if s then
+			return fd
+		end
+	end
+end
+
+local function getSummary(bv)
+	local info = {}
+	info.name = bv.data:getName() or bv.name
+	info.format, info.formatInternal = bv.data:getFormatName()
+	info.audio = bv.data:getAudio() or substituteAudio(bv.name)
+	info.difficulty = bv.data:getDifficultyString()
+	info.coverArt = bv.data:getCoverArt()
+	local score = bv.data:getScoreInformation()
+	if score then
+		info.scoreS, info.scoreA, info.scoreB, info.scoreC = score[4], score[3], score[2], score[1]
+	end
+	local combo = bv.data:getComboInformation()
+	if combo then
+		info.comboS, info.comboA, info.comboB, info.comboC = combo[4], combo[3], combo[2], combo[1]
+	end
+
+	return info
 end
 
 -- Initialize beatmap loaders
@@ -125,13 +155,21 @@ do
 end
 
 local function processCommand(chan, command)
+	local arg = chan:demand()
+	local id = table.remove(arg, 1)
+
 	if command == "enum" then
 		beatmap.list = {}
 		collectgarbage()
 		collectgarbage()
-		enumerateBeatmap()
-	elseif command == "get" then
-		-- TODO
+		enumerateBeatmap(id)
+	elseif command == "summary" then
+		-- see game/beatmap/list.lua for more information about the format
+		if beatmap.list[arg[1]] then
+			sendBeatmapData("summary", id, getSummary(beatmap.list[arg[1]]))
+		else
+			sendBeatmapData("error", id, "beatmap doesn't exist")
+		end
 	elseif command == "quit" then
 		return "quit"
 	end
