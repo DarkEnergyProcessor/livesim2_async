@@ -231,7 +231,6 @@ function gamestate.internal.loop()
 	if gamestate.preparedGamestate then
 		local coro = gamestate.preparedGamestate.coro
 		if coroutine.status(coro) == "dead" then
-			print("dead", prep.mode)
 			-- Assume it's already done, but it may be dead because lua error
 			if prep.mode == "replace" then
 				current = gamestate.stack[#gamestate.stack]
@@ -357,7 +356,6 @@ function gamestate.leave(loading)
 end
 
 function gamestate.replace(loading, name, arg)
-	print("replace", loading, name, arg)
 	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
 	gamestate.internal.makeStrong(game)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "replace")

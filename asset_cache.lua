@@ -45,7 +45,6 @@ function assetCache.loadImage(name, settings)
 		end
 
 		cache.set(a, image)
-		print(image)
 		return image
 	end
 end

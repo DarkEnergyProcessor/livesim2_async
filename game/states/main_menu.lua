@@ -5,7 +5,6 @@
 
 local love = require("love")
 local gamestate = require("gamestate")
-local async = require("async")
 local color = require("color")
 local timer = require("libs.hump.timer")
 
@@ -24,11 +23,6 @@ local mainMenu = gamestate.create {
 	},
 	audios = {},
 }
-
-local function updateAnimation(style, prog, event, element)
-	element.xoffset = -60 * prog + 60
-	element.canvasColor[4] = 255*prog
-end
 
 local function initializeButtons()
 	local blist = {}
