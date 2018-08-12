@@ -9,6 +9,8 @@ require("love.system")
 require("love.image")
 require("love.filesystem")
 
+local util = require("util")
+
 local commandChannel = ...
 local beatmap = {
 	fileLoader = {},
@@ -70,9 +72,9 @@ end
 
 function beatmap.findSuitable(path)
 	if love.filesystem.isDirectory(path) then
-		return beatmap.findSuitableForFolder(path)
+		return beatmap.findSuitableForFolder(path), "folder"
 	else
-		return beatmap.findSuitableForFile(path)
+		return beatmap.findSuitableForFile(path), "file"
 	end
 end
 
@@ -85,26 +87,28 @@ local function enumerateBeatmap(id)
 
 	for i = 1, #list do
 		local file = list[i]
-		local beatmapObject = beatmap.findSuitable(file)
+		local beatmapObject, type = beatmap.findSuitable("beatmap/"..file)
 
 		if beatmapObject then
-			local value = {name = file, data = beatmapObject}
+			local value = {name = file, data = beatmapObject, type = type}
 			beatmap.list[#beatmap.list + 1] = value
 			beatmap.list[file] = value
 			sendBeatmapData("enum", id, file, beatmapObject:getName() or file, (beatmapObject:getFormatName()))
+		end
+
+		if commandChannel:peek() == "quit" then
+			sendBeatmapData("enum", id, "")
+			return
 		end
 	end
 
 	sendBeatmapData("enum", id, "")
 end
 
-local supportedAudioExtensions = {".wav", ".ogg", ".mp3"} -- in order
-local function substituteAudio(name)
-	for _, v in ipairs(supportedAudioExtensions) do
-		local s, fd = pcall(love.filesystem.newFileData, "audio/"..name..v)
-		if s then
-			return fd
-		end
+local function substituteAudio(name, isdir)
+	local value = util.substituteExtension("audio/"..name, util.getNativeAudioExtensions(), not(isdir))
+	if value then
+		return love.filesystem.newFileData(value)
 	end
 end
 
@@ -112,7 +116,7 @@ local function getSummary(bv)
 	local info = {}
 	info.name = bv.data:getName() or bv.name
 	info.format, info.formatInternal = bv.data:getFormatName()
-	info.audio = bv.data:getAudio() or substituteAudio(bv.name)
+	info.audio = bv.data:getAudio() or substituteAudio(bv.name, bv.type == "folder")
 	info.difficulty = bv.data:getDifficultyString()
 	info.coverArt = bv.data:getCoverArt()
 	local score = bv.data:getScoreInformation()
@@ -130,13 +134,13 @@ end
 -- Initialize beatmap loaders
 do
 	local list = love.filesystem.getDirectoryItems("game/beatmap/loader")
-	for i, v in ipairs(list) do
+	for _, v in ipairs(list) do
 		if v:sub(-4) == ".lua" then
 			local s, func = love.filesystem.load("game/beatmap/loader/"..v)
 
 			if s then
 				local type
-				s, func, type = pcall(func)
+				s, func, type = pcall(s)
 
 				if s then
 					if type == "file" then
@@ -155,7 +159,7 @@ do
 end
 
 local function processCommand(chan, command)
-	local arg = chan:demand()
+	local arg = chan:pop()
 	local id = table.remove(arg, 1)
 
 	if command == "enum" then
@@ -178,7 +182,5 @@ end
 
 while true do
 	local command = commandChannel:demand()
-	if commandChannel:performAtomic(processCommand, command) == "quit" then
-		return
-	end
+	if command == "quit" or commandChannel:performAtomic(processCommand, command) == "quit" then return end
 end

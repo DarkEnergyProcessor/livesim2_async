@@ -348,9 +348,9 @@ function gamestate.leave(loading)
 		return
 	end
 
-	local game = gamestate.stack[gamestate.stack - 1]
+	local game = gamestate.stack[#gamestate.stack - 1]
 	gamestate.internal.makeStrong(game.game)
-	gamestate.preparedGamestate = gamestate.internal.initPreparation(game.name, game.game, nil, "enter")
+	gamestate.preparedGamestate = gamestate.internal.initPreparation(game.name, game.game, nil, "leave")
 	gamestate.loadingState = loading
 	gamestate.loadingStateResumed = false
 end

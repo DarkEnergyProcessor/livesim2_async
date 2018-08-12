@@ -62,6 +62,7 @@ local function registerGamestates()
 	gamestate.register("dummy", require("game.states.dummy"))
 	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("mainMenu", require("game.states.main_menu"))
+	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
 end
 
 local function initializeSetting()
@@ -77,12 +78,21 @@ local function initializeSetting()
 	setting.define("TAP_SOUND", 1)
 end
 
+local function createDirectories()
+	assert(love.filesystem.createDirectory("audio"), "Failed to create directory \"audio\"")
+	assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory \"beatmap\"")
+	assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
+	assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory \"screenshots\"")
+	assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory \"unit_icon\"")
+end
+
 function love.load()
-	-- Early initialization
+	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
+	-- Early initialization (crash on failure)
+	createDirectories()
 	initializeSetting()
 	-- TODO: command-line processing.
-	-- Most codes in livesim2 uses math.random instead of love.math.random
 	-- Initialize window
 	initWindow()
 	-- Register all gamestates

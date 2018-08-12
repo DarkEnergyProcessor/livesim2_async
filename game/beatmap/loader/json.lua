@@ -6,7 +6,6 @@ local JSON = require("libs.JSON")
 local Luaoop = require("libs.Luaoop")
 local love = require("love")
 local setting = require("setting")
-local beatmap = require("game.beatmap")
 local baseLoader = require("game.beatmap.base")
 
 local function basename(file)

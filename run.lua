@@ -4,6 +4,7 @@
 
 local love = require("love")
 local vires = require("vires")
+local postExit = require("post_exit")
 local timer = require("libs.hump.timer")
 local loadingInstance = require("loading_instance")
 
@@ -99,6 +100,14 @@ love.arg.parse_options = love.arg.parseOptions
 -- Game loop --
 ---------------
 
+--[[
+local u = print
+function print(...)
+	u(...)
+	u(debug.traceback())
+end
+]]
+
 function love.createhandlers()
 	love.handlers = {}
 end
@@ -158,8 +167,8 @@ function love.run()
 					d, e = d * vires.data.scaleOverall, e * vires.data.scaleOverall
 				end
 			-- print information (debug). sent from another thread
-			elseif name == "print" then
-				print(a)
+			--elseif name == "print" then
+				--print(a)
 			-- update setting on focus triggered
 			elseif name == "focus" then
 				setting.update()
@@ -173,24 +182,29 @@ function love.run()
 				lily.quit()
 				loadingInstance.exit()
 				setting.quit()
+				postExit.exit()
 				return 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)
-			elseif not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
+			elseif not(gui) or not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end
 		end
 		-- We have to pass the mouse position to virtual resolution
 		-- screen coordinate to logical coordinate conversion
-		gui.eventHandlers.mousePos(vires.screenToLogical(love.mouse.getPosition()))
+		if gui then
+			gui.eventHandlers.mousePos(vires.screenToLogical(love.mouse.getPosition()))
+		end
 
 		local currentGame = gamestate.internal.getActive()
 		-- Call update and draw
 		if currentGame then currentGame:update(dt) end
 
 		if love.graphics and love.graphics.isActive() then
-			gui.element.bufferUpdate(dt)
+			if gui then
+				gui.element.bufferUpdate(dt)
+			end
 			love.graphics.push("all")
 			vires.set()
 			if currentGame then currentGame:draw() end
@@ -202,7 +216,6 @@ function love.run()
 	end
 
 	-- Portability code
-	-- TODO: Support LOVE 11.0
 	if love._version >= "11.0" then
 		return step
 	else

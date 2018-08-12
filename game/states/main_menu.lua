@@ -4,9 +4,11 @@
 -- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER
 
 local love = require("love")
-local gamestate = require("gamestate")
 local color = require("color")
 local timer = require("libs.hump.timer")
+
+local gamestate = require("gamestate")
+local loadingInstance = require("loading_instance")
 
 local backgroundLoader = require("game.background_loader")
 
@@ -24,20 +26,23 @@ local mainMenu = gamestate.create {
 	audios = {},
 }
 
+local function makeEnterGamestateFunction(name)
+	return function()
+		return gamestate.enter(loadingInstance.getInstance(), name)
+	end
+end
+
 local function initializeButtons()
 	local blist = {}
 	-- Play button
 	blist.play = menuButtonUI.new("Play")
-	--blist.play:addAnimation("canvasinit", updateAnimation, 0.2)
+	blist.play:addEventListener("released", makeEnterGamestateFunction("beatmapSelect"))
 	-- Change units button
 	blist.changeUnits = menuButtonUI.new("Change Units")
-	--blist.changeUnits:addAnimation("canvasinit", updateAnimation, 0.35)
 	-- Settings button
 	blist.settings = menuButtonUI.new("Settings")
-	--blist.settings:addAnimation("canvasinit", updateAnimation, 0.5)
 	-- Exit button
 	blist.exit = menuButtonUI.new("Exit")
-	--blist.exit:addAnimation("canvasinit", updateAnimation, 0.65)
 	blist.exit:addEventListener("released", function()
 		if love._os ~= "iOS" then
 			gamestate.leave()
@@ -150,10 +155,10 @@ function mainMenu:draw()
 	-- Draw title
 	love.graphics.draw(self.data.titleText, 280, 78)
 	-- Draw buttons
-	self.data.buttons.play:draw(16, 120+80*1, 432, 80)
-	self.data.buttons.changeUnits:draw(16, 120+80*2, 432, 80)
-	self.data.buttons.settings:draw(16, 120+80*3, 432, 80)
-	self.data.buttons.exit:draw(16, 120+80*4, 432, 80)
+	menuButtonUI.draw(self.data.buttons.play, 16, 120+80*1)
+	menuButtonUI.draw(self.data.buttons.changeUnits, 16, 120+80*2)
+	menuButtonUI.draw(self.data.buttons.settings, 16, 120+80*3)
+	menuButtonUI.draw(self.data.buttons.exit, 16, 120+80*4)
 	gui.draw()
 end
 

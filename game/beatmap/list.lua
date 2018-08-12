@@ -6,7 +6,7 @@
 Beatmap lister lists beatmaps in separate thread using love.filesystem
 and in asynchronous manner.
 
-Beatmap lister returns these properties (all fields must exists unless noted):
+Beatmap list returns these summary data (all fields must exists unless noted):
 {
 	name = beatmap name,
 	audio = audio file path (or FileData; can be nil),
@@ -21,13 +21,11 @@ Beatmap lister returns these properties (all fields must exists unless noted):
 The order of the returned values are undefined, as all objects are also
 processed (parsed) in another thread.
 
-If the return is string, that means the beatmap is invalid, and it should
-be printed to user console (debugging purpose)
-
 "beatmapresponse" is sent to LOVE event handler.
 ]]
 
 local love = require("love")
+local postExit = require("post_exit")
 local beatmapList = {
 	count = 0,
 	thread = nil,
@@ -58,7 +56,9 @@ function love.handlers.beatmapresponse(name, id, data)
 			if data[1] == "" then
 				beatmapList.callback[id] = nil
 			end
-			cb(unpack(data))
+			if not(cb(unpack(data))) then
+				beatmapList.callback[id] = nil
+			end
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
@@ -69,7 +69,7 @@ end
 
 function beatmapList.push()
 	if beatmapList.count == 0 then
-		if beatmapList.thread then
+		if beatmapList.thread and beatmapList.thread:isRunning() then
 			beatmapList.thread:wait()
 		end
 		beatmapList.thread = love.thread.newThread("game/beatmap/thread.lua")
@@ -79,26 +79,41 @@ function beatmapList.push()
 	beatmapList.count = beatmapList.count + 1
 end
 
+local function sendData(chan, name, arg)
+	chan:push(name)
+	chan:push(arg)
+end
+
 function beatmapList.pop()
 	assert(beatmapList.count > 0, "unable to pop")
 
 	beatmapList.count = beatmapList.count - 1
 	if beatmapList.count == 0 then
-		beatmapList.channel:push("quit")
+		beatmapList.channel:performAtomic(sendData, "quit", {})
 		beatmapList.channel = nil
 	end
 end
 
 function beatmapList.getSummary(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:push("summary")
-	beatmapList.channel:push({registerRequestID(callback), name})
+	beatmapList.channel:performAtomic(sendData, "summary", {registerRequestID(callback), name})
 end
 
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:push("enum")
-	beatmapList.channel:push({registerRequestID(callback)})
+	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
 end
+
+postExit.add(function()
+	if beatmapList.count > 0 then
+		beatmapList.channel:performAtomic(sendData, "quit", {})
+		beatmapList.channel = nil
+		if beatmapList.thread and beatmapList.thread:isRunning() then
+			beatmapList.thread:wait()
+			beatmapList.thread = nil
+		end
+		beatmapList.count = 0
+	end
+end)
 
 return beatmapList

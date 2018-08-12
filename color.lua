@@ -75,10 +75,18 @@ local color = setmetatable({}, {
 })
 
 -- Uncached. Return 4 values instead of table
-function color.get(r, g, b, a)
+function color.get(r, g, b, a, premultiplied)
 	a = math.min(math.max(a or 1 + 0.0005, 0), 1)
 	local v = hexCache(string.format("%02x%02x%02xff", r, g, b))
-	return v[1], v[2], v[3], math.floor(255 * a) * div
+	if premultiplied then
+		return
+			math.floor(v[1] * a),
+			math.floor(v[2] * a),
+			math.floor(v[3] * a),
+			math.floor(255 * a) * div
+	else
+		return v[1], v[2], v[3], math.floor(255 * a) * div
+	end
 end
 
 -- Pre-defined colors from HTML (undefined order)

@@ -2,10 +2,9 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = require("love")
 local gui = require("libs.fusion-ui")
 local assetCache = require("asset_cache")
-local menuButtonUI = {class = nil, w = nil, h = nil}
+local menuButtonUI = {class = nil}
 
 local function initialize()
 	local buttonImages = assetCache.loadMultipleImages({
@@ -16,7 +15,7 @@ local function initialize()
 	local button = gui.template.new("button", {
 		backgroundImage = buttonImages[1],
 		font = font,
-		padding = {32, -8, 0, 0},
+		padding = {32, -8, 0, 0}, -- padding order: {left, top, right, botton}
 		backgroundSize = 'fit',
 		foregroundColor = {255, 255, 255, 255},
 		backgroundColor = {0, 0, 0, 0},
@@ -38,9 +37,12 @@ end
 
 function menuButtonUI.new(name)
 	menuButtonUI.class = menuButtonUI.class or initialize()
-	local v = menuButtonUI.class:newElement(name)
-	return v
+	return menuButtonUI.class:newElement(name)
 end
 
-setmetatable(menuButtonUI, {__call = function(_, name) return menuButtonUI.new(name) end})
+function menuButtonUI.draw(elem, x, y)
+	return elem:draw(x, y, 432, 80)
+end
+
+setmetatable(menuButtonUI, {__call = function(_, ...) return menuButtonUI.new(...) end})
 return menuButtonUI

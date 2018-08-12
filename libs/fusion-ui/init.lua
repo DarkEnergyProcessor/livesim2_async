@@ -58,6 +58,8 @@ gui.style.finalize()
 
 --[[ Element buffer rendering ]]
 function gui.draw()
+	local a, b = love.graphics.getBlendMode()
+	love.graphics.setBlendMode("alpha", "premultiplied")
 	while true do
 		local e = table.remove(gui.gfxBuffer, 1)
 		if e then
@@ -66,6 +68,7 @@ function gui.draw()
 			break
 		end
 	end
+	love.graphics.setBlendMode(a, b)
 end
 
 --[[

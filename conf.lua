@@ -6,6 +6,7 @@
 -- luacheck: ignore DEPLS_VERSION_NUMBER
 
 local love = require("love")
+love._version = love._version or love.getVersion()
 
 -- Override love.run
 love.filesystem.load("run.lua")()
@@ -15,7 +16,6 @@ love.filesystem.load("errorhandler.lua")()
 -- Set in main.lua later
 DEPLS_VERSION = false
 DEPLS_VERSION_NUMBER = false
-customRun = false
 
 -- We don't want to lock the global table if we run it from LuaJIT/Terra
 if love._exe then
