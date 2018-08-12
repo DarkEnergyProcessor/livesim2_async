@@ -106,12 +106,14 @@ backgroundLoader.meshData = mergeTable(
 )
 
 local loadDirectType = {
+	-- async
 	[true] = function(id)
 		local image = async.loadImage(string.format("assets/image/background/%d.png", id), {mipmaps = true})
 		local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
 		mesh:setTexture(image:getValues())
 		return mesh
 	end,
+	-- sync
 	[false] = function(id)
 		local img = love.graphics.newImage(string.format("assets/image/background/%d.png", id), {mipmaps = true})
 		local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")

@@ -135,7 +135,7 @@ rawset(async, "loop", function(dt)
 		local coro = table.remove(async.backEvents, i)
 		local status, err = coroutine.resume(coro, dt)
 		if status == false then
-			error(err)
+			error(debug.traceback(coro, err), 0)
 		end
 	end
 end)

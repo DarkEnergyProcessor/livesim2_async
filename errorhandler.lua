@@ -1,5 +1,8 @@
--- Slightly modified error handler from LOVE boot.lua
+-- Slightly modified error handler, based on LOVE 11.0 error handler
+-- Part of Live Simulator: 2
+
 local love = require("love")
+local postExit = require("post_exit")
 local loadingInstance = require("loading_instance")
 local utf8 = require("utf8")
 
@@ -16,6 +19,7 @@ function love.errorhandler(msg)
 	gamestate.internal.quit()
 	loadingInstance.exit()
 	setting.quit()
+	postExit.exit()
 
 	msg = tostring(msg)
 	error_printer(msg, 2)

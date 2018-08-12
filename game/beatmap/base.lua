@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local Luaoop = require("libs.Luaoop")
+local util = require("util")
 local base = Luaoop.class("beatmap.Base")
 
 -- For getStoryboardData function
@@ -48,16 +49,14 @@ function base.getAudioPathList()
 	return {} -- audio path, without extension!
 end
 
-local supportedExtensions = {".wav", ".ogg", ".mp3"} -- in order
 function base:getAudio()
 	local paths = self:getAudioPathList()
+	local ext = util.getNativeAudioExtensions()
 
 	for i = 1, #paths do
-		for _, v in ipairs(supportedExtensions) do
-			local s, fd = pcall(love.filesystem.newFileData, paths[i]..v)
-			if s then
-				return fd
-			end
+		local value = util.substituteExtension(paths[i], ext)
+		if value then
+			return love.filesystem.newFileData(value)
 		end
 	end
 
