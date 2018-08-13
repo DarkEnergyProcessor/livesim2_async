@@ -20,8 +20,8 @@ DEPLS_VERSION_NUMBER = false
 -- We don't want to lock the global table if we run it from LuaJIT/Terra
 if love._exe then
 	setmetatable(_G, {
-		__index = function(_, var) error("Unknown variable "..var, 2) end,
-		__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
+		__index = function(_, var) error("Unknown variable "..var, 3) end,
+		__newindex = function(_, var) error("New variable not allowed "..var, 3) end,
 		__metatable = function(_) error("Global variable protection", 2) end,
 	})
 end
