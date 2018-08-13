@@ -12,6 +12,7 @@ local gui = require("libs.fusion-ui")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("ui.back_navigation")
 local selectButton = require("ui.select_button")
+local beatmapSelButton = require("ui.beatmap_select_button")
 
 local beatmapList = require("game.beatmap.list")
 
@@ -27,7 +28,46 @@ local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
+local function initializeBeatmapListUI(self)
+	if not(self.persist.beatmapList) then return end
+
+	local frameElements = {}
+	local frameLayout = {}
+
+	for i = 1, #self.persist.beatmapList do
+		local v = self.persist.beatmapList[i]
+		-- TODO callback
+		frameElements[#frameElements + 1] = {
+			element = beatmapSelButton.new(v.name, v.format, function() end),
+			index = i
+		}
+		frameLayout[i] = {
+			position = "absolute",
+			size = "absolute",
+			left = 0,
+			top = (i - 1) * 60,
+			w = 324,
+			h = 60
+		}
+	end
+
+	self.data.beatmapFrame = gui.element.newElement("frame", {
+		elements = frameElements,
+		layout = frameLayout
+	}, {
+		backgroundColor = {0, 0, 0, 0},
+		padding = {0, #self.persist.beatmapList * 60, 0, 0},
+		margin = {0, 0, 0, 0},
+		w = 350,
+		h = 480
+	})
+	--print(self.data.beatmapFrame.type.w, self.data.beatmapFrame.type.h)
+	self.data.beatmapFrame.xoffset, self.data.beatmapFrame.yoffset = -5, -5
+end
+
 function beatmapSelect:load()
+	beatmapSelButton.init()
+
 	if self.data.back == nil then
 		self.data.back = backNavigation.new("Select Beatmap", leave)
 	end
@@ -41,13 +81,24 @@ function beatmapSelect:load()
 			return love.system.openURL(saveUrl)
 		end)
 	end
+	if self.data.beatmapFrame == nil then
+		initializeBeatmapListUI(self)
+	end
 end
 
 function beatmapSelect:start()
 	self.persist.beatmapList = {}
 	beatmapList.push()
 	beatmapList.enumerate(function(id, name, fmt)
-		print("beatmap", id, name, fmt)
+		--print("beatmap", id, name, fmt)
+		if id == "" then
+			initializeBeatmapListUI(self)
+			return false
+		end
+		self.persist.beatmapList[#self.persist.beatmapList + 1] = {
+			name = name,
+			format = fmt
+		}
 		return true
 	end)
 end
@@ -63,6 +114,9 @@ function beatmapSelect:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	backNavigation.draw(self.data.back)
+	if self.data.beatmapFrame then
+		self.data.beatmapFrame:draw(60, 80, 350, 480)
+	end
 	selectButton.draw(self.data.openBeatmap, 64, 592)
 	gui.draw()
 end

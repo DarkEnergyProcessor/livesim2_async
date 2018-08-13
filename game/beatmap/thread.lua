@@ -159,7 +159,7 @@ do
 end
 
 local function processCommand(chan, command)
-	local arg = chan:pop()
+	local arg = chan:demand()
 	local id = table.remove(arg, 1)
 
 	if command == "enum" then
@@ -182,5 +182,5 @@ end
 
 while true do
 	local command = commandChannel:demand()
-	if command == "quit" or commandChannel:performAtomic(processCommand, command) == "quit" then return end
+	if command == "quit" or processCommand(commandChannel, command) == "quit" then return end
 end
