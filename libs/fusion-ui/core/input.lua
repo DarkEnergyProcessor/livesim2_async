@@ -177,7 +177,7 @@ function gui.input.checkParent(x, y, button, touch, parent)
 end
 
 function gui.input.checkBox(x, y, box)
-	if x>box.x and x<box.x+box.w and y>box.y and y<box.y+box.h then
+	if x>box.x and x<box.x+box.w and y>box.y and y<box.y+box.h and (love.timer.getTime() - box.lastUpdate < 0.5) then
 		return true
 	else
 		return false

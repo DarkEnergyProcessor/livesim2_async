@@ -59,8 +59,8 @@ local function get_sizes(prop, elem, fw, fh)
 		w = prop.w
 		h = prop.h
 	elseif prop.size == 'relative' and prop.w and prop.h then
-		w = (prop.w/100)*fw-elem.style.margins[1]-elem.style.margins[3]
-		h = (prop.h/100)*fh-elem.style.margins[2]-elem.style.margins[4]
+		w = math.ceil((prop.w/100)*fw-elem.style.margins[1]-elem.style.margins[3])
+		h = math.ceil((prop.h/100)*fh-elem.style.margins[2]-elem.style.margins[4])
 	else
 		w, h = elem:getSize()
 	end
@@ -83,17 +83,17 @@ local function get_sizes(prop, elem, fw, fh)
 		end
 	elseif prop.position == 'relative' then
 		if prop.left then
-			x = fw*(prop.left/100)+elem.style.margins[1]
+			x = math.ceil(fw*(prop.left/100)+elem.style.margins[1])
 		elseif prop.right then
-			x = fw - fw*(prop.right/100) - elem.style.margins[3]
+			x = math.ceil(fw - fw*(prop.right/100) - elem.style.margins[3])
 		else
 			x = elem.style.margins[1]
 		end
 
 		if prop.top then
-			y = fh*(prop.top/100)+elem.style.margins[2]
+			y = math.ceil(fh*(prop.top/100)+elem.style.margins[2])
 		elseif prop.bottom then
-			y = fh - fh*(prop.bottom/100) - elem.style.margins[4]
+			y = math.ceil(fh - fh*(prop.bottom/100) - elem.style.margins[4])
 		else
 			y = elem.style.margins[2]
 		end
@@ -314,7 +314,12 @@ function frame:render(x, y, w, h, content, style)
 		for i, eCont in ipairs(self.elementContainers) do
 			local p = eCont.props
 			if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 )then
+				local a, b = love.graphics.getBlendMode()
+				love.graphics.setBlendMode("alpha", "premultiplied")
+
 				eCont.element:render(eCont.props.x, eCont.props.y+self.vOffset)
+
+				love.graphics.setBlendMode(a, b)
 			end
 		end
 		if self.slider then
@@ -327,7 +332,12 @@ function frame:render(x, y, w, h, content, style)
 		for i, eCont in ipairs(self.elementContainers) do
 			local p = eCont.props
 			if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 )then
+				local a, b = love.graphics.getBlendMode()
+				love.graphics.setBlendMode("alpha", "premultiplied")
+
 				eCont.element:render(eCont.props.x, eCont.props.y+self.vOffset)
+				
+				love.graphics.setBlendMode(a, b)
 			end
 		end
 

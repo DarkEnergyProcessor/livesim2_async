@@ -84,9 +84,9 @@ function element:render(x, y)
 		x = x or self.cValues.drawX
 		y = y or self.cValues.drawY
 
-		-- FIX: Premultiply colors
 		local r, g, b, a = self.canvasColor[1], self.canvasColor[2], self.canvasColor[3], self.canvasColor[4]/255
 		love.graphics.setColor(r * a, g * a, b * a, 255 * a)
+		
 		if self.canvas and self.quad then
 			love.graphics.draw(self.canvas, self.quad, x, y)
 		end
