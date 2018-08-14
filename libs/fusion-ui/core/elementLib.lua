@@ -27,6 +27,8 @@ function state.check(box, states)
 		end
 	end
 
+	box.lastUpdate = love.timer.getTime()
+
 	return st
 end
 

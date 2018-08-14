@@ -178,11 +178,17 @@ function love.run()
 
 			-- Have to quit all instance in here
 			if name == "quit" then
+				print("gamestate quit")
 				gamestate.internal.quit()
+				print("lily quit")
 				lily.quit()
+				print("loadinginstance quit")
 				loadingInstance.exit()
+				print("setting quit")
 				setting.quit()
+				print("postexit quit")
 				postExit.exit()
+				print("return 0")
 				return 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then

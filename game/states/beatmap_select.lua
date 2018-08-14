@@ -57,9 +57,7 @@ local function initializeBeatmapListUI(self)
 	}, {
 		backgroundColor = {0, 0, 0, 0},
 		padding = {0, #self.persist.beatmapList * 60, 0, 0},
-		margin = {0, 0, 0, 0},
-		w = 350,
-		h = 480
+		margin = {0, 0, 0, 0}
 	})
 	--print(self.data.beatmapFrame.type.w, self.data.beatmapFrame.type.h)
 	self.data.beatmapFrame.xoffset, self.data.beatmapFrame.yoffset = -5, -5
@@ -115,7 +113,7 @@ function beatmapSelect:draw()
 	love.graphics.draw(self.data.background)
 	backNavigation.draw(self.data.back)
 	if self.data.beatmapFrame then
-		self.data.beatmapFrame:draw(60, 80, 350, 480)
+		self.data.beatmapFrame:draw(60, 80, 350, 500)
 	end
 	selectButton.draw(self.data.openBeatmap, 64, 592)
 	gui.draw()

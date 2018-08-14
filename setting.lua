@@ -10,6 +10,7 @@ local arg = ...
 if type(arg) == "userdata" and arg:typeOf("Channel") then
 	-- Secondary thread only
 	require("love.filesystem") -- needed by our thread
+	require("love.timer")
 	if jit and (love._os == "Android" or love._os == "iOS") then
 		jit.off()
 	end
@@ -71,8 +72,8 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	local function processCommand(chan, command)
 		if command == "init" then
 			-- initialize new configuration
-			local name = chan:demand():upper()
-			local default = chan:demand()
+			local name = chan:pop():upper()
+			local default = chan:pop()
 			setting.default[name] = default
 
 			if isFileExist(name..".txt") then
@@ -85,14 +86,14 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 				setting.modified[name] = true
 			end
 		elseif command == "def" then
-			local name = chan:demand():upper()
+			local name = chan:pop():upper()
 			chan:push(setting.default[name])
 		elseif command == "get" then
-			local name = chan:demand()
+			local name = chan:pop()
 			chan:push(getConfigImpl(name))
 		elseif command == "set" then
-			local name = chan:demand():upper()
-			local value = chan:demand()
+			local name = chan:pop():upper()
+			local value = chan:pop()
 			setConfigImpl(name, value)
 		elseif command == "commit" then
 			commitConfigImpl()
@@ -104,10 +105,14 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	end
 
 	while true do
-		local command = channel:demand()
-		if channel:performAtomic(processCommand, command) == "quit" then
-			-- Done thread
-			return
+		local command = channel:pop()
+		if command ~= nil then
+			if processCommand(channel, command) == "quit" then
+				-- Done thread
+				return
+			end
+		else
+			love.timer.sleep(1/100)
 		end
 	end
 else
