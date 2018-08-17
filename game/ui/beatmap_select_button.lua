@@ -13,6 +13,7 @@ local function initialize()
 		"assets/image/ui/s_button_03se.png"
 	}, {mipmaps = true})
 	local fmtfont = assetCache.loadFont("fonts/MTLmr3m.ttf", 11)
+	local diffont = assetCache.loadFont("fonts/MTLmr3m.ttf", 14)
 	local namefont = assetCache.loadFont("fonts/MTLmr3m.ttf", 22)
 	local c1 = love.graphics.newCanvas(324, 60)
 	local c2 = love.graphics.newCanvas(324, 60)
@@ -21,6 +22,12 @@ local function initialize()
 		font = fmtfont,
 		align = 'left',
 		foregroundColor = {0, 0, 0, 255},
+		backgroundColor = {0, 0, 0, 0}
+	}
+	beatmapSelButton.difficultyTextStyle = {
+		font = diffont,
+		align = 'left',
+		foregroundColor = {255, 255, 255, 255},
 		backgroundColor = {0, 0, 0, 0}
 	}
 
@@ -35,10 +42,11 @@ local function initialize()
 	love.graphics.pop()
 
 	-- Main button class
+	local mainPad = {8, -4, 0, 0}
 	local button = gui.template.new("button", {
 		backgroundImage = c1,
 		font = namefont,
-		padding = {16, -6, 0, 0},
+		padding = mainPad,
 		backgroundSize = 'fit',
 		foregroundColor = {255, 255, 255, 255},
 		backgroundColor = {0, 0, 0, 0},
@@ -48,7 +56,7 @@ local function initialize()
 	button:addStyleSwitch("pressed", "released", {
 		backgroundImage = c2,
 		font = namefont,
-		padding = {16, -6, 0, 0},
+		padding = mainPad,
 		backgroundSize = 'fit',
 		foregroundColor = {255, 255, 255, 255},
 		backgroundColor = {0, 0, 0, 0},
@@ -71,8 +79,14 @@ local buttonFrameLayout = {
 	format = {
 		position = "absolute",
 		size = "absolute",
-		left = 8,
-		top = 40
+		left = 6,
+		top = 41
+	},
+	difficulty = {
+		position = "absolute",
+		size = "absolute",
+		right = -20,
+		top = 5
 	}
 }
 
@@ -84,20 +98,35 @@ function beatmapSelButton.init()
 	beatmapSelButton.class = beatmapSelButton.class or initialize()
 end
 
-function beatmapSelButton.new(name, format, callback)
+function beatmapSelButton.new(name, format, callback, difficulty)
 	beatmapSelButton.class = beatmapSelButton.class or initialize()
+
 	local button = beatmapSelButton.class:newElement(name)
-	local fmtText = gui.element.newElement("text", format, beatmapSelButton.formatTextStyle)
-	local buttonFrame = gui.element.newElement("frame", {
-		elements = {
-			{element = button, index = "button"},
-			{element = fmtText, index = "format"}
+	local elems = {
+		{
+			element = button,
+			index = "button"
 		},
+		{
+			element = gui.element.newElement("text", format, beatmapSelButton.formatTextStyle),
+			index = "format"
+		}
+	}
+
+	if difficulty and #difficulty > 0 then
+		elems[#elems + 1] = {
+			element = gui.element.newElement("text", difficulty, beatmapSelButton.difficultyTextStyle),
+			index = "difficulty"
+		}
+	end
+
+	local buttonFrame = gui.element.newElement("frame", {
+		elements = elems,
 		layout = buttonFrameLayout
 	}, buttonFrameStyle)
 	buttonFrame.xoffset, buttonFrame.yoffset = -5, -5
 
-	button:addEventListener("released", callback)
+	button:addEventListener("released", callback, buttonFrame)
 	return buttonFrame
 end
 

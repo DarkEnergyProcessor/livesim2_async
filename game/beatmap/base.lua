@@ -75,7 +75,6 @@ base.getBackground = nilret
 base.getScorePerTap = zeroret
 base.getStamina = zeroret
 base.getNoteStyle = zeroret          -- TODO
-base.getAudio = nilret               -- FileData, not decoder
 base.getLiveClearVoice = nilret      -- same as above
 base.getStarDifficultyInfo = zeroret -- star, random_star (2 values, or 1 if random not avail.)
 

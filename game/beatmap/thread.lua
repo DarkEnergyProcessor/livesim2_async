@@ -32,7 +32,7 @@ if love._version >= "11.0" then
 end
 
 local function sendBeatmapData(name, id, ...)
-	return love.event.push("beatmapresponse", name, id, {...})
+	return love.event.push("beatmapresponse", name, id, ...)
 end
 
 -- Beatmap-related code
@@ -93,7 +93,12 @@ local function enumerateBeatmap(id)
 			local value = {name = file, data = beatmapObject, type = type}
 			beatmap.list[#beatmap.list + 1] = value
 			beatmap.list[file] = value
-			sendBeatmapData("enum", id, file, beatmapObject:getName() or file, (beatmapObject:getFormatName()))
+			sendBeatmapData("enum", id,
+				file,
+				beatmapObject:getName() or file,
+				(beatmapObject:getFormatName()),
+				beatmapObject:getDifficultyString()
+			)
 		end
 
 		if commandChannel:peek() == "quit" then
@@ -110,6 +115,7 @@ local function substituteAudio(name, isdir)
 	if value then
 		return love.filesystem.newFileData(value)
 	end
+	return nil
 end
 
 local function getSummary(bv)
@@ -170,7 +176,14 @@ local function processCommand(chan, command)
 	elseif command == "summary" then
 		-- see game/beatmap/list.lua for more information about the format
 		if beatmap.list[arg[1]] then
-			sendBeatmapData("summary", id, getSummary(beatmap.list[arg[1]]))
+			-- LOVE 0.10.1 and below: Cannot send table directly, so reconstruct it later.
+			local summary = getSummary(beatmap.list[arg[1]])
+			local throwawayChannel = love.thread.newChannel()
+			for n, v in pairs(summary) do
+				throwawayChannel:push(n)
+				throwawayChannel:push(v)
+			end
+			sendBeatmapData("summary", id, throwawayChannel)
 		else
 			sendBeatmapData("error", id, "beatmap doesn't exist")
 		end

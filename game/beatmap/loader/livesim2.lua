@@ -152,21 +152,35 @@ function ls2Loader:getComboInformation()
 	return self:_getMetadata().combo
 end
 
+function ls2Loader:getStarDifficultyInfo()
+	local metadata = self:_getMetadata()
+
+	if metadata.star then
+		if metadata.random_star and metadata.random_star ~= metadata.star then
+			return metadata.star, metadata.random_star
+		end
+		return metadata.star
+	end
+
+	return 0
+end
+
 function ls2Loader:getAudio()
 	local internal = ls2Loader^self
 
 	if internal.ls2.sections.ADIO then
+		internal.file:seek(internal.ls2.sections.ADIO[1])
 		local ext, data, ff = ls2.section_processor.ADIO[1](internal.file, internal.ls2.version_2)
-
-		if ff then
-			-- TODO
-			return nil
+		if ext then
+			if ff then
+				-- TODO
+				return nil
+			end
+			return love.filesystem.newFileData(data, "_."..ext)
 		end
-
-		return love.filesystem.newFileData(data, "_."..ext)
 	end
 
-	return base.getAudio(self)
+	return baseLoader.getAudio(self)
 end
 
 function ls2Loader:getAudioPathList()

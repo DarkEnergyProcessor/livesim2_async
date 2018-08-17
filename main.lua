@@ -26,7 +26,7 @@ local love = require("love")
 local vires = require("vires")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
-local setting = require("setting")
+local postExit = require("post_exit")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -58,6 +58,7 @@ end
 local function registerGamestates()
 	-- Loading screen singleton init
 	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
+	postExit.add(loadingInstance.exit)
 	-- Load all gamestates.
 	gamestate.register("dummy", require("game.states.dummy"))
 	gamestate.register("splash", require("game.states.splash"))
@@ -66,6 +67,7 @@ local function registerGamestates()
 end
 
 local function initializeSetting()
+	local setting = require("setting")
 	setting.define("NOTE_STYLE", 1)
 	setting.define("MINIMAL_EFFECT", 0)
 	setting.define("BACKGROUND_IMAGE", 10)

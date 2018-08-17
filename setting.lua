@@ -57,7 +57,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	local function commitConfigImpl()
 		-- Call sparingly, expensive!
 		for k in pairs(setting.modified) do
-			assert(love.filesystem.write("config/"..k:upper()..".txt", tostring(setting.list[k])))
+			love.filesystem.write("config/"..k:upper()..".txt", tostring(setting.list[k]))
 		end
 	end
 
@@ -69,11 +69,16 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 		end
 	end
 
-	local function processCommand(chan, command)
+	local function processCommand(command)
+		if command == "quit" then
+			commitConfigImpl()
+			return "quit"
+		end
+		local receiveChannel = channel:demand()
 		if command == "init" then
 			-- initialize new configuration
-			local name = chan:pop():upper()
-			local default = chan:pop()
+			local name = channel:demand():upper()
+			local default = channel:demand()
 			setting.default[name] = default
 
 			if isFileExist(name..".txt") then
@@ -86,44 +91,39 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 				setting.modified[name] = true
 			end
 		elseif command == "def" then
-			local name = chan:pop():upper()
-			chan:push(setting.default[name])
+			local name = channel:demand():upper()
+			receiveChannel:push(setting.default[name])
 		elseif command == "get" then
-			local name = chan:pop()
-			chan:push(getConfigImpl(name))
+			local name = channel:demand()
+			receiveChannel:push(getConfigImpl(name))
 		elseif command == "set" then
-			local name = chan:pop():upper()
-			local value = chan:pop()
+			local name = channel:demand():upper()
+			local value = channel:demand()
 			setConfigImpl(name, value)
 		elseif command == "commit" then
 			commitConfigImpl()
-		elseif command == "quit" then
-			commitConfigImpl()
-			return "quit"
 		end
 		return ""
 	end
 
 	while true do
-		local command = channel:pop()
-		if command ~= nil then
-			if processCommand(channel, command) == "quit" then
-				-- Done thread
-				return
-			end
-		else
-			love.timer.sleep(1/100)
+		local command = channel:demand()
+		if processCommand(command) == "quit" then
+			-- Done thread
+			return
 		end
 	end
 else
 	-- Get named channel
 	setting.channel = love.thread.getChannel("setting.lua")
+	setting.channelMain = love.thread.getChannel("setting.lua.lock")
+	setting.receiveChannel = love.thread.newChannel()
 
-	if setting.channel:getCount() == 0 then
+	if setting.channelMain:getCount() == 0 then
 		-- Main thread only
 		assert(love.filesystem.createDirectory("config"), "failed to create configuration directory")
 		setting.thread = assert(love.thread.newThread("setting.lua"))
-		setting.channel:push(0) -- arbitrary value is okay
+		setting.channelMain:push(0) -- arbitrary value
 		setting.thread:start(setting.channel)
 	end
 end
@@ -132,56 +132,49 @@ end
 -- Public API --
 ----------------
 
-local function defineImpl(chan, key, default)
-	chan:push("init")
-	chan:push(key)
-	chan:push(tostring(default))
+local function sendImpl(chan, name, ...)
+	chan:push(name)
+	for i = 1, select("#", ...) do
+		chan:push((select(i, ...)))
+	end
+end
+
+local function send(name, ...)
+	--return setting.channel:push({name, setting.receiveChannel, ...})
+	return setting.channel:performAtomic(sendImpl, name, setting.receiveChannel, ...)
 end
 
 function setting.define(key, default)
 	assert(setting.thread, "'define' can only be called in main thread")
-	return setting.channel:performAtomic(defineImpl, key, default)
-end
-
-local function defImpl(chan, key)
-	chan:push("def")
-	chan:push(key)
+	return send("init", key, tostring(default))
 end
 
 function setting.default(key)
-	setting.channel:performAtomic(defImpl, key)
-	return setting.channel:demand()
-end
-
-local function getImpl(chan, key)
-	chan:push("get")
-	chan:push(key)
+	return send("def", key)
 end
 
 function setting.get(key)
-	setting.channel:performAtomic(getImpl, key)
-	return setting.channel:demand()
-end
-
-local function setImpl(chan, key, value)
-	chan:push("set")
-	chan:push(key)
-	chan:push(tostring(value))
+	send("get", key)
+	return setting.receiveChannel:demand()
 end
 
 function setting.set(key, value)
-	return setting.channel:performAtomic(setImpl, key, value)
+	return send("set", key, tostring(value))
 end
 
 function setting.update()
 	assert(setting.thread, "'update' can only be called in main thread")
-	setting.channel:push("commit")
+	return send("commit")
 end
 
 function setting.quit()
 	assert(setting.thread, "'quit' can only be called in main thread")
-	setting.channel:push("quit")
-	setting.thread:wait()
+	send("quit")
+	if setting.thread:isRunning() then
+		setting.thread:wait()
+	end
+
+	setting.channelMain:pop()
 end
 
 return setting

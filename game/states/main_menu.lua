@@ -13,7 +13,7 @@ local loadingInstance = require("loading_instance")
 local backgroundLoader = require("game.background_loader")
 
 local gui = require("libs.fusion-ui")
-local menuButtonUI = require("ui.menu_button")
+local menuButtonUI = require("game.ui.menu_button")
 
 local mainMenu = gamestate.create {
 	fonts = {
