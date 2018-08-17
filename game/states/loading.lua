@@ -11,8 +11,8 @@
 -- called on gamestate switch.
 -- Loading screen also always "strong", that
 -- means the asset is never be freed, or in
--- short, it's self.data and self.assets are persist
--- as long as the game is running.
+-- short, it's self.data is persist as long as
+-- the game is running.
 
 -- luacheck: read_globals DEPLS_VERSION
 
@@ -39,12 +39,10 @@ local loadingText = {
 	"Overflowing Time Lapse",
 	"Refactoring code...",
 	"1 FPS, 2 FPS, 2 FPS, 50 FPS",
-	"\"livesim2.exe livesim time_lapse\"",
-	"v"..DEPLS_VERSION,
+	"Version "..DEPLS_VERSION,
 	"Asking how is NPad...",
 	"Finding rabbits...",
 	"Chasing rabbits...",
-	"This line is suggested by LazyKill for no reason."
 }
 
 function loading:start()

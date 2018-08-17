@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local bit = require("bit")
 local JSON = require("libs.JSON")
 local Luaoop = require("libs.Luaoop")
 local love = require("love")

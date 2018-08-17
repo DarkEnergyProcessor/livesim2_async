@@ -3,7 +3,6 @@
 
 local love = require("love")
 local postExit = require("post_exit")
-local loadingInstance = require("loading_instance")
 local utf8 = require("utf8")
 
 local function error_printer(msg, layer)
@@ -17,7 +16,6 @@ function love.errorhandler(msg)
 
 	lily.quit()
 	gamestate.internal.quit()
-	loadingInstance.exit()
 	setting.quit()
 	postExit.exit()
 

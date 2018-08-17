@@ -238,5 +238,6 @@ color.papayaWhip = color.hexFFEFD5
 color.purple = color.hex800080
 color.orchid = color.hexDA70D6
 color.saddleBrown = color.hex8B4513
+color.transparent = color.hex00000000
 
 return color

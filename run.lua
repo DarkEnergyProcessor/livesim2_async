@@ -6,7 +6,6 @@ local love = require("love")
 local vires = require("vires")
 local postExit = require("post_exit")
 local timer = require("libs.hump.timer")
-local loadingInstance = require("loading_instance")
 
 --------------------------------
 -- LOVE 11.0 argument parsing --
@@ -178,17 +177,10 @@ function love.run()
 
 			-- Have to quit all instance in here
 			if name == "quit" then
-				print("gamestate quit")
 				gamestate.internal.quit()
-				print("lily quit")
 				lily.quit()
-				print("loadinginstance quit")
-				loadingInstance.exit()
-				print("setting quit")
 				setting.quit()
-				print("postexit quit")
 				postExit.exit()
-				print("return 0")
 				return 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
