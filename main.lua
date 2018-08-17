@@ -23,10 +23,14 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
 local love = require("love")
+local assetCache = require("asset_cache")
 local vires = require("vires")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local postExit = require("post_exit")
+local Yohane = require("libs.Yohane")
+local util = require("util")
+local setting = require("setting")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -67,7 +71,6 @@ local function registerGamestates()
 end
 
 local function initializeSetting()
-	local setting = require("setting")
 	setting.define("NOTE_STYLE", 1)
 	setting.define("MINIMAL_EFFECT", 0)
 	setting.define("BACKGROUND_IMAGE", 10)
@@ -78,6 +81,7 @@ local function initializeSetting()
 	setting.define("GLOBAL_OFFSET", 0)
 	setting.define("TEXT_SCALING", 1)
 	setting.define("TAP_SOUND", 1)
+	setting.define("SE_VOLUME", 80)
 end
 
 local function createDirectories()
@@ -86,6 +90,72 @@ local function createDirectories()
 	assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
 	assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory \"screenshots\"")
 	assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory \"unit_icon\"")
+end
+
+local function initializeYohane()
+	local rendering = require("rendering")
+
+	function Yohane.Platform.UpdateSEVolume()
+		Yohane.Platform.SEVolume = assert(tonumber(setting.get("SE_VOLUME")))
+	end
+
+	function Yohane.Platform.ResolveImage(path)
+		return assetCache.loadImage(path..":"..path, {mipmaps = true})
+	end
+
+	function Yohane.Platform.ResolveAudio(path)
+		local v = util.substituteExtension(path, util.getNativeAudioExtensions())
+		if v then
+			local s = love.audio.newSource(v, "static")
+			s:setVolume(Yohane.Platform.SEVolume * 0.008)
+			return s
+		end
+
+		return nil
+	end
+
+	function Yohane.Platform.CloneImage(image_handle)
+		return image_handle
+	end
+
+	function Yohane.Platform.CloneAudio(audio)
+		if audio then
+			return audio:clone()
+		end
+
+		return nil
+	end
+
+	function Yohane.Platform.PlayAudio(audio)
+		if audio then
+			audio:stop()
+			audio:play()
+		end
+	end
+
+	function Yohane.Platform.Draw(drawdatalist)
+		local r, g, b, a = rendering.getColor()
+
+		for _, dd in ipairs(drawdatalist) do
+			if dd.image then
+				rendering.setColor(dd.r / 255 * r, dd.g / 255 * g, dd.b / 255 * b, dd.a / 255 * a)
+				if type(dd.image) == "table" then
+					-- Quad + Image
+					rendering.draw(dd.image[1], dd.image[2], dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+				else
+					rendering.draw(dd.image, dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+				end
+			end
+		end
+
+		rendering.setColor(r, g, b, a)
+	end
+
+	function Yohane.Platform.OpenReadFile(fn)
+		return assert(love.filesystem.newFile(fn, "r"))
+	end
+
+	Yohane.Init(love.filesystem.load, "libs")
 end
 
 function love.load()
@@ -97,6 +167,8 @@ function love.load()
 	-- TODO: command-line processing.
 	-- Initialize window
 	initWindow()
+	-- Initialize Yohane
+	initializeYohane()
 	-- Register all gamestates
 	registerGamestates()
 	-- Jump to default game state

@@ -8,45 +8,25 @@ local rendering = {}
 
 -- Default implementation for LOVE 11.0
 function rendering.setColor(r, g, b, a)
-	return love.graphics.setColor(r, g, b, a)
+	return love.graphics.setColor(r / 255, g / 255, b / 255, a / 255)
 end
 function rendering.draw(drawable, ...)
 	return love.graphics.draw(drawable, ...)
 end
-function rendering.setFont(font)
-	return love.graphics.setFont(font)
+function rendering.flush()
+	return love.graphics.flushBatch()
 end
-function rendering.print(text, x, y, r, sx, sy, ox, oy, kx, ky)
-	return love.graphics.print(text, x, y, r, sx, sy, ox, oy, kx, ky)
+function rendering.getColor()
+	local r, g, b, a = love.graphics.getColor()
+	return r * 255, g * 255, b * 255, a * 255
 end
-function rendering.printf(text, x, y, limit, align, r, sx, sy, ox, oy, kx, ky)
-	return love.graphics.printf(text, x, y, limit, align, r, sx, sy, ox, oy, kx, ky)
-end
-function rendering.flush() end -- dummy
 
 if not(love_11) then
 	-- LOVE 0.10.2 and below: Use emulated autobatch
 	local dummytex = love.graphics.newCanvas(1, 1)
-	local dummyfont = love.graphics.newFont(12)
 	rendering.spriteBatch = love.graphics.newSpriteBatch(dummytex, 16, "stream")
 	rendering.spriteBatchBufsize = 16
 	rendering.currentTexture = dummytex
-	rendering.text = love.graphics.newText(dummyfont)
-	rendering.currentFont = dummyfont
-
-	local function isTextEmpty()
-		local w, h = rendering.text:getDimensions()
-		return w == 0 or h == 0
-	end
-
-	local function flushText()
-		if isTextEmpty() then return end
-		local r, g, b, a = love.graphics.getColor()
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(rendering.text)
-		rendering.text:clear()
-		love.graphics.setColor(r, g, b, a)
-	end
 
 	local function flushSpriteBatch()
 		if rendering.spriteBatch:getCount() == 0 then return end
@@ -57,32 +37,13 @@ if not(love_11) then
 		love.graphics.setColor(r, g, b, a)
 	end
 
-	function rendering.setFont(font)
-		if rendering.currentFont ~= font then
-			flushText()
-			rendering.currentFont = font
-			rendering.text:setFont(font)
-		end
-	end
-
-	function rendering.print(text, x, y, r, sx, sy, ox, oy, kx, ky)
-		local m, g, b, a = love.graphics.getColor()
-		flushSpriteBatch()
-		rendering.text:add({{m, g, b, a}, text}, x, y, r, sx, sy, ox, oy, kx, ky)
-	end
-
-	function rendering.printf(text, x, y, limit, align, r, sx, sy, ox, oy, kx, ky)
-		local m, g, b, a = love.graphics.getColor()
-		flushSpriteBatch()
-		rendering.text:addf({{m, g, b, a}, text}, limit, align, x, y, r, sx, sy, ox, oy, kx, ky)
-	end
+	rendering.getColor = love.graphics.getColor
 
 	function rendering.setColor(r, g, b, a)
 		return rendering.spriteBatch:setColor(r, g, b, a)
 	end
 
 	function rendering.draw(drawable, ...)
-		flushText()
 		if drawable:typeOf("Texture") then
 			if rendering.currentTexture ~= drawable then
 				flushSpriteBatch()
@@ -106,8 +67,7 @@ if not(love_11) then
 
 	function rendering.flush()
 		-- Only one of them should trigger.
-		flushSpriteBatch()
-		flushText()
+		return flushSpriteBatch()
 	end
 end
 
