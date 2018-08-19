@@ -17,8 +17,7 @@ function rendering.flush()
 	return love.graphics.flushBatch()
 end
 function rendering.getColor()
-	local r, g, b, a = love.graphics.getColor()
-	return r * 255, g * 255, b * 255, a * 255
+	return love.graphics.getColor()
 end
 
 if not(love_11) then
@@ -37,9 +36,8 @@ if not(love_11) then
 		love.graphics.setColor(r, g, b, a)
 	end
 
-	rendering.getColor = love.graphics.getColor
-
 	function rendering.setColor(r, g, b, a)
+		love.graphics.setColor(r, g, b, a)
 		return rendering.spriteBatch:setColor(r, g, b, a)
 	end
 
@@ -61,6 +59,7 @@ if not(love_11) then
 			rendering.spriteBatch:add(drawable, ...)
 		else
 			-- Huh? Why bother.
+			flushSpriteBatch()
 			return love.graphics.draw(drawable, ...)
 		end
 	end
