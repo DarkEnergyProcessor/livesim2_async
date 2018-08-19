@@ -94,6 +94,7 @@ end
 
 local function initializeYohane()
 	local rendering = require("rendering")
+	local color = require("color")
 
 	function Yohane.Platform.UpdateSEVolume()
 		Yohane.Platform.SEVolume = assert(tonumber(setting.get("SE_VOLUME")))
@@ -133,12 +134,29 @@ local function initializeYohane()
 		end
 	end
 
+	local colorcompatget
+	local colorcompatset
+	if love._version >= "11.0" then
+		function colorcompatset(r, g, b, a)
+			return r/255, g/255, b/255, a/255
+		end
+
+		function colorcompatget(r, g, b, a)
+			return r*255, g*255, b*255, a*255
+		end
+	else
+		function colorcompatget(r, g, b, a)
+			return r, g, b, a
+		end
+		colorcompatset = colorcompatget
+	end
+
 	function Yohane.Platform.Draw(drawdatalist)
-		local r, g, b, a = rendering.getColor()
+		local r, g, b, a = colorcompatget(rendering.getColor())
 
 		for _, dd in ipairs(drawdatalist) do
 			if dd.image then
-				rendering.setColor(dd.r / 255 * r, dd.g / 255 * g, dd.b / 255 * b, dd.a / 255 * a)
+				rendering.setColor(colorcompatset(dd.r / 255 * r, dd.g / 255 * g, dd.b / 255 * b, dd.a / 255 * a))
 				if type(dd.image) == "table" then
 					-- Quad + Image
 					rendering.draw(dd.image[1], dd.image[2], dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)

@@ -89,9 +89,7 @@ function beatmapList.pop()
 
 	beatmapList.count = beatmapList.count - 1
 	if beatmapList.count == 0 then
-		print("atomic quit")
 		beatmapList.channel:performAtomic(sendData, "quit", {})
-		print("atomic quit ok")
 		beatmapList.channel = nil
 	end
 end
@@ -111,16 +109,12 @@ postExit.add(function()
 		beatmapList.channel:performAtomic(sendData, "quit", {})
 		beatmapList.channel = nil
 		if beatmapList.thread and beatmapList.thread:isRunning() then
-			print("thread wait")
 			beatmapList.thread:wait()
-			print("thread wait ok")
 			beatmapList.thread = nil
 		end
 		beatmapList.count = 0
 	elseif beatmapList.thread and beatmapList.thread:isRunning() then
-		print("thread wait 2")
 		beatmapList.thread:wait()
-		print("thread wait ok 2")
 	end
 end)
 
