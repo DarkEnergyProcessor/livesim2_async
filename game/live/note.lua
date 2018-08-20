@@ -108,6 +108,7 @@ note.quadRegion = {
 local noteManager = Luaoop.class("livesim2.NoteManager")
 
 function noteManager:__construct(param)
+	-- luacheck: push no unused args
 	-- note image used
 	self.noteImage = param.image
 	-- note speed
@@ -192,6 +193,7 @@ function noteManager:__construct(param)
 	else
 		self.noteStyleFrame, self.noteStyleSwing, self.noteStyleSimul = preset, preset, preset
 	end
+	-- luacheck: pop
 end
 
 function noteManager:getLayer(attribute, simul, swing, token, star)
@@ -369,7 +371,7 @@ local normalMovingNote = Luaoop.class("livesim2.NormalMovingNote", baseMovingNot
 
 function normalMovingNote:__construct(definition, param)
 	-- Note target time
-	self.targetTime = definition.timing_sec + param.timingOffset
+	self.targetTime = definition.timing_sec
 	-- Note speed
 	self.noteSpeed = param.noteSpeed / (definition.speed or 1)
 	-- Note spawn time
@@ -384,10 +386,29 @@ function normalMovingNote:__construct(definition, param)
 	self.accuracy = param.laneAccuracy[definition.position]
 	-- note current position
 	self.position = param.noteSpawningPosition + self.elapsedTime / self.noteSpeed * self.distance * self.direction
-	-- time needed to mark note as miss
-	self.missTime = self.noteSpeed * self.accuracy.miss[2]
-	-- time needed to make the note able to receive keypress
-	self.eventTime = self.noteSpeed * self.accuracy.miss[1]
+	-- time needed for specific accuracy
+	self.accuracyTime = {
+		perfect = {
+			self.accuracy.perfect[1] * self.noteSpeed,
+			self.accuracy.perfect[2] * self.noteSpeed
+		},
+		great = {
+			self.accuracy.great[1] * self.noteSpeed,
+			self.accuracy.great[2] * self.noteSpeed
+		},
+		good = {
+			self.accuracy.good[1] * self.noteSpeed,
+			self.accuracy.good[2] * self.noteSpeed
+		},
+		bad = {
+			self.accuracy.bad[1] * self.noteSpeed,
+			self.accuracy.bad[2] * self.noteSpeed
+		},
+		miss = {
+			self.accuracy.miss[1] * self.noteSpeed, -- eventTime
+			self.accuracy.miss[2] * self.noteSpeed -- missTime
+		}
+	}
 	-- token flag
 	self.token = definition.effect == 2
 	-- star note
@@ -402,6 +423,8 @@ function normalMovingNote:__construct(definition, param)
 	self.rotation = 0 -- set later
 	-- vanish type (1 = hidden, 2 = sudden)
 	self.vanishType = definition.vanish or 0
+	-- opacity
+	self.opacity = 1
 	-- Current note manager
 	self.manager = param
 end
@@ -410,14 +433,61 @@ function normalMovingNote:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
 	self.position = self.position + dt * self.distance * self.direction
 
-	if self.elapsedTime >= self.missTime then
+	if self.elapsedTime >= self.accuracyTime.miss[2] then
 		-- Mark note as "miss"
-		return "miss"
+		return "miss", true
+	end
+
+	-- calculate opacity for "vanish" note
+	if self.vanishType > 0 then
+		if self.vanishType == 1 then
+			-- Hidden note
+			self.opacity = math.max(math.min((self.noteSpeed * 2/3 - self.elapsedTime) * 0.0125, 1), 0)
+		elseif self.vanishType == 2 then
+			-- Sudden note
+			self.opacity = math.max(math.min((self.elapsedTime - self.noteSpeed * 0.4) * 0.0125, 1), 0)
+		end
 	end
 end
 
 function normalMovingNote:draw()
-	return self.manager:drawNote(self.noteLayers, self.position, self.elapsedTime / self.noteSpeed, self.rotation)
+	return self.manager:drawNote(
+		self.noteLayers,
+		self.opacity,
+		self.position,
+		self.elapsedTime / self.noteSpeed,
+		self.rotation
+	)
+end
+
+function normalMovingNote:tap()
+	-- Unlike previous note manager, the touch identifier
+	-- is handled entirely by NoteManager class, so the
+	-- only task remain for NormalMovingNote class is to
+	-- return the judgement string
+	if self.swing then
+		-- Start checking from great accuracy for swing notes
+		if self.elapsedTime > self.accuracyTime.great[1] and self.elapsedTime < self.elapsedTime.great[2] then
+			return "perfect", true
+		elseif self.elapsedTime > self.accuracyTime.good[1] and self.elapsedTime < self.elapsedTime.good[2] then
+			return "great", true
+		elseif self.elapsedTime > self.accuracyTime.bad[1] and self.elapsedTime < self.elapsedTime.bad[2] then
+			return "good", true
+		else
+			return "bad", true -- shouldn't happen unless tap is called early.
+		end
+	else
+		-- Start checking from perfect
+		if self.elapsedTime > self.accuracyTime.great[1] and self.elapsedTime < self.elapsedTime.great[2] then
+			return "great", true
+		elseif self.elapsedTime > self.accuracyTime.good[1] and self.elapsedTime < self.elapsedTime.good[2] then
+			return "good", true
+		elseif self.elapsedTime > self.accuracyTime.bad[1] and self.elapsedTime < self.elapsedTime.bad[2] then
+			return "bad", true
+		else
+			return "bad", true -- shouldn't happen unless tap is called early.
+		end
+	end
 end
 
 -----------------------------
@@ -430,17 +500,25 @@ function longMovingNote:__construct(definition, param)
 	normalMovingNote.__construct(self, definition, param)
 
 	-- Long note properties
+	-- long note first judgement
+	self.lnFirstJudgement = nil
+	-- flag to determine whetever the note is in hold
+	self.lnHolding = false
 	-- long note vertices
 	self.lnVertices = {
-		{40, 0, 1, 0.0625, 255 * colDiv, 255 * colDiv, 255 * colDiv, 255 * colDiv},
-		{40, 0, 1, 0.9375, 255 * colDiv, 255 * colDiv, 255 * colDiv, 255 * colDiv},
-		{-1, -1, 0, 0.9375, 255 * colDiv, 255 * colDiv, 255 * colDiv, 255 * colDiv},
-		{-1, -1, 0, 0.0625, 255 * colDiv, 255 * colDiv, 255 * colDiv, 255 * colDiv},
+		{40, 0, 1, 0.0625, color.compat(255, 255, 255)},
+		{40, 0, 1, 0.9375, color.compat(255, 255, 255)},
+		{-1, -1, 0, 0.9375, color.compat(255, 255, 255)},
+		{-1, -1, 0, 0.0625, color.compat(255, 255, 255)},
 	}
 	-- long note mesh
 	self.lnMesh = love.graphics.newMesh(4, "strip", "stream")
+	-- long note opacity
+	self.lnOpacity = 1
 	-- long note target time
 	self.lnTargetTime = self.targetTime + definition.effect_value
+	-- long note spawn time (elapsed time)
+	self.lnSpawnTime = definition.effect_value + self.noteSpeed
 	-- end note position
 	local ndist = math.max(self.noteSpeed - self.lnTargetTime, 0)
 	self.lnPosition = param.noteSpawningPosition + ndist / self.noteSpeed * self.distance * self.direction
@@ -452,6 +530,83 @@ function longMovingNote:__construct(definition, param)
 		self.lnFlashEffect = param:getLongNoteAnimation()
 		-- flash rotation
 		self.lnFlashRotation = param.lnRotation[definition.position]
+	end
+end
+
+function longMovingNote:update(dt)
+	self.elapsedTime = self.elapsedTime + dt
+	self.position = self.position + dt * self.distance * self.direction
+
+	if self.elapsedTime >= self.accuracyTime.miss[2] and not(self.lnHolding) then
+		-- Mark note as "miss" as whole
+		self.lnFirstJudgement = "miss"
+		return "miss", true
+	end
+
+	if self.elapsedTime >= self.lnSpawnTime then
+		-- Calculating the dT is bit difficult, because it must take
+		-- previous time into account. If this case is not handled,
+		-- at worse case it can gives about 1000/framerate ms inaccuracy.
+		-- The other problem is that this check is only taken at most once
+		-- and can hurt processor which does branch prediction.
+		if self.elapsedTime - dt < self.lnSpawnTime then
+			self.lnPosition = self.lnPosition + (self.elapsedTime - self.lnSpawnTime) * self.distance * self.direction
+		else
+			self.lnPosition = self.lnPosition + dt * self.distance * self.direction
+		end
+	end
+
+	if self.elapsedTime - self.lnSpawnTime >= self.accuracyTime.miss[2] then
+		-- If the end note is missed, make it miss too
+		return "miss", true
+	end
+
+	-- calculate opacity for "vanish" note
+	if self.vanishType > 0 then
+		local x = self.elapsedTime - self.lnSpawnTime
+		if self.vanishType == 1 then
+			-- Hidden note
+			self.opacity = math.max(math.min((self.noteSpeed * 2/3 - self.elapsedTime) * 0.0125, 1), 0)
+			self.lnOpacity = math.max(math.min((self.noteSpeed * 2/3 - x) * 0.0125, 1), 0)
+		elseif self.vanishType == 2 then
+			-- Sudden note
+			self.opacity = math.max(math.min((self.elapsedTime - self.noteSpeed * 0.4) * 0.0125, 1), 0)
+			self.lnOpacity = math.max(math.min((x - self.noteSpeed * 0.4) * 0.0125, 1), 0)
+		end
+	end
+end
+
+function longMovingNote:draw()
+	-- 1. draw note trail
+	rendering.setColor(color.compat(255, 255, self.lnHolding and 127 or 255, self.manager.opacity))
+	rendering.draw(self.lnMesh)
+	-- 2. draw end note circle
+	if self.elapsedTime - self.lnSpawnTime > 0 then
+		local s = (self.elapsedTime - self.lnSpawnTime) / self.noteSpeed
+		rendering.setColor(255, 255, 255, self.manager.opacity * self.lnOpacity)
+		rendering.draw(
+			self.manager.noteImage, note.quadRegion[3],
+			self.lnPosition.x, self.lnPosition.y, 0,
+			s, s, 64, 64
+		)
+	end
+	-- 3. draw main note
+	self.manager:drawNote(
+		self.noteLayers,
+		self.opacity,
+		self.position,
+		self.elapsedTime / self.noteSpeed,
+		self.rotation
+	)
+	-- 4. draw flash effect
+	if self.lnFlashEffect then
+		rendering.flush()
+		love.graphics.push()
+		love.graphics.translate(self.position:unpack())
+		love.graphics.rotate(self.lnFlashRotation)
+		self.lnFlashEffect:setOpacity(self.manager.opacity * 255)
+		self.lnFlashEffect:draw()
+		love.graphics.pop()
 	end
 end
 
