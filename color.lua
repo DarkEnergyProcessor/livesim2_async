@@ -89,6 +89,28 @@ function color.get(r, g, b, a, premultiplied)
 	end
 end
 
+-- Like color.get, but does color range conversion
+-- based on LOVE version
+if love._version >= "11.0" then
+	function color.compat(r, g, b, a, premul)
+		a = math.min(math.max(a or 1 + 0.0005, 0), 1)
+		if premul then
+			return r * a / 255, g * a / 255, b * a / 255, a
+		else
+			return r / 255, g / 255, b / 255, a
+		end
+	end
+else
+	function color.compat(r, g, b, a, premul)
+		a = math.min(math.max(a or 1 + 0.0005, 0), 1)
+		if premul then
+			return r * a, g * a, b * a, a * 255
+		else
+			return r, g, b, a * 255
+		end
+	end
+end
+
 -- Pre-defined colors from HTML (undefined order)
 color.tan = color.hexD2B48C
 color.steelBlue = color.hex4682B4

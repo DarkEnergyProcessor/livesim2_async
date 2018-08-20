@@ -14,7 +14,8 @@ function rendering.draw(drawable, ...)
 	return love.graphics.draw(drawable, ...)
 end
 function rendering.flush()
-	return love.graphics.flushBatch()
+	-- no-op as LOVE 11.0 automatically flush batch when necessary
+	--return love.graphics.flushBatch()
 end
 function rendering.getColor()
 	return love.graphics.getColor()
