@@ -109,6 +109,8 @@ local noteManager = Luaoop.class("livesim2.NoteManager")
 
 function noteManager:__construct(param)
 	-- luacheck: push no unused args
+	-- current elapsed time
+	self.elapsedTime = 0
 	-- note image used
 	self.noteImage = param.image
 	-- note speed
@@ -119,6 +121,8 @@ function noteManager:__construct(param)
 	self.notesListByEvent = {}
 	-- list of notes, ordered by their draw order
 	self.notesListByDraw = {}
+	-- in queue note (pressed)
+	self.notePressed = {nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	-- on note triggered
 	self.callback = function(object, lane, position, judgement, releaseFlag)
 		-- object: note object
@@ -164,8 +168,6 @@ function noteManager:__construct(param)
 	self.timingOffset = 0 -- TODO
 	-- note spawning position
 	self.noteSpawningPosition = param.noteSpawningPosition
-
-	-- Other properties
 	-- opacity
 	self.opacity = 1
 
@@ -203,11 +205,12 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 		-- Custom Beatmap Festival extension attribute.
 		-- Bit pattern: rrrrrrrr rggggggg ggbbbbbb bbb0nnnn
 		-- If n is 15 then color is r, g, b
-		defCol = {
-			bit.band(bit.rshift(attribute, 23), 511) * colDiv,
-			bit.band(bit.rshift(attribute, 14), 511) * colDiv,
-			bit.band(bit.rshift(attribute, 5), 511) * colDiv,
-		}
+		defCol = {color.compat(
+			bit.band(bit.rshift(attribute, 23), 511),
+			bit.band(bit.rshift(attribute, 14), 511),
+			bit.band(bit.rshift(attribute, 5), 511),
+			1
+		)}
 		attribute = 9
 	end
 
@@ -228,7 +231,7 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 	elseif self.noteStyleFrame == 2 then
 		-- There's special case for neon note style.
 		-- If frame and swing is neon, then don't use the base frame
-		if not(swing and self.noteStyleSwing == 2) then
+		if not(swing or self.noteStyleSwing == 2) then
 			layer[#layer + 1] = 16 + attribute
 
 			if token then
@@ -420,7 +423,7 @@ function normalMovingNote:__construct(definition, param)
 	-- simultaneous note
 	self.simul = false -- set later
 	-- swing rotation
-	self.rotation = 0 -- set later
+	self.rotation = false -- set later
 	-- vanish type (1 = hidden, 2 = sudden)
 	self.vanishType = definition.vanish or 0
 	-- opacity
@@ -460,34 +463,38 @@ function normalMovingNote:draw()
 	)
 end
 
-function normalMovingNote:tap()
-	-- Unlike previous note manager, the touch identifier
-	-- is handled entirely by NoteManager class, so the
-	-- only task remain for NormalMovingNote class is to
-	-- return the judgement string
-	if self.swing then
+local function judgementCheck(t, accuracy, swing)
+	if swing then
 		-- Start checking from great accuracy for swing notes
-		if self.elapsedTime > self.accuracyTime.great[1] and self.elapsedTime < self.elapsedTime.great[2] then
+		if t > accuracy.great[1] and t < accuracy.great[2] then
 			return "perfect", true
-		elseif self.elapsedTime > self.accuracyTime.good[1] and self.elapsedTime < self.elapsedTime.good[2] then
+		elseif t > accuracy.good[1] and t < accuracy.good[2] then
 			return "great", true
-		elseif self.elapsedTime > self.accuracyTime.bad[1] and self.elapsedTime < self.elapsedTime.bad[2] then
+		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
 			return "good", true
 		else
 			return "bad", true -- shouldn't happen unless tap is called early.
 		end
 	else
 		-- Start checking from perfect
-		if self.elapsedTime > self.accuracyTime.great[1] and self.elapsedTime < self.elapsedTime.great[2] then
+		if t > accuracy.great[1] and t < accuracy.great[2] then
 			return "great", true
-		elseif self.elapsedTime > self.accuracyTime.good[1] and self.elapsedTime < self.elapsedTime.good[2] then
+		elseif t > accuracy.good[1] and t < accuracy.good[2] then
 			return "good", true
-		elseif self.elapsedTime > self.accuracyTime.bad[1] and self.elapsedTime < self.elapsedTime.bad[2] then
+		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
 			return "bad", true
 		else
 			return "bad", true -- shouldn't happen unless tap is called early.
 		end
 	end
+end
+
+function normalMovingNote:tap()
+	-- Unlike previous note manager, the touch identifier
+	-- is handled entirely by NoteManager class, so the
+	-- only task remain for NormalMovingNote class is to
+	-- return the judgement string
+	return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing), true
 end
 
 -----------------------------
@@ -535,7 +542,9 @@ end
 
 function longMovingNote:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
-	self.position = self.position + dt * self.distance * self.direction
+	if not(self.lnHolding) then
+		self.position = self.position + dt * self.distance * self.direction
+	end
 
 	if self.elapsedTime >= self.accuracyTime.miss[2] and not(self.lnHolding) then
 		-- Mark note as "miss" as whole
@@ -574,6 +583,23 @@ function longMovingNote:update(dt)
 			self.lnOpacity = math.max(math.min((x - self.noteSpeed * 0.4) * 0.0125, 1), 0)
 		end
 	end
+
+	-- calculate vertices
+	-- First position
+	self.lnMesh[4][1] = self.position.x + (self.Scale * 62) * math.cos(self.lnRotation)
+	self.lnMesh[4][2] = self.position.y + (self.Scale * 62) * math.sin(self.lnRotation)
+	self.lnMesh[4][8] = self.opacity
+	self.lnMesh[3][1] = self.position.x + (self.Scale * 62) * math.cos(self.lnRotation - math.pi)
+	self.lnMesh[3][2] = self.position.y + (self.Scale * 62) * math.sin(self.lnRotation - math.pi)
+	self.lnMesh[3][8] = self.opacity
+	self.lnMesh[1][1] = self.lnPosition.x + (self.LN.Scale * 62) * math.cos(self.lnRotation - math.pi)
+	self.lnMesh[1][2] = self.lnPosition.y + (self.LN.Scale * 62) * math.sin(self.lnRotation - math.pi)
+	self.lnMesh[1][8] = self.lnOpacity
+	self.lnMesh[2][1] = self.lnPosition.x + (self.LN.Scale * 62) * math.cos(self.lnRotation)
+	self.lnMesh[2][2] = self.lnPosition.y + (self.LN.Scale * 62) * math.sin(self.lnRotation)
+	self.lnMesh[2][8] = self.lnOpacity
+	-- Update
+	self.LN.Mesh:setVertices(self.lnMesh)
 end
 
 function longMovingNote:draw()
@@ -610,12 +636,90 @@ function longMovingNote:draw()
 	end
 end
 
+function longMovingNote:tap()
+	if self.lnHolding then
+		return
+	else
+		self.position = self.manager.noteSpawningPosition + self.distance * self.direction
+		self.lnHolding = true
+		return normalMovingNote.tap(self), false
+	end
+end
+
+function longMovingNote:untap()
+	if self.lnHolding then
+		local t = self.elapsedTime - self.lnSpawnTime + self.timingOffset
+		if t <= self.accuracyTime.miss[1] then
+			return "miss", true
+		else
+			return judgementCheck(t, self.accuracyTime, self.swing), true
+		end
+	else
+		return
+	end
+end
+
 ----------------
 -- Public API --
 ----------------
 
 function note.newNoteManager(param)
 	return noteManager(param)
+end
+
+function noteManager:addNote(definition)
+	local v
+	if definition.effect % 10 == 3 then
+		v = longMovingNote(definition, self)
+	else
+		v = normalMovingNote(definition, self)
+	end
+
+	local i = #self.notesList + 1
+	self.notesList[i] = v
+	self.notesListByEvent[i] = v
+	self.notesListByDraw[i] = v
+end
+
+function noteManager:initialize()
+	-- You should really call this at most once.
+	-- It doesn't perform any sanity check whetever it's
+	-- already called previously or not!
+	table.sort(self.notesList, function(a, b)
+		-- Sort by targetTime
+		return a.targetTime < b.targetTime
+	end)
+	table.sort(self.notesListByEvent, function(a, b)
+		-- Sort by accuracyTime.miss[1]
+		local c = a.spawnTime + a.accuracyTime.miss[1]
+		local d = b.spawnTime + b.accuracyTime.miss[1]
+		return c < d
+	end)
+	table.sort(self.notesListByDraw, function(a, b)
+		-- Sort by their spawning time
+		return a.spawnTime < b.spawnTime
+	end)
+
+	-- Swing note & simultaneous note detection
+	local swingNoteList = {}
+	local lastTiming = -32767
+	for i = 1, #self.notesList do
+		local v = self.notesList[i]
+
+		-- Check for simultaneous note
+		if math.abs(lastTiming - v.targetTime) <= 0.001 then
+			v.simul = true
+			self.notesList[i-1].simul = true
+		end
+		lastTiming = v.targetTime
+
+		-- Check for swing note
+		if self.notesList[i].swing then
+			swingNoteList[#swingNoteList + 1] = self.notesList[i]
+		end
+	end
+
+	-- TODO: Apply proper swing rotation
 end
 
 return note
