@@ -109,4 +109,39 @@ function assetCache.loadFont(name, settings)
 	end
 end
 
+function assetCache.loadMultipleFonts(fonts)
+	local available = {}
+	local needed = {}
+	local lilyload = {}
+
+	for i = 1, #fonts do
+		local s, a, b = getCacheByParam(fonts[i][1], fonts[i][2])
+		if s then
+			available[i] = a
+		else
+			needed[#needed + 1] = i
+			lilyload[#lilyload + 1] = {lily.newFont, b, fonts[i][2]}
+		end
+	end
+
+	if coroutine.running() then
+		-- Run asynchronously
+		local multi = lily.loadMulti(lilyload)
+			:setUserData({avail = available, need = needed})
+			:onLoaded(setMultipleLilyCallback)
+		-- Wait
+		while multi:isComplete() == false do
+			async.wait()
+		end
+	else
+		-- Run synchronously
+		for i = 1, #lilyload do
+			local img = love.graphics.newFont(lilyload[i][2], lilyload[i][3])
+			available[needed[i]] = img
+		end
+	end
+
+	return available
+end
+
 return assetCache

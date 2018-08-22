@@ -187,6 +187,23 @@ local function processCommand(chan, command)
 		else
 			sendBeatmapData("error", id, "beatmap doesn't exist")
 		end
+	elseif command == "notes" then
+		if beatmap.list[arg[1]] then
+			local beatmapData = beatmap.list[arg[1]]:getNotesList()
+			local throwChan = love.thread.newChannel()
+			-- amount of notes
+			throwChan:push(#beatmapData)
+			-- note encoding data start
+			for i = 1, #beatmapData do
+				for k, v in pairs(beatmapData[i]) do
+					throwChan:push(k)
+					throwChan:push(v)
+				end
+				throwChan:push(throwChan) -- separator
+			end
+		else
+			sendBeatmapData("error", id, "beatmap doesn't exist")
+		end
 	elseif command == "quit" then
 		return "quit"
 	end

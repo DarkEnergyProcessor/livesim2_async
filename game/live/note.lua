@@ -389,6 +389,8 @@ function normalMovingNote:__construct(definition, param)
 	self.accuracy = param.laneAccuracy[definition.position]
 	-- note current position
 	self.position = param.noteSpawningPosition + self.elapsedTime / self.noteSpeed * self.distance * self.direction
+	-- note lane position
+	self.lanePosition = definition.position
 	-- time needed for specific accuracy
 	self.accuracyTime = {
 		perfect = {
@@ -412,6 +414,10 @@ function normalMovingNote:__construct(definition, param)
 			self.accuracy.miss[2] * self.noteSpeed -- missTime
 		}
 	}
+	-- attribute
+	self.attribute = definition.attribute
+	-- note layers (set later)
+	self.noteLayers = false
 	-- token flag
 	self.token = definition.effect == 2
 	-- star note
@@ -720,6 +726,35 @@ function noteManager:initialize()
 	end
 
 	-- TODO: Apply proper swing rotation
+	for _, v in ipairs(self.notesList) do
+		v.noteLayers = self:getLayer(v.attribute, v.simul, v.swing, v.token, v.star)
+	end
+end
+
+function noteManager:update(dt)
+	-- Note update is based on how notes are drawn
+	self.elapsedTime = self.elapsedTime + dt
+	for _, v in ipairs(self.notesListByDraw) do
+		if self.elapsedTime >= v.spawnTime then
+			local judgement, mode
+			local isLn = Luaoop.class.instanceof(v, "livesim2.LongMovingNote")
+			if self.elapsedTime - dt < v.spawnTime then
+				judgement, mode = v:update(self.elapsedTime - v.spawnTime)
+			else
+				judgement, mode = v:update(dt)
+			end
+
+			if judgement then
+				-- function(object, lane, position, judgement, releaseFlag)
+				local relflg = isLn and (v.lnHolding and 2 or 1) or 0
+				self.callback(v, v.lanePosition, v.position, judgement, relflg)
+			end
+
+			if mode then
+				-- remove from all notes data
+			end
+		end
+	end
 end
 
 return note
