@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local gui = require("libs.fusion-ui")
+local mainFont = require("font")
 local color = require("color")
 local assetCache = require("asset_cache")
 local beatmapSelButton = {class = nil}
@@ -12,9 +13,9 @@ local function initialize()
 		"assets/image/ui/s_button_03.png",
 		"assets/image/ui/s_button_03se.png"
 	}, {mipmaps = true})
-	local fmtfont = assetCache.loadFont("fonts/MTLmr3m.ttf", 11)
-	local diffont = assetCache.loadFont("fonts/MTLmr3m.ttf", 14)
-	local namefont = assetCache.loadFont("fonts/MTLmr3m.ttf", 22)
+	local fmtfont = mainFont.get(11)
+	local diffont = mainFont.get(14)
+	local namefont = mainFont.get(20)
 	local c1 = love.graphics.newCanvas(324, 60)
 	local c2 = love.graphics.newCanvas(324, 60)
 

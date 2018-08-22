@@ -99,6 +99,11 @@ function beatmapList.getSummary(name, callback)
 	beatmapList.channel:performAtomic(sendData, "summary", {registerRequestID(callback), name})
 end
 
+function beatmapList.getNotes(name, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "notes", {registerRequestID(callback), name})
+end
+
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})

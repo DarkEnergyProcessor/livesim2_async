@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local gui = require("libs.fusion-ui")
+local mainFont = require("font")
 local assetCache = require("asset_cache")
 local menuButtonUI = {class = nil}
 
@@ -11,7 +12,7 @@ local function initialize()
 		"assets/image/ui/s_button_03.png",
 		"assets/image/ui/s_button_03se.png"
 	})
-	local font = assetCache.loadFont("fonts/MTLmr3m.ttf", 30)
+	local font = mainFont.get(30)
 	local button = gui.template.new("button", {
 		backgroundImage = buttonImages[1],
 		font = font,

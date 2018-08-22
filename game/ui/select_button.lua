@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local gui = require("libs.fusion-ui")
+local mainFont = require("font")
 local color = require("color")
 local assetCache = require("asset_cache")
 local selectButton = {class = nil}
@@ -12,7 +13,7 @@ local function initialize()
 		"assets/image/ui/s_button_03.png",
 		"assets/image/ui/s_button_03se.png"
 	}, {mipmaps = true})
-	local font = assetCache.loadFont("fonts/MTLmr3m.ttf", 18)
+	local font = mainFont.get(16)
 	local c1 = love.graphics.newCanvas(216, 40)
 	local c2 = love.graphics.newCanvas(216, 40)
 
