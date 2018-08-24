@@ -4,8 +4,8 @@
 
 local love = require("love")
 local color = require("color")
-local setting = require("setting")
-local util = require("util")
+local async = require("async")
+local rendering = require("rendering")
 local vector = require("libs.hump.vector")
 
 local gamestate = require("gamestate")
@@ -19,16 +19,39 @@ local DEPLS = gamestate.create {
 		main = {"fonts/MTLmr3m.ttf", 12},
 	},
 	images = {
-		note = {"noteImage:assets/image/tap_circle/note.png", {mipmaps = true}},
+		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
 	},
 	audios = {}
 }
 
 function DEPLS:load(arg)
-	local noteData = {}
+	-- Lane definition
+	self.persist.lane = {
+		vector(816+64, 96+64 ),
+		vector(785+64, 249+64),
+		vector(698+64, 378+64),
+		vector(569+64, 465+64),
+		vector(416+64, 496+64),
+		vector(262+64, 465+64),
+		vector(133+64, 378+64),
+		vector(46+64 , 249+64),
+		vector(16+64 , 96+64 ),
+	}
+	-- Create new note manager
+	self.persist.noteManager = note.newNoteManager({
+		image = self.assets.images.note,
+		-- TODO: make it user-interface dependent
+		noteSpawningPosition = vector(480, 160),
+		lane = self.persist.lane,
+		accuracy = {16, 40, 64, 112, 128},
+		autoplay = true -- Testing only
+	})
+
+	-- Load notes data
+	local isInit = false
 	beatmapList.getNotes(arg.beatmapName, function(chan)
 		local amount = chan:pop()
-		for i = 1, amount do
+		for _ = 1, amount do
 			local t = {}
 			while chan:peek() ~= chan do
 				local k = chan:pop()
@@ -37,29 +60,37 @@ function DEPLS:load(arg)
 
 			-- pop separator
 			chan:pop()
-			noteData[i] = t
+			self.persist.noteManager:addNote(t)
 		end
+
+		self.persist.noteManager:initialize()
+		isInit = true
 	end)
-
-	self.persist.noteManager = note.newNoteManager({
-		image = self.assets.image.note,
-		-- TODO: make it user-interface dependent
-		noteSpawningPosition = vector(480, 160),
-		lane = {
-			vector(816+64, 96+64 ),
-			vector(785+64, 249+64),
-			vector(698+64, 378+64),
-			vector(569+64, 465+64),
-			vector(416+64, 496+64),
-			vector(262+64, 465+64),
-			vector(133+64, 378+64),
-			vector(46+64 , 249+64),
-			vector(16+64 , 96+64 ),
-		},
-		accuracy = {16, 40, 64, 112, 128}
-	})
-	local beatmapOffset = setting.get("GLOBAL_OFFSET") / 1000
-
+	-- wait until all notes are ok
+	while isInit == false do
+		async.wait()
+	end
 end
+
+function DEPLS:update(dt)
+	self.persist.noteManager:update(dt)
+end
+
+function DEPLS:draw()
+	love.graphics.clear(color.white)
+	rendering.setColor(color.black)
+	for _, v in ipairs(self.persist.lane) do
+		love.graphics.circle("fill", v.x, v.y, 64)
+		love.graphics.circle("line", v.x, v.y, 64)
+	end
+
+	self.persist.noteManager:draw()
+end
+
+DEPLS:registerEvent("keypressed", function(_, key)
+	if key == "escape" then
+		return gamestate.leave(loadingInstance.getInstance())
+	end
+end)
 
 return DEPLS

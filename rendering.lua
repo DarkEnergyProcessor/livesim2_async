@@ -57,7 +57,7 @@ if not(love_11) then
 			end
 
 			-- Add
-			rendering.spriteBatch:add(drawable, ...)
+			rendering.spriteBatch:add(...)
 		else
 			-- Huh? Why bother.
 			flushSpriteBatch()

@@ -6,9 +6,10 @@ local bit = require("bit")
 local love = require("love")
 local rendering = require("rendering")
 local Luaoop = require("libs.Luaoop")
-local vector = require("libs.hump.vector")
+--local vector = require("libs.hump.vector")
 local setting = require("setting")
 local color = require("color")
+local Yohane = require("libs.Yohane")
 local note = {}
 
 local colDiv = love._version >= "11.0" and 1/255 or 1
@@ -121,25 +122,31 @@ function noteManager:__construct(param)
 	self.notesListByEvent = {}
 	-- list of notes, ordered by their draw order
 	self.notesListByDraw = {}
-	-- in queue note (pressed)
-	self.notePressed = {nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	-- input list
+	self.touchInput = {}
 	-- on note triggered
-	self.callback = function(object, lane, position, judgement, releaseFlag)
+	self.callback = param.callback or function(object, lane, position, judgement, releaseFlag)
 		-- object: note object
 		-- lane: desired idol position (1 is rightmost, 9 is leftmost)
 		-- position: position (in pixels) as hump.vector object
 		-- judgement: judgement string (perfect, great, good, bad, miss)
 		-- releaseFlag: release note information (0 = normal note, 1 = hold note, 2 = release note)
 	end
+	-- lane data
+	self.lane = param.lane
 	-- lane direction vector
 	self.laneDirection = {}
 	-- lane distance length
 	self.laneDistance = {}
+	-- long note rotation
+	self.lnRotation = {}
 	-- per-lane accuracy
 	self.laneAccuracy = {}
 	for i = 1, 9 do
-		self.laneDirection[i] = vector(param.lane[i] - param.noteSpawningPosition):normalizeInplace()
-		local dist = param.noteSpawningPosition:distance(param.lane[i])
+		local norm = (param.lane[i] - param.noteSpawningPosition):normalized()
+		self.laneDirection[i] = norm
+		self.lnRotation[i] = math.atan2(norm.y, norm.x) + math.pi/2
+		local dist = param.noteSpawningPosition:dist(param.lane[i])
 		self.laneDistance[i] = dist
 		self.laneAccuracy[i] = {
 			perfect = {
@@ -168,8 +175,18 @@ function noteManager:__construct(param)
 	self.timingOffset = 0 -- TODO
 	-- note spawning position
 	self.noteSpawningPosition = param.noteSpawningPosition
+	-- hitbox rotation
+	self.hitboxRotation = {0, 0, 0, 0, 0, 0, 0, 0, 0}
+	for i = 1, 9 do
+		local x = self.noteSpawningPosition - self.lane[i]
+		self.hitboxRotation[i] = math.atan2(x.y, x.x)
+	end
+	-- flash object
+	self.lnFlashAnimation = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
 	-- opacity
 	self.opacity = 1
+	-- autoplay flag
+	self.autoplay = not(not(param.autoplay))
 
 	-- Note style needs additional parsing
 	local noteStyle = setting.get("NOTE_STYLE")
@@ -315,14 +332,14 @@ local function isUncolorableLayer(layerIndex)
 		layerIndex == 62
 end
 
-function noteManager:drawNote(layers, position, scale, rotation)
+function noteManager:drawNote(layers, opacity, position, scale, rotation)
 	for i = 1, #layers do
 		local layer = layers[i]
 		local quad = note.quadRegion[layer]
 		if isUncolorableLayer(layer) then
-			rendering.setColor(color.get(255, 255, 255, self.opacity))
+			rendering.setColor(color.get(255, 255, 255, self.opacity * opacity))
 		else
-			rendering.setColor(color.get(layers.color[1], layers.color[2], layers.color[3], self.opacity))
+			rendering.setColor(color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity))
 		end
 
 		local w, h = select(3, quad:getViewport())
@@ -334,6 +351,10 @@ function noteManager:drawNote(layers, position, scale, rotation)
 			-w*0.5, -h*0.5 -- offset
 		)
 	end
+end
+
+function noteManager:getLongNoteAnimation()
+	return self.lnFlashAnimation:clone()
 end
 
 -----------------------------
@@ -382,7 +403,7 @@ function normalMovingNote:__construct(definition, param)
 	-- Elapsed time. If it's equal to self.noteSpeed then it's "perfect" judgement
 	self.elapsedTime = math.max(self.noteSpeed - self.targetTime, 0)
 	-- note distance to tap lane
-	self.distance = param.laneDistance[definition.position]
+	self.distance = param.laneDistance[assert(definition.position)]
 	-- note direction to tap lane
 	self.direction = param.laneDirection[definition.position]
 	-- note accuracy timing
@@ -409,17 +430,17 @@ function normalMovingNote:__construct(definition, param)
 			self.accuracy.bad[1] * self.noteSpeed,
 			self.accuracy.bad[2] * self.noteSpeed
 		},
-		miss = {
-			self.accuracy.miss[1] * self.noteSpeed, -- eventTime
-			self.accuracy.miss[2] * self.noteSpeed -- missTime
-		}
 	}
+	-- event time
+	self.eventTime = self.accuracy.miss[1] * self.noteSpeed
+	-- miss time
+	self.missTime = self.accuracy.miss[2] * self.noteSpeed
 	-- attribute
-	self.attribute = definition.attribute
+	self.attribute = assert(definition.notes_attribute)
 	-- note layers (set later)
 	self.noteLayers = false
 	-- token flag
-	self.token = definition.effect == 2
+	self.token = assert(definition.effect) == 2
 	-- star note
 	self.star = definition.effect == 4
 	-- swing note
@@ -434,6 +455,8 @@ function normalMovingNote:__construct(definition, param)
 	self.vanishType = definition.vanish or 0
 	-- opacity
 	self.opacity = 1
+	-- remove?
+	self.delete = false
 	-- Current note manager
 	self.manager = param
 end
@@ -442,9 +465,10 @@ function normalMovingNote:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
 	self.position = self.position + dt * self.distance * self.direction
 
-	if self.elapsedTime >= self.accuracyTime.miss[2] then
+	if self.elapsedTime >= self.missTime then
 		-- Mark note as "miss"
-		return "miss", true
+		self.delete = true
+		return "miss"
 	end
 
 	-- calculate opacity for "vanish" note
@@ -473,24 +497,24 @@ local function judgementCheck(t, accuracy, swing)
 	if swing then
 		-- Start checking from great accuracy for swing notes
 		if t > accuracy.great[1] and t < accuracy.great[2] then
-			return "perfect", true
+			return "perfect"
 		elseif t > accuracy.good[1] and t < accuracy.good[2] then
-			return "great", true
+			return "great"
 		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
-			return "good", true
+			return "good"
 		else
-			return "bad", true -- shouldn't happen unless tap is called early.
+			return "bad" -- shouldn't happen unless tap is called early.
 		end
 	else
 		-- Start checking from perfect
 		if t > accuracy.great[1] and t < accuracy.great[2] then
-			return "great", true
+			return "great"
 		elseif t > accuracy.good[1] and t < accuracy.good[2] then
-			return "good", true
+			return "good"
 		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
-			return "bad", true
+			return "bad"
 		else
-			return "bad", true -- shouldn't happen unless tap is called early.
+			return "bad" -- shouldn't happen unless tap is called early.
 		end
 	end
 end
@@ -500,6 +524,7 @@ function normalMovingNote:tap()
 	-- is handled entirely by NoteManager class, so the
 	-- only task remain for NormalMovingNote class is to
 	-- return the judgement string
+	self.delete = true
 	return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing), true
 end
 
@@ -552,10 +577,11 @@ function longMovingNote:update(dt)
 		self.position = self.position + dt * self.distance * self.direction
 	end
 
-	if self.elapsedTime >= self.accuracyTime.miss[2] and not(self.lnHolding) then
+	if self.elapsedTime >= self.missTime and not(self.lnHolding) then
 		-- Mark note as "miss" as whole
 		self.lnFirstJudgement = "miss"
-		return "miss", true
+		self.delete = true
+		return "miss"
 	end
 
 	if self.elapsedTime >= self.lnSpawnTime then
@@ -571,9 +597,10 @@ function longMovingNote:update(dt)
 		end
 	end
 
-	if self.elapsedTime - self.lnSpawnTime >= self.accuracyTime.miss[2] then
+	if self.elapsedTime - self.lnSpawnTime >= self.missTime then
 		-- If the end note is missed, make it miss too
-		return "miss", true
+		self.delete = true
+		return "miss"
 	end
 
 	-- calculate opacity for "vanish" note
@@ -591,21 +618,23 @@ function longMovingNote:update(dt)
 	end
 
 	-- calculate vertices
+	local s1 = self.lnHolding and 1 or self.elapsedTime / self.noteSpeed
+	local s2 = math.max(self.elapsedTime - self.lnSpawnTime, 0) / self.noteSpeed
 	-- First position
-	self.lnMesh[4][1] = self.position.x + (self.Scale * 62) * math.cos(self.lnRotation)
-	self.lnMesh[4][2] = self.position.y + (self.Scale * 62) * math.sin(self.lnRotation)
-	self.lnMesh[4][8] = self.opacity
-	self.lnMesh[3][1] = self.position.x + (self.Scale * 62) * math.cos(self.lnRotation - math.pi)
-	self.lnMesh[3][2] = self.position.y + (self.Scale * 62) * math.sin(self.lnRotation - math.pi)
-	self.lnMesh[3][8] = self.opacity
-	self.lnMesh[1][1] = self.lnPosition.x + (self.LN.Scale * 62) * math.cos(self.lnRotation - math.pi)
-	self.lnMesh[1][2] = self.lnPosition.y + (self.LN.Scale * 62) * math.sin(self.lnRotation - math.pi)
-	self.lnMesh[1][8] = self.lnOpacity
-	self.lnMesh[2][1] = self.lnPosition.x + (self.LN.Scale * 62) * math.cos(self.lnRotation)
-	self.lnMesh[2][2] = self.lnPosition.y + (self.LN.Scale * 62) * math.sin(self.lnRotation)
-	self.lnMesh[2][8] = self.lnOpacity
+	self.lnVertices[4][1] = self.position.x + (s1 * 62) * math.cos(self.lnRotation)
+	self.lnVertices[4][2] = self.position.y + (s1 * 62) * math.sin(self.lnRotation)
+	self.lnVertices[4][8] = self.opacity
+	self.lnVertices[3][1] = self.position.x + (s1 * 62) * math.cos(self.lnRotation - math.pi)
+	self.lnVertices[3][2] = self.position.y + (s1 * 62) * math.sin(self.lnRotation - math.pi)
+	self.lnVertices[3][8] = self.opacity
+	self.lnVertices[1][1] = self.lnPosition.x + (s2 * 62) * math.cos(self.lnRotation - math.pi)
+	self.lnVertices[1][2] = self.lnPosition.y + (s2 * 62) * math.sin(self.lnRotation - math.pi)
+	self.lnVertices[1][8] = self.lnOpacity
+	self.lnVertices[2][1] = self.lnPosition.x + (s2 * 62) * math.cos(self.lnRotation)
+	self.lnVertices[2][2] = self.lnPosition.y + (s2 * 62) * math.sin(self.lnRotation)
+	self.lnVertices[2][8] = self.lnOpacity
 	-- Update
-	self.LN.Mesh:setVertices(self.lnMesh)
+	self.lnMesh:setVertices(self.lnVertices)
 end
 
 function longMovingNote:draw()
@@ -652,13 +681,14 @@ function longMovingNote:tap()
 	end
 end
 
-function longMovingNote:untap()
+function longMovingNote:unTap()
 	if self.lnHolding then
 		local t = self.elapsedTime - self.lnSpawnTime + self.timingOffset
-		if t <= self.accuracyTime.miss[1] then
-			return "miss", true
+		self.delete = true
+		if t <= self.eventTime then
+			return "miss"
 		else
-			return judgementCheck(t, self.accuracyTime, self.swing), true
+			return judgementCheck(t, self.accuracyTime, self.swing)
 		end
 	else
 		return
@@ -696,13 +726,11 @@ function noteManager:initialize()
 		return a.targetTime < b.targetTime
 	end)
 	table.sort(self.notesListByEvent, function(a, b)
-		-- Sort by accuracyTime.miss[1]
-		local c = a.spawnTime + a.accuracyTime.miss[1]
-		local d = b.spawnTime + b.accuracyTime.miss[1]
-		return c < d
+		-- Sort by eventTime
+		return a.eventTime + a.spawnTime < b.eventTime + b.spawnTime
 	end)
 	table.sort(self.notesListByDraw, function(a, b)
-		-- Sort by their spawning time
+		-- Sort by their spawnTime
 		return a.spawnTime < b.spawnTime
 	end)
 
@@ -731,29 +759,137 @@ function noteManager:initialize()
 	end
 end
 
+local function touchHitboxCheck(o, x, y, rot)
+	local xp = (math.cos(rot) * (x - o.x) + math.sin(rot) * (y - o.y)) / 132
+	local yp = (math.sin(rot) * (x - o.x) - math.cos(rot) * (y - o.y)) / 74
+	return xp*xp + yp*yp <= 1
+end
+
+function noteManager:touchPressed(id, x, y)
+	if self.autoplay then return end -- why bother
+	for i = 1, 9 do
+		if touchHitboxCheck(self.lane[i], x, y, self.hitboxRotation[i]) then
+			return self:setTouch(i, id)
+		end
+	end
+end
+
+function noteManager:touchMoved(id, x, y)
+	if self.autoplay or not(self.touchInput[id]) then return end
+
+	local track = self.touchInput[id]
+	for i = 1, 9 do
+		if i ~= track.position and touchHitboxCheck(self.lane[i], x, y, self.hitboxRotation[i]) then
+			return self:setTouch(i, id, false, track.position)
+		end
+	end
+end
+
+function noteManager:touchReleased(id)
+	return self:setTouch(nil, id, true)
+end
+
+function noteManager:setTouch(pos, id, rel, prev)
+	if not(self.touchInput[id]) then return end
+
+	if rel then
+		local v = self.touchInput[id].note
+		local judgement = v:unTap()
+		self.callback(v, v.lanePosition, v.position:clone(), judgement, true)
+		self.touchInput[id] = nil
+	else
+		for _, v in ipairs(self.notesListByEvent) do
+			if self.elapsedTime >= v.eventTime + v.spawnTime then
+				if not(v.delete) and v.lanePosition == pos then
+					-- process new note
+					local judgement = v:tap()
+					self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
+
+					-- if prev exists, that means we're sliding
+					if self.touchInput[id].position == prev then
+						-- process old note
+						local vold = self.touchInput[id].note
+						if vold and Luaoop.class.instanceof(vold, "livesim2.LongMovingNote") then
+							-- release long note
+							judgement = vold:unTap()
+							self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+						end
+						-- set note
+						self.touchInput[id].position = pos
+						self.touchInput[id].note = v
+					else
+						self.touchInput[id] = {
+							position = pos,
+							note = v
+						}
+					end
+				end
+			else
+				return
+			end
+		end
+	end
+end
+
+-- Positive07's super fast in-place table filtering
+-- Beats naive table.remove implementation by many
+-- orders of magnitude
+local function filterTableInPlace(t)
+	local length = #t
+	local index = 1
+	local left = length
+	for i = 1, length do
+		if t[i] and t[i].delete then
+			left = left - 1
+		else
+			t[index] = t[i]
+			index = index + 1
+		end
+	end
+
+	for i = left + 1, length do
+		t[i] = nil
+	end
+end
+
 function noteManager:update(dt)
 	-- Note update is based on how notes are drawn
 	self.elapsedTime = self.elapsedTime + dt
+
 	for _, v in ipairs(self.notesListByDraw) do
 		if self.elapsedTime >= v.spawnTime then
-			local judgement, mode
-			local isLn = Luaoop.class.instanceof(v, "livesim2.LongMovingNote")
-			if self.elapsedTime - dt < v.spawnTime then
-				judgement, mode = v:update(self.elapsedTime - v.spawnTime)
-			else
-				judgement, mode = v:update(dt)
-			end
+			if not(v.delete) then
+				local judgement
+				local isLn = Luaoop.class.instanceof(v, "livesim2.LongMovingNote")
+				if self.elapsedTime - dt < v.spawnTime then
+					judgement = v:update(self.elapsedTime - v.spawnTime)
+				else
+					judgement = v:update(dt)
+				end
 
-			if judgement then
-				-- function(object, lane, position, judgement, releaseFlag)
-				local relflg = isLn and (v.lnHolding and 2 or 1) or 0
-				self.callback(v, v.lanePosition, v.position, judgement, relflg)
+				if judgement then
+					-- function(object, lane, position, judgement, releaseFlag)
+					local relflg = isLn and (v.lnHolding and 2 or 1) or 0
+					self.callback(v, v.lanePosition, v.position:clone(), judgement, relflg)
+				end
 			end
-
-			if mode then
-				-- remove from all notes data
-			end
+		else
+			break
 		end
+	end
+
+	-- Remove all notes that are marked as "deleted" here
+	-- Thanks to Positive07 for the super fast table filtering
+	-- algorithm (see `filterTableInPlace` function above)
+	filterTableInPlace(self.notesList)
+	filterTableInPlace(self.notesListByEvent)
+	filterTableInPlace(self.notesListByDraw)
+end
+
+function noteManager:draw()
+	for _, v in ipairs(self.notesListByDraw) do
+		-- Well, just call draw method
+		v:draw()
 	end
 end
 
