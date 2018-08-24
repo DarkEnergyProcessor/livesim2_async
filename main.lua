@@ -68,6 +68,7 @@ local function registerGamestates()
 	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("mainMenu", require("game.states.main_menu"))
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
+	gamestate.register("livesim2", require("game.states.livesim2"))
 end
 
 local function initializeSetting()
@@ -159,6 +160,23 @@ local function initializeYohane()
 	Yohane.Init(love.filesystem.load, "libs")
 end
 
+local function loadTestBeatmap()
+	local beatmapList = require("game.beatmap.list")
+	beatmapList.push()
+	beatmapList.enumerate(function() end)
+	beatmapList.getSummary("senbonzakura.json", function(data)
+		local v = {}
+		while data:getCount() > 0 do
+			local k = data:pop()
+			v[k] = data:pop()
+		end
+		gamestate.enter(nil, "livesim2", {
+			beatmapName = "senbonzakura.json",
+			summary = v
+		})
+	end)
+end
+
 function love.load()
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
@@ -173,5 +191,6 @@ function love.load()
 	-- Register all gamestates
 	registerGamestates()
 	-- Jump to default game state
-	gamestate.enter(nil, "dummy")
+	--gamestate.enter(nil, "dummy")
+	loadTestBeatmap()
 end
