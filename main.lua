@@ -94,7 +94,6 @@ local function createDirectories()
 end
 
 local function initializeYohane()
-	local rendering = require("rendering")
 	local color = require("color")
 
 	function Yohane.Platform.UpdateSEVolume()
@@ -136,21 +135,21 @@ local function initializeYohane()
 	end
 
 	function Yohane.Platform.Draw(drawdatalist)
-		local r, g, b, a = rendering.getColor()
+		local r, g, b, a = love.graphics.getColor()
 
 		for _, dd in ipairs(drawdatalist) do
 			if dd.image then
-				rendering.setColor(color.compat(dd.r, dd.g, dd.b, dd.a / 255))
+				love.graphics.setColor(color.compat(dd.r, dd.g, dd.b, dd.a / 255))
 				if type(dd.image) == "table" then
 					-- Quad + Image
-					rendering.draw(dd.image[1], dd.image[2], dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+					love.graphics.draw(dd.image[1], dd.image[2], dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
 				else
-					rendering.draw(dd.image, dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
+					love.graphics.draw(dd.image, dd.x, dd.y, dd.rotation, dd.scaleX, dd.scaleY)
 				end
 			end
 		end
 
-		rendering.setColor(r, g, b, a)
+		love.graphics.setColor(r, g, b, a)
 	end
 
 	function Yohane.Platform.OpenReadFile(fn)

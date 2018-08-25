@@ -27,11 +27,11 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 		if setting.list[key] then
 			return setting.list[key]
 		end
-		-- livesim2 v2.x backward compatibility
-		local file = love.filesystem.newFile(key..".txt")
 
+		local file = love.filesystem.newFile("config/"..key..".txt")
 		if not(file:open("r")) then
-			file = love.filesystem.newFile("config/"..key..".txt")
+			-- livesim2 v2.x backward compatibility
+			file = love.filesystem.newFile(key..".txt")
 
 			if not(file:open("r")) then
 				assert(file:open("w"))

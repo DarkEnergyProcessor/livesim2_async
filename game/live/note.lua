@@ -4,15 +4,11 @@
 
 local bit = require("bit")
 local love = require("love")
-local rendering = require("rendering")
 local Luaoop = require("libs.Luaoop")
---local vector = require("libs.hump.vector")
 local setting = require("setting")
 local color = require("color")
 local Yohane = require("libs.Yohane")
 local note = {}
-
-local colDiv = love._version >= "11.0" and 1/255 or 1
 
 local function region(x, y, s)
 	s = s or 128
@@ -114,6 +110,8 @@ function noteManager:__construct(param)
 	self.elapsedTime = 0
 	-- note image used
 	self.noteImage = param.image
+	-- long note trail image
+	self.lnTrailImage = param.trailImage
 	-- note speed
 	self.noteSpeed = param.noteSpeed or setting.get("NOTE_SPEED") * 0.001
 	-- list of notes
@@ -143,10 +141,10 @@ function noteManager:__construct(param)
 	-- per-lane accuracy
 	self.laneAccuracy = {}
 	for i = 1, 9 do
-		local norm = (param.lane[i] - param.noteSpawningPosition):normalized()
-		self.laneDirection[i] = norm
-		self.lnRotation[i] = math.atan2(norm.y, norm.x) + math.pi/2
-		local dist = param.noteSpawningPosition:dist(param.lane[i])
+		local di = param.lane[i] - param.noteSpawningPosition
+		local dist = di:len()
+		self.laneDirection[i] = di:normalized()
+		self.lnRotation[i] = math.atan2(di.y, di.x) + math.pi
 		self.laneDistance[i] = dist
 		self.laneAccuracy[i] = {
 			perfect = {
@@ -193,22 +191,22 @@ function noteManager:__construct(param)
 	-- bit pattern for note style: 00000000 iiiiiiss ssssffff ffpppppp
 	--
 	-- Any values there range from 1-63 (0 is invalid)
-	-- 1 = default, 2 = neon, 3 = matter
+	-- 1 = default, 2 = neon, 3 = matte
 	--
-	-- p = note style preset. If 63 then see below
+	-- p = note style preset. If 63 then:
 	-- f = note style frame (base)
 	-- s = note style swing
 	-- i = note style simultaneous mark
 	local preset = bit.band(noteStyle, 63)
-	local MAX_NOTE_STYLE = 4 -- const
-	assert(preset ~= 63 and preset > 0 and preset < MAX_NOTE_STYLE, "Invalid note style")
+	local MAX_NOTE_STYLE = 3 -- const
+	assert(preset == 63 or (preset > 0 and preset <= MAX_NOTE_STYLE), "Invalid note style")
 	if preset == 63 then
 		local value = bit.band(bit.rshift(noteStyle, 6), 63)
-		self.noteStyleFrame = assert(value > 0 and value < MAX_NOTE_STYLE and value, "Invalid note style frame")
+		self.noteStyleFrame = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style frame")
 		value = bit.band(bit.rshift(noteStyle, 12), 63)
-		self.noteStyleSwing = assert(value > 0 and value < MAX_NOTE_STYLE and value, "Invalid note style swing")
+		self.noteStyleSwing = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style swing")
 		value = bit.band(bit.rshift(noteStyle, 18), 63)
-		self.noteStyleSimul = assert(value > 0 and value < MAX_NOTE_STYLE and value, "Invalid note style simul")
+		self.noteStyleSimul = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style simul")
 	else
 		self.noteStyleFrame, self.noteStyleSwing, self.noteStyleSimul = preset, preset, preset
 	end
@@ -337,18 +335,18 @@ function noteManager:drawNote(layers, opacity, position, scale, rotation)
 		local layer = layers[i]
 		local quad = note.quadRegion[layer]
 		if isUncolorableLayer(layer) then
-			rendering.setColor(color.get(255, 255, 255, self.opacity * opacity))
+			love.graphics.setColor(color.get(255, 255, 255, self.opacity * opacity))
 		else
-			rendering.setColor(color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity))
+			love.graphics.setColor(color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity))
 		end
 
 		local w, h = select(3, quad:getViewport())
-		rendering.draw(
+		love.graphics.draw(
 			self.noteImage, quad, -- texture, quad
 			position.x, position.y, -- position
 			isSwingLayer(layer) and rotation or 0, -- rotation
 			scale, scale, -- scaling
-			-w*0.5, -h*0.5 -- offset
+			w*0.5, h*0.5 -- offset
 		)
 	end
 end
@@ -378,8 +376,7 @@ end
 
 function baseMovingNote.tap()
 	error("pure virtual method 'tap'", 2)
-	-- 2nd return is whetever the note should be destroyed
-	return "judgement string", true or false
+	return "judgement string"
 end
 
 function baseMovingNote.unTap()
@@ -463,7 +460,7 @@ end
 
 function normalMovingNote:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
-	self.position = self.position + dt * self.distance * self.direction
+	self.position = self.position + (dt * self.distance / self.noteSpeed) * self.direction
 
 	if self.elapsedTime >= self.missTime then
 		-- Mark note as "miss"
@@ -480,6 +477,11 @@ function normalMovingNote:update(dt)
 			-- Sudden note
 			self.opacity = math.max(math.min((self.elapsedTime - self.noteSpeed * 0.4) * 0.0125, 1), 0)
 		end
+	end
+
+	if self.manager.autoplay and self.elapsedTime >= self.noteSpeed then
+		self.delete = true
+		return "perfect"
 	end
 end
 
@@ -538,8 +540,6 @@ function longMovingNote:__construct(definition, param)
 	normalMovingNote.__construct(self, definition, param)
 
 	-- Long note properties
-	-- long note first judgement
-	self.lnFirstJudgement = nil
 	-- flag to determine whetever the note is in hold
 	self.lnHolding = false
 	-- long note vertices
@@ -551,12 +551,13 @@ function longMovingNote:__construct(definition, param)
 	}
 	-- long note mesh
 	self.lnMesh = love.graphics.newMesh(4, "strip", "stream")
+	self.lnMesh:setTexture(param.lnTrailImage)
 	-- long note opacity
 	self.lnOpacity = 1
 	-- long note target time
 	self.lnTargetTime = self.targetTime + definition.effect_value
 	-- long note spawn time (elapsed time)
-	self.lnSpawnTime = definition.effect_value + self.noteSpeed
+	self.lnSpawnTime = definition.effect_value
 	-- end note position
 	local ndist = math.max(self.noteSpeed - self.lnTargetTime, 0)
 	self.lnPosition = param.noteSpawningPosition + ndist / self.noteSpeed * self.distance * self.direction
@@ -573,13 +574,13 @@ end
 
 function longMovingNote:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
+	local velocity = dt * self.distance / self.noteSpeed
 	if not(self.lnHolding) then
-		self.position = self.position + dt * self.distance * self.direction
+		self.position = self.position + velocity * self.direction
 	end
 
 	if self.elapsedTime >= self.missTime and not(self.lnHolding) then
 		-- Mark note as "miss" as whole
-		self.lnFirstJudgement = "miss"
 		self.delete = true
 		return "miss"
 	end
@@ -591,9 +592,10 @@ function longMovingNote:update(dt)
 		-- The other problem is that this check is only taken at most once
 		-- and can hurt processor which does branch prediction.
 		if self.elapsedTime - dt < self.lnSpawnTime then
-			self.lnPosition = self.lnPosition + (self.elapsedTime - self.lnSpawnTime) * self.distance * self.direction
+			local v = (self.elapsedTime - self.lnSpawnTime) * self.distance / self.noteSpeed
+			self.lnPosition = self.lnPosition + v * self.direction
 		else
-			self.lnPosition = self.lnPosition + dt * self.distance * self.direction
+			self.lnPosition = self.lnPosition + velocity * self.direction
 		end
 	end
 
@@ -620,32 +622,50 @@ function longMovingNote:update(dt)
 	-- calculate vertices
 	local s1 = self.lnHolding and 1 or self.elapsedTime / self.noteSpeed
 	local s2 = math.max(self.elapsedTime - self.lnSpawnTime, 0) / self.noteSpeed
+	local op = select(4, color.compat(0, 0, 0, self.opacity))
 	-- First position
 	self.lnVertices[4][1] = self.position.x + (s1 * 62) * math.cos(self.lnRotation)
 	self.lnVertices[4][2] = self.position.y + (s1 * 62) * math.sin(self.lnRotation)
-	self.lnVertices[4][8] = self.opacity
+	self.lnVertices[4][8] = op
 	self.lnVertices[3][1] = self.position.x + (s1 * 62) * math.cos(self.lnRotation - math.pi)
 	self.lnVertices[3][2] = self.position.y + (s1 * 62) * math.sin(self.lnRotation - math.pi)
-	self.lnVertices[3][8] = self.opacity
+	self.lnVertices[3][8] = op
+	op = select(4, color.compat(0, 0, 0, self.lnOpacity))
 	self.lnVertices[1][1] = self.lnPosition.x + (s2 * 62) * math.cos(self.lnRotation - math.pi)
 	self.lnVertices[1][2] = self.lnPosition.y + (s2 * 62) * math.sin(self.lnRotation - math.pi)
-	self.lnVertices[1][8] = self.lnOpacity
+	self.lnVertices[1][8] = op
 	self.lnVertices[2][1] = self.lnPosition.x + (s2 * 62) * math.cos(self.lnRotation)
 	self.lnVertices[2][2] = self.lnPosition.y + (s2 * 62) * math.sin(self.lnRotation)
-	self.lnVertices[2][8] = self.lnOpacity
-	-- Update
+	self.lnVertices[2][8] = op
+	-- Update vertices
 	self.lnMesh:setVertices(self.lnVertices)
+	-- Update flash
+	if self.lnHolding and self.lnFlashEffect then
+		self.lnFlashEffect:update(dt * 1000)
+	end
+
+	if self.manager.autoplay then
+		if self.lnHolding and self.elapsedTime - self.lnSpawnTime >= self.noteSpeed then
+			self.delete = true
+			return "perfect"
+		elseif not(self.lnHolding) and self.elapsedTime >= self.noteSpeed then
+			self.position = self.manager.noteSpawningPosition + self.distance * self.direction
+			self.lnHolding = true
+			return "perfect"
+		end
+	end
 end
 
 function longMovingNote:draw()
 	-- 1. draw note trail
-	rendering.setColor(color.compat(255, 255, self.lnHolding and 127 or 255, self.manager.opacity))
-	rendering.draw(self.lnMesh)
+	local trailOpacity = self.lnHolding and math.abs(math.sin(((self.elapsedTime - self.noteSpeed) % 1) * 2*math.pi)) or 1
+	love.graphics.setColor(color.compat(255, 255, self.lnHolding and 127 or 255, self.manager.opacity * trailOpacity))
+	love.graphics.draw(self.lnMesh)
 	-- 2. draw end note circle
 	if self.elapsedTime - self.lnSpawnTime > 0 then
 		local s = (self.elapsedTime - self.lnSpawnTime) / self.noteSpeed
-		rendering.setColor(255, 255, 255, self.manager.opacity * self.lnOpacity)
-		rendering.draw(
+		love.graphics.setColor(color.compat(255, 255, 255, self.manager.opacity * self.lnOpacity))
+		love.graphics.draw(
 			self.manager.noteImage, note.quadRegion[3],
 			self.lnPosition.x, self.lnPosition.y, 0,
 			s, s, 64, 64
@@ -656,12 +676,11 @@ function longMovingNote:draw()
 		self.noteLayers,
 		self.opacity,
 		self.position,
-		self.elapsedTime / self.noteSpeed,
+		self.lnHolding and 1 or self.elapsedTime / self.noteSpeed,
 		self.rotation
 	)
 	-- 4. draw flash effect
-	if self.lnFlashEffect then
-		rendering.flush()
+	if self.lnHolding and self.lnFlashEffect then
 		love.graphics.push()
 		love.graphics.translate(self.position:unpack())
 		love.graphics.rotate(self.lnFlashRotation)
@@ -677,7 +696,7 @@ function longMovingNote:tap()
 	else
 		self.position = self.manager.noteSpawningPosition + self.distance * self.direction
 		self.lnHolding = true
-		return normalMovingNote.tap(self), false
+		return normalMovingNote.tap(self)
 	end
 end
 

@@ -5,8 +5,8 @@
 local love = require("love")
 local color = require("color")
 local async = require("async")
-local rendering = require("rendering")
 local vector = require("libs.hump.vector")
+local timer = require("libs.hump.timer")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -20,6 +20,7 @@ local DEPLS = gamestate.create {
 	},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
+		longNoteTrail = {"assets/image/ef_326_000.png"}
 	},
 	audios = {}
 }
@@ -40,6 +41,7 @@ function DEPLS:load(arg)
 	-- Create new note manager
 	self.persist.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
+		trailImage = self.assets.images.longNoteTrail,
 		-- TODO: make it user-interface dependent
 		noteSpawningPosition = vector(480, 160),
 		lane = self.persist.lane,
@@ -72,13 +74,19 @@ function DEPLS:load(arg)
 	end
 end
 
+function DEPLS:start()
+	timer.every(1, function()
+		print("note remaining", #self.persist.noteManager.notesList)
+	end)
+end
+
 function DEPLS:update(dt)
 	self.persist.noteManager:update(dt)
 end
 
 function DEPLS:draw()
-	love.graphics.clear(color.white)
-	rendering.setColor(color.black)
+	love.graphics.clear(color.black)
+	love.graphics.setColor(color.white)
 	for _, v in ipairs(self.persist.lane) do
 		love.graphics.circle("fill", v.x, v.y, 64)
 		love.graphics.circle("line", v.x, v.y, 64)
