@@ -213,19 +213,20 @@ function noteManager:__construct(param)
 	-- luacheck: pop
 end
 
+local white = {255, 255, 255}
+
 function noteManager:getLayer(attribute, simul, swing, token, star)
 	local layer = {}
-	local defCol = color.white
+	local defCol = white
 	if bit.band(attribute, 15) == 15 then
 		-- Custom Beatmap Festival extension attribute.
 		-- Bit pattern: rrrrrrrr rggggggg ggbbbbbb bbb0nnnn
 		-- If n is 15 then color is r, g, b
-		defCol = {color.compat(
+		defCol = {
 			bit.band(bit.rshift(attribute, 23), 511),
 			bit.band(bit.rshift(attribute, 14), 511),
 			bit.band(bit.rshift(attribute, 5), 511),
-			1
-		)}
+		}
 		attribute = 9
 	end
 
@@ -310,7 +311,6 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 			layer[#layer + 1] = 62
 		end
 	end
-
 	layer.color = defCol
 	return layer
 end
@@ -907,8 +907,12 @@ end
 
 function noteManager:draw()
 	for _, v in ipairs(self.notesListByDraw) do
-		-- Well, just call draw method
-		v:draw()
+		if not(self.delete) and self.elapsedTime >= v.spawnTime then
+			-- Well, just call draw method
+			v:draw()
+		else
+			return
+		end
 	end
 end
 
