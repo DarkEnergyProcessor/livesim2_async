@@ -397,11 +397,7 @@ local function instance_index(t,k)
   local mtable = getmetatable(t)
   local p = mtable.class[k]
 
-  if type(p) ~= "function" then
-    p = false -- force nil properties to be marked as false (optimization)
-  end
-
-  t[k] = p -- cache function 
+  t[k] = p -- cache member
   return p
 end
 

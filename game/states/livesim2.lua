@@ -7,6 +7,7 @@ local color = require("color")
 local async = require("async")
 local vector = require("libs.hump.vector")
 local timer = require("libs.hump.timer")
+local log = require("logging")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -51,6 +52,7 @@ function DEPLS:load(arg)
 
 	-- Load notes data
 	local isInit = false
+	log.debug("loading notes data")
 	beatmapList.getNotes(arg.beatmapName, function(chan)
 		local amount = chan:pop()
 		for _ = 1, amount do
@@ -76,7 +78,7 @@ end
 
 function DEPLS:start()
 	timer.every(1, function()
-		print("note remaining", #self.persist.noteManager.notesList)
+		log.debug("note remaining "..#self.persist.noteManager.notesList)
 	end)
 end
 
@@ -85,8 +87,8 @@ function DEPLS:update(dt)
 end
 
 function DEPLS:draw()
-	love.graphics.clear(color.black)
 	love.graphics.setColor(color.white)
+	local t = love.timer.getTime()
 	for _, v in ipairs(self.persist.lane) do
 		love.graphics.circle("fill", v.x, v.y, 64)
 		love.graphics.circle("line", v.x, v.y, 64)

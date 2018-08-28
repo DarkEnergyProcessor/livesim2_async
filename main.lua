@@ -31,6 +31,7 @@ local postExit = require("post_exit")
 local Yohane = require("libs.Yohane")
 local util = require("util")
 local setting = require("setting")
+local log = require("logging")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -40,6 +41,7 @@ DEPLS_VERSION_NUMBER = 02030000
 
 local function initWindow()
 	-- Our window is 960x640 by default.
+	log.info("creating window")
 	love.window.setMode(960, 640, {
 		resizable = true,
 		minwidth = 320,
@@ -48,10 +50,12 @@ local function initWindow()
 		--RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		fullscreen = love._os == "iOS",
 		fullscreentype = "desktop",
+		vsync = true,
 	})
 	love.window.setTitle("Live Simulator: 2")
 	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
 	-- Initialize virtual resolution
+	log.debug("initializing virtual resolution")
 	vires.init(960, 640)
 	-- Update virtual resolution but using love.graphics.getDimensions value
 	-- because we can't be sure that 960x640 is supported in mobile or
@@ -60,6 +64,7 @@ local function initWindow()
 end
 
 local function registerGamestates()
+	log.debug("loading gamestates")
 	-- Loading screen singleton init
 	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
 	postExit.add(loadingInstance.exit)
@@ -72,6 +77,7 @@ local function registerGamestates()
 end
 
 local function initializeSetting()
+	log.debug("initializing settings")
 	setting.define("NOTE_STYLE", 1)
 	setting.define("MINIMAL_EFFECT", 0)
 	setting.define("BACKGROUND_IMAGE", 10)
@@ -86,6 +92,7 @@ local function initializeSetting()
 end
 
 local function createDirectories()
+	log.debug("making directories")
 	assert(love.filesystem.createDirectory("audio"), "Failed to create directory \"audio\"")
 	assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory \"beatmap\"")
 	assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
@@ -95,6 +102,7 @@ end
 
 local function initializeYohane()
 	local color = require("color")
+	log.debug("initializing Yohane")
 
 	function Yohane.Platform.UpdateSEVolume()
 		Yohane.Platform.SEVolume = assert(tonumber(setting.get("SE_VOLUME")))
@@ -161,6 +169,7 @@ end
 
 local function loadTestBeatmap()
 	local beatmapList = require("game.beatmap.list")
+	log.info("loading test beatmap")
 	beatmapList.push()
 	beatmapList.enumerate(function() end)
 	beatmapList.getSummary("senbonzakura.json", function(data)
@@ -177,6 +186,12 @@ local function loadTestBeatmap()
 end
 
 function love.load()
+	log.dbg = true
+	log.info("logging check (info)")
+	log.warning("loging check (warning)")
+	log.error("logging check (error)")
+	log.debug("logging check (debug)")
+	log.info("logging check (info)")
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
 	-- Early initialization (crash on failure)
