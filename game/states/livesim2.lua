@@ -14,6 +14,7 @@ local loadingInstance = require("loading_instance")
 
 local beatmapList = require("game.beatmap.list")
 local note = require("game.live.note")
+local liveUI = require("game.live.ui")
 
 local DEPLS = gamestate.create {
 	fonts = {
@@ -25,6 +26,10 @@ local DEPLS = gamestate.create {
 	},
 	audios = {}
 }
+
+local function loadTestBeatmap()
+	log.info("livesim2", "loading test beatmap")
+end
 
 function DEPLS:load(arg)
 	-- Lane definition
@@ -52,24 +57,37 @@ function DEPLS:load(arg)
 
 	-- Load notes data
 	local isInit = false
-	log.debug("loading notes data")
-	beatmapList.getNotes(arg.beatmapName, function(chan)
-		local amount = chan:pop()
-		for _ = 1, amount do
-			local t = {}
-			while chan:peek() ~= chan do
-				local k = chan:pop()
-				t[k] = chan:pop()
+	log.debug("livesim2", "loading notes data for test beatmap")
+	beatmapList.push()
+	beatmapList.enumerate(function() end)
+	beatmapList.getSummary("senbonzakura.json", function(data)
+		local v = {}
+		while data:getCount() > 0 do
+			local k = data:pop()
+			v[k] = data:pop()
+		end
+		arg.beatmapName = "senbonzakura.json"
+		arg.summary = v
+		beatmapList.getNotes(arg.beatmapName, function(chan)
+			local amount = chan:pop()
+			for _ = 1, amount do
+				local t = {}
+				while chan:peek() ~= chan do
+					local k = chan:pop()
+					t[k] = chan:pop()
+				end
+
+				-- pop separator
+				chan:pop()
+				self.persist.noteManager:addNote(t)
 			end
 
-			-- pop separator
-			chan:pop()
-			self.persist.noteManager:addNote(t)
-		end
-
-		self.persist.noteManager:initialize()
-		isInit = true
+			self.persist.noteManager:initialize()
+			isInit = true
+		end)
 	end)
+	-- load live UI
+	self.liveUI = liveUI.newLiveUI("sif")
 	-- wait until all notes are ok
 	while isInit == false do
 		async.wait()
@@ -78,7 +96,7 @@ end
 
 function DEPLS:start()
 	timer.every(1, function()
-		log.debug("note remaining "..#self.persist.noteManager.notesList)
+		log.debug("livesim2", "note remaining "..#self.persist.noteManager.notesList)
 	end)
 end
 
@@ -88,10 +106,10 @@ end
 
 function DEPLS:draw()
 	love.graphics.setColor(color.white)
-	local t = love.timer.getTime()
+	self.liveUI:drawHeader()
 	for _, v in ipairs(self.persist.lane) do
 		love.graphics.circle("fill", v.x, v.y, 64)
-		love.graphics.circle("line", v.x, v.y, 64)
+		--love.graphics.circle("line", v.x, v.y, 64)
 	end
 
 	self.persist.noteManager:draw()
