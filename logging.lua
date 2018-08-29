@@ -3,24 +3,31 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local log = {dbg = false}
+local log = {level = 2}
 
-local function getCallingScript()
-	return debug.traceback("", 3):match("\nstack traceback:\n\t([^:]+)")
+-- loglevel
+-- 0 = no log message
+-- 1 = error
+-- 2 = warn (default)
+-- 3 = info
+-- 4 = debug
+log.level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
+if not(log.level) or (log.level < 0 or log.level > 4) then
+	log.level = 2
 end
 
 -- Default implementation
-local function infoImpl(text)
-	io.stderr:write("I[", getCallingScript(), "] ", text, "\n")
+local function infoImpl(tag, text)
+	io.stderr:write("I[", tag, "] ", text, "\n")
 end
-local function warnImpl(text)
-	io.stderr:write("W[", getCallingScript(), "] ", text, "\n")
+local function warnImpl(tag, text)
+	io.stderr:write("W[", tag, "] ", text, "\n")
 end
-local function errorImpl(text)
-	io.stderr:write("E[", getCallingScript(), "] ", text, "\n")
+local function errorImpl(tag, text)
+	io.stderr:write("E[", tag, "] ", text, "\n")
 end
-local function debugImpl(text)
-	io.stderr:write("D[", getCallingScript(), "] ", text, "\n")
+local function debugImpl(tag, text)
+	io.stderr:write("D[", tag, "] ", text, "\n")
 end
 
 -- Codepath used if ANSI color code is supported
@@ -29,24 +36,24 @@ local function setupANSICode()
 		return string.format("\27[%dm", n)
 	end
 
-	function warnImpl(text)
-		io.stderr:write(m(1), m(33), "W[", getCallingScript(), "] ", text, m(0), "\n")
+	function warnImpl(tag, text)
+		io.stderr:write(m(1), m(33), "W[", tag, "] ", text, m(0), "\n")
 	end
 
-	function errorImpl(text)
-		io.stderr:write(m(31), "E[", getCallingScript(), "] ", text, m(0), "\n")
+	function errorImpl(tag, text)
+		io.stderr:write(m(31), "E[", tag, "] ", text, m(0), "\n")
 	end
 
-	function debugImpl(text)
-		io.stderr:write(m(1), m(37), "D[", getCallingScript(), "] ", text, m(0), "\n")
+	function debugImpl(tag, text)
+		io.stderr:write(m(1), m(37), "D[", tag, "] ", text, m(0), "\n")
 	end
 end
 
 if love._os == "Windows" then
 	-- Windows can have many options depending on Windows version
-	-- * if "ANSICON" environment variable is present (Windows 10 FCU+), then ANSI color code is used
-	-- * if it's possible to set VT100 mode to console (Windows 10 Anniv.), then ANSI color code is used
-	-- * otherwise, use to Console API for setting color (Windows 10 RTM or older)
+	-- * if "ANSICON" environment variable is present, then ANSI color code is used
+	-- * if it's possible to set VT100 mode to console (Windows 10 Anniv+), then ANSI color code is used
+	-- * otherwise, use Console API for setting color (Windows 10 RTM or older)
 	if os.getenv("ANSICON") then
 		setupANSICode()
 	else
@@ -101,23 +108,23 @@ if love._os == "Windows" then
 					ffi.fill(csbi, ffi.sizeof("logging_CSBI"), 0)
 				end
 
-				function warnImpl(text)
+				function warnImpl(tag, text)
 					local m = pushMode(0x0004+0x0002+0x0008) -- bright yellow
-					io.stderr:write("W[", getCallingScript(), "] ", text, "\n")
+					io.stderr:write("W[", tag, "] ", text, "\n")
 					io.stderr:flush()
 					popMode(m)
 				end
 
-				function errorImpl(text)
+				function errorImpl(tag, text)
 					local m = pushMode(0x0004) -- red
-					io.stderr:write("E[", getCallingScript(), "] ", text, "\n")
+					io.stderr:write("E[", tag, "] ", text, "\n")
 					io.stderr:flush()
 					popMode(m)
 				end
 
-				function debugImpl(text)
+				function debugImpl(tag, text)
 					local m = pushMode(0x0004+0x0002+0x0001+0x0008) -- bright white
-					io.stderr:write("D[", getCallingScript(), "] ", text, "\n")
+					io.stderr:write("D[", tag, "] ", text, "\n")
 					io.stderr:flush()
 					popMode(m)
 				end
@@ -139,40 +146,47 @@ elseif love._os == "Android" then
 				int __android_log_write(int prio, const char *tag, const char *text);
 			]]
 
-			function infoImpl(text)
-				llog.__android_log_write(4, getCallingScript(), text)
+			function infoImpl(tag, text)
+				llog.__android_log_write(4, tag, text)
 			end
 
-			function warnImpl(text)
-				llog.__android_log_write(5, getCallingScript(), text)
+			function warnImpl(tag, text)
+				llog.__android_log_write(5, tag, text)
 			end
 
-			function errorImpl(text)
-				llog.__android_log_write(6, getCallingScript(), text)
+			function errorImpl(tag, text)
+				llog.__android_log_write(6, tag, text)
 			end
 
-			function debugImpl(text)
-				llog.__android_log_write(3, getCallingScript(), text)
+			function debugImpl(tag, text)
+				llog.__android_log_write(3, tag, text)
 			end
 		end
 	end
 end
 
-function log.info(text)
-	return infoImpl(text)
+function log.info(tag, text)
+	if log.level >= 3 then
+		return infoImpl(tag, text)
+	end
 end
 
-function log.warning(text)
-	return warnImpl(text)
+function log.warning(tag, text)
+	if log.level >= 2 then
+		return warnImpl(tag, text)
+	end
+end
+log.warn = log.warning
+
+function log.error(tag, text)
+	if log.level >= 1 then
+		return errorImpl(tag, text)
+	end
 end
 
-function log.error(text)
-	return errorImpl(text)
-end
-
-function log.debug(text)
-	if log.dbg then
-		return debugImpl(text)
+function log.debug(tag, text)
+	if log.level >= 4 then
+		return debugImpl(tag, text)
 	end
 end
 

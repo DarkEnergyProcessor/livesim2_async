@@ -48,13 +48,9 @@ end
 -- Combo System --
 ------------------
 
-function uibase:incrementCombo()
-	error("pure virtual method 'incrementCombo'", 2)
-	return 0+1
-end
-
-function uibase:breakCombo()
-	error("pure virtual method 'breakCombo'", 2)
+function uibase:comboJudgement(judgement)
+	-- handle whetevr to increment combo or break
+	error("pure virtual method 'comboJudgement'", 2)
 end
 
 function uibase:getCurrentCombo()
@@ -114,12 +110,12 @@ function uibase:addTapEffect(x, y, r, g, b, a)
 	error("pure virtual method 'addTapEffect'", 2)
 end
 
-function uibase:setBackground(backgroundMesh)
-	error("pure virtual method 'setBackground'", 2)
+function uibase:setTextScaling(scale)
+	error("pure virtual method 'setTextScaling'", 2)
 end
 
-function uibase:updateSize(w, h)
-	error("pure virtual method 'updateSize'", 2)
+function uibase:setOpacity(opacity)
+	error("pure virtual method 'setOpacity'", 2)
 end
 
 -------------

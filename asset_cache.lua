@@ -6,7 +6,7 @@ local love = require("love")
 local async = require("async")
 local cache = require("cache")
 local lily = require("libs.lily")
-local assetCache = {}
+local assetCache = {enableSync = false}
 
 local function getCacheByParam(a, b)
 	local s, e = a:find(":", 1, true)
@@ -41,6 +41,7 @@ function assetCache.loadImage(name, settings)
 			image = c:getValues()
 		else
 			-- Run synchronously (discouraged)
+			assert(assetCache.enableSync, "synchronous mode is not allowed")
 			image = love.graphics.newImage(b, settings)
 		end
 
@@ -79,6 +80,7 @@ function assetCache.loadMultipleImages(images, settings)
 		end
 	else
 		-- Run synchronously
+		assert(assetCache.enableSync, "synchronous mode is not allowed")
 		for i = 1, #lilyload do
 			local img = love.graphics.newImage(lilyload[i][2], lilyload[i][3])
 			available[needed[i]] = img
@@ -101,6 +103,7 @@ function assetCache.loadFont(name, settings)
 			image = c:getValues()
 		else
 			-- Run synchronously (discouraged)
+			assert(assetCache.enableSync, "synchronous mode is not allowed")
 			image = love.graphics.newFont(b, settings)
 		end
 
@@ -135,6 +138,7 @@ function assetCache.loadMultipleFonts(fonts)
 		end
 	else
 		-- Run synchronously
+		assert(assetCache.enableSync, "synchronous mode is not allowed")
 		for i = 1, #lilyload do
 			local img = love.graphics.newFont(lilyload[i][2], lilyload[i][3])
 			available[needed[i]] = img
