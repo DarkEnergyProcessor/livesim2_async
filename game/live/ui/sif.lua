@@ -141,33 +141,37 @@ function sifui:__construct()
 	do
 		local target = {judgementOpacity = 1, judgementScale = 1}
 		local target2 = {judgementOpacity = 0}
-		local showTimer, hideTimer
-		self.judgementScriptFunc = function(wait)
+		local showTimer, delayTimer, hideTimer
+		self.judgementDelayFunc = function()
 			showTimer = self.timer:tween(0.05, self, target, "out-sine")
-			wait(0.05)
-			showTimer = nil
-			wait(0.17-0.05)
+			wait(0.17)
+			self.judgementOpacity = 1
 			hideTimer = self.timer:tween(0.2, self, target2)
 			wait(0.2)
-			hideTimer = nil
 		end
 		self.judgementResetTimer = function()
 			if showTimer then
 				self.timer:cancel(showTimer)
-				showTimer = nil
+			end
+			if delayTimer then
+				self.timer:cancel(delayTimer)
 			end
 			if hideTimer then
 				self.timer:cancel(hideTimer)
-				hideTimer = nil
-			end
-			if self.judgementTimer then
-				self.timer:cancel(self.judgementTimer)
-				self.judgementTimer = nil
 			end
 
-			print("reset at ", self.judgementOpacity)
 			self.judgementOpacity = 0
 			self.judgementScale = 0
+		end
+		local hideFunc = function()
+			self.judgementOpacity = 1
+			hideTimer = self.timer:tween(0.2, self, target2)
+		end
+		local delayFunc = function()
+			delayTimer = self.timer:after(0.17, hideFunc)
+		end
+		self.judgementStartTimer = function()
+			showTimer = self.timer:tween(0.05, self, target, "out-sine", delayFunc)
 		end
 	end
 	-- pause system
@@ -390,7 +394,7 @@ function sifui:comboJudgement(judgement, addcombo)
 
 	-- reset judgement animation
 	self.judgementResetTimer()
-	self.judgementTimer = self.timer:script(self.judgementScriptFunc)
+	self.judgementStartTimer()
 
 	if breakCombo then
 		-- break combo
