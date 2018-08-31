@@ -27,10 +27,6 @@ local DEPLS = gamestate.create {
 	audios = {}
 }
 
-local function loadTestBeatmap()
-	log.info("livesim2", "loading test beatmap")
-end
-
 function DEPLS:load(arg)
 	-- Lane definition
 	self.persist.lane = {
@@ -45,14 +41,20 @@ function DEPLS:load(arg)
 		vector(16+64 , 96+64 ),
 	}
 	-- Create new note manager
-	self.persist.noteManager = note.newNoteManager({
+	self.data.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
 		trailImage = self.assets.images.longNoteTrail,
 		-- TODO: make it user-interface dependent
 		noteSpawningPosition = vector(480, 160),
 		lane = self.persist.lane,
 		accuracy = {16, 40, 64, 112, 128},
-		autoplay = true -- Testing only
+		autoplay = true, -- Testing only
+		callback = function(object, lane, position, judgement, releaseFlag)
+			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
+			if releaseFlag ~= 1 then
+				self.data.liveUI:addScore(1024)
+			end
+		end,
 	})
 
 	-- Load notes data
@@ -79,15 +81,15 @@ function DEPLS:load(arg)
 
 				-- pop separator
 				chan:pop()
-				self.persist.noteManager:addNote(t)
+				self.data.noteManager:addNote(t)
 			end
 
-			self.persist.noteManager:initialize()
+			self.data.noteManager:initialize()
 			isInit = true
 		end)
 	end)
 	-- load live UI
-	self.liveUI = liveUI.newLiveUI("sif")
+	self.data.liveUI = liveUI.newLiveUI("sif")
 	-- wait until all notes are ok
 	while isInit == false do
 		async.wait()
@@ -96,23 +98,25 @@ end
 
 function DEPLS:start()
 	timer.every(1, function()
-		log.debug("livesim2", "note remaining "..#self.persist.noteManager.notesList)
+		log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
 	end)
 end
 
 function DEPLS:update(dt)
-	self.persist.noteManager:update(dt)
+	self.data.noteManager:update(dt)
+	self.data.liveUI:update(dt)
 end
 
 function DEPLS:draw()
+	self.data.liveUI:drawHeader()
 	love.graphics.setColor(color.white)
-	self.liveUI:drawHeader()
 	for _, v in ipairs(self.persist.lane) do
 		love.graphics.circle("fill", v.x, v.y, 64)
 		--love.graphics.circle("line", v.x, v.y, 64)
 	end
 
-	self.persist.noteManager:draw()
+	self.data.noteManager:draw()
+	self.data.liveUI:drawStatus()
 end
 
 DEPLS:registerEvent("keypressed", function(_, key)

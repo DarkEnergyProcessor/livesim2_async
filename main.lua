@@ -47,8 +47,9 @@ local function initWindow()
 		minwidth = 320,
 		minheight = 240,
 		highdpi = true,
-		--RayFirefist: Please make iOS fullscreen so the status bar is not shown.
-		fullscreen = love._os == "iOS",
+		-- RayFirefist: Please make iOS fullscreen so the status bar is not shown.
+		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
+		fullscreen = love._os == "iOS" or love._os == "Android",
 		fullscreentype = "desktop",
 		vsync = true,
 	})
