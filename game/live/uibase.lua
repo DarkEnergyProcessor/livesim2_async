@@ -40,25 +40,23 @@ function uibase:getScore()
 	return 0
 end
 
-function uibase:setScore(score)
-	error("pure virtual method 'setScore'", 2)
-end
-
 ------------------
 -- Combo System --
 ------------------
 
-function uibase:comboJudgement(judgement)
-	-- handle whetevr to increment combo or break
+function uibase:comboJudgement(judgement, addCombo)
+	-- handle whetever to increment combo or break
 	error("pure virtual method 'comboJudgement'", 2)
 end
 
 function uibase:getCurrentCombo()
 	error("pure virtual method 'getCurrentCombo'", 2)
+	return 222
 end
 
 function uibase:getMaxCombo()
 	error("pure virtual method 'getMaxCombo'", 2)
+	return 255
 end
 
 -------------
@@ -116,6 +114,10 @@ end
 
 function uibase:setOpacity(opacity)
 	error("pure virtual method 'setOpacity'", 2)
+end
+
+function uibase:setMinimalEffect(min)
+	error("pure virtual method 'setMinimalEffect'", 2)
 end
 
 -------------
