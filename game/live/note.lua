@@ -888,7 +888,7 @@ function noteManager:update(dt)
 
 				if judgement then
 					-- function(object, lane, position, judgement, releaseFlag)
-					local relflg = isLn and (v.lnHolding and 2 or 1) or 0
+					local relflg = isLn and (v.lnHolding and (v.delete and 2) or 1) or 0
 					self.callback(v, v.lanePosition, v.position:clone(), judgement, relflg)
 				end
 			end

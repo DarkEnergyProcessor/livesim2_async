@@ -2,6 +2,8 @@
 -- Part of Live Simulator: 2
 
 local love = require("love")
+local color = require("color")
+local util = require("util")
 local postExit = require("post_exit")
 local utf8 = require("utf8")
 
@@ -34,7 +36,7 @@ function love.errorhandler(msg)
 		love.mouse.setVisible(true)
 		love.mouse.setGrabbed(false)
 		love.mouse.setRelativeMode(false)
-		if love.mouse.hasCursor() then
+		if util.isCursorSupported() then
 			love.mouse.setCursor()
 		end
 	end
@@ -49,7 +51,7 @@ function love.errorhandler(msg)
 	love.graphics.reset()
 	love.graphics.setNewFont(14)
 
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(color.white)
 
 	local trace = debug.traceback()
 
@@ -88,7 +90,7 @@ function love.errorhandler(msg)
 		local pos = 70
 		love.graphics.printf(p, pos, pos, love.graphics.getWidth() - pos)
 		love.graphics.present()
-		love.graphics.clear(89, 157, 220)
+		love.graphics.clear(color.hex599DDC)
 	end
 
 	local fullErrorText = p
@@ -96,7 +98,7 @@ function love.errorhandler(msg)
 		if not love.system then return end
 		love.system.setClipboardText(fullErrorText)
 		p = p .. "\nCopied to clipboard!"
-		return draw()
+		--return draw()
 	end
 
 	if love.system then
@@ -129,7 +131,7 @@ function love.errorhandler(msg)
 			end
 		end
 
-		return draw()
+		draw()
 	end
 
 	if love._version >= "11.0" then

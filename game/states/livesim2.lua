@@ -52,7 +52,8 @@ function DEPLS:load(arg)
 		callback = function(object, lane, position, judgement, releaseFlag)
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
-				self.data.liveUI:addScore(1024)
+				self.data.liveUI:addScore(math.random(256, 1024))
+				self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
 			end
 		end,
 	})
@@ -90,6 +91,7 @@ function DEPLS:load(arg)
 	end)
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
+	self.data.liveUI:setScoreRange(12500, 36000, 92200, 125000)
 	-- wait until all notes are ok
 	while isInit == false do
 		async.wait()

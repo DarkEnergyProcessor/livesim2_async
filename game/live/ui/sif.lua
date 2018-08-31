@@ -54,14 +54,15 @@ function sifui:__construct()
 		-- effects
 		"assets/image/live/circleeffect.png", -- 18
 		"assets/image/live/ef_308.png",
+		"noteImage:assets/image/tap_circle/notes.png",
 		-- judgement
-		"assets/image/live/ef_313_004_w2x.png", -- 20
+		"assets/image/live/ef_313_004_w2x.png", -- 21
 		"assets/image/live/ef_313_003_w2x.png",
 		"assets/image/live/ef_313_002_w2x.png",
 		"assets/image/live/ef_313_001_w2x.png",
 		"assets/image/live/ef_313_000_w2x.png",
 		-- combo
-		"assets/image/live/combo/1.png", -- 25
+		"assets/image/live/combo/1.png", -- 22
 		"assets/image/live/combo/2.png",
 		"assets/image/live/combo/3.png",
 		"assets/image/live/combo/4.png",
@@ -97,6 +98,11 @@ function sifui:__construct()
 	self.opacity = 1
 	self.textScaling = 1
 	self.minimalEffect = false
+	self.tapEffectList = {}
+	self.tapEffectQuad = {
+		star = love.graphics.newQuad(0, 1948, 100, 100, 2048, 2048),
+		circle = love.graphics.newQuad(100, 1973, 75, 75, 2048, 2048)
+	}
 	-- score variable setup
 	self.currentScore = 0
 	self.currentScoreAdd = 0 -- also as dirty flag
@@ -115,7 +121,7 @@ function sifui:__construct()
 	-- combo variable setup
 	self.currentCombo = 0
 	self.maxCombo = 0
-	self.comboSpriteBatch = love.graphics.newSpriteBatch(self.images[25], 12, "stream")
+	self.comboSpriteBatch = love.graphics.newSpriteBatch(self.images[26], 12, "stream")
 	self.currentComboTextureIndex = 1
 	self.comboNumberScale1 = 1.15
 	self.comboNumberScale2 = 1.25
@@ -128,13 +134,13 @@ function sifui:__construct()
 	end
 	-- judgement system variable setup
 	self.judgementCenterPosition = {
-		[self.images[20]] = {198, 38},
-		[self.images[21]] = {147, 35},
-		[self.images[22]] = {127, 35},
-		[self.images[23]] = {86, 33},
-		[self.images[24]] = {93, 30}
+		[self.images[21]] = {198, 38},
+		[self.images[22]] = {147, 35},
+		[self.images[23]] = {127, 35},
+		[self.images[24]] = {86, 33},
+		[self.images[25]] = {93, 30}
 	}
-	self.currentJudgement = self.images[20]
+	self.currentJudgement = self.images[21]
 	self.judgementOpacity = 0
 	self.judgementScale = 0
 	self.judgementTimer = nil
@@ -142,13 +148,6 @@ function sifui:__construct()
 		local target = {judgementOpacity = 1, judgementScale = 1}
 		local target2 = {judgementOpacity = 0}
 		local showTimer, delayTimer, hideTimer
-		self.judgementDelayFunc = function()
-			showTimer = self.timer:tween(0.05, self, target, "out-sine")
-			wait(0.17)
-			self.judgementOpacity = 1
-			hideTimer = self.timer:tween(0.2, self, target2)
-			wait(0.2)
-		end
 		self.judgementResetTimer = function()
 			if showTimer then
 				self.timer:cancel(showTimer)
@@ -376,17 +375,17 @@ function sifui:comboJudgement(judgement, addcombo)
 	local breakCombo = false
 
 	if judgement == "perfect" then
-		self.currentJudgement = self.images[20]
-	elseif judgement == "great" then
 		self.currentJudgement = self.images[21]
-	elseif judgement == "good" then
+	elseif judgement == "great" then
 		self.currentJudgement = self.images[22]
-		breakCombo = true
-	elseif judgement == "bad" then
+	elseif judgement == "good" then
 		self.currentJudgement = self.images[23]
 		breakCombo = true
-	elseif judgement == "miss" then
+	elseif judgement == "bad" then
 		self.currentJudgement = self.images[24]
+		breakCombo = true
+	elseif judgement == "miss" then
+		self.currentJudgement = self.images[25]
 		breakCombo = true
 	else
 		error("invalid judgement '"..judgement.."'", 2)
@@ -404,7 +403,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		end
 		-- reset texture
 		self.currentComboTextureIndex = 1
-		self.comboSpriteBatch:setTexture(self.images[25])
+		self.comboSpriteBatch:setTexture(self.images[26])
 	elseif addcombo then
 		-- increment combo
 		self.currentCombo = self.currentCombo + 1
@@ -413,7 +412,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		-- set combo texture when needed
 		local idx = getComboNumberIndex(self.currentCombo)
 		if self.currentComboTextureIndex ~= idx then
-			self.comboSpriteBatch:setTexture(self.images[24 + idx])
+			self.comboSpriteBatch:setTexture(self.images[25 + idx])
 			self.currentComboTextureIndex = idx
 		end
 
@@ -459,6 +458,60 @@ end
 ------------------
 -- Other things --
 ------------------
+
+local starEffectTweenTarget = {starEffectOpacity = 0, starEffectScale = 2.6}
+local circle1TweenTarget = {circle1Opacity = 0, circle1Scale = 4}
+local circle2TweenTarget = {circle2Opacity = 0, circle2Scale = 4}
+local circle3TweenTarget = {circle3Opacity = 0, circle3Scale = 4}
+
+function sifui:addTapEffect(x, y, r, g, b, a)
+	local tap
+	for i = 1, #self.tapEffectList do
+		local w = self.tapEffectList[i]
+		if w.done then
+			tap = table.remove(self.tapEffectList, i)
+			break
+		end
+	end
+
+	if not(tap) then
+		tap = {
+			x = 0, y = 0, r = 255, g = 255, b = 255,
+			opacity = 1,
+			starEffectOpacity = 1,
+			starEffectScale = 2,
+			circle1Opacity = 1,
+			circle1Scale = 2.427,
+			circle2Opacity = 1,
+			circle2Scale = 2.427,
+			circle3Opacity = 1,
+			circle3Scale = 2.427,
+			done = false
+		}
+		tap.func = function()
+			tap.done = true
+		end
+	end
+
+	tap.x, tap.y, tap.r, tap.g, tap.b = x, y, r, g, b
+	tap.opacity = a
+	tap.starEffectOpacity = 1
+	tap.starEffectScale = 2
+	tap.circle1Opacity = 1
+	tap.circle1Scale = 2.427
+	tap.circle2Opacity = 1
+	tap.circle2Scale = 2.427
+	tap.circle3Opacity = 1
+	tap.circle3Scale = 2.427
+	tap.timer = self.timer:script(tap.func)
+	tap.done = false
+	self.timer:tween(0.8, tap, starEffectTweenTarget, "out-expo", tap.func)
+	self.timer:tween(0.2, tap, circle1TweenTarget, "out-expo")
+	self.timer:tween(0.45, tap, circle2TweenTarget, "out-expo")
+	self.timer:tween(0.7, tap, circle3TweenTarget, "out-expo")
+
+	self.tapEffectList[#self.tapEffectList + 1] = tap
+end
 
 function sifui:setOpacity(opacity)
 	self.opacity = opacity
@@ -520,7 +573,47 @@ function sifui:drawStatus()
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 		love.graphics.draw(self.comboSpriteBatch, 480, 320 - 8 * (1 - self.textScaling), 0, self.textScaling)
 	end
-	-- TODO: tap effect
+	-- tap effect
+	for i = #self.tapEffectList, 1, -1 do
+		local tap = self.tapEffectList[i]
+		if tap.done then break end
+		if tap.starEffectOpacity > 0 then
+			love.graphics.setColor(color.compat(
+				255 * tap.r / 255,
+				255 * tap.g / 255,
+				255 * tap.b / 255,
+				tap.starEffectOpacity * tap.opacity * self.opacity
+			))
+			love.graphics.draw(self.images[20], self.tapEffectQuad.star, tap.x, tap.y, 0, tap.starEffectScale, tap.starEffectScale, 50, 50)
+		end
+		if tap.circle1Opacity > 0 then
+			love.graphics.setColor(color.compat(
+				255 * tap.r / 255,
+				255 * tap.g / 255,
+				255 * tap.b / 255,
+				tap.circle1Opacity * tap.opacity * self.opacity
+			))
+			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle1Scale, tap.circle1Scale, 37.5, 37.5)
+		end
+		if tap.circle2Opacity > 0 then
+			love.graphics.setColor(color.compat(
+				255 * tap.r / 255,
+				255 * tap.g / 255,
+				255 * tap.b / 255,
+				tap.circle2Opacity * tap.opacity * self.opacity
+			))
+			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle2Scale, tap.circle2Scale, 37.5, 37.5)
+		end
+		if tap.circle3Opacity > 0 then
+			love.graphics.setColor(color.compat(
+				255 * tap.r / 255,
+				255 * tap.g / 255,
+				255 * tap.b / 255,
+				tap.circle3Opacity * tap.opacity * self.opacity
+			))
+			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)
+		end
+	end
 end
 
 return sifui

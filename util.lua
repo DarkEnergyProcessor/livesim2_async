@@ -58,4 +58,12 @@ function util.clamp(value, min, max)
 	return math.max(math.min(value, max), min)
 end
 
+function util.isCursorSupported()
+	if love._version >= "11.0" then
+		return love.mouse.isCursorSupported()
+	else
+		return love.mouse.hasCursor()
+	end
+end
+
 return util
