@@ -165,28 +165,69 @@ elseif love._os == "Android" then
 	end
 end
 
+function infoImplMutex(_, tag, text)
+	return infoImpl(tag, text)
+end
+
+function warnImplMutex(_, tag, text)
+	return warnImpl(tag, text)
+end
+
+function errorImplMutex(_, tag, text)
+	return errorImpl(tag, text)
+end
+
+function debugImplMutex(_, tag, text)
+	return debugImpl(tag, text)
+end
+
+local function initMutex()
+	if not(log.mutex) and love.thread then
+		-- Lock
+		log.mutex = love.thread.getChannel("logging.lock")
+	end
+
+	return not(not(log.mutex))
+end
+
 function log.info(tag, text)
 	if log.level >= 3 then
-		return infoImpl(tag, text)
+		if initMutex() then
+			return log.mutex:performAtomic(infoImplMutex, tag, text)
+		else
+			return infoImpl(tag, text)
+		end
 	end
 end
 
 function log.warning(tag, text)
 	if log.level >= 2 then
-		return warnImpl(tag, text)
+		if initMutex() then
+			return log.mutex:performAtomic(warnImplMutex, tag, text)
+		else
+			return warnImpl(tag, text)
+		end
 	end
 end
 log.warn = log.warning
 
 function log.error(tag, text)
 	if log.level >= 1 then
-		return errorImpl(tag, text)
+		if initMutex() then
+			return log.mutex:performAtomic(errorImplMutex, tag, text)
+		else
+			return errorImpl(tag, text)
+		end
 	end
 end
 
 function log.debug(tag, text)
 	if log.level >= 4 then
-		return debugImpl(tag, text)
+		if initMutex() then
+			return log.mutex:performAtomic(debugImplMutex, tag, text)
+		else
+			return debugImpl(tag, text)
+		end
 	end
 end
 

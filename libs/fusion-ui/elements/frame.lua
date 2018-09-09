@@ -266,6 +266,8 @@ function frame:update(x, y, w, h, content, style, elem)
 		if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 ) or self.init then
 			eCont.element:draw(p.x+x, p.y+y+self.vOffset, p.w, p.h, nil, false)
 			eCont.element:update(0,false)
+		else
+			eCont.element.type:cleanUp()
 		end
 		self.init = false
 	end
