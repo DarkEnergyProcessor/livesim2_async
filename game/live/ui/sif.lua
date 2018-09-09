@@ -427,7 +427,7 @@ function sifui:comboJudgement(judgement, addcombo)
 			self.comboNumberOpacity2 = 0.5
 		end
 		self.comboNumberTimer = self.timer:tween(0.15, self, comboNumber1Target, "in-out-sine")
-		self.comboNumberTimer = self.timer:tween(0.33, self, comboNumber2Target)
+		self.comboNumberTimer2 = self.timer:tween(0.33, self, comboNumber2Target)
 	end
 end
 

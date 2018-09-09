@@ -3,12 +3,13 @@
 
 local love = require("love")
 local color = require("color")
+local log = require("logging")
 local util = require("util")
 local postExit = require("post_exit")
 local utf8 = require("utf8")
 
 local function error_printer(msg, layer)
-	print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
+	log.error("errhand", (debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
 end
 
 function love.errorhandler(msg)

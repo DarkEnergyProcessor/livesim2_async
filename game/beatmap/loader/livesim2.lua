@@ -6,6 +6,7 @@ local Luaoop = require("libs.Luaoop")
 local love = require("love")
 local ls2 = require("libs.ls2")
 local util = require("util")
+local log = require("logging")
 local baseLoader = require("game.beatmap.base")
 
 ------------------------------
@@ -192,6 +193,58 @@ function ls2Loader:getAudioPathList()
 	end
 
 	return paths
+end
+
+function ls2Loader:getBackground()
+	-- if nil or 0, let livesim2 decide
+	-- if number, predefined one
+	-- if table, {mode, ...}
+	-- where mode are bitwise:
+	-- 1. main background only (index 2)
+	-- 2. has left right background (index 3 and 4)
+	-- 4. has top bottom background (index 5 and 6)
+	-- 8. has video background, refer to File object (index 7)
+	-- background refer to ImageData object
+	local internal = ls2Loader^self
+
+	if internal.ls2.sections.BIMG then
+		local backgrounds = {}
+
+		for _, v in ipairs(internal.ls2.sections.BIMG) do
+			internal.file:seek(v)
+			local idx, img = ls2.section_processor.BIMG[1](internal.file, internal.ls2.version_2)
+
+			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img, ""))
+		end
+
+		-- verify backgrounds
+		local bits = 1
+		local realBack = {0, backgrounds[1]}
+		if backgrounds[1] == nil then
+			log.warning("noteloader.livesim2", "missing main background. Discard all backgrounds!")
+			return internal.ls2.background_id
+		end
+		if backgrounds[2] and backgrounds[3] then
+			bits = bits + 2
+			realBack[#realBack + 1] = backgrounds[2]
+			realBack[#realBack + 1] = backgrounds[3]
+		else
+			log.warning("noteloader.livesim2", "missing left or right background. Discard both!")
+			backgrounds[2], backgrounds[3] = nil, nil
+		end
+		if backgrounds[4] and backgrounds[5] then
+			bits = bits + 4
+			backgrounds[4], backgrounds[5] = nil, nil
+			realBack[#realBack + 1] = backgrounds[4]
+			realBack[#realBack + 1] = backgrounds[5]
+		else
+			log.warning("noteloader.livesim2", "missing top or bottom background. Discard both!")
+		end
+		realBack[1] = bits
+		return realBack
+	end
+
+	return internal.ls2.background_id
 end
 
 return ls2Loader, "file"

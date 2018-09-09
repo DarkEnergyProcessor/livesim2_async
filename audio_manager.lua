@@ -226,12 +226,4 @@ function audioManager.setVolume(obj, vol)
 	end
 end
 
-function audioManager.isPlaying(obj)
-	if audioManager.renderRate > 0 then
-		return obj.volume
-	else
-		return obj.source:getVolume()
-	end
-end
-
 return audioManager

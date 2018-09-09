@@ -8,10 +8,13 @@ local async = require("async")
 local vector = require("libs.hump.vector")
 local timer = require("libs.hump.timer")
 local log = require("logging")
+local setting = require("setting")
 
+local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
+local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local note = require("game.live.note")
 local liveUI = require("game.live.ui")
@@ -26,6 +29,27 @@ local DEPLS = gamestate.create {
 	},
 	audios = {}
 }
+
+local function playTapSFXSound(tapSFX, name, nsAccumulation)
+	local list = tapSFX[tapSFX[name]]
+	if list.alreadyPlayed == false then
+		-- first element should be the least played
+		local audio
+		if audioManager.isPlaying(list[1]) then
+			-- ok no more space
+			audio = audioManager.clone(tapSFX[name])
+		else
+			audio = table.remove(list, 1)
+		end
+
+		audioManager.play(audio)
+		list[#list + 1] = audio
+
+		if nsAccumulation then
+			list.alreadyPlayed = true
+		end
+	end
+end
 
 function DEPLS:load(arg)
 	-- Lane definition
@@ -54,6 +78,14 @@ function DEPLS:load(arg)
 			if releaseFlag ~= 1 then
 				self.data.liveUI:addScore(math.random(256, 1024))
 				self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+			end
+
+			-- play SFX
+			if judgement ~= "miss" then
+				playTapSFXSound(self.data.tapSFX, judgement, self.data.tapNoteAccumulation)
+			end
+			if judgement ~= "perfect" and judgement ~= "great" and object.star then
+				playTapSFXSound(self.data.tapSFX, "starExplode", false)
 			end
 		end,
 	})
@@ -92,7 +124,24 @@ function DEPLS:load(arg)
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
 	self.data.liveUI:setScoreRange(12500, 36000, 92200, 125000)
-	-- wait until all notes are ok
+	-- load tap SFX
+	self.data.tapSFX = {accumulateTracking = {}}
+	local tapSoundIndex = assert(tapSound[tonumber(setting.get("TAP_SOUND"))], "invalid tap sound")
+	for k, v in pairs(tapSoundIndex) do
+		if type(v) == "string" then
+			local audio = audioManager.newAudio(v)
+			audioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
+			self.data.tapSFX[k] = audio
+			local list = {
+				alreadyPlayed = false, -- for note sound accumulation
+				audioManager.clone(audio)
+			} -- cloned things
+			self.data.tapSFX[audio] = list
+			self.data.tapSFX.accumulateTracking[#self.data.tapSFX.accumulateTracking + 1] = list
+		end
+	end
+	self.data.tapNoteAccumulation = assert(tonumber(setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
+	-- wait until notes are loaded
 	while isInit == false do
 		async.wait()
 	end
@@ -105,6 +154,10 @@ function DEPLS:start()
 end
 
 function DEPLS:update(dt)
+	for i = 1, #self.data.tapSFX.accumulateTracking do
+		self.data.tapSFX.accumulateTracking[i].alreadyPlayed = false
+	end
+
 	self.data.noteManager:update(dt)
 	self.data.liveUI:update(dt)
 end
