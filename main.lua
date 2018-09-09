@@ -32,6 +32,7 @@ local Yohane = require("libs.Yohane")
 local util = require("util")
 local setting = require("setting")
 local log = require("logging")
+local audioManager = require("audio_manager")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -108,6 +109,7 @@ local function initializeYohane()
 	log.debug("main", "initializing Yohane")
 
 	function Yohane.Platform.UpdateSEVolume()
+		-- it's in 0..100 range for backward compatibility
 		Yohane.Platform.SEVolume = assert(tonumber(setting.get("SE_VOLUME")))
 	end
 
@@ -118,8 +120,8 @@ local function initializeYohane()
 	function Yohane.Platform.ResolveAudio(path)
 		local v = util.substituteExtension(path, util.getNativeAudioExtensions())
 		if v then
-			local s = love.audio.newSource(v, "static")
-			s:setVolume(Yohane.Platform.SEVolume * 0.008)
+			local s = audioManager.newAudio(path)
+			audioManager.setVolume(s, Yohane.Platform.SEVolume * 0.008)
 			return s
 		end
 
@@ -132,7 +134,7 @@ local function initializeYohane()
 
 	function Yohane.Platform.CloneAudio(audio)
 		if audio then
-			return audio:clone()
+			return audioManager.clone(audio)
 		end
 
 		return nil
@@ -140,8 +142,8 @@ local function initializeYohane()
 
 	function Yohane.Platform.PlayAudio(audio)
 		if audio then
-			audio:stop()
-			audio:play()
+			audioManager.stop(audio)
+			audioManager.play(audio)
 		end
 	end
 
@@ -171,7 +173,6 @@ local function initializeYohane()
 end
 
 function love.load()
-	log.dbg = true
 	log.info("main", "logging check (info)")
 	log.warning("main", "loging check (warning)")
 	log.error("main", "logging check (error)")

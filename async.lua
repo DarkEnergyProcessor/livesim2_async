@@ -160,6 +160,11 @@ function async.loadFont(path, size)
 	return wrapLilyClass(lily.newFont(path, size))
 end
 
+--- Load data with Lily
+function async.syncLily(lobj)
+	return wrapLilyClass(lobj)
+end
+
 --- Run function as asynchronous task.
 -- You can call async.wait() inside the function
 -- @tparam function func The function to run.

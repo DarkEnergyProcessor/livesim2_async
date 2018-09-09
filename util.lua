@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local version11 = love._version >= "11.0"
 local util = {}
 
 function util.basename(file)
@@ -10,7 +11,7 @@ function util.basename(file)
 end
 
 function util.fileExists(path)
-	if love._version >= "11.0" then
+	if version11 then
 		return not(not(love.filesystem.getInfo(path, "file")))
 	else
 		return love.filesystem.isFile(path)
@@ -18,7 +19,7 @@ function util.fileExists(path)
 end
 
 function util.directoryExist(path)
-	if love._version >= "11.0" then
+	if version11 then
 		return not(not(love.filesystem.getInfo(path, "directory")))
 	else
 		return love.filesystem.isDirectory(path)
@@ -59,11 +60,20 @@ function util.clamp(value, min, max)
 end
 
 function util.isCursorSupported()
-	if love._version >= "11.0" then
+	if version11 then
 		return love.mouse.isCursorSupported()
 	else
 		return love.mouse.hasCursor()
 	end
+end
+
+function util.releaseObject(obj)
+	if version11 then return obj:release() end
+end
+
+function util.getChannelCount(sounddata)
+	if version11 then return obj:getChannelCount()
+	else return obj:getChannels() end
 end
 
 return util

@@ -7,8 +7,8 @@ This repository contains rewritten version of Live Simulator: 2 "Time Lapse Upda
 
 **Please don't fork!** This is just temporary repository. It will be merged to [livesim2/time_lapse](https://github.com/MikuAuahDark/livesim2/tree/time_lapse) branch when it's done and this repository will be deleted afterwards!
 
-Components
-==========
+External Libraries
+==================
 
 Live Simulator: 2 uses these external libraries to run:
 
@@ -30,9 +30,11 @@ Live Simulator: 2 uses these external libraries to run:
 
 * Fusion UI
 
+* [LS2X](https://github.com/MikuAuahDark/ls2x)
+
 Live Simulator: 2 uses these external libraries if available:
 
-* [FFmpeg 3.x](http://ffmpeg.org/) (libavcodec 57)
+* [FFmpeg 3.x](http://ffmpeg.org/)
 
 Disclaimer
 ==========
