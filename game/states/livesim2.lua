@@ -52,24 +52,15 @@ local function playTapSFXSound(tapSFX, name, nsAccumulation)
 end
 
 function DEPLS:load(arg)
+	-- load live UI
+	self.data.liveUI = liveUI.newLiveUI("sif")
 	-- Lane definition
-	self.persist.lane = {
-		vector(816+64, 96+64 ),
-		vector(785+64, 249+64),
-		vector(698+64, 378+64),
-		vector(569+64, 465+64),
-		vector(416+64, 496+64),
-		vector(262+64, 465+64),
-		vector(133+64, 378+64),
-		vector(46+64 , 249+64),
-		vector(16+64 , 96+64 ),
-	}
+	self.persist.lane = self.data.liveUI:getLanePosition()
 	-- Create new note manager
 	self.data.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
 		trailImage = self.assets.images.longNoteTrail,
-		-- TODO: make it user-interface dependent
-		noteSpawningPosition = vector(480, 160),
+		noteSpawningPosition = self.data.liveUI:getNoteSpawnPosition(),
 		lane = self.persist.lane,
 		accuracy = {16, 40, 64, 112, 128},
 		autoplay = true, -- Testing only
@@ -121,8 +112,6 @@ function DEPLS:load(arg)
 			isInit = true
 		end)
 	end)
-	-- load live UI
-	self.data.liveUI = liveUI.newLiveUI("sif")
 	self.data.liveUI:setScoreRange(12500, 36000, 92200, 125000)
 	-- load tap SFX
 	self.data.tapSFX = {accumulateTracking = {}}
@@ -148,9 +137,13 @@ function DEPLS:load(arg)
 end
 
 function DEPLS:start()
-	timer.every(1, function()
+	self.persist.debugTimer = timer.every(1, function()
 		log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
 	end)
+end
+
+function DEPLS:exit()
+	timer.cancel(self.persist.debugTimer)
 end
 
 function DEPLS:update(dt)
