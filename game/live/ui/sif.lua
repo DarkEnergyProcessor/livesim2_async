@@ -6,6 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local lily = require("libs.lily")
 local timer = require("libs.hump.timer")
+local vector = require("libs.hump.vector")
 local assetCache = require("asset_cache")
 local async = require("async")
 local color = require("color")
@@ -98,6 +99,11 @@ function sifui:__construct()
 	self.opacity = 1
 	self.textScaling = 1
 	self.minimalEffect = false
+	self.noteIconTime = 0
+	self.noteIconQuad = {
+		notation = love.graphics.newQuad(0, 0, 108, 104, 256, 128),
+		circle = love.graphics.newQuad(128, 0, 68, 68, 256, 128)
+	}
 	self.tapEffectList = {}
 	self.tapEffectQuad = {
 		star = love.graphics.newQuad(0, 1948, 100, 100, 2048, 2048),
@@ -247,7 +253,30 @@ function sifui:update(dt)
 			i = i + 1
 		end
 	end
+	-- note icon
+	self.noteIconTime = self.noteIconTime + dt
+	while self.noteIconTime >= 2.2 do
+		self.noteIconTime = self.noteIconTime - 2.2
+	end
 	-- TODO: all things
+end
+
+function sifui.getNoteSpawnPosition()
+	return vector(480, 160)
+end
+
+function sifui.getLanePosition()
+	return {
+		vector(816+64, 96+64 ),
+		vector(785+64, 249+64),
+		vector(698+64, 378+64),
+		vector(569+64, 465+64),
+		vector(416+64, 496+64),
+		vector(262+64, 465+64),
+		vector(133+64, 378+64),
+		vector(46+64 , 249+64),
+		vector(16+64 , 96+64 ),
+	}
 end
 
 --------------------
@@ -568,11 +597,33 @@ function sifui:drawStatus()
 			self.judgementCenterPosition[self.currentJudgement][2]
 		)
 	end
+
 	-- combo
 	if self.currentCombo > 0 then
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 		love.graphics.draw(self.comboSpriteBatch, 480, 320 - 8 * (1 - self.textScaling), 0, self.textScaling)
 	end
+	-- note icon
+	do
+		-- draw circles (each needs 1.6s with 0s, 0.3s, and 0.6s delay respectively)
+		for i = 0, 600, 300 do
+			-- this value is used for scaling and opacity
+			local v = math.min(math.max(self.noteIconTime - (i * 0.001), 0) / 1.6, 1)
+			if v > 0 then
+				local s = v * 1.9 + 0.6
+				love.graphics.setColor(color.compat(255, 255, 255, self.opacity * (1-v)))
+				love.graphics.draw(self.images[19], self.noteIconQuad.circle, 480, 160, 0, s, s, 34, 34)
+			end
+		end
+		-- Note icon notation is pulsating indicator.
+		-- It's scaling down to 0.8 first (tween in 0.8s) then back to 1 (tween in 1.4s)
+		-- which gives total of 2.2 seconds elapsed time.
+		local secondScale = timer.tween["out-sine"](math.max(self.noteIconTime - 0.8, 0) / 1.4) * 0.2
+		local scale = 1 - math.min(self.noteIconTime, 0.8) / 4 + secondScale
+		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
+		love.graphics.draw(self.images[19], self.noteIconQuad.notation, 480, 160, 0, scale, scale, 54, 52)
+	end
+
 	-- tap effect
 	for i = #self.tapEffectList, 1, -1 do
 		local tap = self.tapEffectList[i]

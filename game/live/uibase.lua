@@ -23,6 +23,17 @@ function uibase:update(dt)
 	error("pure virtual method 'update'", 2)
 end
 
+function uibase:getNoteSpawnPosition()
+	error("pure virtual method 'getNoteSpawnPosition'")
+	return -- vector
+end
+
+function uibase:getLanePosition()
+	-- 1 is leftmost, 9 is rightmost
+	error("pure virtual method 'getLanePosition'")
+	return -- {vector, vector, ...}
+end
+
 --------------------
 -- Scoring System --
 --------------------
