@@ -226,4 +226,12 @@ function audioManager.setVolume(obj, vol)
 	end
 end
 
+function audioManager.seek(obj, seconds)
+	if audioManager.renderRate > 0 then
+		obj.pos = 48000 * seconds
+	else
+		return obj.source:seek(seconds, "seconds")
+	end
+end
+
 return audioManager

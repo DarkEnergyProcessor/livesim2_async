@@ -191,6 +191,5 @@ function love.load()
 	-- Register all gamestates
 	registerGamestates()
 	-- Jump to default game state
-	--gamestate.enter(nil, "dummy")
-	gamestate.enter(loadingInstance.getInstance(), "livesim2", {})
+	gamestate.enter(nil, "dummy")
 end
