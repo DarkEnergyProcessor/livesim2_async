@@ -72,8 +72,8 @@ function util.releaseObject(obj)
 end
 
 function util.getChannelCount(sounddata)
-	if version11 then return obj:getChannelCount()
-	else return obj:getChannels() end
+	if version11 then return sounddata:getChannelCount()
+	else return sounddata:getChannels() end
 end
 
 return util

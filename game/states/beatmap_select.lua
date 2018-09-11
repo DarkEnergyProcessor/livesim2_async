@@ -53,6 +53,8 @@ local function initializeSummary(self, data)
 	print("====== summary")
 	table.foreach(data, print)
 	print("====== summary")
+	-- Set
+	self.persist.summary = data
 
 	-- Title
 	self.persist.titleText:clear()
@@ -114,6 +116,7 @@ local function initializeBeatmapListUI(self)
 				local k = data:pop()
 				v[k] = data:pop()
 			end
+			self.persist.selectedBeatmapID = beatmap.id
 			return initializeSummary(self, v)
 		end)
 	end
@@ -167,6 +170,18 @@ function beatmapSelect:load()
 	if self.data.beatmapFrame == nil then
 		initializeBeatmapListUI(self)
 	end
+	if self.data.playButton == nil then
+		--self.persist.summary
+		self.data.playButton = selectButton.new("Play Beatmap")
+		self.data.playButton:addEventListener("released", function()
+			if self.persist.summary then
+				gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+					summary = self.persist.summary,
+					beatmapName = self.persist.selectedBeatmapID
+				})
+			end
+		end)
+	end
 end
 
 function beatmapSelect:start()
@@ -193,11 +208,11 @@ function beatmapSelect:start()
 	setStatusText(self, "Loading...")
 end
 
-function beatmapSelect:exit()
+function beatmapSelect.exit()
 	beatmapList.pop()
 end
 
-function beatmapSelect:update(dt)
+function beatmapSelect.update()
 end
 
 function beatmapSelect:draw()
@@ -220,10 +235,13 @@ function beatmapSelect:draw()
 	if self.data.beatmapFrame then
 		self.data.beatmapFrame:draw(60, 80, 360, 480)
 	end
+	if self.persist.summary then
+		selectButton.draw(self.data.playButton, 470, 520)
+	end
 	gui.draw()
 end
 
-beatmapSelect:registerEvent("keyreleased", function(self, key)
+beatmapSelect:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return leave()
 	end

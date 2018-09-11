@@ -206,6 +206,11 @@ local function processCommand(chan, command)
 		else
 			sendBeatmapData("error", id, "beatmap doesn't exist")
 		end
+	elseif command == "background" then
+		if beatmap.list[arg[1]] then
+			local bg = beatmap.list[arg[1]].data:getBackground()
+			sendBeatmapData("background", id, bg or 0)
+		end
 	elseif command == "quit" then
 		return "quit"
 	end

@@ -219,26 +219,28 @@ function ls2Loader:getBackground()
 
 		-- verify backgrounds
 		local bits = 1
-		local realBack = {0, backgrounds[1]}
+		local realBack = {0}
 		if backgrounds[1] == nil then
-			log.warning("noteloader.livesim2", "missing main background. Discard all backgrounds!")
+			log.warning("noteloader.livesim2", "missing main background. Fallback to background ID!")
 			return internal.ls2.background_id
+		else
+			realBack[2] = love.filesystem.newFileData(backgrounds[1], "")
 		end
 		if backgrounds[2] and backgrounds[3] then
 			bits = bits + 2
-			realBack[#realBack + 1] = backgrounds[2]
-			realBack[#realBack + 1] = backgrounds[3]
+			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[2], "")
+			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[3], "")
 		else
 			log.warning("noteloader.livesim2", "missing left or right background. Discard both!")
 			backgrounds[2], backgrounds[3] = nil, nil
 		end
 		if backgrounds[4] and backgrounds[5] then
 			bits = bits + 4
-			backgrounds[4], backgrounds[5] = nil, nil
-			realBack[#realBack + 1] = backgrounds[4]
-			realBack[#realBack + 1] = backgrounds[5]
+			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[4], "")
+			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[5], "")
 		else
 			log.warning("noteloader.livesim2", "missing top or bottom background. Discard both!")
+			backgrounds[4], backgrounds[5] = nil, nil
 		end
 		realBack[1] = bits
 		return realBack
