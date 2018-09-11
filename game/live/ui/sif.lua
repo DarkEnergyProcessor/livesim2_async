@@ -80,7 +80,7 @@ function sifui:__construct()
 	-- fonts
 	self.scoreFont = love.graphics.newImageFont(fontImageDataList:getValues(1), "0123456789", -4)
 	self.addScoreFont = love.graphics.newImageFont(fontImageDataList:getValues(2), "0123456789+", -5)
-	self.staminaFont = love.graphics.newImageFont(fontImageDataList:getValues(3), "0123456789+-")
+	self.staminaFont = love.graphics.newImageFont(fontImageDataList:getValues(3), "0123456789+- ")
 	-- quads
 	self.comboQuad = {
 		[0] = love.graphics.newQuad(0, 0, 48, 48, 240, 130),
@@ -179,6 +179,18 @@ function sifui:__construct()
 			showTimer = self.timer:tween(0.05, self, target, "out-sine", delayFunc)
 		end
 	end
+	-- stamina
+	self.maxStamina = 45
+	self.stamina = 45
+	self.staminaInterpolate = 45
+	self.staminaLerpVal = 1
+	self.staminaMode = 1
+	self.staminaTimer = nil
+	self.staminaQuad = love.graphics.newQuad(0, 0, 271, 29, 271, 29)
+	self.staminaImage = self.images[13]
+	self.staminaFlashTime = 0 -- limits at 1
+	self.staminaAddText = love.graphics.newText(self.staminaFont, "+ 1")
+	self.staminaText = love.graphics.newText(self.staminaFont, "45")
 	-- pause system
 	self.pauseEnabled = true
 end
@@ -253,12 +265,32 @@ function sifui:update(dt)
 			i = i + 1
 		end
 	end
+	-- stamina
+	local noteiconMultipler = 1
+	local staminaPercentage = self.staminaInterpolate / self.maxStamina
+	if staminaPercentage >= 0.8 then
+		self.staminaImage = self.images[13]
+	elseif staminaPercentage >= 0.6 then
+		self.staminaImage = self.images[14]
+	elseif staminaPercentage >= 0.4 then
+		self.staminaImage = self.images[15]
+	elseif staminaPercentage >= 0.2 then
+		self.staminaImage = self.images[16]
+		noteiconMultipler = 4
+	elseif staminaPercentage > 0 then
+		self.staminaImage = self.images[17]
+		noteiconMultipler = 8
+	else
+		noteiconMultipler = 8
+		self.staminaImage = nil
+	end
+	self.staminaFlashTime = (self.staminaFlashTime + dt) % 1
+	self.staminaQuad:setViewport(0, 0, 36 + 235 * staminaPercentage, 29)
 	-- note icon
-	self.noteIconTime = self.noteIconTime + dt
+	self.noteIconTime = self.noteIconTime + dt * noteiconMultipler
 	while self.noteIconTime >= 2.2 do
 		self.noteIconTime = self.noteIconTime - 2.2
 	end
-	-- TODO: all things
 end
 
 function sifui.getNoteSpawnPosition()
@@ -468,6 +500,40 @@ function sifui:getMaxCombo()
 	return self.maxCombo
 end
 
+-------------
+-- Stamina --
+-------------
+
+function sifui:setMaxStamina(val)
+	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
+end
+
+function sifui:getMaxStamina()
+	return self.maxStamina
+end
+
+function sifui:getStamina()
+	return self.stamina
+end
+
+function sifui:addStamina(val)
+	val = math.floor(val)
+	if val == 0 then return end
+
+	-- set up timer
+	self.staminaMode = val
+	if self.staminaTimer then
+		self.timer:cancel(self.staminaTimer)
+	end
+	self.staminaLerpVal = 0
+	self.stamina = math.max(math.min(self.stamina + val, self.maxStamina), 0)
+	self.staminaTimer = self.timer:tween(1, self, {staminaLerpVal = 1, staminaInterpolate = self.stamina})
+	self.staminaText:clear()
+	self.staminaText:add(string.format("%2d", self.stamina))
+	self.staminaAddText:clear()
+	self.staminaAddText:add((val > 0 and "+" or "-")..string.format("%2d", math.abs(val)))
+end
+
 ------------------
 -- Pause button --
 ------------------
@@ -554,6 +620,10 @@ end
 -- Drawing --
 -------------
 
+local function triangle(x)
+	return math.abs((x - 1) % 4 - 2) - 1
+end
+
 function sifui:drawHeader()
 	-- draw live header
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
@@ -583,6 +653,40 @@ function sifui:drawHeader()
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * obj.opacity))
 		love.graphics.draw(obj.text, obj.x, 72, 0, obj.scale, obj.scale, 0, 16)
 	end
+	-- stamina (confusion & some edge case incoming)
+	local stOff = 0
+	local stRedTint = 255
+	local stGreenTint = 255
+	if self.staminaMode < 0 then
+		-- control the offset
+		local d = self.staminaLerpVal * 2
+		local e = d * 2
+		stOff = triangle(e * 4) * 4
+		stRedTint = 255 * math.max(math.abs(math.sin(d * math.pi)), math.abs(math.cos(d * math.pi)))
+	elseif self.staminaMode > 0 then
+		stGreenTint = 127 + (1 - math.sin(self.staminaLerpVal * math.pi)) * 128
+	end
+	love.graphics.setColor(color.compat(255, stRedTint, stRedTint, self.opacity))
+	love.graphics.draw(self.images[12], 16 + stOff, 62 + stOff)
+	if self.staminaImage then
+		-- if it's yellow, then 2Hz. if it's red, then 4Hz
+		local freq = 0
+		if self.staminaImage == self.images[17] then
+			-- red
+			freq = 4
+		elseif self.staminaImage == self.images[16] then
+			-- yellow
+			freq = 2
+		end
+
+		-- flash to black, in range 64...255
+		local col = math.cos(self.staminaFlashTime * math.pi * freq) * 0.5 + 0.5
+		love.graphics.setColor(color.compat(255, stRedTint, stRedTint, self.opacity * col))
+		love.graphics.draw(self.staminaImage, self.staminaQuad, 16 + stOff, 62 + stOff)
+	end
+	love.graphics.draw(self.staminaText, 306, 64)
+	love.graphics.setColor(color.compat(stGreenTint, 255, stGreenTint, self.opacity * math.sin(self.staminaLerpVal * math.pi)))
+	love.graphics.draw(self.staminaAddText, 290, 90)
 end
 
 function sifui:drawStatus()

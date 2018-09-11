@@ -122,18 +122,18 @@ function DEPLS:load(arg)
 			local bitval
 			local m, l, r, t, b
 			-- main background
-			m = table.remove(value, 2)
+			m = love.graphics.newImage(table.remove(value, 2))
 			bitval = math.floor(value[1] / 4)
 			-- left & right
 			if bitval % 2 > 0 then
-				l = table.remove(value, 2)
-				r = table.remove(value, 2)
+				l = love.graphics.newImage(table.remove(value, 2))
+				r = love.graphics.newImage(table.remove(value, 2))
 			end
 			bitval = math.floor(value[1] / 2)
 			-- top & bottom
 			if bitval % 2 > 0 then
-				t = table.remove(value, 2)
-				b = table.remove(value, 2)
+				t = love.graphics.newImage(table.remove(value, 2))
+				b = love.graphics.newImage(table.remove(value, 2))
 			end
 			-- TODO: video
 			self.data.background = backgroundLoader.compose(m, l, r, t, b)
