@@ -214,33 +214,31 @@ function ls2Loader:getBackground()
 			internal.file:seek(v)
 			local idx, img = ls2.section_processor.BIMG[1](internal.file, internal.ls2.version_2)
 
-			backgrounds[idx] = love.graphics.newImage(love.filesystem.newFileData(img, ""))
+			backgrounds[idx] = love.image.newImageData(love.filesystem.newFileData(img, ""))
 		end
 
 		-- verify backgrounds
 		local bits = 1
 		local realBack = {0}
-		if backgrounds[1] == nil then
+		if backgrounds[0] == nil then
 			log.warning("noteloader.livesim2", "missing main background. Fallback to background ID!")
 			return internal.ls2.background_id
 		else
-			realBack[2] = love.filesystem.newFileData(backgrounds[1], "")
+			realBack[2] = backgrounds[0]
 		end
-		if backgrounds[2] and backgrounds[3] then
+		if backgrounds[1] and backgrounds[2] then
 			bits = bits + 2
-			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[2], "")
-			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[3], "")
-		else
+			realBack[#realBack + 1] = backgrounds[1]
+			realBack[#realBack + 1] = backgrounds[2]
+		elseif not(backgrounds[1]) ~= not(backgrounds[2]) then
 			log.warning("noteloader.livesim2", "missing left or right background. Discard both!")
-			backgrounds[2], backgrounds[3] = nil, nil
 		end
-		if backgrounds[4] and backgrounds[5] then
+		if backgrounds[3] and backgrounds[4] then
 			bits = bits + 4
-			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[4], "")
-			realBack[#realBack + 1] = love.filesystem.newFileData(backgrounds[5], "")
-		else
+			realBack[#realBack + 1] = backgrounds[3]
+			realBack[#realBack + 1] = backgrounds[4]
+		elseif not(backgrounds[3]) ~= not(backgrounds[4]) then
 			log.warning("noteloader.livesim2", "missing top or bottom background. Discard both!")
-			backgrounds[4], backgrounds[5] = nil, nil
 		end
 		realBack[1] = bits
 		return realBack
