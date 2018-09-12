@@ -57,6 +57,8 @@ function beatmap.findSuitableForFile(filename)
 end
 
 function beatmap.findSuitableForFolder(dir)
+	-- make sure to guarantee path separator
+	if dir:sub(-1) ~= "/" then dir = dir.."/" end
 	for i = 1, #beatmap.fileLoader do
 		local status, value = pcall(beatmap.folderLoader[i], dir)
 
@@ -71,7 +73,7 @@ function beatmap.findSuitableForFolder(dir)
 end
 
 function beatmap.findSuitable(path)
-	if love.filesystem.isDirectory(path) then
+	if util.directoryExist(path) then
 		return beatmap.findSuitableForFolder(path), "folder"
 	else
 		return beatmap.findSuitableForFile(path), "file"
@@ -218,6 +220,7 @@ local function processCommand(chan, command)
 end
 
 while true do
+	collectgarbage()
 	local command = commandChannel:demand()
 	if command == "quit" or processCommand(commandChannel, command) == "quit" then return end
 end
