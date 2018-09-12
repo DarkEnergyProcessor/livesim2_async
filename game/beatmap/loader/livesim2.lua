@@ -126,8 +126,12 @@ function ls2Loader:getCoverArt()
 	if not(internal.coverArtLoaded) then
 		if internal.ls2.sections.COVR then
 			internal.file:seek(internal.ls2.sections.COVR[1])
-			internal.coverArt = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
-			internal.coverArt.image = love.filesystem.newFileData(internal.coverArt.image, "")
+			local val = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
+			internal.coverArt = {
+				title = val.title,
+				info = val.arr,
+				image = love.filesystem.newFileData(val.image, "")
+			}
 		end
 		internal.coverArtLoaded = true
 	end

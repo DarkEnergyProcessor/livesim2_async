@@ -4,6 +4,7 @@
 
 local love = require("love")
 local vires = require("vires")
+local log = require("logging")
 local postExit = require("post_exit")
 local timer = require("libs.hump.timer")
 
@@ -113,7 +114,7 @@ end
 
 function love.run()
 	-- At least LOVE 0.10.0 (must be checked here, otherwise window will show up)
-	assert(love._version >= "0.10.0", "Minimum LOVE version needed is LOVE 0.10.0")
+	assert(love._version >= "0.10.0", "minimum LOVE version needed is LOVE 0.10.0")
 	-- We have to delay-load any script that depends on Lily
 	-- because Lily checks the loaded library
 	-- and doesn't require them.
@@ -171,6 +172,13 @@ function love.run()
 			-- update setting on focus triggered
 			elseif name == "focus" then
 				setting.update()
+			end
+			-- Hardcoded "collectgarbage" button
+			if name == "keyreleased" and a == "f10" then
+				collectgarbage()
+				collectgarbage()
+				log.debug("run", "collectgarbage issued")
+				log.debug("run", string.format("current usage: %.2fMB", collectgarbage("count")/1024))
 			end
 			-- Error on thread error
 			assert(name ~= "threaderror", b)

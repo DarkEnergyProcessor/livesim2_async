@@ -50,6 +50,8 @@ Special Thanks
 
 * qfx - Allowing me as the person to test Fusion UI and provide feedback.
 
+* Some other people who suggest something and helping me which I forgot his/her name
+
 License
 =======
 
