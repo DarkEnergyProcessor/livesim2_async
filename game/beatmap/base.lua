@@ -28,6 +28,9 @@ function base.getNotesList()
 	error("pure virtual method 'getNotesList'", 2)
 end
 
+-- For each index (1-9):
+-- * If it's filename, ImageData, or FileData, then use that.
+-- * If it's table, then it's in layers and drawn like that (each index use rule above).
 function base.getCustomUnitInformation()
 	return {}
 end
