@@ -251,4 +251,31 @@ function ls2Loader:getBackground()
 	return internal.ls2.background_id
 end
 
+function ls2Loader:getCustomUnitInformation()
+	local internal = ls2Loader^self
+	local unitData = {}
+
+	if internal.ls2.sections.UNIT and internal.ls2.sections.UIMG then
+		local uimgs = {}
+
+		for _, v in ipairs(internal.ls2.sections.UIMG) do
+			local idx, img
+			internal.file:seek(v)
+
+			idx, img = ls2.section_processor.UIMG[1](internal.file, internal.ls2.version_2)
+			uimgs[idx] = love.image.newImageData(love.filesystem.newFileData(img, ""))
+		end
+
+		for _, v in ipairs(internal.ls2.sections.UNIT) do
+			internal.file:seek(v)
+
+			for _, u in ipairs(ls2.section_processor.UNIT[1](internal.file, internal.ls2.version_2)) do
+				unitData[u[1]] = uimgs[u[2]]
+			end
+		end
+	end
+
+	return unitData
+end
+
 return ls2Loader, "file"

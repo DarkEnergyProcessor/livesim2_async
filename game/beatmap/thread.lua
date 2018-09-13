@@ -5,9 +5,10 @@
 local love = require("love")
 love._version = love._version or love.getVersion()
 require("love.event")
-require("love.system")
-require("love.image")
 require("love.filesystem")
+require("love.image")
+require("love.system")
+require("love.timer")
 
 local util = require("util")
 
