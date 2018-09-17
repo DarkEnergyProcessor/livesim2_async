@@ -22,6 +22,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	-- Get configuration
 	local function getConfigImpl(key)
 		key = key:upper()
+		assert(setting.default[key], "invalid setting name")
 
 		-- Cache
 		if setting.list[key] then
@@ -50,6 +51,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	local function setConfigImpl(key, val)
 		key = key:upper()
+		assert(setting.default[key], "invalid setting name")
 		setting.list[key] = val
 		setting.modified[key] = true
 	end

@@ -90,6 +90,14 @@ function BGMClass:seek(timepos)
 	return audioManager.seek(self.audio, timepos)
 end
 
+function BGMClass:tell()
+	if audioManager.renderRate > 0 then
+		return self.audio.pos / 48000
+	else
+		return self.audio.source:tell()
+	end
+end
+
 function BGM.newSong(decoder)
 	local sync = async.syncLily(lily.newSoundData(decoder))
 	return BGMClass(sync:getValues())

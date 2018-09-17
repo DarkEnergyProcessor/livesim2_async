@@ -13,9 +13,13 @@ local baseLoader = require("game.beatmap.base")
 local function imageCache(link)
 	return setmetatable({}, {
 		__index = function(v, var)
-			local val = love.image.newImageData(link[var])
-			rawset(v, var, val)
-			return val
+			if link[var] then
+				local val = love.image.newImageData(link[var])
+				rawset(v, var, val)
+				return val
+			end
+
+			return nil
 		end,
 		__mode = "v"
 	})
@@ -139,80 +143,59 @@ local cbfUnitIconFrame = {
 
 local cbfCompositionThread = Luaoop.class("beatmap.CBF.UnitComposition")
 
-cbfCompositionThread.code = [[
+cbfCompositionThread.code = love.filesystem.newFileData([[
 local love = require("love")
-local div = love._version >= "11.0" and 1/255 or 1
+local div = love._version >= "11.0" and 1 or 1/255
 require("love.image")
 
-local dummyImage, chan = ...
+local dst, astart, aend = ...
+local imageCount = (select("#", ...) - 3) / 2
 
 -- a over b method
 local function blend(ca, aa, cb, ab)
 	return (ca*aa+cb*ab*(1-aa))/(aa+ab*(1-aa))
 end
 
--- start receive
-while true do
-	local dst = chan:demand()
-	if dst == dummyImage then return end -- done
-
-	local astart = chan:demand()
-	local aend = chan:demand()
-	local imageCount = chan:demand()
-	local inputs = {}
-
-	for i = 1, imageCount do
-		local t = {}
-		t.image = chan:demand()
-		local color = chan:demand()
-		-- for sake of simplicity, use 0..1 range
-		t.color = {
-			(color[1] or 255) * div,
-			(color[2] or 255) * div,
-			(color[3] or 255) * div,
-			(color[4] or 255) * div
-		}
-		inputs[i] = t
-	end
-
-	for i = astart, aend do
-		local x = i % 128
-		local y = math.floor(i / 128)
-		local c = {0, 0, 0, 0}
-
-		-- enum all images
-		for _, v in ipairs(inputs) do
-			local r, g, b, a = v.image:getPixel(x, y)
-			r, g = r * div * v.color[1], g * div * v.color[2]
-			b, a = b * div * v.color[3], a * div * v.color[4]
-
-			-- blend
-			c[1] = blend(r, a, c[1], c[4])
-			c[2] = blend(g, a, c[2], c[4])
-			c[3] = blend(b, a, c[3], c[4])
-			c[4] = a + c[4] * (1 - a)
-		end
-
-		dst:setPixel(x, y, c[1] / div, c[2] / div, c[3] / div, c[4] / div)
-	end
-
-	chan:demand() -- dummy
+local function clamp(val, min, max)
+	return math.max(math.min(val, max), min)
 end
-]]
+
+local inputs = {}
+for i = 1, imageCount do
+	local t = {}
+	t.image = select(4 + (i - 1) * 2, ...)
+	local color = select(4 + (i - 1) * 2 + 1, ...)
+	-- for sake of simplicity, use 0..1 range
+	t.color = {
+		(color[1] or 255) / 255,
+		(color[2] or 255) / 255,
+		(color[3] or 255) / 255,
+		(color[4] or 255) / 255
+	}
+	inputs[i] = t
+end
+for i = astart, aend do
+	local x = i % 128
+	local y = math.floor(i / 128)
+	local c = {0, 0, 0, 0}
+	-- enum all images
+	for _, v in ipairs(inputs) do
+		local r, g, b, a = v.image:getPixel(x, y)
+		r, g = r * div * v.color[1], g * div * v.color[2]
+		b, a = b * div * v.color[3], a * div * v.color[4]
+		-- blend
+		c[1] = clamp(blend(r, a, c[1], c[4]), 0, 1)
+		c[2] = clamp(blend(g, a, c[2], c[4]), 0, 1)
+		c[3] = clamp(blend(b, a, c[3], c[4]), 0, 1)
+		c[4] = clamp(a + c[4] * (1 - a), 0, 1)
+	end
+	dst:setPixel(x, y, c[1] / div, c[2] / div, c[3] / div, c[4] / div)
+end
+]], "cbfCompositionThread")
 
 function cbfCompositionThread:__construct()
 	self.threadCount = love.system.getProcessorCount()
-	self.threads = {}
 	self.dummyImage = love.image.newImageData(1, 1)
-
-	for i = 1, self.threadCount do
-		local t = {
-			love.thread.newThread(cbfCompositionThread.code),
-			love.thread.newChannel()
-		}
-		self.threads[i] = t
-		t[1]:start(self.dummyImage, t[2])
-	end
 end
 
 local function splitIntoParts(whole, parts)
@@ -239,6 +222,12 @@ function cbfCompositionThread:compose(decl)
 	local pushIn = {} -- inputs
 	local chunkPerThread = splitIntoParts(128 * 128, self.threadCount)
 	local parts = 0
+	local threads = {}
+
+	-- create thread
+	for i = 1, self.threadCount do
+		threads[i] = love.thread.newThread(cbfCompositionThread.code)
+	end
 
 	-- push list
 	for i = 1, #decl do
@@ -254,27 +243,16 @@ function cbfCompositionThread:compose(decl)
 	end
 
 	-- Push to thread
-	for i = 1, #self.threads do
-		local t = self.threads[i]
+	for i = 1, #threads do
+		local t = threads[i]
 
-		t[2]:push(dest)
-		t[2]:push(parts)
-		t[2]:push(parts + chunkPerThread[i] - 1)
-		t[2]:push(#decl)
-		for j = 1, #pushIn do
-			t[2]:push(pushIn[j])
-		end
-		t[2]:push(0) -- dummy
-
+		t:start(dest, parts, parts + chunkPerThread[i] - 1, unpack(pushIn))
 		parts = parts + chunkPerThread[i]
 	end
 
 	-- synchronize
-	for i = 1, #self.threads do
-		local t = self.threads[i]
-		while t[2]:getCount() > 0 do
-			love.timer.sleep(0.01)
-		end
+	for i = 1, #threads do
+		threads[i]:wait()
 	end
 
 	return dest
@@ -284,10 +262,12 @@ function cbfCompositionThread:__destruct()
 	for i = 1, #self.threads do
 		local t = self.threads[i]
 		t[2]:push(self.dummyImage)
+		log.debug("noteloader.cbf", "killing "..tostring(t[1]))
 		t[1]:wait()
 	end
 end
 
+function cbfCompositionThread.getInstance() end
 do
 	local inst = cbfCompositionThread()
 	function cbfCompositionThread.getInstance()
@@ -315,10 +295,23 @@ function cbfLoader:__construct(path)
 		internal.path = path
 
 		-- check for unit icon loading strategy
-		internal.loadUnitMethods = {
-			util.directoryExist(path.."Cards"),
-			util.directoryExist(path.."Custom Cards") and util.fileExists(path.."Custom Cards/list.txt")
-		}
+		internal.loadUnitMethods = {}
+		internal.loadUnitMethods[1] = util.directoryExist(path.."Cards")
+		if util.directoryExist(path.."Custom Cards") and util.fileExists(path.."Custom Cards/list.txt") then
+			local out = {}
+
+			for line in love.filesystem.lines(path.."Custom Cards/list.txt") do
+				if #line > 0 then
+					local idx, name = line:match("([^/]+)/([^;]+)")
+
+					if util.fileExists(path.."Custom Cards/"..idx..".png") then
+						out[tostring(idx)] = name
+					end
+				end
+			end
+
+			internal.loadUnitMethods[2] = out
+		end
 	else
 		error("directory is not CBF project")
 	end
@@ -471,6 +464,8 @@ function cbfLoader:getAudioPathList()
 end
 
 local function getUnitByID(id, path, s1, s2)
+	id = tostring(id)
+
 	-- Try pre-defined one
 	if cbfUnitIcon[id] then
 		return cbfUnitIcon[id]
@@ -487,7 +482,7 @@ local function getUnitByID(id, path, s1, s2)
 	-- Try strategy 2: look at "Custom Cards" folder
 	if s2 then
 		if s2[id] then
-			local a = path.."Custom Cards/"..s2[id]..".png"
+			local a = path.."Custom Cards/"..id..".png"
 			if util.fileExists(a) then
 				return love.image.newImageData(a)
 			end
@@ -501,7 +496,7 @@ local function getUnitByID(id, path, s1, s2)
 	end
 
 	-- Try "unit_icon" directory
-	a = "unit_icon/"..var..".png"
+	a = "unit_icon/"..id..".png"
 	if util.fileExists(a) then
 		return love.image.newImageData(a)
 	end
@@ -510,14 +505,55 @@ local function getUnitByID(id, path, s1, s2)
 	return nil
 end
 
+-- colors are in 0..255 range
+local function composeUnitIcon(unit, colorType, rarity, r, g, b)
+	local composition = cbfCompositionThread.getInstance()
+	local decl = {}
+
+	if colorType == "Custom" then
+		local rarityImage = assert(cbfUnitIconFrame.None[rarity], "invalid rarity")
+
+		decl[#decl + 1] = {rarityImage[2], r, g, b, 255}
+		if unit then decl[#decl + 1] = unit end
+		decl[#decl + 1] = {rarityImage[1], r, g, b, 255}
+	else
+		local type = assert(cbfUnitIconFrame[colorType], "invalid color type")
+		local rarityImage = assert(type[rarity], "invalid rarity")
+
+		decl[#decl + 1] = rarityImage[2]
+		if unit then decl[#decl + 1] = unit end
+		decl[#decl + 1] = rarityImage[1]
+	end
+
+	return composition:compose(decl)
+end
+
 -- implementing this one can be harder
 function cbfLoader:getCustomUnitInformation()
 	local internal = cbfLoader^self
 	local unitData = {}
 
-	-- TODO
-	-- if util.fileExists(internal.path.."characterPositions.txt") then
-	-- end
+	if util.fileExists(internal.path.."characterPositions.txt") then
+		local compositionCache = {}
+
+		for line in love.filesystem.lines(internal.path.."characterPositions.txt") do
+			local cacheName = line:sub(line:find("/") + 1)
+			local p, attr, rar, id, r, g, b = line:match("([^/]+)/([^/]+)/([^/]+)/([^/]*)/(%d+%.?%d*),(%d+%.?%d*),(%d+%.?%d*)/")
+			local index = assert(positionTranslate[p])
+			local unit = compositionCache[cacheName]
+
+			if not(unit) then
+				-- compose
+				local unitImage = getUnitByID(id, internal.path, internal.loadUnitMethods[1], internal.loadUnitMethods[2])
+				local output = composeUnitIcon(unitImage, attr, rar, r * 255, g * 255, b * 255)
+
+				compositionCache[cacheName] = output
+				unit = output
+			end
+
+			unitData[index] = unit
+		end
+	end
 
 	return unitData
 end

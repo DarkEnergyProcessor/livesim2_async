@@ -59,6 +59,16 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 			if not(cb(a, b, c, d, e)) then
 				beatmapList.callback[id] = nil
 			end
+		elseif name == "unitinfo" then
+			local data = {}
+			while a:getCount() > 0 do
+				local k = a:pop()
+				data[k] = a:pop()
+			end
+
+			local cb = beatmapList.callback[id]
+			beatmapList.callback[id] = nil
+			cb(data)
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
@@ -107,6 +117,11 @@ end
 function beatmapList.getBackground(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name})
+end
+
+function beatmapList.getCustomUnit(name, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "unitinfo", {registerRequestID(callback), name})
 end
 
 function beatmapList.enumerate(callback)

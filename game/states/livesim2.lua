@@ -5,9 +5,11 @@
 local love = require("love")
 local color = require("color")
 local async = require("async")
+local assetCache = require("asset_cache")
 local timer = require("libs.hump.timer")
 local log = require("logging")
 local setting = require("setting")
+local util = require("util")
 
 local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
@@ -26,7 +28,8 @@ local DEPLS = gamestate.create {
 	},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
-		longNoteTrail = {"assets/image/ef_326_000.png"}
+		longNoteTrail = {"assets/image/ef_326_000.png"},
+		dummyUnit = {"assets/image/dummy.png", {mipmaps = true}}
 	},
 	audios = {}
 }
@@ -90,6 +93,7 @@ function DEPLS:load(arg)
 	local isBeatmapInit = 0
 	beatmapList.getNotes(arg.beatmapName, function(chan)
 		local amount = chan:pop()
+		log.debug("livesim2", "received notes data: "..amount.." notes")
 		local fullScore = 0
 		for _ = 1, amount do
 			local t = {}
@@ -105,7 +109,6 @@ function DEPLS:load(arg)
 		end
 
 		self.data.noteManager:initialize()
-		isBeatmapInit = isBeatmapInit + 1
 		-- Set score range (c,b,a,s order)
 		self.data.liveUI:setScoreRange(
 			math.floor(fullScore * 211/739 + 0.5),
@@ -113,10 +116,12 @@ function DEPLS:load(arg)
 			math.floor(fullScore * 633/739 + 0.5),
 			fullScore
 		)
+		isBeatmapInit = isBeatmapInit + 1
 	end)
 	-- need to wrap in coroutine because
 	-- there's no async access in the callback
 	beatmapList.getBackground(arg.beatmapName, coroutine.wrap(function(value)
+		log.debug("livesim2", "received background data")
 		local tval = type(value)
 		if tval == "table" then
 			local bitval
@@ -142,6 +147,13 @@ function DEPLS:load(arg)
 		end
 		isBeatmapInit = isBeatmapInit + 1
 	end))
+	-- Load unit data too
+	beatmapList.getCustomUnit(arg.beatmapName, function(unitData)
+		self.data.customUnit = unitData
+		log.debug("livesim2", "received unit data")
+		isBeatmapInit = isBeatmapInit + 1
+	end)
+
 	-- load tap SFX
 	self.data.tapSFX = {accumulateTracking = {}}
 	local tapSoundIndex = assert(tapSound[tonumber(setting.get("TAP_SOUND"))], "invalid tap sound")
@@ -159,18 +171,23 @@ function DEPLS:load(arg)
 		end
 	end
 	self.data.tapNoteAccumulation = assert(tonumber(setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
+
 	-- wait until notes are loaded
-	while isBeatmapInit < 2 do
+	while isBeatmapInit < 3 do
 		async.wait()
 	end
+	log.debug("livesim2", "beatmap init wait done")
+
 	-- if there's no background, load default
 	if not(self.data.background) then
 		self.data.background = backgroundLoader.load(assert(tonumber(setting.get("BACKGROUND_IMAGE"))))
 	end
+
 	-- Try to load audio
 	if arg.summary.audio then
 		self.data.song = BGM.newSong(arg.summary.audio)
 	end
+
 	-- Set score range when available
 	if arg.summary.scoreS then -- only check one
 		self.data.liveUI:setScoreRange(
@@ -180,11 +197,63 @@ function DEPLS:load(arg)
 			arg.summary.scoreS
 		)
 	end
+
+	-- Initialize unit icons
+	self.data.unitIcons = {}
+	local unitDefaultName = {}
+	local unitImageCache = {}
+	local idolName = setting.get("IDOL_IMAGE")
+	log.debug("livesim2", "default idol name: "..string.gsub(idolName, "\t", "\\t"))
+	for w in string.gmatch(idolName, "[^\t]+") do
+		unitDefaultName[#unitDefaultName + 1] = w
+	end
+	assert(#unitDefaultName == 9, "IDOL_IMAGE setting is not valid")
+	log.debug("livesim2", "initializing units")
+	for i = 1, 9 do
+		local image
+
+		if self.data.customUnit[i] then
+			image = unitImageCache[self.data.customUnit[i]]
+			if not(image) then
+				image = love.graphics.newImage(self.data.customUnit[i], {mipmaps = true})
+				unitImageCache[self.data.customUnit[i]] = image
+			end
+		else
+			-- Default unit name are in left to right order
+			-- but SIF units are in right to left order
+			image = unitImageCache[unitDefaultName[10 - i]]
+			if not(image) then
+				if unitDefaultName[10 - i] == " " then
+					image = self.assets.images.dummyUnit
+				else
+					local file = "unit_icon/"..unitDefaultName[10 - i]
+					if util.fileExists(file) then
+						image = assetCache.loadImage("unit_icon/"..unitDefaultName[10 - i])
+					else
+						image = self.assets.images.dummyUnit
+					end
+				end
+
+				unitImageCache[unitDefaultName[10 - i]] = image
+			end
+		end
+
+		self.data.unitIcons[i] = image
+	end
+
+	log.debug("livesim2", "ready")
 end
 
 function DEPLS:start()
 	self.persist.debugTimer = timer.every(1, function()
+		-- note debug
 		log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
+		-- song debug
+		if self.data.song then
+			local audiotime = self.data.song:tell() * 1000
+			local notetime = self.data.noteManager.elapsedTime * 1000
+			log.debug("livesim2", string.format("audiotime: %.2fms, notetime: %.2fms, diff: %.2fms", audiotime, notetime, math.abs(audiotime - notetime)))
+		end
 	end)
 	if self.data.song then
 		self.data.song:play()
@@ -213,9 +282,8 @@ function DEPLS:draw()
 	love.graphics.draw(self.data.background)
 	self.data.liveUI:drawHeader()
 	love.graphics.setColor(color.white)
-	for _, v in ipairs(self.persist.lane) do
-		love.graphics.circle("fill", v.x, v.y, 64)
-		--love.graphics.circle("line", v.x, v.y, 64)
+	for i, v in ipairs(self.persist.lane) do
+		love.graphics.draw(self.data.unitIcons[i], v.x, v.y, 0, 1, 1, 64, 64)
 	end
 
 	self.data.noteManager:draw()
