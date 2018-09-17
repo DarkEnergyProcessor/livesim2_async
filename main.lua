@@ -93,6 +93,7 @@ local function initializeSetting()
 	setting.define("TEXT_SCALING", 1)
 	setting.define("TAP_SOUND", 1)
 	setting.define("SE_VOLUME", 80)
+	setting.define("IDOL_IMAGE", " \t \t \t \t \t \t \t \t ")
 end
 
 local function createDirectories()
@@ -191,5 +192,5 @@ function love.load()
 	-- Register all gamestates
 	registerGamestates()
 	-- Jump to default game state
-	gamestate.enter(nil, "dummy")
+	gamestate.enter(nil, "splash")
 end

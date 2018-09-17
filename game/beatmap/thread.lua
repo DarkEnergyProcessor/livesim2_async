@@ -11,6 +11,7 @@ require("love.system")
 require("love.timer")
 
 local util = require("util")
+local log = require("logging")
 
 local commandChannel = ...
 local beatmap = {
@@ -33,6 +34,7 @@ if love._version >= "11.0" then
 end
 
 local function sendBeatmapData(name, id, ...)
+	log.debug("beatmap.thread", "sending beatmap data ("..name..")")
 	return love.event.push("beatmapresponse", name, id, ...)
 end
 
@@ -170,6 +172,7 @@ end
 local function processCommand(chan, command)
 	local arg = chan:demand()
 	local id = table.remove(arg, 1)
+	log.debug("beatmap.thread", "received command: "..command)
 
 	if command == "enum" then
 		beatmap.list = {}
@@ -212,7 +215,20 @@ local function processCommand(chan, command)
 	elseif command == "background" then
 		if beatmap.list[arg[1]] then
 			local bg = beatmap.list[arg[1]].data:getBackground()
+			log.debug("beatmap.thread", "background: "..tostring(bg))
 			sendBeatmapData("background", id, bg or 0)
+		end
+	elseif command == "unitinfo" then
+		if beatmap.list[arg[1]] then
+			local units = beatmap.list[arg[1]].data:getCustomUnitInformation()
+			local c = love.thread.newChannel()
+
+			for k, v in pairs(units) do
+				c:push(k)
+				c:push(v)
+			end
+
+			sendBeatmapData("unitinfo", id, c)
 		end
 	elseif command == "quit" then
 		return "quit"
