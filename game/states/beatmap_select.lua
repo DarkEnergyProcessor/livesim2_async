@@ -110,14 +110,8 @@ local function initializeBeatmapListUI(self)
 		print("====== beatmap selected")
 		table.foreach(beatmap, print)
 		beatmapList.getSummary(beatmap.id, function(data)
-			-- data is throwaway channel. Reconstruct to table
-			local v = {}
-			while data:getCount() > 0 do
-				local k = data:pop()
-				v[k] = data:pop()
-			end
 			self.persist.selectedBeatmapID = beatmap.id
-			return initializeSummary(self, v)
+			return initializeSummary(self, data)
 		end)
 	end
 

@@ -69,6 +69,16 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
 			cb(data)
+		elseif name == "summary" then
+			local v = {}
+			while a:getCount() > 0 do
+				local k = a:pop()
+				v[k] = a:pop()
+			end
+
+			local cb = beatmapList.callback[id]
+			beatmapList.callback[id] = nil
+			cb(v)
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
