@@ -104,12 +104,13 @@ function DEPLS:load(arg)
 
 			-- pop separator
 			chan:pop()
-			fullScore = fullScore + t.effect > 10 and 370 or 739
+			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 			self.data.noteManager:addNote(t)
 		end
 
 		self.data.noteManager:initialize()
 		-- Set score range (c,b,a,s order)
+		log.debug("livesim2", "calculated s score is "..fullScore)
 		self.data.liveUI:setScoreRange(
 			math.floor(fullScore * 211/739 + 0.5),
 			math.floor(fullScore * 528/739 + 0.5),

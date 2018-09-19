@@ -78,6 +78,7 @@ local function registerGamestates()
 	gamestate.register("mainMenu", require("game.states.main_menu"))
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
 	gamestate.register("livesim2", require("game.states.livesim2"))
+	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
 end
 
 local function initializeSetting()
@@ -173,24 +174,79 @@ local function initializeYohane()
 	Yohane.Init(love.filesystem.load, "libs")
 end
 
-function love.load()
-	log.info("main", "logging check (info)")
-	log.warning("main", "loging check (warning)")
-	log.error("main", "logging check (error)")
-	log.debug("main", "logging check (debug)")
-	log.info("main", "logging check (info)")
+local usage = [[
+Usage: %s [options|absolute beatmap]
+
+Options:
+* -help                      Show this message
+
+* -play <beatmap>            Play specified beatmap name in beatmap directory.
+
+* -license                   Show the license text and exit.
+]]
+
+local license = [[
+Live Simulator: 2 v3.0 is licensed under zLib license
+
+Copyright (c) 2039 Dark Energy Processor
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source
+   distribution.
+]]
+
+function love.load(argv)
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
 	-- Early initialization (crash on failure)
 	createDirectories()
 	initializeSetting()
-	-- TODO: command-line processing.
+	-- Process command line
+	local absolutePlayBeatmapName
+	local playBeatmapName
+	do
+		local i = 1
+		while i <= #argv do
+			local arg = argv[i]
+
+			if arg == "-help" then
+				print(string.format(usage, argv[0] or "livesim3.exe"))
+				return love.event.quit()
+			elseif arg == "-play" then
+				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
+				i = i + 1
+			elseif arg == "-license" then
+				print(license)
+				return love.event.quit()
+			elseif not(absolutePlayBeatmapName) then
+				absolutePlayBeatmapName = arg
+			end
+
+			i = i + 1
+		end
+	end
 	-- Initialize window
 	initWindow()
 	-- Initialize Yohane
 	initializeYohane()
 	-- Register all gamestates
 	registerGamestates()
-	-- Jump to default game state
-	gamestate.enter(nil, "splash")
+
+	if playBeatmapName then
+		-- Play beatmap directly
+		gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {playBeatmapName})
+	else
+		-- Jump to default game state
+		gamestate.enter(nil, "splash")
+	end
 end
