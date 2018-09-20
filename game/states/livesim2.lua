@@ -91,23 +91,13 @@ function DEPLS:load(arg)
 
 	-- Load notes data
 	local isBeatmapInit = 0
-	beatmapList.getNotes(arg.beatmapName, function(chan)
-		local amount = chan:pop()
-		log.debug("livesim2", "received notes data: "..amount.." notes")
+	beatmapList.getNotes(arg.beatmapName, function(notes)
 		local fullScore = 0
-		for _ = 1, amount do
-			local t = {}
-			while chan:peek() ~= chan do
-				local k = chan:pop()
-				t[k] = chan:pop()
-			end
-
-			-- pop separator
-			chan:pop()
-			fullScore = fullScore + (t.effect > 10 and 370 or 739)
+		for i = 1, #notes do
+			local t = notes[i]
 			self.data.noteManager:addNote(t)
+			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 		end
-
 		self.data.noteManager:initialize()
 		-- Set score range (c,b,a,s order)
 		log.debug("livesim2", "calculated s score is "..fullScore)

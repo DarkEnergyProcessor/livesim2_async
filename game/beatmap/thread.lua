@@ -13,6 +13,8 @@ require("love.timer")
 local util = require("util")
 local log = require("logging")
 
+math.randomseed(os.time())
+
 local commandChannel = ...
 local beatmap = {
 	fileLoader = {},
@@ -27,10 +29,13 @@ if jit and (love._os == "Android" or love._os == "iOS") then
 	jit.off()
 end
 
-if love._version >= "11.0" then
-	function love.filesystem.isDirectory(filename)
-		return not(not(love.filesystem.getInfo(filename, "directory")))
+local function createRandomString()
+	local t = {}
+	for _ = 1, 64 do
+		t[#t + 1] = string.char(math.random(0, 255))
 	end
+
+	return table.concat(t)
 end
 
 local function sendBeatmapData(name, id, ...)
@@ -56,7 +61,7 @@ function beatmap.findSuitableForFile(filename)
 		end
 	end
 
-	return nil, "no file-based beatmap loader"
+	return nil, "unsupported beatmap format"
 end
 
 function beatmap.findSuitableForFolder(dir)
@@ -72,7 +77,7 @@ function beatmap.findSuitableForFolder(dir)
 		end
 	end
 
-	return nil, "no folder-based beatmap loader"
+	return nil, "unsupported beatmap project"
 end
 
 function beatmap.findSuitable(path)
@@ -140,6 +145,39 @@ local function getSummary(bv)
 	end
 
 	return info
+end
+
+-- returns id, summary or nil, message
+local function loadDirectly(path)
+	local id
+	repeat
+		id = createRandomString()
+	until beatmap.list[id] == nil
+
+	local s, f, msg = pcall(util.newFileWrapper, path, "rb")
+	if not(s) then return nil, msg end
+
+	-- Enumerate file beatmap loaders
+	for i = 1, #beatmap.fileLoader do
+		f:seek(0)
+		local status, value = pcall(beatmap.fileLoader[i], f)
+
+		if status then
+			local bv = {
+				noEnum = true,
+				name = path,
+				type = "file",
+				data = value
+			}
+			beatmap.list[id] = bv
+			return id, getSummary(bv)
+		else
+			love.event.push("print", string.format("%s: %s", path, value))
+		end
+	end
+
+	f:close()
+	return nil, "unsupported beatmap format"
 end
 
 -- Initialize beatmap loaders
@@ -229,6 +267,21 @@ local function processCommand(chan, command)
 			end
 
 			sendBeatmapData("unitinfo", id, c)
+		end
+	elseif command == "load" then
+		-- load direct
+		local path = arg[1]
+		local beatmapID, summary = loadDirectly(path)
+		if beatmapID then
+			local c = love.thread.newChannel()
+			for k, v in pairs(summary) do
+				c:push(k)
+				c:push(v)
+			end
+
+			sendBeatmapData("load", id, beatmapID, c)
+		else
+			sendBeatmapData("error", id, summary)
 		end
 	elseif command == "quit" then
 		return "quit"

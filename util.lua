@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local Luaoop = require("libs.Luaoop")
 local version11 = love._version >= "11.0"
 local util = {}
 
@@ -74,6 +75,51 @@ end
 function util.getChannelCount(sounddata)
 	if version11 then return sounddata:getChannelCount()
 	else return sounddata:getChannels() end
+end
+
+-- Class for wrapping Lua io file to LOVE file compatible
+local fileWrapClass = Luaoop.class("util.FileWrapper")
+
+function fileWrapClass:__construct(path, mode)
+	self.file = assert(io.open(path, mode or "rb"))
+	self.path = path
+end
+
+function fileWrapClass:__destruct()
+	if self.file then self.file:close() end
+end
+
+function fileWrapClass:read(n)
+	return self.file:read(tonumber(n) or "*a")
+end
+
+function fileWrapClass:write(str, size)
+	if type(str) == "userdata" and str:typeOf("Data") then
+		str = str:getString()
+	end
+
+	return self.file:write(tostring(str):sub(1, size))
+end
+
+function fileWrapClass:seek(offset)
+	return self.file:seek("set", offset)
+end
+
+function fileWrapClass:tell()
+	return self.file:seek("cur")
+end
+
+function fileWrapClass:close()
+	self.file:close()
+	self.file = nil
+end
+
+function fileWrapClass:getFilename()
+	return self.path
+end
+
+function util.newFileWrapper(path, mode)
+	return fileWrapClass(path, mode)
 end
 
 return util

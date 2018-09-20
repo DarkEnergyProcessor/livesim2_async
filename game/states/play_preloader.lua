@@ -15,15 +15,24 @@ local playPreloader = gamestate.create {
 
 function playPreloader:load(arg)
 	-- arg[1] is the beatmap name
+	-- arg[2] is the absolute/relative mode
 	beatmapList.push()
-	beatmapList.enumerate() -- initialize
 
 	self.data.beatmapData = nil
 	self.data.beatmapName = nil
-	beatmapList.getSummary(arg[1], function(data)
-		self.data.beatmapData = data
-		self.data.beatmapName = arg[1]
-	end)
+
+	if arg[2] then
+		beatmapList.registerAbsolute(arg[1], function(name, summary)
+			self.data.beatmapName = name
+			self.data.beatmapData = summary
+		end)
+	else
+		beatmapList.enumerate() -- initialize
+		beatmapList.getSummary(arg[1], function(data)
+			self.data.beatmapData = data
+			self.data.beatmapName = arg[1]
+		end)
+	end
 
 	while self.data.beatmapData == nil do
 		async.wait()
@@ -37,8 +46,8 @@ function playPreloader:start()
 	})
 end
 
-function playPreloader:resume()
-	gamestate.leave()
+function playPreloader.resume()
+	gamestate.leave(loadingInstance.getInstance())
 end
 
 return playPreloader

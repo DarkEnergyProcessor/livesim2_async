@@ -4,7 +4,6 @@
 
 local love = require("love")
 local color = require("color")
-local util = require("util")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
