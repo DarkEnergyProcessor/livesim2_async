@@ -33,6 +33,9 @@ local util = require("util")
 local setting = require("setting")
 local log = require("logging")
 local audioManager = require("audio_manager")
+local JSON = require("libs.JSON")
+
+local beatmapList = require("game.beatmap.list")
 
 -- Version string
 DEPLS_VERSION = "3.0.0-beta5"
@@ -103,7 +106,13 @@ local function createDirectories()
 	assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory \"beatmap\"")
 	assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
 	assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory \"screenshots\"")
+	assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
 	assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory \"unit_icon\"")
+
+	log.debug("main", "clearing temporary directory")
+	for file in ipairs(love.filesystem.getDirectoryItems("temp")) do
+		love.filesystem.remove("temp/"..file)
+	end
 end
 
 local function initializeYohane()
@@ -175,14 +184,23 @@ local function initializeYohane()
 end
 
 local usage = [[
-Usage: %s [options|absolute beatmap]
+Usage: %s [options] [absolute beatmap path]
+
+If 1 argument is passed (beatmap file), then Live Simulator: 2 will try to
+load that beatmap instead.
 
 Options:
-* -help                      Show this message
+* -dump                      Dump beatmap data to stdout instead of playing
+							 the game. It will output SIF-compatible JSON
+                             beatmap format.
+
+* -help                      Show this message then exit.
 
 * -play <beatmap>            Play specified beatmap name in beatmap directory.
+							 This argument takes precedence of passed beatmap
+                             path as 1st argument.
 
-* -license                   Show the license text and exit.
+* -license                   Show the license text then exit.
 ]]
 
 local license = [[
@@ -214,6 +232,7 @@ function love.load(argv)
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName
+	local dumpBeatmap = false
 	do
 		local i = 1
 		while i <= #argv do
@@ -228,6 +247,8 @@ function love.load(argv)
 			elseif arg == "-license" then
 				print(license)
 				return love.event.quit()
+			elseif arg == "-dump" then
+				dumpBeatmap = true
 			elseif not(absolutePlayBeatmapName) then
 				absolutePlayBeatmapName = arg
 			end
@@ -235,18 +256,38 @@ function love.load(argv)
 			i = i + 1
 		end
 	end
-	-- Initialize window
-	initWindow()
-	-- Initialize Yohane
-	initializeYohane()
-	-- Register all gamestates
-	registerGamestates()
 
-	if playBeatmapName then
-		-- Play beatmap directly
-		gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {playBeatmapName})
+	if dumpBeatmap then
+		local path = assert(playBeatmapName or absolutePlayBeatmapName, "Please specify beatmap file to dump")
+
+		beatmapList.push()
+		if playBeatmapName then
+			beatmapList.enumerate()
+		else
+			beatmapList.registerAbsolute(absolutePlayBeatmapName, function() end)
+		end
+
+		beatmapList.getNotes(playBeatmapName, function(data)
+			io.write(JSON:encode(data))
+			love.event.quit()
+		end)
 	else
-		-- Jump to default game state
-		gamestate.enter(nil, "splash")
+		-- Initialize window
+		initWindow()
+		-- Initialize Yohane
+		initializeYohane()
+		-- Register all gamestates
+		registerGamestates()
+
+		if playBeatmapName then
+			-- Play beatmap directly
+			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {playBeatmapName, false})
+		elseif absolutePlayBeatmapName then
+			-- Play beatmap from specified path
+			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {absolutePlayBeatmapName, true})
+		else
+			-- Jump to default game state
+			gamestate.enter(nil, "splash")
+		end
 	end
 end

@@ -46,6 +46,16 @@ local function registerRequestID(callback)
 	return id
 end
 
+local function channelToTable(a)
+	local data = {}
+	while a:getCount() > 0 do
+		local k = a:pop()
+		data[k] = a:pop()
+	end
+
+	return data
+end
+
 function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 	if beatmapList.callback[id] then
 		if name == "error" then
@@ -59,26 +69,35 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 			if not(cb(a, b, c, d, e)) then
 				beatmapList.callback[id] = nil
 			end
+		elseif name == "notes" then
+			local notes = {}
+			local amount = a:pop()
+			for _ = 1, amount do
+				local t = {}
+				while a:peek() ~= a do
+					local k = a:pop()
+					t[k] = a:pop()
+				end
+
+				-- pop separator
+				a:pop()
+				notes[#notes + 1] = t
+			end
+			local cb = beatmapList.callback[id]
+			beatmapList.callback[id] = nil
+			cb(notes)
 		elseif name == "unitinfo" then
-			local data = {}
-			while a:getCount() > 0 do
-				local k = a:pop()
-				data[k] = a:pop()
-			end
-
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
-			cb(data)
+			cb(channelToTable(a))
 		elseif name == "summary" then
-			local v = {}
-			while a:getCount() > 0 do
-				local k = a:pop()
-				v[k] = a:pop()
-			end
-
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
-			cb(v)
+			cb(channelToTable(a))
+		elseif name == "load" then
+			local cb = beatmapList.callback[id]
+			beatmapList.callback[id] = nil
+			cb(a, channelToTable(b))
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
@@ -114,21 +133,25 @@ function beatmapList.pop()
 	end
 end
 
+-- callback: summary
 function beatmapList.getSummary(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "summary", {registerRequestID(callback), name})
 end
 
+-- callback: notesList channel
 function beatmapList.getNotes(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "notes", {registerRequestID(callback), name})
 end
 
+-- callback: backgrounds channel
 function beatmapList.getBackground(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name})
 end
 
+-- callback: unit list channel
 function beatmapList.getCustomUnit(name, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "unitinfo", {registerRequestID(callback), name})
@@ -137,6 +160,12 @@ end
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
+end
+
+-- callback: id (may print unprintable char), summary
+function beatmapList.registerAbsolute(path, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "load", {registerRequestID(callback), path})
 end
 
 postExit.add(function()
