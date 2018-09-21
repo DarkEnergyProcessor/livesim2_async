@@ -81,10 +81,10 @@ function checkbox:render(x, y, w, h, state, style)
 	style:drawBackground(x, y, w, h)
 
 	if self.state then
-		love.graphics.setColor(style.foregroundColor)
-		love.graphics.rectangle('fill',x+3, y+3, w-6, h-6)
+		gui.platform.setColor(style.foregroundColor)
+		gui.platform.rectangle('fill',x+3, y+3, w-6, h-6)
 	end
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 return checkbox

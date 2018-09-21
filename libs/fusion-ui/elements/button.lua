@@ -115,19 +115,19 @@ function button:render(x, y, w, h, str, style)
 
 	values.style:drawBackground(values.x, values.y, values.w, values.h)
 
-	love.graphics.setFont(values.style.font)
+	gui.platform.setFont(values.style.font)
 	
-	love.graphics.setColor(values.style.foregroundColor)
+	gui.platform.setColor(values.style.foregroundColor)
 
 	if style.align == 'left' then
-		love.graphics.print(str, values.x+values.style.padding[1], math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+		gui.platform.print(str, values.x+values.style.padding[1], math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 	elseif style.align == 'right' then
-		love.graphics.print(str, values.x+math.floor(values.w-values.style.padding[3]-fW), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+		gui.platform.print(str, values.x+math.floor(values.w-values.style.padding[3]-fW), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 	else
-		love.graphics.print(str, values.x+math.floor((values.w/2-fW/2)), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+		gui.platform.print(str, values.x+math.floor((values.w/2-fW/2)), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 	end
 
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 return button

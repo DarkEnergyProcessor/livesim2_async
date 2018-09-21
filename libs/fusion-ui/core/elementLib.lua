@@ -148,7 +148,7 @@ function string.multi(str, style, w)
 				multiStr.maxLn = e
 			end
 
-			s = love.graphics.newText(style.font, s)
+			s = gui.platform.newText(style.font, s)
 
 			table.insert(multiStr, {str = s, w = e})
 		end

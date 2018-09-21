@@ -134,29 +134,29 @@ function text:render(x, y, w, h, str, style, animation)
 
 	values.style:drawBackground(values.x, values.y, values.w, values.h)
 	
-	love.graphics.setColor(values.style.foregroundColor)
-	love.graphics.setFont(values.style.font)
+	gui.platform.setColor(values.style.foregroundColor)
+	gui.platform.setFont(values.style.font)
 	if self.multiStr then
 		for i, e in ipairs(self.multiStr) do
 			if style.align == 'left' then
-				love.graphics.draw(e.str, values.x+values.style.padding[1], values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
+				gui.platform.draw(e.str, values.x+values.style.padding[1], values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
 			elseif style.align == 'center' then
-				love.graphics.draw(e.str, values.x+math.floor((values.w/2-e.w/2)), values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
+				gui.platform.draw(e.str, values.x+math.floor((values.w/2-e.w/2)), values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
 			else
-				love.graphics.draw(e.str, values.x+math.floor(values.w-values.style.padding[3]-e.w), values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
+				gui.platform.draw(e.str, values.x+math.floor(values.w-values.style.padding[3]-e.w), values.y+values.style.padding[2]+math.ceil((i-1)*fH*values.style.text.linespacing))
 			end
 		end
 	else
 		if style.align == 'left' then
-			love.graphics.print(self.str, values.x+values.style.padding[1], math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+			gui.platform.print(self.str, values.x+values.style.padding[1], math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 		elseif style.align == 'center' then
-			love.graphics.print(self.str, values.x+math.floor((values.w/2-fW/2)), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+			gui.platform.print(self.str, values.x+math.floor((values.w/2-fW/2)), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 		else
-			love.graphics.print(self.str, values.x+math.floor(values.w-values.style.padding[3]-fW), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
+			gui.platform.print(self.str, values.x+math.floor(values.w-values.style.padding[3]-fW), math.floor(values.y+values.h/2-fH/2)+values.style.padding[2])
 		end
 	end
 	
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 return text

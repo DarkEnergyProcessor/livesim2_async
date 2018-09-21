@@ -146,21 +146,21 @@ end
 function slider:render(x, y, w, h, str, style, animation)
 	style:drawBackground(x, y, w, h)
 
-	love.graphics.setColor(style.slider.fillIndicator)
+	gui.platform.setColor(style.slider.fillIndicator)
 	if self.orientation == 'horizontal' then
-		love.graphics.rectangle('fill', x, y+5, w*(self.current/(self.max-self.min)), h-10)
+		gui.platform.rectangle('fill', x, y+5, w*(self.current/(self.max-self.min)), h-10)
 	else
-		love.graphics.rectangle('fill', x+5, y, w-10, h*(self.current/(self.max-self.min)))
+		gui.platform.rectangle('fill', x+5, y, w-10, h*(self.current/(self.max-self.min)))
 	end
 
-	love.graphics.setColor(style.slider.handleColor)
+	gui.platform.setColor(style.slider.handleColor)
 	if self.orientation == 'horizontal' then
-		love.graphics.rectangle('fill', x-h/2+5+w*(self.current/(self.max-self.min)), y+5, h-10, h-10)
+		gui.platform.rectangle('fill', x-h/2+5+w*(self.current/(self.max-self.min)), y+5, h-10, h-10)
 	else
-		love.graphics.rectangle('fill', x+5, y-w/2+h*(self.current/(self.max-self.min)), w-10, w-10)
+		gui.platform.rectangle('fill', x+5, y-w/2+h*(self.current/(self.max-self.min)), w-10, w-10)
 	end
 
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 return slider

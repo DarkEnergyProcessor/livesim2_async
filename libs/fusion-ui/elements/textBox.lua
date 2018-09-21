@@ -132,21 +132,21 @@ function textBox:render(x, y, w, h, str, style)
 
 	style:drawBackground(x, y, w, h)
 
-	love.graphics.setFont(style.font)
+	gui.platform.setFont(style.font)
 	
-	love.graphics.setColor(style.foregroundColor)
+	gui.platform.setColor(style.foregroundColor)
 	
 	if fW>w then
-		love.graphics.print(str, x+(w-fW), math.floor(y+h/2-fH/2))
+		gui.platform.print(str, x+(w-fW), math.floor(y+h/2-fH/2))
 	else
-		love.graphics.print(str, x, math.floor(y+h/2-fH/2))
+		gui.platform.print(str, x, math.floor(y+h/2-fH/2))
 	end
 
 	if self.tick then
-		love.graphics.print('|', x+fW, math.floor(y+h/2-fH/2))
+		gui.platform.print('|', x+fW, math.floor(y+h/2-fH/2))
 	end
 
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 return textBox
