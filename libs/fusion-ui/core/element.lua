@@ -85,10 +85,10 @@ function element:render(x, y)
 		y = y or self.cValues.drawY
 
 		local r, g, b, a = self.canvasColor[1], self.canvasColor[2], self.canvasColor[3], self.canvasColor[4]/255
-		love.graphics.setColor(r * a, g * a, b * a, 255 * a)
+		gui.platform.setColor(r * a, g * a, b * a, 255 * a)
 		
 		if self.canvas and self.quad then
-			love.graphics.draw(self.canvas, self.quad, x, y)
+			gui.platform.draw(self.canvas, self.quad, x, y)
 		end
 	end
 end
@@ -408,19 +408,19 @@ function element:reRender()
 			h = math.ceil((self.h-self.hoffset)*1.5)
 		}
 
-		self.canvas = love.graphics.newCanvas(self.canvasSize.w, self.canvasSize.h)
+		self.canvas = gui.platform.newCanvas(self.canvasSize.w, self.canvasSize.h)
 		self:emitEvent('canvasinit',{canvas = self.canvas})
 	end
 
-	love.graphics.setCanvas(self.canvas)
+	gui.platform.setCanvas(self.canvas)
 	
-	love.graphics.clear()
+	gui.platform.clear()
 
 
 	self.type:render(0, 0, self.cValues.w, self.cValues.h, self.content, self.style)
 
 
-	love.graphics.setCanvas()
+	gui.platform.setCanvas()
 	if not self.quad then
 		self.quad = love.graphics.newQuad(0,0,self.cValues.w, self.cValues.h, self.canvasSize.w, self.canvasSize.h )
 	else

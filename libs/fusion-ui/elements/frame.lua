@@ -309,19 +309,19 @@ end
 
 function frame:render(x, y, w, h, content, style)
 	style:drawBackground(x, y, w, h)
-	love.graphics.setColor(style.foregroundColor)
+	gui.platform.setColor(style.foregroundColor)
 
 	--If the layout changed, then re-render all elements
 	if self.mkLayout then
 		for i, eCont in ipairs(self.elementContainers) do
 			local p = eCont.props
 			if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 )then
-				local a, b = love.graphics.getBlendMode()
-				love.graphics.setBlendMode("alpha", "premultiplied")
+				local a, b = gui.platform.getBlendMode()
+				gui.platform.setBlendMode("alpha", "premultiplied")
 
 				eCont.element:render(eCont.props.x, eCont.props.y+self.vOffset)
 
-				love.graphics.setBlendMode(a, b)
+				gui.platform.setBlendMode(a, b)
 			end
 		end
 		if self.slider then
@@ -334,12 +334,12 @@ function frame:render(x, y, w, h, content, style)
 		for i, eCont in ipairs(self.elementContainers) do
 			local p = eCont.props
 			if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 )then
-				local a, b = love.graphics.getBlendMode()
-				love.graphics.setBlendMode("alpha", "premultiplied")
+				local a, b = gui.platform.getBlendMode()
+				gui.platform.setBlendMode("alpha", "premultiplied")
 
 				eCont.element:render(eCont.props.x, eCont.props.y+self.vOffset)
 				
-				love.graphics.setBlendMode(a, b)
+				gui.platform.setBlendMode(a, b)
 			end
 		end
 
@@ -349,7 +349,7 @@ function frame:render(x, y, w, h, content, style)
 		self.redraw = false
 	end
 
-	love.graphics.setStencilTest()
+	gui.platform.setStencilTest()
 end
 
 

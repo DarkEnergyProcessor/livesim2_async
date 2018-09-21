@@ -123,14 +123,14 @@ local path = string.sub(..., 1, string.len(...) - string.len(".core.style"))
 local gui = require(path .. ".dummy")
 
 local style = {
-	defaultImage = love.graphics.newImage(love.image.newImageData(1,1))
+	defaultImage = gui.platform.newImage(love.image.newImageData(1,1))
 }
 style.__index = style
 
 style.defaultStyle = {
 	--Global/Common settings
 	--Getting a default font on load
-	font = love.graphics.getFont(),
+	font = gui.platform.getFont(),
 
 	--Color scheme
 	foregroundColor = { --Bone white
@@ -248,20 +248,20 @@ end
 function style:drawBackground(x, y, w, h)
 	--Local stencil function
 	local stencilFunction = function()
-		love.graphics.rectangle('fill',x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
+		gui.platform.rectangle('fill',x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
 	end
 
 	--Setting the stencil state
-	love.graphics.stencil(stencilFunction, "replace", 1)
-	love.graphics.setStencilTest('greater', 0)
+	gui.platform.stencil(stencilFunction, "replace", 1)
+	gui.platform.setStencilTest('greater', 0)
 
 	--Drawing the background rectangle
-	love.graphics.setColor(self.backgroundColor)
-	love.graphics.rectangle('fill', x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
+	gui.platform.setColor(self.backgroundColor)
+	gui.platform.rectangle('fill', x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
 
 		--Drawing the background image
 		if self.backgroundImage~=style.defaultImage then
-			love.graphics.setColor(self.backgroundImageColor)
+			gui.platform.setColor(self.backgroundImageColor)
 			if not self.backgroundSize or self.backgroundSize == 'center' then
 				local overShootX, overShootY, imgW, imgH
 	
@@ -270,7 +270,7 @@ function style:drawBackground(x, y, w, h)
 				overShootX = (imgW-w)/2
 				overShootY = (imgH-h)/2
 	
-				love.graphics.draw(self.backgroundImage, x-overShootX, y-overShootY)
+				gui.platform.draw(self.backgroundImage, x-overShootX, y-overShootY)
 			elseif self.backgroundSize == 'fit' then
 				local imgRatio, vOdr, hRatio, imgW, imgH
 				
@@ -281,7 +281,7 @@ function style:drawBackground(x, y, w, h)
 				hRatio = w/imgW
 				vOdr = imgH*hRatio-h
 	
-				love.graphics.draw(self.backgroundImage, x, y-((vOdr/2)), 0, hRatio, hRatio)
+				gui.platform.draw(self.backgroundImage, x, y-((vOdr/2)), 0, hRatio, hRatio)
 			end
 		end
 
@@ -297,26 +297,26 @@ function style:drawBackground(x, y, w, h)
 
 		if self.accent.direction=='down' then
 			for i = 1, self.accent.size do
-				love.graphics.setColor(
+				gui.platform.setColor(
 					self.backgroundColor[1]+accentStep[1]*i,
 					self.backgroundColor[2]+accentStep[2]*i,
 					self.backgroundColor[3]+accentStep[3]*i
 				)
 
-				love.graphics.line(x, y+h-self.accent.size+i, x+w, y+h-self.accent.size+i)
+				gui.platform.line(x, y+h-self.accent.size+i, x+w, y+h-self.accent.size+i)
 			end
 		end
 	elseif self.accent.style == 'uniform' then
-		love.graphics.setColor(self.accentColor)
+		gui.platform.setColor(self.accentColor)
 
 		if self.accent.direction=='down' then
-			love.graphics.rectangle('fill', x, y+h-self.accent.size, w, self.accent.size)
+			gui.platform.rectangle('fill', x, y+h-self.accent.size, w, self.accent.size)
 		end
 	end
 
 	if self.outline > 0 then
-		love.graphics.setColor(self.outlineColor)
-		love.graphics.rectangle('line', x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
+		gui.platform.setColor(self.outlineColor)
+		gui.platform.rectangle('line', x, y, w, h, self.cornerRadius, self.cornerRadius, 10)
 	end
 
 --[[	if self.outline[1]>0 then

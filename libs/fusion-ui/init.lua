@@ -18,6 +18,9 @@ gui.conf.touch_enabled = true
 gui.conf.utilities = true
 gui.conf.timing = false
 
+--[[ Loading platform agnostic function ]]
+gui.platform    = require(path..".platform")
+
 --[[ Loading core modules ]]
 --[[--------------------------------------------------
 	Note that elementLib could be considered not core,
