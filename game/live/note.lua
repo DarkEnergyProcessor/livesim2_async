@@ -432,6 +432,8 @@ function normalMovingNote:__construct(definition, param)
 	self.eventTime = self.accuracy.miss[1] * self.noteSpeed
 	-- miss time
 	self.missTime = self.accuracy.miss[2] * self.noteSpeed
+	-- timing offset
+	self.timingOffset = param.timingOffset
 	-- attribute
 	self.attribute = assert(definition.notes_attribute)
 	-- note layers (set later)
@@ -454,6 +456,8 @@ function normalMovingNote:__construct(definition, param)
 	self.opacity = 1
 	-- remove?
 	self.delete = false
+	-- oof
+	self.long = false
 	-- Current note manager
 	self.manager = param
 end
@@ -509,7 +513,9 @@ local function judgementCheck(t, accuracy, swing)
 		end
 	else
 		-- Start checking from perfect
-		if t > accuracy.great[1] and t < accuracy.great[2] then
+		if t > accuracy.perfect[1] and t < accuracy.perfect[2] then
+			return "perfect"
+		elseif t > accuracy.great[1] and t < accuracy.great[2] then
 			return "great"
 		elseif t > accuracy.good[1] and t < accuracy.good[2] then
 			return "good"
@@ -527,7 +533,11 @@ function normalMovingNote:tap()
 	-- only task remain for NormalMovingNote class is to
 	-- return the judgement string
 	self.delete = true
-	return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing), true
+	return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing)
+end
+
+function normalMovingNote.unTap()
+	-- nothing
 end
 
 -----------------------------
@@ -538,6 +548,7 @@ local longMovingNote = Luaoop.class("livesim2.LongMovingNote", normalMovingNote)
 
 function longMovingNote:__construct(definition, param)
 	normalMovingNote.__construct(self, definition, param)
+	self.long = true
 
 	-- Long note properties
 	-- flag to determine whetever the note is in hold
@@ -696,7 +707,7 @@ function longMovingNote:tap()
 	else
 		self.position = self.manager.noteSpawningPosition + self.distance * self.direction
 		self.lnHolding = true
-		return normalMovingNote.tap(self)
+		return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing)
 	end
 end
 
@@ -813,12 +824,14 @@ function noteManager:touchReleased(id)
 end
 
 function noteManager:setTouch(pos, id, rel, prev)
-	if not(self.touchInput[id]) then return end
+	if (rel or prev) and not(self.touchInput[id]) then return end
 
 	if rel then
 		local v = self.touchInput[id].note
-		local judgement = v:unTap()
-		self.callback(v, v.lanePosition, v.position:clone(), judgement, true)
+		if v.long then
+			local judgement = v:unTap()
+			self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+		end
 		self.touchInput[id] = nil
 	else
 		for _, v in ipairs(self.notesListByEvent) do
@@ -829,13 +842,15 @@ function noteManager:setTouch(pos, id, rel, prev)
 					self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
 
 					-- if prev exists, that means we're sliding
-					if self.touchInput[id].position == prev then
-						-- process old note
-						local vold = self.touchInput[id].note
-						if vold and Luaoop.class.instanceof(vold, "livesim2.LongMovingNote") then
-							-- release long note
-							judgement = vold:unTap()
-							self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+					if self.touchInput[id] then
+						if self.touchInput[id].position == prev then
+							-- process old note
+							local vold = self.touchInput[id].note
+							if vold and vold.long then
+								-- release long note
+								judgement = vold:unTap()
+								self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+							end
 						end
 						-- set note
 						self.touchInput[id].position = pos
@@ -883,7 +898,6 @@ function noteManager:update(dt)
 		if self.elapsedTime >= v.spawnTime then
 			if not(v.delete) then
 				local judgement
-				local isLn = Luaoop.class.instanceof(v, "livesim2.LongMovingNote")
 				if self.elapsedTime - dt < v.spawnTime then
 					judgement = v:update(self.elapsedTime - v.spawnTime)
 				else
@@ -892,7 +906,7 @@ function noteManager:update(dt)
 
 				if judgement then
 					-- function(object, lane, position, judgement, releaseFlag)
-					local relflg = isLn and (v.lnHolding and (v.delete and 2) or 1) or 0
+					local relflg = v.long and (v.lnHolding and (v.delete and 2) or 1) or 0
 					self.callback(v, v.lanePosition, v.position:clone(), judgement, relflg)
 				end
 			end

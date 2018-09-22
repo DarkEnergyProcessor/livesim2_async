@@ -56,17 +56,26 @@ local function channelToTable(a)
 	return data
 end
 
-function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
+function love.handlers.beatmapresponse(name, id, a, b, c, d)
 	if beatmapList.callback[id] then
 		if name == "error" then
 			beatmapList.callback[id] = nil
 			error(a)
-		elseif name == "enum" then
+		elseif name == "loaders" then
 			local cb = beatmapList.callback[id]
 			if a == "" then
 				beatmapList.callback[id] = nil
 			end
-			if not(cb(a, b, c, d, e)) then
+			if not(cb(a, b, c, d)) then
+				beatmapList.callback[id] = nil
+			end
+		elseif name == "enum" then
+			local cb = beatmapList.callback[id]
+			c = c or {}
+			if a == "" then
+				beatmapList.callback[id] = nil
+			end
+			if not(cb(a, b, c[2], d, c[1])) then
 				beatmapList.callback[id] = nil
 			end
 		elseif name == "notes" then
@@ -101,7 +110,7 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
-			cb(a, b, c, d, e)
+			cb(a, b, c, d)
 		end
 	end
 end
@@ -160,6 +169,11 @@ end
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
+end
+
+function beatmapList.enumerateLoaders(callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "loaders", {registerRequestID(callback)})
 end
 
 -- callback: id (may print unprintable char), summary

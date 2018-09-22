@@ -40,13 +40,15 @@ function playPreloader:load(arg)
 		end
 
 		self.persist.alreadyLoaded = true
+		self.persist.autoplayMode = arg.autoplay
 	end
 end
 
 function playPreloader:start()
 	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
-		summary = self.data.beatmapData
+		summary = self.data.beatmapData,
+		autoplay = self.persist.autoplayMode,
 	})
 end
 

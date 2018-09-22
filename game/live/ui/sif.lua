@@ -465,6 +465,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		-- reset texture
 		self.currentComboTextureIndex = 1
 		self.comboSpriteBatch:setTexture(self.images[26])
+		self.currentCombo = 0
 	elseif addcombo then
 		-- increment combo
 		self.currentCombo = self.currentCombo + 1
