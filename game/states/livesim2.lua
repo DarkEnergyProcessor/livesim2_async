@@ -19,6 +19,7 @@ local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
 local note = require("game.live.note")
+local pause = require("game.live.pause")
 local liveUI = require("game.live.ui")
 local BGM = require("game.bgm")
 
@@ -59,6 +60,7 @@ function DEPLS:load(arg)
 	-- sanity check
 	assert(arg.summary, "summary data missing")
 	assert(arg.beatmapName, "beatmap name id missing")
+	self.persist.beatmapDisplayName = assert(arg.summary.name)
 
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
@@ -151,8 +153,10 @@ function DEPLS:load(arg)
 	for k, v in pairs(tapSoundIndex) do
 		if type(v) == "string" then
 			local audio = audioManager.newAudio(v)
+
 			audioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
 			self.data.tapSFX[k] = audio
+
 			local list = {
 				alreadyPlayed = false, -- for note sound accumulation
 				audioManager.clone(audio)
@@ -162,6 +166,22 @@ function DEPLS:load(arg)
 		end
 	end
 	self.data.tapNoteAccumulation = assert(tonumber(setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
+
+	-- load pause system
+	self.data.pauseObject = pause({
+		quit = function()
+			gamestate.leave(loadingInstance.getInstance())
+		end,
+		resume = function(self)
+			if self.data.song then
+				self.data.song:seek(self.data.noteManager:getElapsedTime())
+				self.data.song:play()
+			end
+		end,
+		restart = function()
+			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
+		end
+	}, self)
 
 	-- wait until notes are loaded
 	while isBeatmapInit < 3 do
@@ -263,7 +283,12 @@ function DEPLS:update(dt)
 		self.data.tapSFX.accumulateTracking[i].alreadyPlayed = false
 	end
 
-	self.data.noteManager:update(dt)
+	-- update pause object first
+	self.data.pauseObject:update(dt)
+	if not(self.data.pauseObject:isPaused()) then
+		self.data.noteManager:update(dt)
+	end
+
 	self.data.liveUI:update(dt)
 end
 
@@ -279,12 +304,64 @@ function DEPLS:draw()
 
 	self.data.noteManager:draw()
 	self.data.liveUI:drawStatus()
+	self.data.pauseObject:draw()
 end
 
-DEPLS:registerEvent("keyreleased", function(_, key)
+local function pauseGame(self)
+	if self.data.song then
+		self.data.song:pause()
+	end
+	self.data.pauseObject:pause(self.persist.beatmapDisplayName)
+end
+
+local function livesimInputPressed(self, id, x, y)
+	-- id 0 is mouse
+	if self.data.pauseObject:isPaused() then return end
+
+	return self.data.noteManager:touchPressed(id, x, y)
+end
+
+local function livesimInputMoved(self, id, x, y)
+	if self.data.pauseObject:isPaused() then return end
+
+	return self.data.noteManager:touchMoved(id, x, y)
+end
+
+local function livesimInputReleased(self, id, x, y)
+	if self.data.pauseObject:isPaused() then
+		return self.data.pauseObject:mouseReleased(x, y)
+	end
+
+	if self.data.liveUI:checkPause(x, y) then
+		return pauseGame(self)
+	end
+
+	return self.data.noteManager:touchReleased(id, x, y)
+end
+
+DEPLS:registerEvent("keyreleased", function(self, key)
 	if key == "escape" then
 		return gamestate.leave(loadingInstance.getInstance())
+	elseif key == "pause" then
+		return pauseGame(self)
 	end
+
+	-- TODO: keymaps
+end)
+
+DEPLS:registerEvent("mousepressed", function(self, x, y, b, ist)
+	if ist or b > 1 then return end -- handled separately/handle left click only
+	return livesimInputPressed(self, 0, x, y)
+end)
+
+DEPLS:registerEvent("mousemoved", function(self, x, y, _, _, ist)
+	if ist or not(love.mouse.isDown(1)) then return end
+	return livesimInputMoved(self, 0, x, y)
+end)
+
+DEPLS:registerEvent("mousereleased", function(self, x, y, b, ist)
+	if ist or b > 1 then return end
+	return livesimInputReleased(self, 0, x, y)
 end)
 
 return DEPLS

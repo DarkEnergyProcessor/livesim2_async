@@ -16,31 +16,35 @@ local playPreloader = gamestate.create {
 function playPreloader:load(arg)
 	-- arg[1] is the beatmap name
 	-- arg[2] is the absolute/relative mode
-	beatmapList.push()
+	if not(self.persist.alreadyLoaded) then
+		beatmapList.push()
 
-	self.data.beatmapData = nil
-	self.data.beatmapName = nil
+		self.data.beatmapData = nil
+		self.data.beatmapName = nil
 
-	if arg[2] then
-		beatmapList.registerAbsolute(arg[1], function(name, summary)
-			self.data.beatmapName = name
-			self.data.beatmapData = summary
-		end)
-	else
-		beatmapList.enumerate() -- initialize
-		beatmapList.getSummary(arg[1], function(data)
-			self.data.beatmapData = data
-			self.data.beatmapName = arg[1]
-		end)
-	end
+		if arg[2] then
+			beatmapList.registerAbsolute(arg[1], function(name, summary)
+				self.data.beatmapName = name
+				self.data.beatmapData = summary
+			end)
+		else
+			beatmapList.enumerate() -- initialize
+			beatmapList.getSummary(arg[1], function(data)
+				self.data.beatmapData = data
+				self.data.beatmapName = arg[1]
+			end)
+		end
 
-	while self.data.beatmapData == nil do
-		async.wait()
+		while self.data.beatmapData == nil do
+			async.wait()
+		end
+
+		self.persist.alreadyLoaded = true
 	end
 end
 
 function playPreloader:start()
-	gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData
 	})
