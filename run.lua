@@ -217,7 +217,26 @@ function love.run()
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)
+			--[[
 			elseif not(gui) or not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
+				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
+			end
+			]]
+			-- fusion-ui currently has incomplete touch code
+			elseif gui and name:sub(1, 5) ~= "touch" and gui.eventHandlers[name] then
+				local received = false
+				if name == "mousepressed" then
+					received = gui.eventHandlers.mousepressed(a, b, c, false)
+				elseif name == "mousemoved" then
+					received = gui.eventHandlers.mousemoved(a, b, c, d, false)
+				elseif name == "mousereleased" then
+					received = gui.eventHandlers.mousereleased(a, b, c, false)
+				end
+				
+				if not(received) then
+					gamestate.internal.handleEvents(name, a, b, c, d, e, f)
+				end
+			else
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end
 		end
