@@ -200,6 +200,10 @@ function log.info(tag, text)
 	end
 end
 
+function log.infof(tag, text, ...)
+	return log.info(tag, string.format(text, ...))
+end
+
 function log.warning(tag, text)
 	if log.level >= 2 then
 		if initMutex() then
@@ -211,6 +215,11 @@ function log.warning(tag, text)
 end
 log.warn = log.warning
 
+function log.warningf(tag, text, ...)
+	return log.warning(tag, string.format(text, ...))
+end
+log.warnf = log.warningf
+
 function log.error(tag, text)
 	if log.level >= 1 then
 		if initMutex() then
@@ -221,6 +230,10 @@ function log.error(tag, text)
 	end
 end
 
+function log.errorf(tag, text, ...)
+	return log.error(tag, string.format(text, ...))
+end
+
 function log.debug(tag, text)
 	if log.level >= 4 then
 		if initMutex() then
@@ -229,6 +242,10 @@ function log.debug(tag, text)
 			return debugImpl(tag, text)
 		end
 	end
+end
+
+function log.debugf(tag, text, ...)
+	return log.debug(tag, string.format(text, ...))
 end
 
 return log

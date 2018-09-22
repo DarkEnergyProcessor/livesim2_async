@@ -62,6 +62,12 @@ function DEPLS:load(arg)
 	assert(arg.beatmapName, "beatmap name id missing")
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
 
+	-- autoplay
+	local autoplay = arg.autoplay
+	if autoplay == nil then
+		autoplay = setting.get("AUTOPLAY") == 1
+	end
+
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
 	-- Lane definition
@@ -73,12 +79,18 @@ function DEPLS:load(arg)
 		noteSpawningPosition = self.data.liveUI:getNoteSpawnPosition(),
 		lane = self.persist.lane,
 		accuracy = {16, 40, 64, 112, 128},
-		autoplay = true, -- Testing only
+		autoplay = autoplay,
 		callback = function(object, lane, position, judgement, releaseFlag)
+			log.debugf(
+				"livesim2", "note cb (%s), lane: %d, position: %s, relmode: %d",
+				judgement, lane, tostring(position), releaseFlag
+			)
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
-				self.data.liveUI:addScore(math.random(256, 1024))
-				self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+				if judgement ~= "miss" then
+					self.data.liveUI:addScore(math.random(256, 1024))
+					self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+				end
 			end
 
 			-- play SFX
@@ -102,7 +114,7 @@ function DEPLS:load(arg)
 		end
 		self.data.noteManager:initialize()
 		-- Set score range (c,b,a,s order)
-		log.debug("livesim2", "calculated s score is "..fullScore)
+		log.debugf("livesim2", "calculated s score is %d", fullScore)
 		self.data.liveUI:setScoreRange(
 			math.floor(fullScore * 211/739 + 0.5),
 			math.floor(fullScore * 528/739 + 0.5),
@@ -172,7 +184,7 @@ function DEPLS:load(arg)
 		quit = function()
 			gamestate.leave(loadingInstance.getInstance())
 		end,
-		resume = function(self)
+		resume = function()
 			if self.data.song then
 				self.data.song:seek(self.data.noteManager:getElapsedTime())
 				self.data.song:play()
@@ -181,7 +193,24 @@ function DEPLS:load(arg)
 		restart = function()
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
 		end
-	}, self)
+	})
+
+	-- load keymapping
+	do
+		local keymap = {}
+		local i = 9
+
+		for w in setting.get("IDOL_KEYS"):gmatch("[^\t]+") do
+			-- keymap is leftmost, but sif is rightmost
+			log.debugf("livesim2", "keymap: %q, lane: %d", w, i)
+			keymap[w] = i
+			i = i - 1
+			if i == 0 then break end
+		end
+
+		assert(i == 0, "improper keymap setting")
+		self.persist.keymap = keymap
+	end
 
 	-- wait until notes are loaded
 	while isBeatmapInit < 3 do
@@ -263,7 +292,10 @@ function DEPLS:start()
 		if self.data.song then
 			local audiotime = self.data.song:tell() * 1000
 			local notetime = self.data.noteManager.elapsedTime * 1000
-			log.debug("livesim2", string.format("audiotime: %.2fms, notetime: %.2fms, diff: %.2fms", audiotime, notetime, math.abs(audiotime - notetime)))
+			log.debugf(
+				"livesim2", "audiotime: %.2fms, notetime: %.2fms, diff: %.2fms",
+				audiotime, notetime, math.abs(audiotime - notetime)
+			)
 		end
 	end)
 	if self.data.song then
@@ -339,14 +371,25 @@ local function livesimInputReleased(self, id, x, y)
 	return self.data.noteManager:touchReleased(id, x, y)
 end
 
+DEPLS:registerEvent("keypressed", function(self, key, _, rep)
+	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
+	if not(rep) and self.persist.keymap[key] then
+		print(self.persist.keymap[key])
+		return self.data.noteManager:setTouch(self.persist.keymap[key], key)
+	end
+end)
+
 DEPLS:registerEvent("keyreleased", function(self, key)
+	log.debugf("livesim2", "keypressed, key: %s", key)
 	if key == "escape" then
 		return gamestate.leave(loadingInstance.getInstance())
 	elseif key == "pause" then
 		return pauseGame(self)
 	end
 
-	-- TODO: keymaps
+	if self.persist.keymap[key] then
+		return self.data.noteManager:setTouch(self.persist.keymap[key], key, true)
+	end
 end)
 
 DEPLS:registerEvent("mousepressed", function(self, x, y, b, ist)
@@ -363,5 +406,9 @@ DEPLS:registerEvent("mousereleased", function(self, x, y, b, ist)
 	if ist or b > 1 then return end
 	return livesimInputReleased(self, 0, x, y)
 end)
+
+DEPLS:registerEvent("touchpressed", livesimInputPressed)
+DEPLS:registerEvent("touchmoved", livesimInputMoved)
+DEPLS:registerEvent("touchreleased", livesimInputReleased)
 
 return DEPLS

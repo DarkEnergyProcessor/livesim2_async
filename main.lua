@@ -98,6 +98,8 @@ local function initializeSetting()
 	setting.define("TAP_SOUND", 1)
 	setting.define("SE_VOLUME", 80)
 	setting.define("IDOL_IMAGE", " \t \t \t \t \t \t \t \t ")
+	setting.define("AUTOPLAY", 0)
+	setting.define("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
 end
 
 local function createDirectories()
@@ -190,9 +192,15 @@ If 1 argument is passed (beatmap file), then Live Simulator: 2 will try to
 load that beatmap instead.
 
 Options:
+* -autoplay <on/off|1/0>     Enable/disable live simulator autoplay.
+
 * -dump                      Dump beatmap data to stdout instead of playing
 							 the game. It will output SIF-compatible JSON
-                             beatmap format.
+							 beatmap format.
+
+* -list <which>              Lists various things then exit. 'which' can be:
+  -list beatmaps             Lists available beatmaps.
+  -list loaders              Lists availabe beatmap loaders.
 
 * -help                      Show this message then exit.
 
@@ -232,13 +240,24 @@ function love.load(argv)
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName
+	local autoplayOverride
+	local listingMode
 	local dumpBeatmap = false
 	do
 		local i = 1
 		while i <= #argv do
 			local arg = argv[i]
 
-			if arg == "-help" then
+			if arg == "-autoplay" then
+				local u = assert(argv[i+1], "please specify autoplay mode"):lower()
+				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid autoplay mode")
+				autoplayOverride = u
+				i = i + 1
+			elseif arg == "-list" then
+				local which = assert(argv[i+1], "which to list?"):lower()
+				assert(which == "beatmaps" or which == "loaders", "invalid which or unimplemented yet")
+				listingMode = which
+			elseif arg == "-help" then
 				print(string.format(usage, argv[0] or "livesim3.exe"))
 				return love.event.quit()
 			elseif arg == "-play" then
@@ -258,7 +277,8 @@ function love.load(argv)
 	end
 
 	if dumpBeatmap then
-		local path = assert(playBeatmapName or absolutePlayBeatmapName, "Please specify beatmap file to dump")
+		assert(playBeatmapName or absolutePlayBeatmapName, "Please specify beatmap file to dump")
+		-- TODO: Dump to LS2 beatmap
 
 		beatmapList.push()
 		if playBeatmapName then
@@ -271,7 +291,34 @@ function love.load(argv)
 			io.write(JSON:encode(data))
 			love.event.quit()
 		end)
+	elseif listingMode then
+		beatmapList.push()
+
+		if listingMode == "beatmaps" then
+			beatmapList.enumerate(function(bname, name, fmt, diff, fmtInt)
+				if bname == "" then
+					love.event.quit()
+					return false
+				end
+				print("========== "..bname)
+				print(name)
+				print("("..fmtInt..") "..fmt)
+				print(diff or "*null*")
+				return true
+			end)
+		elseif listingMode == "loaders" then
+			beatmapList.enumerateLoaders(function(name, type)
+				if name == "" then
+					love.event.quit()
+					return false
+				end
+				print(type..": "..name)
+				return true
+			end)
+		end
 	else
+		local autoplayMode
+
 		-- Initialize window
 		initWindow()
 		-- Initialize Yohane
@@ -279,12 +326,26 @@ function love.load(argv)
 		-- Register all gamestates
 		registerGamestates()
 
+		if autoplayOverride then
+			autoplayMode = autoplayOverride == "on" or autoplayOverride == "1"
+		end
+
 		if playBeatmapName then
 			-- Play beatmap directly
-			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {playBeatmapName, false})
+			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
+				playBeatmapName,
+				false,
+
+				autoplay = autoplayMode
+			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
-			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {absolutePlayBeatmapName, true})
+			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
+				absolutePlayBeatmapName,
+				true,
+
+				autoplay = autoplayMode,
+			})
 		else
 			-- Jump to default game state
 			gamestate.enter(nil, "splash")

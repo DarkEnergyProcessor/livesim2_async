@@ -101,12 +101,13 @@ local function enumerateBeatmap(id)
 
 		if beatmapObject then
 			local value = {name = file, data = beatmapObject, type = type}
+			local fmt, fmtInt = beatmapObject:getFormatName()
 			beatmap.list[#beatmap.list + 1] = value
 			beatmap.list[file] = value
 			sendBeatmapData("enum", id,
 				file,
 				beatmapObject:getName() or file,
-				(beatmapObject:getFormatName()),
+				{fmtInt, fmt},
 				beatmapObject:getDifficultyString()
 			)
 		end
@@ -180,6 +181,12 @@ local function loadDirectly(path)
 	return nil, "unsupported beatmap format"
 end
 
+local loaderMeta = {
+	__call = function(loader, ...)
+		return rawget(loader, "func")(...)
+	end
+}
+
 -- Initialize beatmap loaders
 do
 	local list = love.filesystem.getDirectoryItems("game/beatmap/loader")
@@ -192,10 +199,15 @@ do
 				s, func, type = pcall(s)
 
 				if s then
+					local data = setmetatable({
+						name = v:sub(1, -5),
+						func = func
+					}, loaderMeta)
+
 					if type == "file" then
-						beatmap.fileLoader[#beatmap.fileLoader + 1] = func
+						beatmap.fileLoader[#beatmap.fileLoader + 1] = data
 					elseif type == "folder" then
-						beatmap.folderLoader[#beatmap.fileLoader + 1] = func
+						beatmap.folderLoader[#beatmap.fileLoader + 1] = data
 					end
 				else
 					love.event.push("print", v..": "..func)
@@ -283,6 +295,14 @@ local function processCommand(chan, command)
 		else
 			sendBeatmapData("error", id, summary)
 		end
+	elseif command == "loaders" then
+		for i = 1, #beatmap.fileLoader do
+			sendBeatmapData("loaders", id, beatmap.fileLoader[i].name, "file")
+		end
+		for i = 1, #beatmap.folderLoader do
+			sendBeatmapData("loaders", id, beatmap.folderLoader[i].name, "folder")
+		end
+		sendBeatmapData("loaders", id, "")
 	elseif command == "quit" then
 		return "quit"
 	end
