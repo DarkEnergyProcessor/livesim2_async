@@ -629,6 +629,12 @@ function sifui:drawHeader()
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 	love.graphics.draw(self.images[1])
 	love.graphics.draw(self.images[3], 5, 8, 0, 0.99545454, 0.86842105)
+
+	-- draw pause button
+	if self.pauseEnabled then
+		love.graphics.draw(self.images[2], 916, 5, 0, 0.6, 0.6)
+	end
+
 	-- score bar
 	love.graphics.draw(self.scoreBarImage, self.scoreBarQuad, 5, 8, 0, 0.99545454, 0.86842105)
 	if self.scoreIsMax then
@@ -638,14 +644,17 @@ function sifui:drawHeader()
 		love.graphics.setColor(color.compat(255, 255, 255, self.scoreBarFlashOpacity * self.opacity))
 		love.graphics.draw(self.images[9], 5, 8)
 	end
+
 	-- score number
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 	love.graphics.draw(self.currentScoreText, 476, 53, 0, 1, 1, self.currentScoreText:getWidth() * 0.5, 0)
+
 	-- score flash
 	if self.scoreBarFlashOpacity > 0 then
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * self.scoreFlashOpacity))
 		love.graphics.draw(self.images[10], 484, 72, 0, self.scoreFlashScale, self.scoreFlashScale, 159, 34)
 	end
+
 	-- score add effect
 	for i = #self.scoreAddAnimationList, 1, -1 do
 		local obj = self.scoreAddAnimationList[i]
@@ -653,6 +662,7 @@ function sifui:drawHeader()
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * obj.opacity))
 		love.graphics.draw(obj.text, obj.x, 72, 0, obj.scale, obj.scale, 0, 16)
 	end
+
 	-- stamina (confusion & some edge case incoming)
 	local stOff = 0
 	local stRedTint = 255
