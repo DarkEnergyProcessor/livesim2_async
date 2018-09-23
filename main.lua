@@ -82,6 +82,7 @@ local function registerGamestates()
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
 	gamestate.register("livesim2", require("game.states.livesim2"))
 	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
+	gamestate.register("changeUnits", require("game.states.change_units"))
 end
 
 local function initializeSetting()
@@ -348,7 +349,11 @@ function love.load(argv)
 			})
 		else
 			-- Jump to default game state
-			gamestate.enter(nil, "splash")
+			if love.filesystem.isFused() then
+				gamestate.enter(nil, "splash")
+			else
+				gamestate.enter(loadingInstance.getInstance(), "mainMenu")
+			end
 		end
 	end
 end

@@ -374,7 +374,6 @@ end
 DEPLS:registerEvent("keypressed", function(self, key, _, rep)
 	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
 	if not(rep) and self.persist.keymap[key] then
-		print(self.persist.keymap[key])
 		return self.data.noteManager:setTouch(self.persist.keymap[key], key)
 	end
 end)
