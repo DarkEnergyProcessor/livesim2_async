@@ -43,10 +43,10 @@ DEPLS_VERSION = "3.0.0-beta5"
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
 DEPLS_VERSION_NUMBER = 02030000
 
-local function initWindow()
+local function initWindow(w, h)
 	-- Our window is 960x640 by default.
-	log.info("main", "creating window")
-	love.window.setMode(960, 640, {
+	log.infof("main", "creating window, width: %d, height: %d", w, h)
+	love.window.setMode(w, h, {
 		resizable = true,
 		minwidth = 320,
 		minheight = 240,
@@ -196,8 +196,8 @@ Options:
 * -autoplay <on/off|1/0>     Enable/disable live simulator autoplay.
 
 * -dump                      Dump beatmap data to stdout instead of playing
-							 the game. It will output SIF-compatible JSON
-							 beatmap format.
+                             the game. It will output SIF-compatible JSON
+                             beatmap format.
 
 * -list <which>              Lists various things then exit. 'which' can be:
   -list beatmaps             Lists available beatmaps.
@@ -206,10 +206,16 @@ Options:
 * -help                      Show this message then exit.
 
 * -play <beatmap>            Play specified beatmap name in beatmap directory.
-							 This argument takes precedence of passed beatmap
+                             This argument takes precedence of passed beatmap
                              path as 1st argument.
 
 * -license                   Show the license text then exit.
+
+* -width <width>             Set window width. Ignored if used with command
+                             that operates without window. Default is 960
+
+* -height <height>           Set window height. Ignored if used with command
+                             that operates without window. Default is 640
 ]]
 
 local license = [[
@@ -243,6 +249,8 @@ function love.load(argv)
 	local playBeatmapName
 	local autoplayOverride
 	local listingMode
+	local windowWidth = 960
+	local windowHeight = 640
 	local dumpBeatmap = false
 	do
 		local i = 1
@@ -269,6 +277,12 @@ function love.load(argv)
 				return love.event.quit()
 			elseif arg == "-dump" then
 				dumpBeatmap = true
+			elseif arg == "-width" then
+				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
+				i = i + 1
+			elseif arg == "-height" then
+				windowHeight = assert(tonumber(argv[i+1]), "please specify correct height")
+				i = i + 1
 			elseif not(absolutePlayBeatmapName) then
 				absolutePlayBeatmapName = arg
 			end
@@ -321,7 +335,7 @@ function love.load(argv)
 		local autoplayMode
 
 		-- Initialize window
-		initWindow()
+		initWindow(windowWidth, windowHeight)
 		-- Initialize Yohane
 		initializeYohane()
 		-- Register all gamestates
