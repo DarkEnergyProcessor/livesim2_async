@@ -232,7 +232,7 @@ function love.run()
 				elseif name == "mousereleased" then
 					received = gui.eventHandlers.mousereleased(a, b, c, false)
 				end
-				
+
 				if not(received) then
 					gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 				end

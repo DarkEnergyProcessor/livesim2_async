@@ -39,6 +39,7 @@ local function initializeButtons()
 	blist.play:addEventListener("released", makeEnterGamestateFunction("beatmapSelect"))
 	-- Change units button
 	blist.changeUnits = menuButtonUI.new("Change Units")
+	blist.changeUnits:addEventListener("released", makeEnterGamestateFunction("changeUnits"))
 	-- Settings button
 	blist.settings = menuButtonUI.new("Settings")
 	-- Exit button
