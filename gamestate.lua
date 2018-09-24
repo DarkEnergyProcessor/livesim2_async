@@ -6,9 +6,9 @@ local Luaoop = require("libs.Luaoop")
 local lily = require("libs.lily")
 local async = require("async")
 local cache = require("cache")
+local log = require("logging")
 local gamestate = {
 	list = {}, -- list of registered gamestate
-	cachedInstance = setmetatable({}, {__mode = "kv"}),
 	internal = {}, -- internal functions
 	stack = {}, -- the active one is always gamestate.stack[#gamestate.stack]
 	preparedGamestate = nil, -- gamestate which is prepared
@@ -26,7 +26,6 @@ local gamestateObject = Luaoop.class("gamestate.Gamestate")
 function gamestateConstructorObject:__construct(info)
 	assert(info.fonts, "missing fonts table")
 	assert(info.images, "missing images table")
-	assert(info.audios, "missing audios table")
 	self.info = info
 	self.events = {}
 end
@@ -146,8 +145,9 @@ local function gamestateHandleMultiLily(udata, index, value)
 	local assetType = assetUdata[index][1]
 	local internal = gamestateObject^game
 
-	game.assets[assetType][assetUdata[index][2]] = value
+	log.debugf("gamestate", "asset loaded: %s", assetUdata[index][2])
 	internal.assets[assetType][assetUdata[index][2]] = value
+	game.assets[assetType][assetUdata[index][2]] = value
 	cache.set(assetUdata[index][3], value)
 end
 
@@ -168,6 +168,7 @@ function gamestate.internal.loadAssets(game)
 			local s, cname, aname = getCacheByValue(v)
 			if s then
 				game.assets.fonts[k] = cname
+				state.assets.fonts[k] = cname
 			else
 				loadedAssetList[#loadedAssetList + 1] = {lily.newFont, aname, v[2]}
 				assetUdata[#assetUdata + 1] = {"fonts", k, cname}
@@ -180,32 +181,23 @@ function gamestate.internal.loadAssets(game)
 			local s, cname, aname = getCacheByValue(v)
 			if s then
 				game.assets.images[k] = cname
+				state.assets.images[k] = cname
 			else
 				loadedAssetList[#loadedAssetList + 1] = {lily.newImage, aname, v[2]}
 				assetUdata[#assetUdata + 1] = {"images", k, cname}
 			end
 		end
 	end
-	-- Get audios
-	for k, v in pairs(state.constructor.info.audios or {}) do
-		if not(game.assets.images[k]) then
-			local s, cname, aname = getCacheByValue(v)
-			if s then
-				game.assets.images[k] = cname
-			else
-				loadedAssetList[#loadedAssetList + 1] = {lily.newSource, aname, v[2]}
-				assetUdata[#assetUdata + 1] = {"audios", k, cname}
-			end
-		end
-	end
 
-	-- Multilily
-	local multi = lily.loadMulti(loadedAssetList)
-		:setUserData({asset = assetUdata, game = game})
-		:onLoaded(gamestateHandleMultiLily)
-	-- Wait
-	while multi:isComplete() == false do
-		async.wait()
+	if #loadedAssetList > 0 then
+		-- Multilily
+		local multi = lily.loadMulti(loadedAssetList)
+			:setUserData({asset = assetUdata, game = game})
+			:onLoaded(gamestateHandleMultiLily)
+		-- Wait
+		while multi:isComplete() == false do
+			async.wait()
+		end
 	end
 end
 
@@ -335,6 +327,7 @@ end
 
 function gamestate.enter(loading, name, arg)
 	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
+	log.infof("gamestate", "entering gamestate: %s", name)
 	gamestate.internal.makeStrong(game)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "enter")
 	gamestate.loadingState = loading
@@ -349,6 +342,7 @@ function gamestate.leave(loading)
 	end
 
 	local game = gamestate.stack[#gamestate.stack - 1]
+	log.infof("gamestate", "leaving gamestate")
 	gamestate.internal.makeStrong(game.game)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(game.name, game.game, nil, "leave")
 	gamestate.loadingState = loading
@@ -357,6 +351,7 @@ end
 
 function gamestate.replace(loading, name, arg)
 	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
+	log.infof("gamestate", "replace current gamestate: %s", name)
 	gamestate.internal.makeStrong(game)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "replace")
 	gamestate.loadingState = loading

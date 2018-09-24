@@ -197,7 +197,14 @@ Options:
 
 * -dump                      Dump beatmap data to stdout instead of playing
                              the game. It will output SIF-compatible JSON
-                             beatmap format.
+							 beatmap format.
+
+* -dumpformat <format>       Set the format of the beatmap dump for -dump
+                             option.
+* -dumpformat json           Dump beatmap as JSON beatmap. This is default.
+* -dumpformat ls2            Dump beatmap as Live Simulator: 2 v2.0 binary
+                             beatmap. If this is used, -dumpout must be
+                             specified (unimplemented).
 
 * -list <which>              Lists various things then exit. 'which' can be:
   -list beatmaps             Lists available beatmaps.
@@ -238,12 +245,16 @@ freely, subject to the following restrictions:
    distribution.
 ]]
 
-function love.load(argv)
+function love.load(argv, gameargv)
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
 	-- Early initialization (crash on failure)
 	createDirectories()
 	initializeSetting()
+	print("argv")
+	table.foreach(argv, print)
+	print("gameargv")
+	table.foreach(gameargv, print)
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName
@@ -267,7 +278,7 @@ function love.load(argv)
 				assert(which == "beatmaps" or which == "loaders", "invalid which or unimplemented yet")
 				listingMode = which
 			elseif arg == "-help" then
-				print(string.format(usage, argv[0] or "livesim3.exe"))
+				print(string.format(usage, love.arg.getLow(gameargv) or "livesim3.exe"))
 				return love.event.quit()
 			elseif arg == "-play" then
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")

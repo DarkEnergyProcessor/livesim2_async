@@ -35,7 +35,7 @@ end
 
 function pause:_drawCounter()
 	local fract = self.timer % 1
-	local fractStr = string.format(".%03d", fract * 1000)
+	local fractStr = string.format(".%03d", math.min(fract * 1000, 999))
 	local whole = tostring(math.ceil(self.timer))
 	local s = (1 - fract) + 1
 
