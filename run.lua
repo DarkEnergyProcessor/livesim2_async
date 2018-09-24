@@ -68,7 +68,7 @@ function love.arg.parseOption(m, i)
 	return m.a
 end
 
-function love.arg.parseOptions()
+function love.arg.parseOptions(arg)
 	local game
 	local argc = #arg
 
@@ -94,6 +94,11 @@ function love.arg.parseOptions()
 
 	if not love.arg.options.game.set then
 		love.arg.parseOption(love.arg.options.game, game or 0)
+	end
+
+	if love.filesystem.isFused() and not(love.arg.options.fused.set) and game then
+		-- really fused
+		love.arg.optionIndices[game] = false
 	end
 end
 
@@ -201,8 +206,8 @@ function love.run()
 			if name == "keyreleased" and a == "f10" then
 				collectgarbage()
 				collectgarbage()
-				log.debug("run", "collectgarbage issued")
-				log.debug("run", string.format("current usage: %.2fMB", collectgarbage("count")/1024))
+				log.info("run", "collectgarbage issued")
+				log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
 			end
 			-- Error on thread error
 			assert(name ~= "threaderror", b)

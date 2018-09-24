@@ -31,8 +31,7 @@ local DEPLS = gamestate.create {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
 		longNoteTrail = {"assets/image/ef_326_000.png"},
 		dummyUnit = {"assets/image/dummy.png", {mipmaps = true}}
-	},
-	audios = {}
+	}
 }
 
 local function playTapSFXSound(tapSFX, name, nsAccumulation)
@@ -264,13 +263,13 @@ function DEPLS:load(arg)
 			image = unitImageCache[unitDefaultName[10 - i]]
 			if not(image) then
 				if unitDefaultName[10 - i] == " " then
-					image = self.assets.images.dummyUnit
+					image = assert(self.assets.images.dummyUnit)
 				else
 					local file = "unit_icon/"..unitDefaultName[10 - i]
 					if util.fileExists(file) then
 						image = assetCache.loadImage("unit_icon/"..unitDefaultName[10 - i])
 					else
-						image = self.assets.images.dummyUnit
+						image = assert(self.assets.images.dummyUnit)
 					end
 				end
 
@@ -278,6 +277,14 @@ function DEPLS:load(arg)
 			end
 		end
 
+		if not(image) then
+			error(string.format(
+				"image not exist. index: %d, custom: %s, name: %s",
+				i,
+				self.data.customUnit[i] or "false",
+				unitDefaultName[10 - i] or "null"
+			))
+		end
 		self.data.unitIcons[i] = image
 	end
 

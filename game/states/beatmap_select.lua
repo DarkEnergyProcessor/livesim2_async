@@ -4,6 +4,7 @@
 
 local love = require("love")
 local color = require("color")
+local setting = require("setting")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -13,6 +14,7 @@ local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local selectButton = require("game.ui.select_button")
 local beatmapSelButton = require("game.ui.beatmap_select_button")
+local checkbox = require("game.ui.checkbox")
 
 local beatmapList = require("game.beatmap.list")
 
@@ -175,6 +177,25 @@ function beatmapSelect:load()
 			end
 		end)
 	end
+
+	if self.data.checkLabel == nil then
+		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
+		addTextWithShadow(self.data.checkLabel, "Autoplay", 770, 372)
+		addTextWithShadow(self.data.checkLabel, "Random", 770, 408)
+		addTextWithShadow(self.data.checkLabel, "Storyboard", 770, 444)
+		addTextWithShadow(self.data.checkLabel, "Video Bg.", 770, 480)
+	end
+
+	if self.data.checkButton == nil then
+		self.data.checkButton = {
+			checkbox.new(setting.get("AUTOPLAY") == 1, function(_, elem)
+				setting.set("AUTOPLAY", elem.type.state and 1 or 0)
+			end),
+			checkbox.new(false),
+			checkbox.new(false),
+			checkbox.new(false)
+		}
+	end
 end
 
 function beatmapSelect:start()
@@ -225,12 +246,20 @@ function beatmapSelect:draw()
 	-- GUI draw
 	backNavigation.draw(self.data.back)
 	selectButton.draw(self.data.openBeatmap, 64, 592)
+
 	if self.data.beatmapFrame then
 		self.data.beatmapFrame:draw(60, 80, 360, 480)
 	end
+
+	for i = 1, #self.data.checkButton do
+		checkbox.draw(self.data.checkButton[i], 738, 336 + i * 36)
+	end
+	love.graphics.draw(self.data.checkLabel)
+
 	if self.persist.summary then
 		selectButton.draw(self.data.playButton, 470, 520)
 	end
+
 	gui.draw()
 end
 
