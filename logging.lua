@@ -13,7 +13,10 @@ local log = {level = 2}
 -- 4 = debug
 log.level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
 if not(log.level) or (log.level < 0 or log.level > 4) then
-	log.level = 2
+	log.level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
+	if not(log.level) or (log.level < 0 or log.level > 4) then
+		log.level = 2
+	end
 end
 
 -- Default implementation
@@ -135,33 +138,18 @@ elseif love._os == "Linux" or love._os == "OS X" then
 	-- Well does macOS support this?
 	setupANSICode()
 elseif love._os == "Android" then
-	-- Use android log function if there's FFI access
-	-- It's slow but it's better than nothing
-	local hasFFI, ffi = pcall(require, "ffi")
-	if hasFFI then
-		-- I hope this works in Android 7 due to dlopen behaviour changes in Android 7
-		local hasLog, llog = pcall(ffi.load, "log")
-		if hasLog then
-			ffi.cdef [[
-				int __android_log_write(int prio, const char *tag, const char *text);
-			]]
-
-			function infoImpl(tag, text)
-				llog.__android_log_write(4, tag, text)
-			end
-
-			function warnImpl(tag, text)
-				llog.__android_log_write(5, tag, text)
-			end
-
-			function errorImpl(tag, text)
-				llog.__android_log_write(6, tag, text)
-			end
-
-			function debugImpl(tag, text)
-				llog.__android_log_write(3, tag, text)
-			end
-		end
+	-- Screw this, use print and hope for the best
+	function infoImpl(tag, text)
+		print("I["..tag.."] "..text.."\n")
+	end
+	function warnImpl(tag, text)
+		print("W["..tag.."] "..text.."\n")
+	end
+	function errorImpl(tag, text)
+		print("E["..tag.."] "..text.."\n")
+	end
+	function debugImpl(tag, text)
+		print("D["..tag.."] "..text.."\n")
 	end
 end
 
