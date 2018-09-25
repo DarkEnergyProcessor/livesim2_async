@@ -14,6 +14,8 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	if jit and (love._os == "Android" or love._os == "iOS") then
 		jit.off()
 	end
+	require("util")
+	local log = require("logging")
 	local channel = arg
 	setting.list = {}
 	setting.default = {}
@@ -109,8 +111,12 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	end
 
 	while true do
+		log.debug("setting", "waiting for command...")
 		local command = channel:demand()
+		log.debugf("setting", "command get: %s", command)
 		if processCommand(command) == "quit" then
+			-- Clean up channel
+			while channel:getCount() > 0 do channel:pop() end
 			-- Done thread
 			return
 		end
@@ -126,6 +132,7 @@ else
 		assert(love.filesystem.createDirectory("config"), "failed to create configuration directory")
 		setting.thread = assert(love.thread.newThread("setting.lua"))
 		setting.channelMain:push(0) -- arbitrary value
+		while setting.channel:getCount() > 0 do setting.channel:pop() end
 		setting.thread:start(setting.channel)
 	end
 end
@@ -176,7 +183,8 @@ function setting.quit()
 		setting.thread:wait()
 	end
 
-	setting.channelMain:pop()
+	while setting.channelMain:getCount() > 0 do setting.channelMain:pop() end
 end
+
 
 return setting
