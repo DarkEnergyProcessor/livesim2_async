@@ -51,9 +51,6 @@ local function addTextWithShadow(text, str, x, y, intensity)
 end
 
 local function initializeSummary(self, data)
-	print("====== summary")
-	table.foreach(data, print)
-	print("====== summary")
 	-- Set
 	self.persist.summary = data
 
@@ -108,8 +105,6 @@ local function initializeBeatmapListUI(self)
 
 	local function frameButtonCallback(frame)
 		local beatmap = frameButton2Beatmap[frame]
-		print("====== beatmap selected")
-		table.foreach(beatmap, print)
 		beatmapList.getSummary(beatmap.id, function(data)
 			self.persist.selectedBeatmapID = beatmap.id
 			return initializeSummary(self, data)

@@ -80,8 +80,8 @@ end
 -- Class for wrapping Lua io file to LOVE file compatible
 local fileWrapClass = Luaoop.class("util.FileWrapper")
 
-function fileWrapClass:__construct(path, mode)
-	self.file = assert(io.open(path, mode or "rb"))
+function fileWrapClass:__construct(path, file)
+	self.file = file
 	self.path = path
 end
 
@@ -119,7 +119,9 @@ function fileWrapClass:getFilename()
 end
 
 function util.newFileWrapper(path, mode)
-	return fileWrapClass(path, mode)
+	local file, msg = io.open(path, mode)
+	if not(file) then return nil, msg end
+	fileWrapClass(path, file)
 end
 
 return util

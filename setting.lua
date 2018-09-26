@@ -37,6 +37,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			file = love.filesystem.newFile(key..".txt")
 
 			if not(file:open("r")) then
+				file = love.filesystem.newFile("config/"..key..".txt")
 				assert(file:open("w"))
 				file:write(assert(setting.default[key]))
 				file:close()
@@ -83,7 +84,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			-- initialize new configuration
 			local name = channel:demand():upper()
 			local default = channel:demand()
-			setting.default[name] = default
+			setting.default[name] = tonumber(default) or default
 
 			if isFileExist(name..".txt") then
 				-- old, backward compatible livesim2 config
@@ -99,10 +100,13 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			receiveChannel:push(setting.default[name])
 		elseif command == "get" then
 			local name = channel:demand()
-			receiveChannel:push(getConfigImpl(name))
+			local value = getConfigImpl(name)
+			log.debugf("setting", "get: %s, value: %s", name, tostring(value))
+			receiveChannel:push(value)
 		elseif command == "set" then
 			local name = channel:demand():upper()
 			local value = channel:demand()
+			log.debugf("setting", "set: %s, value: %s", name, tostring(value))
 			setConfigImpl(name, value)
 		elseif command == "commit" then
 			commitConfigImpl()
@@ -111,9 +115,8 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	end
 
 	while true do
-		log.debug("setting", "waiting for command...")
+		collectgarbage()
 		local command = channel:demand()
-		log.debugf("setting", "command get: %s", command)
 		if processCommand(command) == "quit" then
 			-- Clean up channel
 			while channel:getCount() > 0 do channel:pop() end
@@ -155,7 +158,7 @@ end
 
 function setting.define(key, default)
 	assert(setting.thread, "'define' can only be called in main thread")
-	return send("init", key, tostring(default))
+	return send("init", key, default)
 end
 
 function setting.default(key)
@@ -168,7 +171,7 @@ function setting.get(key)
 end
 
 function setting.set(key, value)
-	return send("set", key, tostring(value))
+	return send("set", key, value)
 end
 
 function setting.update()
