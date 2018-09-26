@@ -155,8 +155,8 @@ local function loadDirectly(path)
 		id = createRandomString()
 	until beatmap.list[id] == nil
 
-	local s, f, msg = pcall(util.newFileWrapper, path, "rb")
-	if not(s) then return nil, msg end
+	local f, msg = util.newFileWrapper(path, "rb")
+	if not(f) then return nil, msg end
 
 	-- Enumerate file beatmap loaders
 	for i = 1, #beatmap.fileLoader do
@@ -210,10 +210,10 @@ do
 						beatmap.folderLoader[#beatmap.fileLoader + 1] = data
 					end
 				else
-					love.event.push("print", v..": "..func)
+					log.errorf("beatmap.thread", "cannot register loader %s: %s", v, func)
 				end
 			else
-				love.event.push("print", v..": "..func)
+				log.errorf("beatmap.thread", "cannot register loader %s: %s", v, func)
 			end
 		end
 	end
@@ -226,8 +226,6 @@ local function processCommand(chan, command)
 
 	if command == "enum" then
 		beatmap.list = {}
-		collectgarbage()
-		collectgarbage()
 		enumerateBeatmap(id)
 	elseif command == "summary" then
 		-- see game/beatmap/list.lua for more information about the format

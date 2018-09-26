@@ -120,8 +120,10 @@ function noteManager:__construct(param)
 	self.notesListByEvent = {}
 	-- list of notes, ordered by their draw order
 	self.notesListByDraw = {}
-	-- input list
+	-- touch input note list
 	self.touchInput = {}
+	-- touch input position list
+	self.touchTrack = {}
 	-- on note triggered
 	self.callback = param.callback or function(object, lane, position, judgement, releaseFlag)
 		-- object: note object
@@ -803,30 +805,33 @@ function noteManager:touchPressed(id, x, y)
 	if self.autoplay then return end -- why bother
 	for i = 1, 9 do
 		if touchHitboxCheck(self.lane[i], x, y, self.hitboxRotation[i]) then
+			self.touchTrack[id] = i
 			return self:setTouch(i, id)
 		end
 	end
 end
 
 function noteManager:touchMoved(id, x, y)
-	if self.autoplay or not(self.touchInput[id]) then return end
+	if self.autoplay or not(self.touchTrack[id]) then return end
 
-	local track = self.touchInput[id]
+	local track = self.touchTrack[id]
 	for i = 1, 9 do
-		if i ~= track.position and touchHitboxCheck(self.lane[i], x, y, self.hitboxRotation[i]) then
-			return self:setTouch(i, id, false, track.position)
+		if i ~= track and touchHitboxCheck(self.lane[i], x, y, self.hitboxRotation[i]) then
+			self.touchTrack[id] = i
+			return self:setTouch(i, id, false, track)
 		end
 	end
 end
 
 function noteManager:touchReleased(id)
+	self.touchTrack[id] = nil
 	return self:setTouch(nil, id, true)
 end
 
 function noteManager:setTouch(pos, id, rel, prev)
-	if (rel or prev) and not(self.touchInput[id]) then return end
+	if rel and not(self.touchInput[id]) then return end
 
-	if rel then
+	if rel and self.touchInput[id].note then
 		local v = self.touchInput[id].note
 		if v.long then
 			local judgement = v:unTap()
@@ -837,32 +842,37 @@ function noteManager:setTouch(pos, id, rel, prev)
 		for _, v in ipairs(self.notesListByEvent) do
 			if self.elapsedTime >= v.eventTime + v.spawnTime then
 				if not(v.delete) and v.lanePosition == pos then
-					-- process new note
-					local judgement = v:tap()
-					self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
+					if prev and v.swing or not(prev) then
+						-- process new note
+						local judgement = v:tap()
+						self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
 
-					-- if prev exists, that means we're sliding
-					if self.touchInput[id] then
-						if self.touchInput[id].position == prev then
-							-- process old note
-							local vold = self.touchInput[id].note
-							if vold and vold.long then
-								-- release long note
-								judgement = vold:unTap()
-								self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+						if self.touchInput[id] then
+							-- if prev exists, that means we're sliding
+							if self.touchInput[id].position == prev and self.touchInput[id].note then
+								-- process old note
+								local vold = self.touchInput[id].note
+								if vold and vold.long then
+									-- release long note
+									judgement = vold:unTap()
+									self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+								end
 							end
+							-- set note
+							self.touchInput[id].position = pos
+							self.touchInput[id].note = v
+						else
+							self.touchInput[id] = {
+								position = pos,
+								note = v
+							}
 						end
-						-- set note
-						self.touchInput[id].position = pos
-						self.touchInput[id].note = v
-					else
-						self.touchInput[id] = {
-							position = pos,
-							note = v
-						}
 					end
+
+					return
 				end
 			else
+				-- not found
 				return
 			end
 		end

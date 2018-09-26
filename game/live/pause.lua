@@ -88,7 +88,7 @@ function pause:_drawPause()
 
 		love.graphics.setColor(b.color)
 		love.graphics.rectangle("fill", 416, y, 128, 48)
-		love.graphics.setColor(color.white50PT)
+		love.graphics.setColor(color.white52PT)
 		love.graphics.print(b.display, 480, y + 5, 0, 1, 1, w * 0.5, 0)
 	end
 end

@@ -22,6 +22,12 @@
 -- luacheck: globals DEPLS_VERSION
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
+-- Version string
+DEPLS_VERSION = "3.0.0-beta5"
+-- Version number
+-- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
+DEPLS_VERSION_NUMBER = 02030000
+
 local love = require("love")
 local assetCache = require("asset_cache")
 local vires = require("vires")
@@ -37,14 +43,7 @@ local JSON = require("libs.JSON")
 
 local beatmapList = require("game.beatmap.list")
 
--- Version string
-DEPLS_VERSION = "3.0.0-beta5"
--- Version number
--- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02030000
-
-local function initWindow(w, h)
-	-- Our window is 960x640 by default.
+local function initWindow(w, h, f)
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
 	love.window.setMode(w, h, {
 		resizable = true,
@@ -53,7 +52,7 @@ local function initWindow(w, h)
 		highdpi = true,
 		-- RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
-		fullscreen = love._os == "iOS" or love._os == "Android",
+		fullscreen = love._os == "iOS" or love._os == "Android" or f,
 		fullscreentype = "desktop",
 		vsync = true,
 	})
@@ -197,7 +196,7 @@ Options:
 
 * -dump                      Dump beatmap data to stdout instead of playing
                              the game. It will output SIF-compatible JSON
-							 beatmap format.
+                             beatmap format.
 
 * -dumpformat <format>       Set the format of the beatmap dump for -dump
                              option.
@@ -206,11 +205,16 @@ Options:
                              beatmap. If this is used, -dumpout must be
                              specified (unimplemented).
 
+* -fullscreen                Start Live Simulator: 2 fullscreen.
+
 * -list <which>              Lists various things then exit. 'which' can be:
   -list beatmaps             Lists available beatmaps.
   -list loaders              Lists availabe beatmap loaders.
 
 * -help                      Show this message then exit.
+
+* -height <height>           Set window height. Ignored if used with command
+                             that operates without window. Default is 640
 
 * -play <beatmap>            Play specified beatmap name in beatmap directory.
                              This argument takes precedence of passed beatmap
@@ -221,8 +225,6 @@ Options:
 * -width <width>             Set window width. Ignored if used with command
                              that operates without window. Default is 960
 
-* -height <height>           Set window height. Ignored if used with command
-                             that operates without window. Default is 640
 ]]
 
 local license = [[
@@ -251,15 +253,12 @@ function love.load(argv, gameargv)
 	-- Early initialization (crash on failure)
 	createDirectories()
 	initializeSetting()
-	print("argv")
-	table.foreach(argv, print)
-	print("gameargv")
-	table.foreach(gameargv, print)
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName
 	local autoplayOverride
 	local listingMode
+	local fullscreen = false
 	local windowWidth = 960
 	local windowHeight = 640
 	local dumpBeatmap = false
@@ -273,10 +272,18 @@ function love.load(argv, gameargv)
 				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid autoplay mode")
 				autoplayOverride = u
 				i = i + 1
+			elseif arg == "-dump" then
+				dumpBeatmap = true
+			elseif arg == "-fullscreen" then
+				fullscreen = true
+				windowWidth, windowHeight = love.window.getDesktopDimensions()
 			elseif arg == "-list" then
 				local which = assert(argv[i+1], "which to list?"):lower()
 				assert(which == "beatmaps" or which == "loaders", "invalid which or unimplemented yet")
 				listingMode = which
+			elseif arg == "-height" then
+				windowHeight = assert(tonumber(argv[i+1]), "please specify correct height")
+				i = i + 1
 			elseif arg == "-help" then
 				print(string.format(usage, love.arg.getLow(gameargv) or "livesim3.exe"))
 				return love.event.quit()
@@ -286,13 +293,8 @@ function love.load(argv, gameargv)
 			elseif arg == "-license" then
 				print(license)
 				return love.event.quit()
-			elseif arg == "-dump" then
-				dumpBeatmap = true
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
-				i = i + 1
-			elseif arg == "-height" then
-				windowHeight = assert(tonumber(argv[i+1]), "please specify correct height")
 				i = i + 1
 			elseif not(absolutePlayBeatmapName) then
 				absolutePlayBeatmapName = arg
@@ -346,7 +348,7 @@ function love.load(argv, gameargv)
 		local autoplayMode
 
 		-- Initialize window
-		initWindow(windowWidth, windowHeight)
+		initWindow(windowWidth, windowHeight, fullscreen)
 		-- Initialize Yohane
 		initializeYohane()
 		-- Register all gamestates

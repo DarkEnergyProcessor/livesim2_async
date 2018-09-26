@@ -59,7 +59,7 @@ local color = setmetatable({}, {
 
 			if colval then
 				local cmodv = hexCache(string.format("%02x%02x%02x%02x",
-					colval[1], colval[2], colval[3],
+					colval[1] / div, colval[2] / div, colval[3] / div,
 					math.floor(255 * alpha / 100)
 				))
 				rawset(color, var, cmodv)
