@@ -6,6 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local assetCache = require("asset_cache")
 local color = require("color")
+local Yohane = require("libs.Yohane")
 
 local pause = Luaoop.class("livesim2.Pause")
 
@@ -19,10 +20,17 @@ function pause:__construct(callbacks, opaque)
 	self.callback = callbacks
 	self.opaque = opaque
 	self.beatmapName = ""
+	self.failedAnimation = Yohane.newFlashFromFilename("flash/live_gameover.flsh", "ef_312")
+	self.failedTimer = 3
 end
 
 function pause:update(dt)
 	if self.paused then
+		if self.isFailed then
+			self.failedAnimation:update(dt * 1000)
+			self.failedTimer = math.max(self.failedTimer - dt, 0)
+		end
+
 		self.timer = self.timer - dt
 
 		if self.timer <= 0 then
@@ -75,13 +83,18 @@ function pause:_drawPause()
 	-- x = 416
 	-- y = 228 + i * 72 (where i starts at 1)
 	local w = self.font:getWidth(self.beatmapName)
-	love.graphics.setColor(color.white)
 	love.graphics.setFont(self.mainCounterFont)
-	love.graphics.print("Paused", 372, 128)
+	if self.isFailed then
+		love.graphics.setColor(color.orangeRed)
+		love.graphics.print("Failed", 372, 128) -- coincidence position
+	else
+		love.graphics.setColor(color.white)
+		love.graphics.print("Paused", 372, 128)
+	end
 	love.graphics.setFont(self.font)
 	love.graphics.print(self.beatmapName, 480, 192, 0, 1, 1, w * 0.5, 0)
 
-	for i = 1, #buttons do
+	for i = (self.isFailed and 2 or 1), #buttons do
 		local b = buttons[i]
 		local y = 228 + i * 72
 		w = self.font:getWidth(b.display)
@@ -91,6 +104,10 @@ function pause:_drawPause()
 		love.graphics.setColor(color.white52PT)
 		love.graphics.print(b.display, 480, y + 5, 0, 1, 1, w * 0.5, 0)
 	end
+end
+
+function pause:_drawFailed()
+	return self.failedAnimation:draw(480, 320)
 end
 
 function pause:draw()
@@ -103,15 +120,20 @@ function pause:draw()
 		love.graphics.pop()
 
 		if self.timer == math.huge then
-			return self:_drawPause()
+			if self.isFailed and self.failedTimer > 0 then
+				return self:_drawFailed()
+			else
+				return self:_drawPause()
+			end
 		else
 			return self:_drawCounter()
 		end
 	end
 end
 
-function pause:pause(name)
+function pause:pause(name, fail)
 	self.paused = true
+	self.isFailed = not(not(fail))
 	self.beatmapName = name or self.beatmapName
 end
 
@@ -126,7 +148,10 @@ function pause:mouseReleased(x, y)
 			local index = (y - 300) / 72
 			if index % 1 < 48/72 then -- button only has size of 48px
 				-- direct indexing
-				local button = buttons[math.floor(index) + 1]
+				index = math.floor(index)
+				if index == 0 and self.isFailed then return end -- no resume
+
+				local button = buttons[index + 1]
 				if type(button.callback) == "function" then
 					button.callback(self)
 				else

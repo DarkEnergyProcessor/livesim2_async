@@ -100,6 +100,10 @@ local function initializeSetting()
 	setting.define("IDOL_IMAGE", " \t \t \t \t \t \t \t \t ")
 	setting.define("AUTOPLAY", 0)
 	setting.define("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
+	setting.define("LIVESIM_DELAY", 1000) -- backward compatibility
+	setting.define("LIVESIM_DIM", 75)
+	setting.define("SCORE_ADD_NOTE", 1024)
+	setting.define("STAMINA_DISPLAY", 32)
 end
 
 local function createDirectories()
