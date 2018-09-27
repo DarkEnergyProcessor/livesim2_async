@@ -511,7 +511,7 @@ local function judgementCheck(t, accuracy, swing)
 		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
 			return "good"
 		else
-			return "bad" -- shouldn't happen unless tap is called early.
+			return "good" -- swing is never "bad"
 		end
 	else
 		-- Start checking from perfect

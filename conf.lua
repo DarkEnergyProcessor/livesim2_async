@@ -26,8 +26,10 @@ if love._exe then
 end
 
 function love.conf(t)
+	-- Set identity and give game directory a priority
+	love.filesystem.setIdentity("DEPLS", true)
+
 	t.version = "0.10.0"                -- At the moment. TODO: Remove.
-	t.identity = "DEPLS"                -- The name of the save directory (string)
 	t.appendidentity = true             -- Search files in source directory before save directory (boolean)
 	t.console = false                   -- Attach a console (boolean, Windows only)
 	t.accelerometerjoystick = false     -- Enable accelerometer on iOS and Android as a Joystick (boolean)
