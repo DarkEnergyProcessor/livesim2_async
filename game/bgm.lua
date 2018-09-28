@@ -98,6 +98,10 @@ function BGMClass:tell()
 	end
 end
 
+function BGMClass:isPlaying()
+	return audioManager.isPlaying(self.audio)
+end
+
 function BGM.newSong(decoder)
 	local sync = async.syncLily(lily.newSoundData(decoder))
 	return BGMClass(sync:getValues())

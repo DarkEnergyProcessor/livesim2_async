@@ -739,6 +739,10 @@ function noteManager:getElapsedTime()
 	return self.elapsedTime
 end
 
+function noteManager:getRemainingNotes()
+	return #self.notesList
+end
+
 function noteManager:addNote(definition)
 	local v
 	if definition.effect % 10 == 3 then

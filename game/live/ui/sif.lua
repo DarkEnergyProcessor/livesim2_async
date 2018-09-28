@@ -3,14 +3,19 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local assetCache = require("asset_cache")
+local cache = require("cache")
+local async = require("async")
+local color = require("color")
+
+local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
 local lily = require("libs.lily")
 local timer = require("libs.hump.timer")
 local vector = require("libs.hump.vector")
-local assetCache = require("asset_cache")
-local async = require("async")
-local color = require("color")
+
 local uibase = require("game.live.uibase")
+
 local sifui = Luaoop.class("livesim2.SIFLiveUI", uibase)
 
 -- luacheck: no max line length
@@ -20,6 +25,7 @@ local sifui = Luaoop.class("livesim2.SIFLiveUI", uibase)
 -----------------
 
 local scoreAddTweenTarget = {{x = 570, scale = 1}, {opacity = 0}}
+local comboCheerSteps = {"cut_01_loop_end", "cut_02_loop_end", "cut_03_loop_end"}
 
 function sifui:__construct()
 	-- as per uibase definition, constructor can use
@@ -109,6 +115,36 @@ function sifui:__construct()
 		star = love.graphics.newQuad(0, 1948, 100, 100, 2048, 2048),
 		circle = love.graphics.newQuad(100, 1973, 75, 75, 2048, 2048)
 	}
+	-- combo cheer
+	self.comboCheer = true
+	self.comboCheerAnim = cache.get("live_combo_cheer")
+	if not(self.comboCheerAnim) then
+		self.comboCheerAnim = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh")
+		local img = assetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
+		-- THIS VIOLATES YOHANE API FOR PERFORMANCE OPTIMIZATIONS
+		local function flashSetImage(flash, name, image)
+			local this = getmetatable(flash)
+			local flshname = "I"..name..".png.imag"
+
+			for i = 0, #this.movieData do
+				if this.movieData[i].name == flshname then
+					this.movieData[i].imageHandle = image
+					return
+				end
+			end
+			error("Invalid name "..name)
+		end
+		for i = 0, 9 do
+			flashSetImage(
+				self.comboCheerAnim,
+				string.format("assets/flash/ui/live/img/ef_350_%03d", i),
+				{img, love.graphics.newQuad(i * 77, 0, 77, 78, 770, 78)}
+			)
+		end
+	end
+	self.comboCheerAnim = self.comboCheerAnim:clone()
+	self.comboCheerAnim:setMovie("ef_350")
+	self.comboCheerStep = 1
 	-- score variable setup
 	self.currentScore = 0
 	self.currentScoreAdd = 0 -- also as dirty flag
@@ -193,11 +229,55 @@ function sifui:__construct()
 	self.staminaText = love.graphics.newText(self.staminaFont, "45")
 	-- pause system
 	self.pauseEnabled = true
+	-- live clear
+	self.fullComboAnim = cache.get("live_fullcombo")
+	if not(self.fullComboAnim) then
+		self.fullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh")
+		cache.set("live_fullcombo", self.fullComboAnim)
+	end
+	self.liveClearAnim = cache.get("live_clear")
+	if not(self.liveClearAnim) then
+		self.liveClearAnim = Yohane.newFlashFromFilename("flash/live_clear.flsh")
+		cache.set("live_clear", self.liveClearAnim)
+	end
+	self.fullComboAnim = self.fullComboAnim:clone()
+	self.liveClearAnim = self.liveClearAnim:clone()
+	self.liveClearTime = -math.huge -- 7 = FC + live clear; 5 = live clear only
+	self.liveClearCallback = nil
+	self.fullComboAnim:setMovie("ef_329")
+	self.liveClearAnim:setMovie("ef_311")
 end
 
 function sifui:update(dt)
 	-- timer
 	self.timer:update(dt)
+	-- combo cheer
+	if not(self.minimalEffect) and self.comboCheer then
+		if self.currentCombo >= 100 then
+			if self.currentCombo >= 300 and self.comboCheerStep ~= 3 then
+				self.comboCheerStep = 3
+				self.comboCheerAnim:jumpToLabel("cut_02_end")
+				self.comboCheerAnim:jumpToLabel("cut_03_loop")
+			elseif
+				self.currentCombo >= 200 and
+				self.currentCombo < 300 and
+				self.comboCheerStep ~= 2
+			then
+				self.comboCheerStep = 2
+				self.comboCheerAnim:jumpToLabel("cut_01_end")
+				self.comboCheerAnim:jumpToLabel("cut_02_loop")
+			end
+
+			self.comboCheerAnim:update(dt * 1000)
+			if self.comboCheerAnim:isFrozen() then
+				self.comboCheerAnim:jumpToLabel(comboCheerSteps[self.comboCheerStep])
+			end
+		elseif self.comboCheerStep > 1 then
+			self.comboCheerStep = 1
+			self.comboCheerAnim:jumpToLabel("cut_03_loop")
+			self.comboCheerAnim:jumpToLabel("cut_01_loop")
+		end
+	end
 	-- score effect
 	if self.currentScoreAdd > 0 then
 		if not(self.minimalEffect) then
@@ -290,6 +370,19 @@ function sifui:update(dt)
 	self.noteIconTime = self.noteIconTime + dt * noteiconMultipler
 	while self.noteIconTime >= 2.2 do
 		self.noteIconTime = self.noteIconTime - 2.2
+	end
+	-- live clear
+	if self.liveClearTime ~= -math.huge then
+		if self.liveClearTime > 0 then
+			self.liveClearTime = self.liveClearTime - dt
+		end
+		local flash = self.liveClearTime > 5 and self.fullComboAnim or self.liveClearAnim
+		flash:update(dt * 1000)
+
+		if self.liveClearTime <= 0 and self.liveClearCallback then
+			self.liveClearCallback()
+			self.liveClearCallback = nil
+		end
 	end
 end
 
@@ -548,8 +641,12 @@ function sifui:disablePause()
 	self.pauseEnabled = false
 end
 
-function sifui.checkPause(_, x, y)
-	return x >= 898 and y >= -12 and x < 970 and y < 60
+function sifui:isPauseEnabled()
+	return self.pauseEnabled
+end
+
+function sifui:checkPause(x, y)
+	return self:isPauseEnabled() and x >= 898 and y >= -12 and x < 970 and y < 60
 end
 
 ------------------
@@ -612,10 +709,25 @@ end
 
 function sifui:setOpacity(opacity)
 	self.opacity = opacity
+	self.fullComboAnim:setOpacity(opacity * 255)
+	self.liveClearAnim:setOpacity(opacity * 255)
+	self.comboCheerAnim:setOpacity(opacity * 255)
 end
 
 function sifui:setMinimalEffect(min)
 	self.minimalEffect = min
+end
+
+function sifui:setComboCheer(enable)
+	self.comboCheer = not(not(enable))
+end
+
+function sifui:startLiveClearAnimation(fullcombo, callback)
+	if self.liveClearTime == -math.huge then
+		self.pauseEnabled = false
+		self.liveClearTime = fullcombo and 7 or 5
+		self.liveClearCallback = callback
+	end
 end
 
 -------------
@@ -627,6 +739,10 @@ local function triangle(x)
 end
 
 function sifui:drawHeader()
+	-- draw combo cheer
+	if not(self.minimalEffect) and self.comboCheer then
+		self.comboCheerAnim:draw()
+	end
 	-- draw live header
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 	love.graphics.draw(self.images[1])
@@ -780,6 +896,11 @@ function sifui:drawStatus()
 			))
 			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)
 		end
+	end
+	-- live clear
+	if self.liveClearTime ~= -math.huge then
+		local flash = self.liveClearTime > 5 and self.fullComboAnim or self.liveClearAnim
+		flash:draw(480, 320)
 	end
 end
 

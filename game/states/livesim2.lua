@@ -6,10 +6,11 @@ local love = require("love")
 local color = require("color")
 local async = require("async")
 local assetCache = require("asset_cache")
-local timer = require("libs.hump.timer")
 local log = require("logging")
 local setting = require("setting")
 local util = require("util")
+
+local timer = require("libs.hump.timer")
 
 local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
@@ -26,6 +27,8 @@ local BGM = require("game.bgm")
 local DEPLS = gamestate.create {
 	fonts = {
 		main = {"fonts/MTLmr3m.ttf", 12},
+		titleArt = {"fonts/MTLmr3m.ttf", 40},
+		infoArt = {"fonts/MTLmr3m.ttf", 16}
 	},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
@@ -50,7 +53,14 @@ local staminaJudgmentDamage = {
 	miss = 2
 }
 
-local pauseGame
+local function pauseGame(self, fail)
+	if self.data.liveUI:isPauseEnabled() then
+		if self.data.song then
+			self.data.song:pause()
+		end
+		self.data.pauseObject:pause(self.persist.beatmapDisplayName, fail)
+	end
+end
 
 local function playTapSFXSound(tapSFX, name, nsAccumulation)
 	local list = tapSFX[tapSFX[name]]
@@ -110,6 +120,7 @@ function DEPLS:load(arg)
 		perfectNote = 0,
 		perfectSwing = 0,
 		perfectSimultaneous = 0,
+		fullCombo = true -- by default
 	}
 	-- Create new note manager
 	self.data.noteManager = note.newNoteManager({
@@ -159,6 +170,7 @@ function DEPLS:load(arg)
 			end
 			if judgement ~= "perfect" and judgement ~= "great" and object.star then
 				playTapSFXSound(self.data.tapSFX, "starExplode", false)
+				self.persist.noteInfo.fullCombo = false
 			end
 
 			-- damage
@@ -279,6 +291,39 @@ function DEPLS:load(arg)
 		self.persist.keymap = keymap
 	end
 
+	-- load cover art system
+	self.persist.coverArtDisplayDone = true
+	if arg.summary.coverArt then
+		local w
+		local x = arg.summary.coverArt
+		local y = {
+			image = love.graphics.newImage(x.image, {mipmaps = true}),
+			scaleX = 0,
+			scaleY = 0,
+			title = love.graphics.newText(self.assets.fonts.titleArt),
+			info = love.graphics.newText(self.assets.fonts.infoArt),
+			script = nil,
+			time = 0
+		}
+		self.persist.coverArtDisplayDone = false
+		y.scaleX = 400/y.image:getWidth()
+		y.scaleY = 400/y.image:getHeight()
+
+		w = self.assets.fonts.titleArt:getWidth(x.title)
+		y.title:add({color.black, x.title}, -w*0.5-2, 507)
+		y.title:add({color.black, x.title}, -w*0.5+2, 509)
+		y.title:add({color.white, x.title}, -w*0.5, 508)
+
+		if x.info and #x.info > 0 then
+			w = self.assets.fonts.infoArt:getWidth(x.info)
+			y.info:add({color.black, x.info}, -w*0.5-1, 553)
+			y.info:add({color.black, x.info}, -w*0.5+1, 555)
+			y.info:add({color.white, x.info}, -w*0.5, 554)
+		end
+
+		self.data.coverArtDisplay = y
+	end
+
 	-- wait until notes are loaded
 	while isBeatmapInit < 3 do
 		async.wait()
@@ -383,36 +428,88 @@ function DEPLS:exit()
 end
 
 function DEPLS:update(dt)
-	self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
+	if self.persist.coverArtDisplayDone then
+		self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
 
-	for i = 1, #self.data.tapSFX.accumulateTracking do
-		self.data.tapSFX.accumulateTracking[i].alreadyPlayed = false
-	end
+		for i = 1, #self.data.tapSFX.accumulateTracking do
+			self.data.tapSFX.accumulateTracking[i].alreadyPlayed = false
+		end
 
-	-- update pause object first
-	self.data.pauseObject:update(dt)
-	if not(self.data.pauseObject:isPaused()) then
-		if self.persist.liveDelayCounter <= 0 then
-			local updtDt = dt
-			if self.persist.liveDelayCounter ~= -math.huge then
-				updtDt = -self.persist.liveDelayCounter
-				self.persist.liveDelayCounter = -math.huge
-				if self.data.song then
-					self.data.song:seek(updtDt)
-					self.data.song:play()
+		-- update pause object first
+		self.data.pauseObject:update(dt)
+		if not(self.data.pauseObject:isPaused()) then
+			if self.persist.liveDelayCounter <= 0 then
+				local updtDt = dt
+				if self.persist.liveDelayCounter ~= -math.huge then
+					updtDt = -self.persist.liveDelayCounter
+					self.persist.liveDelayCounter = -math.huge
+					if self.data.song then
+						self.data.song:seek(updtDt)
+						self.data.song:play()
+					end
 				end
+				self.data.noteManager:update(updtDt)
 			end
-			self.data.noteManager:update(updtDt)
+		end
+
+		self.data.liveUI:update(dt)
+
+		if
+			self.data.noteManager:getRemainingNotes() == 0 and
+			not(self.data.pauseObject:isPaused()) and
+			(self.data.song and not(self.data.song:isPlaying()) or not(self.data.song))
+		then
+			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, function() end)
+		end
+	else
+		self.data.coverArtDisplay.time = self.data.coverArtDisplay.time + dt
+		if self.data.coverArtDisplay.time >= 3 then
+			self.persist.coverArtDisplayDone = true
 		end
 	end
-
-	self.data.liveUI:update(dt)
 end
 
 function DEPLS:draw()
 	-- draw background
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
+	if self.persist.coverArtDisplayDone == false then
+		local x = self.data.coverArtDisplay
+		local fOpacity
+		local fTextPos = math.min(x.time, 0.25) * 1920
+		if x.time >= 2.7 then
+			-- Second transition
+			fOpacity = 1 - math.min(x.time - 2.7, 0.3) * 10/3
+		else
+			-- First transition
+			fOpacity = math.min(x.time, 0.25) * 4
+		end
+
+		-- Draw image
+		love.graphics.setColor(color.compat(255, 255, 255, fOpacity))
+		love.graphics.draw(x.image, 280, 80, 0, x.scaleX, x.scaleY)
+		-- Text aura
+		if x.time >= 0.25 and x.time < 0.75 then
+			local val = math.min(x.time - 0.25, 1) * 2
+			love.graphics.setColor(color.compat(255, 255, 255, (1 - val) * 0.5))
+			-- title
+			love.graphics.draw(x.title, 480 + val * 100, 0)
+			-- information
+			love.graphics.draw(x.info, 480 + val * 100, 0)
+		end
+		-- title and info color (non aura)
+		if x.time >= 2.7 then
+			love.graphics.setColor(color.compat(255, 255, 255, fOpacity))
+		else
+			love.graphics.setColor(color.white)
+		end
+		-- Draw title
+		love.graphics.draw(x.title, fTextPos, 0)
+		-- Draw information
+		love.graphics.draw(x.info, fTextPos, 0)
+
+		return
+	end
 	-- draw dim
 	local dimVal = (self.persist.liveDelay - math.max(self.persist.liveDelayCounter, 0)) / self.persist.liveDelay
 	love.graphics.push()
@@ -436,13 +533,6 @@ function DEPLS:draw()
 		-- draw pause overlay
 		self.data.pauseObject:draw()
 	end
-end
-
-function pauseGame(self, fail)
-	if self.data.song then
-		self.data.song:pause()
-	end
-	self.data.pauseObject:pause(self.persist.beatmapDisplayName, fail)
 end
 
 local function livesimInputPressed(self, id, x, y)
@@ -475,6 +565,7 @@ DEPLS:registerEvent("resize", function(self, w, h)
 end)
 
 DEPLS:registerEvent("keypressed", function(self, key, _, rep)
+	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
 	if not(rep) and not(self.data.pauseObject:isPaused()) and self.persist.keymap[key] then
 		return self.data.noteManager:setTouch(self.persist.keymap[key], key)
@@ -482,10 +573,15 @@ DEPLS:registerEvent("keypressed", function(self, key, _, rep)
 end)
 
 DEPLS:registerEvent("keyreleased", function(self, key)
+	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s", key)
 	if key == "escape" then
-		return gamestate.leave(loadingInstance.getInstance())
-	elseif key == "pause" then
+		if love._os == "Android" and self.persist.liveDelayCounter <= 0 and not(self.data.pauseObject:isPaused()) then
+			return pauseGame(self)
+		else
+			return gamestate.leave(loadingInstance.getInstance())
+		end
+	elseif key == "pause" and self.persist.liveDelayCounter <= 0 then
 		return pauseGame(self)
 	end
 
@@ -495,16 +591,19 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 end)
 
 DEPLS:registerEvent("mousepressed", function(self, x, y, b, ist)
+	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end -- handled separately/handle left click only
 	return livesimInputPressed(self, 0, x, y)
 end)
 
 DEPLS:registerEvent("mousemoved", function(self, x, y, _, _, ist)
+	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or not(love.mouse.isDown(1)) then return end
 	return livesimInputMoved(self, 0, x, y)
 end)
 
 DEPLS:registerEvent("mousereleased", function(self, x, y, b, ist)
+	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end
 	return livesimInputReleased(self, 0, x, y)
 end)

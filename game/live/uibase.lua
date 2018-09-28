@@ -106,6 +106,10 @@ function uibase:disablePause()
 	error("pure virtual method 'disablePause'", 2)
 end
 
+function uibase:isPauseEnabled()
+	error("pure virtual method 'isPauseEnabled'", 2)
+end
+
 function uibase:checkPause(x, y)
 	error("pure virtual method 'checkPause'", 2)
 	return true or false
@@ -129,6 +133,15 @@ end
 
 function uibase:setMinimalEffect(min)
 	error("pure virtual method 'setMinimalEffect'", 2)
+end
+
+function uibase:setComboCheer(enable)
+	error("pure virtual method 'setComboCheer'", 2)
+end
+
+-- this will always be called multiple times, it's UI responsible to handle it
+function uibase:startLiveClearAnimation(fullcombo)
+	error("pure virtual method 'startLiveClearAnimation'", 2)
 end
 
 -------------
