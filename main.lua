@@ -125,11 +125,6 @@ local function initializeYohane()
 	local color = require("color")
 	log.debug("main", "initializing Yohane")
 
-	function Yohane.Platform.UpdateSEVolume()
-		-- it's in 0..100 range for backward compatibility
-		Yohane.Platform.SEVolume = assert(tonumber(setting.get("SE_VOLUME")))
-	end
-
 	function Yohane.Platform.ResolveImage(path)
 		return assetCache.loadImage(path..":"..path, {mipmaps = true})
 	end
@@ -137,8 +132,8 @@ local function initializeYohane()
 	function Yohane.Platform.ResolveAudio(path)
 		local v = util.substituteExtension(path, util.getNativeAudioExtensions())
 		if v then
-			local s = audioManager.newAudio(path)
-			audioManager.setVolume(s, Yohane.Platform.SEVolume * 0.008)
+			local s = audioManager.newAudio(v)
+			audioManager.setVolume(s, assert(tonumber(setting.get("SE_VOLUME"))) * 0.008)
 			return s
 		end
 

@@ -41,7 +41,7 @@ function util.substituteExtension(file, ext, hasext)
 		end
 	end
 
-	for i, v in ipairs(ext) do
+	for _, v in ipairs(ext) do
 		local a = file..v
 		if util.fileExists(a) then
 			return a

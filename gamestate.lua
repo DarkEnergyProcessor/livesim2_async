@@ -7,6 +7,7 @@ local lily = require("libs.lily")
 local async = require("async")
 local cache = require("cache")
 local log = require("logging")
+local setting = require("setting")
 local gamestate = {
 	list = {}, -- list of registered gamestate
 	internal = {}, -- internal functions
@@ -332,6 +333,7 @@ function gamestate.enter(loading, name, arg)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "enter")
 	gamestate.loadingState = loading
 	gamestate.loadingStateResumed = false
+	setting.update()
 end
 
 function gamestate.leave(loading)
@@ -347,6 +349,7 @@ function gamestate.leave(loading)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(game.name, game.game, nil, "leave")
 	gamestate.loadingState = loading
 	gamestate.loadingStateResumed = false
+	setting.update()
 end
 
 function gamestate.replace(loading, name, arg)
@@ -356,6 +359,7 @@ function gamestate.replace(loading, name, arg)
 	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "replace")
 	gamestate.loadingState = loading
 	gamestate.loadingStateResumed = false
+	setting.update()
 end
 
 return gamestate
