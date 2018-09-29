@@ -244,6 +244,7 @@ function sifui:__construct()
 	self.liveClearAnim = self.liveClearAnim:clone()
 	self.liveClearTime = -math.huge -- 7 = FC + live clear; 5 = live clear only
 	self.liveClearCallback = nil
+	self.liveClearCallbackOpaque = nil
 	self.fullComboAnim:setMovie("ef_329")
 	self.liveClearAnim:setMovie("ef_311")
 end
@@ -380,8 +381,9 @@ function sifui:update(dt)
 		flash:update(dt * 1000)
 
 		if self.liveClearTime <= 0 and self.liveClearCallback then
-			self.liveClearCallback()
+			self.liveClearCallback(self.liveClearCallbackOpaque)
 			self.liveClearCallback = nil
+			self.liveClearCallbackOpaque = nil
 		end
 	end
 end
@@ -722,11 +724,12 @@ function sifui:setComboCheer(enable)
 	self.comboCheer = not(not(enable))
 end
 
-function sifui:startLiveClearAnimation(fullcombo, callback)
+function sifui:startLiveClearAnimation(fullcombo, callback, opaque)
 	if self.liveClearTime == -math.huge then
 		self.pauseEnabled = false
 		self.liveClearTime = fullcombo and 7 or 5
 		self.liveClearCallback = callback
+		self.liveClearCallbackOpaque = opaque
 	end
 end
 
