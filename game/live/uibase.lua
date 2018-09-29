@@ -140,7 +140,7 @@ function uibase:setComboCheer(enable)
 end
 
 -- this will always be called multiple times, it's UI responsible to handle it
-function uibase:startLiveClearAnimation(fullcombo)
+function uibase:startLiveClearAnimation(fullcombo, donecb, opaque)
 	error("pure virtual method 'startLiveClearAnimation'", 2)
 end
 

@@ -83,6 +83,17 @@ local function playTapSFXSound(tapSFX, name, nsAccumulation)
 	end
 end
 
+local function isLiveClear(self)
+	return
+		self.data.noteManager:getRemainingNotes() == 0 and
+		not(self.data.pauseObject:isPaused()) and
+		(self.data.song and not(self.data.song:isPlaying()) or not(self.data.song))
+end
+
+local function liveClearCallback(self)
+	table.foreach(self.persist.noteInfo, print)
+end
+
 function DEPLS:load(arg)
 	-- sanity check
 	assert(arg.summary, "summary data missing")
@@ -454,12 +465,8 @@ function DEPLS:update(dt)
 
 		self.data.liveUI:update(dt)
 
-		if
-			self.data.noteManager:getRemainingNotes() == 0 and
-			not(self.data.pauseObject:isPaused()) and
-			(self.data.song and not(self.data.song:isPlaying()) or not(self.data.song))
-		then
-			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, function() end)
+		if isLiveClear(self) then
+			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, liveClearCallback, self)
 		end
 	else
 		self.data.coverArtDisplay.time = self.data.coverArtDisplay.time + dt
@@ -576,8 +583,12 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s", key)
 	if key == "escape" then
-		if love._os == "Android" and self.persist.liveDelayCounter <= 0 and not(self.data.pauseObject:isPaused()) then
-			return pauseGame(self)
+		if love._os == "Android" then
+			if self.persist.liveDelayCounter <= 0 and not(self.data.pauseObject:isPaused()) then
+				return pauseGame(self)
+			elseif isLiveClear(self) then
+				return gamestate.leave(loadingInstance.getInstance())
+			end
 		else
 			return gamestate.leave(loadingInstance.getInstance())
 		end

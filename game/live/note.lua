@@ -98,6 +98,18 @@ note.quadRegion = {
 	region(6, 4), -- black
 }
 
+local swingRotationTable = {
+	(-math.pi / 2) % (2*math.pi),
+	(-3 * math.pi / 8) % (2*math.pi),
+	(-math.pi / 4) % (2*math.pi),
+	(-math.pi / 8) % (2*math.pi),
+	0,
+	math.pi / 8,
+	math.pi / 4,
+	3 * math.pi / 8,
+	math.pi / 2
+}
+
 -------------------------
 -- Note Manager object --
 -------------------------
@@ -120,6 +132,8 @@ function noteManager:__construct(param)
 	self.notesListByEvent = {}
 	-- list of notes, ordered by their draw order
 	self.notesListByDraw = {}
+	-- list of swing notes
+	self.swingNotesList = {}
 	-- touch input note list
 	self.touchInput = {}
 	-- touch input position list
@@ -755,6 +769,10 @@ function noteManager:addNote(definition)
 	self.notesList[i] = v
 	self.notesListByEvent[i] = v
 	self.notesListByDraw[i] = v
+
+	if v.swing then
+		self.swingNotesList[#self.swingNotesList + 1] = {definition, v, i}
+	end
 end
 
 function noteManager:initialize()
@@ -775,25 +793,77 @@ function noteManager:initialize()
 	end)
 
 	-- Swing note & simultaneous note detection
-	local swingNoteList = {}
-	local lastTiming = -32767
+	local lastTimingSw = -32767
 	for i = 1, #self.notesList do
 		local v = self.notesList[i]
 
 		-- Check for simultaneous note
-		if math.abs(lastTiming - v.targetTime) <= 0.001 then
+		if math.abs(lastTimingSw - v.targetTime) <= 0.001 then
 			v.simul = true
 			self.notesList[i-1].simul = true
 		end
-		lastTiming = v.targetTime
+		lastTimingSw = v.targetTime
+	end
 
-		-- Check for swing note
-		if self.notesList[i].swing then
-			swingNoteList[#swingNoteList + 1] = self.notesList[i]
+	for i = 1, #self.swingNotesList do
+		local swing = self.swingNotesList[i]
+
+		if swing[2].rotation == false then
+			local lastLevel = swing[1].notes_level
+			local lastPost2 = swing[1].position
+			local lastTiming = swing[1].timing_sec
+			local lastPos = swing[1].position
+			local lastObj = swing[2]
+			local lastIndex = swing[3]
+
+			if swing[1].effect == 13 then
+				lastTiming = lastTiming + swing[1].effect_value
+			end
+
+			local function applyswing(chainSwing)
+				lastObj.rotation = (lastPos - chainSwing[1].position > 0 and 0 or math.pi) + swingRotationTable[lastPos]
+
+				lastPost2 = lastPos
+				lastTiming = chainSwing[1].timing_sec
+				lastPos = chainSwing[1].position
+				lastObj = chainSwing[2]
+				lastIndex = chainSwing[3]
+
+				if chainSwing[1].effect == 13 then
+					lastTiming = lastTiming + chainSwing[1].effect_value
+				end
+			end
+
+			for j = i + 1, #self.swingNotesList do
+				local chainSwing = self.swingNotesList[j]
+
+				if chainSwing[2].rotation == false then
+					if chainSwing[1].notes_level and chainSwing[1].notes_level > 1 then
+						if chainSwing[1].notes_level - lastLevel == 0 then
+							applyswing(chainSwing)
+						end
+					elseif
+						chainSwing[1].timing_sec + 0.001 >= lastTiming and
+						math.abs(chainSwing[3] - lastIndex) < 3 and
+						math.abs(chainSwing[1].position - lastPos) == 1
+					then
+						applyswing(chainSwing)
+					end
+
+					if (chainSwing[1].effect == 13 and
+							chainSwing[1].timing_sec  + chainSwing[1].effect_value or
+							chainSwing[1].timing_sec
+						) - lastTiming > 0.25
+					then
+						break
+					end
+				end
+			end
+
+			lastObj.rotation = (lastPost2 - lastPos > 0 and 0 or math.pi) + swingRotationTable[lastPos]
 		end
 	end
 
-	-- TODO: Apply proper swing rotation
 	for _, v in ipairs(self.notesList) do
 		v.noteLayers = self:getLayer(v.attribute, v.simul, v.swing, v.token, v.star)
 	end
@@ -834,6 +904,14 @@ end
 
 function noteManager:setTouch(pos, id, rel, prev)
 	if rel and not(self.touchInput[id]) then return end
+	if self.touchInput[id] and not(prev) and not(rel) then
+		-- are we paused somehow?
+		if self.touchInput[id].position == pos then
+			return
+		else
+			rel = true
+		end
+	end
 
 	if rel and self.touchInput[id].note then
 		local v = self.touchInput[id].note
