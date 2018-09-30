@@ -886,7 +886,7 @@ function noteManager:touchPressed(id, x, y)
 end
 
 function noteManager:touchMoved(id, x, y)
-	if self.autoplay or not(self.touchTrack[id]) then return end
+	if self.autoplay  then return end
 
 	local track = self.touchTrack[id]
 	for i = 1, 9 do

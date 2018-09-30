@@ -82,6 +82,7 @@ local function registerGamestates()
 	gamestate.register("livesim2", require("game.states.livesim2"))
 	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
 	gamestate.register("changeUnits", require("game.states.change_units"))
+	gamestate.register("settings", require("game.states.gamesetting"))
 end
 
 local function initializeSetting()

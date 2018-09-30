@@ -23,7 +23,6 @@ local mainMenu = gamestate.create {
 	images = {
 		icon = {"assets/image/icon/icon_128x128.png"}
 	},
-	audios = {},
 }
 
 local function makeEnterGamestateFunction(name)
@@ -42,6 +41,7 @@ local function initializeButtons()
 	blist.changeUnits:addEventListener("released", makeEnterGamestateFunction("changeUnits"))
 	-- Settings button
 	blist.settings = menuButtonUI.new("Settings")
+	blist.settings:addEventListener("released", makeEnterGamestateFunction("settings"))
 	-- Exit button
 	blist.exit = menuButtonUI.new("Exit")
 	blist.exit:addEventListener("released", function()
