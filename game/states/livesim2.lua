@@ -544,14 +544,12 @@ end
 
 local function livesimInputPressed(self, id, x, y)
 	-- id 0 is mouse
-	if self.data.pauseObject:isPaused() then return end
-
+	if self.data.pauseObject:isPaused() or self.data.liveUI:checkPause(x, y) then return end
 	return self.data.noteManager:touchPressed(id, x, y)
 end
 
 local function livesimInputMoved(self, id, x, y)
 	if self.data.pauseObject:isPaused() then return end
-
 	return self.data.noteManager:touchMoved(id, x, y)
 end
 
