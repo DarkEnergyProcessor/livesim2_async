@@ -105,6 +105,7 @@ local function initializeSetting()
 	setting.define("LIVESIM_DIM", 75)
 	setting.define("SCORE_ADD_NOTE", 1024)
 	setting.define("STAMINA_DISPLAY", 32)
+	setting.define("STAMINA_FUNCTIONAL", 0)
 end
 
 local function createDirectories()
