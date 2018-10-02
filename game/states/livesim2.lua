@@ -21,6 +21,7 @@ local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
 local note = require("game.live.note")
 local pause = require("game.live.pause")
+local result = require("game.live.result")
 local liveUI = require("game.live.ui")
 local BGM = require("game.bgm")
 
@@ -28,7 +29,7 @@ local DEPLS = gamestate.create {
 	fonts = {
 		main = {"fonts/MTLmr3m.ttf", 12},
 		titleArt = {"fonts/MTLmr3m.ttf", 40},
-		infoArt = {"fonts/MTLmr3m.ttf", 16}
+		infoArt = {"fonts/MTLmr3m.ttf", 16},
 	},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
@@ -91,7 +92,18 @@ local function isLiveClear(self)
 end
 
 local function liveClearCallback(self)
+	self.persist.noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
+
 	table.foreach(self.persist.noteInfo, print)
+	self.data.resultObject:setReturnCallback(function()
+		return gamestate.leave(loadingInstance.getInstance())
+	end)
+	self.data.resultObject:setReplayCallback(function() end)
+	self.data.resultObject:setSaveReplayCallback(function()
+		return "Unimplemented"
+	end)
+	self.data.resultObject:setInformation(self.persist.noteInfo, self.persist.accuracyData)
+	self.persist.showLiveResult = true
 end
 
 function DEPLS:load(arg)
@@ -115,6 +127,7 @@ function DEPLS:load(arg)
 	-- score and stamina
 	self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
 	self.persist.stamina = setting.get("STAMINA_DISPLAY")
+	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
 	-- Lane definition
@@ -131,8 +144,11 @@ function DEPLS:load(arg)
 		perfectNote = 0,
 		perfectSwing = 0,
 		perfectSimultaneous = 0,
+		maxCombo = 0,
+		tokenAmount = 0,
 		fullCombo = true -- by default
 	}
+	self.persist.accuracyData = {}
 	-- Create new note manager
 	self.data.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
@@ -157,6 +173,7 @@ function DEPLS:load(arg)
 				end
 
 				-- counter
+				self.persist.accuracyData[#self.persist.accuracyData + 1] = scoreMultipler[judgement]
 				self.persist.noteInfo.totalNotes = self.persist.noteInfo.totalNotes + 1
 				self.persist.noteInfo[judgement] = self.persist.noteInfo[judgement] + 1
 				if judgement ~= "miss" and object.token then
@@ -185,10 +202,12 @@ function DEPLS:load(arg)
 			end
 
 			-- damage
-			self.data.liveUI:addStamina(-math.floor(staminaJudgmentDamage[judgement] * (object.star and 2 or 1)))
-			if self.data.liveUI:getStamina() == 0 then
-				-- fail
-				pauseGame(self, true)
+			if not(self.persist.noFail) then
+				self.data.liveUI:addStamina(-math.floor(staminaJudgmentDamage[judgement] * (object.star and 2 or 1)))
+				if self.data.liveUI:getStamina() == 0 then
+					-- fail
+					pauseGame(self, true)
+				end
 			end
 		end,
 	})
@@ -199,7 +218,9 @@ function DEPLS:load(arg)
 		local fullScore = 0
 		for i = 1, #notes do
 			local t = notes[i]
-			self.data.noteManager:addNote(t)
+			if self.data.noteManager:addNote(t) then
+				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1
+			end
 			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 		end
 		self.data.noteManager:initialize()
@@ -284,6 +305,7 @@ function DEPLS:load(arg)
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
 		end
 	})
+	self.data.resultObject = result(arg.summary.name)
 
 	-- load keymapping
 	do
@@ -429,6 +451,7 @@ function DEPLS:start()
 			)
 		end
 	end)
+	self.persist.showLiveResult = false
 end
 
 function DEPLS:exit()
@@ -439,7 +462,9 @@ function DEPLS:exit()
 end
 
 function DEPLS:update(dt)
-	if self.persist.coverArtDisplayDone then
+	if self.persist.showLiveResult then
+		return self.data.resultObject:update(dt)
+	elseif self.persist.coverArtDisplayDone then
 		self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
 
 		for i = 1, #self.data.tapSFX.accumulateTracking do
@@ -525,6 +550,10 @@ function DEPLS:draw()
 	love.graphics.rectangle("fill", 0, 0, self.persist.windowWidth, self.persist.windowHeight)
 	love.graphics.pop()
 
+	if self.persist.showLiveResult then
+		return self.data.resultObject:draw()
+	end
+
 	if self.persist.liveDelayCounter <= 0 then
 		-- draw live header
 		self.data.liveUI:drawHeader()
@@ -544,16 +573,23 @@ end
 
 local function livesimInputPressed(self, id, x, y)
 	-- id 0 is mouse
-	if self.data.pauseObject:isPaused() or self.data.liveUI:checkPause(x, y) then return end
+	if
+		self.persist.showLiveResult or
+		self.data.pauseObject:isPaused() or
+		self.data.liveUI:checkPause(x, y)
+	then
+		return
+	end
 	return self.data.noteManager:touchPressed(id, x, y)
 end
 
 local function livesimInputMoved(self, id, x, y)
-	if self.data.pauseObject:isPaused() then return end
+	if self.persist.showLiveResult or self.data.pauseObject:isPaused() then return end
 	return self.data.noteManager:touchMoved(id, x, y)
 end
 
 local function livesimInputReleased(self, id, x, y)
+	if self.persist.showLiveResult then return end
 	if self.data.pauseObject:isPaused() then
 		return self.data.pauseObject:mouseReleased(x, y)
 	end

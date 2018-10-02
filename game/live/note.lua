@@ -757,6 +757,7 @@ function noteManager:getRemainingNotes()
 	return #self.notesList
 end
 
+-- return true if token, false if not
 function noteManager:addNote(definition)
 	local v
 	if definition.effect % 10 == 3 then
@@ -773,6 +774,8 @@ function noteManager:addNote(definition)
 	if v.swing then
 		self.swingNotesList[#self.swingNotesList + 1] = {definition, v, i}
 	end
+
+	return v.token
 end
 
 function noteManager:initialize()
