@@ -93,16 +93,14 @@ end
 
 local function liveClearCallback(self)
 	self.persist.noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
+	self.persist.noteInfo.score = self.data.liveUI:getScore()
 
 	table.foreach(self.persist.noteInfo, print)
-	self.data.resultObject:setReturnCallback(function()
-		return gamestate.leave(loadingInstance.getInstance())
-	end)
 	self.data.resultObject:setReplayCallback(function() end)
 	self.data.resultObject:setSaveReplayCallback(function()
 		return "Unimplemented"
 	end)
-	self.data.resultObject:setInformation(self.persist.noteInfo, self.persist.accuracyData)
+	self.data.resultObject:setInformation(self.persist.noteInfo, self.persist.accuracyData, self.persist.comboRange)
 	self.persist.showLiveResult = true
 end
 
@@ -146,9 +144,11 @@ function DEPLS:load(arg)
 		perfectSimultaneous = 0,
 		maxCombo = 0,
 		tokenAmount = 0,
+		score = 0,
 		fullCombo = true -- by default
 	}
 	self.persist.accuracyData = {}
+	self.persist.comboRange = {0, 0, 0, 0}
 	-- Create new note manager
 	self.data.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
@@ -232,6 +232,13 @@ function DEPLS:load(arg)
 			math.floor(fullScore * 633/739 + 0.5),
 			fullScore
 		)
+		if not(self.persist.comboRange) then
+			local len = #notes
+			self.persist.comboRange[1] = math.ceil(len * 0.3)
+			self.persist.comboRange[2] = math.ceil(len * 0.5)
+			self.persist.comboRange[3] = math.ceil(len * 0.7)
+			self.persist.comboRange[4] = len
+		end
 		isBeatmapInit = isBeatmapInit + 1
 	end)
 	-- need to wrap in coroutine because
@@ -305,7 +312,16 @@ function DEPLS:load(arg)
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
 		end
 	})
+
+	-- result screen
 	self.data.resultObject = result(arg.summary.name)
+	self.data.resultObject:setReturnCallback(function(opaque, restart)
+		if restart then
+			return gamestate.replace(loadingInstance.getInstance(), "livesim2", opaque)
+		else
+			return gamestate.leave(loadingInstance.getInstance())
+		end
+	end, arg)
 
 	-- load keymapping
 	do
@@ -381,6 +397,14 @@ function DEPLS:load(arg)
 			arg.summary.scoreA,
 			arg.summary.scoreS
 		)
+	end
+
+	-- Set combo range when available
+	if arg.summary.comboS then
+		self.persist.comboRange[1] = arg.summary.comboC
+		self.persist.comboRange[2] = arg.summary.comboB
+		self.persist.comboRange[3] = arg.summary.comboA
+		self.persist.comboRange[4] = arg.summary.comboS
 	end
 
 	-- Initialize unit icons

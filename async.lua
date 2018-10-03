@@ -126,6 +126,7 @@ function async.wait(dt)
 	end
 end
 
+-- luacheck: no unused args
 --- Calls pending asynchronous task.
 -- @param dt Time since the last update in seconds.
 function async.loop(dt) end -- tricking LCA
