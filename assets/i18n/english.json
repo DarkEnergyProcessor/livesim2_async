@@ -1,0 +1,24 @@
+{
+	"name": "English",
+	"code": "en",
+	"strings": {
+		"general.score": "Score",
+		"general.combo": "Combo",
+		"menu.play": "Play",
+		"menu.changeUnits": "Change Units",
+		"menu.settings": "Settings",
+		"menu.quit": "Exit",
+		"menu.renderer": "Renderer",
+		"menu.writeDir": "R/W Directory",
+		"beatmapSelect.title": "Select Beatmap",
+		"beatmapSelect.openDir": "Open Beatmap Directory",
+		"beatmapSelect.play": "Play Beatmap",
+		"beatmapSelect.optionAutoplay": "Autoplay",
+		"beatmapSelect.optionRandom": "Random",
+		"beatmapSelect.optionStoryboard": "Storyboard",
+		"beatmapSelect.optionVideo": "Video Bg.",
+		"beatmapSelect.loading": "Loading...",
+		"beatmapSelect.difficulty": "Difficulty: %{difficulty}",
+		"beatmapSelect.diffUnknown": "Unknown"
+	}
+}

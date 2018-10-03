@@ -49,9 +49,16 @@ function result:__construct(beatmapName)
 	-- return button
 	self.returnButtonCallback = nil
 	self.returnButtonOpaque = nil
+	self.returnRetryTimer = -math.huge
 	self.returnButton = longButtonUI.new("Return")
 	self.returnButton:addEventListener("released", function()
-		return self.returnButtonCallback(self.returnButtonOpaque)
+		print(self.returnRetryTimer)
+		self.returnButtonCallback(self.returnButtonOpaque, self.returnRetryTimer >= 2)
+		self.returnRetryTimer = -math.huge
+	end)
+	self.returnButton:addEventListener("pressed", function()
+		self.returnRetryTimer = 0
+		print(self.returnRetryTimer)
 	end)
 	-- replay button
 	self.replayButtonCallback = nil
@@ -73,10 +80,11 @@ function result:__construct(beatmapName)
 	-- text objects
 	self.staticText = love.graphics.newText(self.fonts[3])
 	addTextWithShadow(self.staticText, "Max Combo", 600, 80)
-	addTextWithShadow(self.staticText, "Token", 648, 168)
+	addTextWithShadow(self.staticText, "Token", 648, 156)
+	addTextWithShadow(self.staticText, "Score", 600, 232)
 	self.beatmapNameText = love.graphics.newText(self.fonts[1])
 	addTextWithShadow(self.beatmapNameText, beatmapName, 0, 0)
-	self.staticStatusText = love.graphics.newText(self.fonts[2])
+	self.statusText = love.graphics.newText(self.fonts[2])
 	self.judgementText = love.graphics.newText(self.fonts[3])
 	-- information table
 	self.noteInfoTable = nil
@@ -85,21 +93,49 @@ function result:__construct(beatmapName)
 		great = 0,
 		good = 0,
 		bad = 0,
-		miss = 0
+		miss = 0,
+		token = 0,
+		maxToken = 0,
+		combo = 0,
+		maxCombo = 0,
+		score = 0,
+		value = 0,
+		comboLevel = ""
 	}
 end
 
 function result:update(dt)
 	self.timer:update(dt)
 	self.saveReplayVanishTimer = self.saveReplayVanishTimer - dt
+	self.returnRetryTimer = self.returnRetryTimer + dt
 
 	if self.noteInfoTable then
+		-- some little animation
+		-- left side
 		self.judgementText:clear()
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.perfect)), 340, 80)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.great)), 340, 156)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.good)), 340, 226)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.bad)), 340, 296)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.miss)), 340, 362)
+		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.perfect)), 310, 80)
+		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.great)), 310, 144)
+		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.good)), 310, 208)
+		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.bad)), 310, 272)
+		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.miss)), 310, 336)
+		-- right side
+		self.statusText:clear()
+		local comboStatus = self.displayJudgement.value == 1 and self.displayJudgement.comboLevel or ""
+		addTextWithShadow(
+			self.statusText,
+			string.format("%d/%d %s", self.displayJudgement.combo, self.displayJudgement.maxCombo, comboStatus),
+			600, 118
+		)
+		addTextWithShadow(
+			self.statusText,
+			string.format("%d/%d", self.displayJudgement.token, self.displayJudgement.maxToken),
+			600, 198
+		)
+		addTextWithShadow(
+			self.statusText,
+			string.format("%d", self.displayJudgement.score),
+			600, 278
+		)
 	end
 end
 
@@ -107,51 +143,64 @@ function result:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.images[3], 230, 0)
 	-- judgement
-	love.graphics.draw(self.images[4], 130, 80, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[5], 130, 156, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[6], 130, 226, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[7], 130, 296, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[8], 130, 362, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[4], 81, 80, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[5], 107, 144, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[6], 117, 208, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[7], 137, 272, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[8], 134, 336, 0, 0.5, 0.5)
 	-- token image
-	love.graphics.draw(self.images[1], self.tokenQuad, 600, 168, 0, 0.3, 0.3)
+	love.graphics.draw(self.images[1], self.tokenQuad, 600, 156, 0, 0.3, 0.3)
 	-- live graph
 	if self.graphMesh then
 		love.graphics.draw(self.graphMesh, 80, 422)
 	end
 	-- draw text
 	love.graphics.draw(self.staticText)
-	love.graphics.draw(self.staticStatusText)
+	love.graphics.draw(self.statusText)
 	love.graphics.draw(self.judgementText)
 	love.graphics.draw(self.beatmapNameText, 80, 396)
 	if self.saveReplayVanishTimer > 0 then
 		love.graphics.setFont(self.fonts[1])
 		love.graphics.setColor(color.black)
-		love.graphics.print(self.saveReplayStatus, 599, 359)
-		love.graphics.print(self.saveReplayStatus, 601, 361)
+		love.graphics.print(self.saveReplayStatus, 599, 393)
+		love.graphics.print(self.saveReplayStatus, 601, 395)
 		love.graphics.setColor(color.white)
-		love.graphics.print(self.saveReplayStatus, 600, 360)
+		love.graphics.print(self.saveReplayStatus, 600, 394)
 	end
 
 	-- draw buttons (gui)
-	selectButtonUI.draw(self.replayButton, 600, 274)
-	selectButtonUI.draw(self.saveReplayButton, 600, 316)
+	selectButtonUI.draw(self.replayButton, 600, 314)
+	selectButtonUI.draw(self.saveReplayButton, 600, 356)
 	longButtonUI.draw(self.returnButton, 101, 556)
 	gui.draw()
 end
 
-function result:setInformation(noteinfo, accuracyData)
+function result:setInformation(noteinfo, accuracyData, comboRange)
 	-- see self.persist.noteInfo in game/states/livesim2.lua
 	self.noteInfoTable = noteinfo
+	self.displayJudgement.combo = noteinfo.maxCombo
+	self.displayJudgement.maxCombo = noteinfo.totalNotes
+	self.displayJudgement.maxToken = noteinfo.tokenAmount
 	self.timer:tween(1, self.displayJudgement, {
 		perfect = noteinfo.perfect,
 		great = noteinfo.great,
 		good = noteinfo.good,
 		bad = noteinfo.good,
-		miss = noteinfo.miss
+		miss = noteinfo.miss,
+		token = noteinfo.token,
+		combo = noteinfo.combo,
+		score = noteinfo.score,
+		value = 1
 	})
-	-- max combo and max token
-	addTextWithShadow(self.staticStatusText, string.format("%d/%d", noteinfo.maxCombo, noteinfo.totalNotes), 600, 118)
-	addTextWithShadow(self.staticStatusText, string.format("%d/%d", noteinfo.token, noteinfo.tokenAmount), 600, 210)
+	if noteinfo.maxCombo >= comboRange[4] then
+		self.displayJudgement.comboLevel = "(S combo)"
+	elseif noteinfo.maxCombo >= comboRange[3] then
+		self.displayJudgement.comboLevel = "(A combo)"
+	elseif noteinfo.maxCombo >= comboRange[2] then
+		self.displayJudgement.comboLevel = "(B combo)"
+	elseif noteinfo.maxCombo >= comboRange[1] then
+		self.displayJudgement.comboLevel = "(C combo)"
+	end
 	-- create live graph
 	local poly = {0, 128}
 	for i = 1, 800 do

@@ -29,17 +29,18 @@ DEPLS_VERSION = "3.0.0-beta5"
 DEPLS_VERSION_NUMBER = 02030000
 
 local love = require("love")
+local Yohane = require("libs.Yohane")
+local JSON = require("libs.JSON")
 local assetCache = require("asset_cache")
 local vires = require("vires")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local postExit = require("post_exit")
-local Yohane = require("libs.Yohane")
+local language = require("language")
 local util = require("util")
 local setting = require("setting")
 local log = require("logging")
 local audioManager = require("audio_manager")
-local JSON = require("libs.JSON")
 
 local beatmapList = require("game.beatmap.list")
 
@@ -106,6 +107,7 @@ local function initializeSetting()
 	setting.define("SCORE_ADD_NOTE", 1024)
 	setting.define("STAMINA_DISPLAY", 32)
 	setting.define("STAMINA_FUNCTIONAL", 0)
+	setting.define("LANGUAGE", "en")
 end
 
 local function createDirectories()
@@ -254,6 +256,8 @@ function love.load(argv, gameargv)
 	-- Early initialization (crash on failure)
 	createDirectories()
 	initializeSetting()
+	language.init()
+	language.set(setting.get("LANGUAGE"))
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName

@@ -43,6 +43,8 @@ local loadingText = {
 	"Asking how is NPad...",
 	"Finding rabbits...",
 	"Chasing rabbits...",
+	"Now comes with multiple languages",
+	"Kira Kira Hikaru!!!"
 }
 
 function loading:start()
