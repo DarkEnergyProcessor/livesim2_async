@@ -7,6 +7,7 @@ local JSON = require("libs.JSON")
 local Luaoop = require("libs.Luaoop")
 local love = require("love")
 local setting = require("setting")
+local util = require("util")
 local baseLoader = require("game.beatmap.base")
 
 local function basename(file)
@@ -143,9 +144,9 @@ end
 function siftLoader:getCoverArt()
 	local internal = siftLoader^self
 
-	if internal.data.live_icon then
+	if internal.data.live_icon and util.fileExists("live_icon/"..internal.data.live_icon) then
 		-- Can't use love.graphics.newImage here
-		local s, img = love.image.newImageData("live_icon/"..internal.data.live_icon)
+		local s, img = pcall(love.image.newImageData, "live_icon/"..internal.data.live_icon)
 
 		if s then
 			return {
@@ -230,6 +231,16 @@ function siftLoader:getAudioPathList()
 	end
 
 	return paths
+end
+
+local diffString = {
+	"Easy", "Normal", "Hard", "Expert"
+}
+function siftLoader:getDifficultyString()
+	local internal = siftLoader^self
+	if internal.data.difficulty then
+		return diffString[internal.data.difficulty] or string.format("Number %d", internal.data.difficulty)
+	end
 end
 
 return function(f)
