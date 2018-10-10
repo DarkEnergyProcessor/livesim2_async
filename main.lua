@@ -44,6 +44,8 @@ local audioManager = require("audio_manager")
 
 local beatmapList = require("game.beatmap.list")
 
+local lsr = require("libs.lsr")
+
 local function initWindow(w, h, f)
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
 	love.window.setMode(w, h, {
@@ -115,6 +117,7 @@ local function createDirectories()
 	assert(love.filesystem.createDirectory("audio"), "Failed to create directory \"audio\"")
 	assert(love.filesystem.createDirectory("beatmap"), "Failed to create directory \"beatmap\"")
 	assert(love.filesystem.createDirectory("live_icon"), "Failed to create directory \"live_icon\"")
+	assert(love.filesystem.createDirectory("replays"), "Failed to create directory \"replays\"")
 	assert(love.filesystem.createDirectory("screenshots"), "Failed to create directory \"screenshots\"")
 	assert(love.filesystem.createDirectory("temp"), "Failed to create directory \"temp\"")
 	assert(love.filesystem.createDirectory("unit_icon"), "Failed to create directory \"unit_icon\"")
@@ -188,6 +191,28 @@ local function initializeYohane()
 	Yohane.Init(love.filesystem.load, "libs")
 end
 
+local function initLSR()
+	function lsr.file.openRead(path)
+		return love.filesystem.newFile(path, "r")
+	end
+
+	function lsr.file.openWrite(path)
+		return love.filesystem.newFile(path, "w")
+	end
+
+	function lsr.file.read(file, n)
+		return file:read(n)
+	end
+
+	function lsr.file.write(file, data)
+		return file:write(data)
+	end
+
+	function lsr.file.close(file)
+		return file:close()
+	end
+end
+
 local usage = [[
 Usage: %s [options] [absolute beatmap path]
 
@@ -210,6 +235,8 @@ Options:
 
 * -fullscreen                Start Live Simulator: 2 fullscreen.
 
+* -license                   Show the license text then exit.
+
 * -list <which>              Lists various things then exit. 'which' can be:
   -list beatmaps             Lists available beatmaps.
   -list loaders              Lists availabe beatmap loaders.
@@ -223,7 +250,8 @@ Options:
                              This argument takes precedence of passed beatmap
                              path as 1st argument.
 
-* -license                   Show the license text then exit.
+* -replay <file>             Use replay file for preview. Replay file is
+                             stored in replays/<beatmap_filename>/<file>.lsr
 
 * -width <width>             Set window width. Ignored if used with command
                              that operates without window. Default is 960
@@ -256,6 +284,7 @@ function love.load(argv, gameargv)
 	-- Early initialization (crash on failure)
 	createDirectories()
 	initializeSetting()
+	initLSR()
 	language.init()
 	language.set(setting.get("LANGUAGE"))
 	-- Process command line
@@ -267,6 +296,7 @@ function love.load(argv, gameargv)
 	local windowWidth = 960
 	local windowHeight = 640
 	local dumpBeatmap = false
+	local replayFile = nil
 	do
 		local i = 1
 		while i <= #argv do
@@ -282,6 +312,9 @@ function love.load(argv, gameargv)
 			elseif arg == "-fullscreen" then
 				fullscreen = true
 				windowWidth, windowHeight = love.window.getDesktopDimensions()
+			elseif arg == "-license" then
+				print(license)
+				return love.event.quit()
 			elseif arg == "-list" then
 				local which = assert(argv[i+1], "which to list?"):lower()
 				assert(which == "beatmaps" or which == "loaders", "invalid which or unimplemented yet")
@@ -295,9 +328,9 @@ function love.load(argv, gameargv)
 			elseif arg == "-play" then
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
 				i = i + 1
-			elseif arg == "-license" then
-				print(license)
-				return love.event.quit()
+			elseif arg == "-replay" then
+				replayFile = assert(argv[i+1], "please specify replay file")
+				i = i + 1
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
 				i = i + 1
@@ -351,6 +384,22 @@ function love.load(argv, gameargv)
 		end
 	else
 		local autoplayMode
+		if autoplayOverride then
+			autoplayMode = autoplayOverride == "on" or autoplayOverride == "1"
+		end
+
+		if replayFile then
+			if autoplayMode then
+				error("cannot use -replay with -autoplay")
+			elseif not(playBeatmapName) then
+				error("cannot use -replay without -play")
+			else
+				replayFile = lsr.loadReplay("replays/"..playBeatmapName.."/"..replayFile..".lsr")
+				if replayFile == nil then
+					error("cannot load replay file")
+				end
+			end
+		end
 
 		-- Initialize window
 		initWindow(windowWidth, windowHeight, fullscreen)
@@ -359,17 +408,15 @@ function love.load(argv, gameargv)
 		-- Register all gamestates
 		registerGamestates()
 
-		if autoplayOverride then
-			autoplayMode = autoplayOverride == "on" or autoplayOverride == "1"
-		end
-
 		if playBeatmapName then
 			-- Play beatmap directly
+			print("replay load", replayFile)
 			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
 				playBeatmapName,
 				false,
 
-				autoplay = autoplayMode
+				autoplay = autoplayMode,
+				replay = replayFile
 			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
