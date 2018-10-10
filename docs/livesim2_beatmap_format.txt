@@ -1,0 +1,141 @@
+Live Simulator: 2 binary beatmap file format. Extension: .ls2
+Version 2.0
+
+The beatmap format consist of multiple sections, where each
+section has FourCC and possibly with size depends on the FourCC itself.
+The section can appear in any order. Like, storyboard section can appear
+before beatmap section. LS2 parser should throw error if unknown section found
+
+Datatypes ("u" suffix means unsigned, except string). All are in little endian:
+    qword - 8 bytes
+    dword - 4 bytes
+    word - 2 bytes
+    byte - 1 byte
+    string - variable-length string. first dwordu is string length in bytes followed by the data
+
+File information start:
+
+Header: File header
+    qword - Header signature. Must be and always be 0x326D69736576696C (string "livesim2")
+    wordu - Amount of sections
+    byteu - * bit 0-3: Used background ID (or 0 to use from BIMG section below or from config)
+            * bit 4-6: Force note style (1 = old note style; 2 = v5 note style; 0 = no enforcing)
+            * bit 7: Live Simulator: 2 Binary Beatmap v2.0? (introduces backward incompatibility changes to some sections)
+    byte  - Stamina display (or -1 to use from config)
+    wordu - Score for each note tap (or 0 to use from config)
+
+Sections:
+1. MTDT - Live Simulator: 2 metadata. Mandatory in v2.0 or later. Optional in v1.x
+    byteu - Metadata information
+        * bit 0: Has score information?
+        * bit 1: Has combo information?
+        * bit 2: Has star information?
+        * bit 3: Has random star information? (bit 2 must be 1 too)
+    byteu - Star information
+        * bit 0-3: Normal star data (or 0 if star information is not available)
+        * bit 4-7: Random star data, or 0 if random star information or star information is not available.
+                   In that case use previous value from bit 0-3 above.
+    string - Song name, or empty string which in that case use from "COVR" data and eventually
+             fallback to beatmap filename without extension.
+    string - Preferred audio file name. No guarantee that this audio file exists.
+    dword - Score needed for C score (or 0 if score info not available)
+    dword - Score needed for B score (or 0 if score info not available)
+    dword - Score needed for A score (or 0 if score info not available)
+    dword - Score needed for S score (or 0 if score info not available)
+    dword - Combo needed for C combo (or 0 if combo info not available)
+    dword - Combo needed for B combo (or 0 if combo info not available)
+    dword - Combo needed for A combo (or 0 if combo info not available)
+    dword - Combo needed for S combo (or 0 if combo info not available)
+
+2. BMPM - Beatmap data with millisecond timing. This section can appear multiple times,
+          in which case, the notes data are merged. This section must appear at least once
+          if BMPT section doesn't exist.
+    dwordu - Amount of notes in this section
+    For Every amount of notes above:
+        dwordu - Timing milliseconds
+        dwordu - Attribute. Some possible values:
+                 * bit layout: rrrrrrrr rggggggg ggbbbbbb bbbscccc
+                 * bit 0-3: Note images following Sukufesu simulator note colors in order. Ask yuyu for it, lol.
+                            * If it's 15 - CBF extension colored note
+                                * bit 23-31 - R color (9 bits, unsigned)
+                                * bit 14-22 - G color (9 bits, unsigned)
+                                * bit 5-13  - B color (9 bits, unsigned)
+                 * bit 4: Is swing note?
+        dwordu - Note effect
+                 * bit layout: ssssssss llllllll llllllll llffpppp
+                 * bit 0-3 - Note position. 9 is leftmost, 1 is rightmost
+                 * bit 4-5: Note effect.
+                            0 = Normal note
+                            1 = Token note
+                            2 = Long note (bit 6-23 is the length, max 262.143 seconds or 262143 ms length)
+                            3 = Star note
+                 * bit 6-23: Long note length (or 0)
+                 * bit 24-31: Swing note group (or 0)
+                 * Note: There's no way to specify if notes is simultaneous, because it's determined at runtime
+    End For
+
+3. BMPT - Beatmap data with tick timing (like MIDI). This section can appear multiple times,
+          in which case, the notes data are merged. This section must appear at least once
+          if BMPM section doesn't exist.
+    word   - PPQN in MIDI. Zero or negative is not allowed
+    dwordu - BPM which is premultiplied by 1000 to retain BPM precision. Zero or negative is not a valid value
+    dwordu - Amount of notes in this section
+    For Every amount of notes above:
+        * Note: same as BMPM, except timing is in tick, not in milliseconds.
+        * If Attribute is 0xFFFFFFFF, then it's tempo change. Note effect is the new BPM premultipled by 1000
+    End For
+
+4. SRYL - Lua storyboard. Optional. Only one can be specificed
+    string - Lua script data. Optionally zlib compressed
+    * Note: Lua script shoudn't be precompiled! This is to ensure compatibility between Lua 5.1 and LuaJIT
+
+5. UIMG - Custom unit image data. Optional. Can appear multiple times
+    byte   - Image index
+    string - Image data (Only PNG image allowed)
+
+6. UNIT - Custom unit image definition. Optional. Can appear multiple times (max 9)
+    byte - Custom unit image definition data amount
+    For every data amount
+        byte - Unit position. 9 is leftmost
+        byte - Image index
+    End For
+
+7. BIMG - Custom background image data. Optional. Can appear multiple times
+    byteu  - Background index. 0 is center, 1 is left, 2 is right, 3 is top, 4 is bottom
+    string - Image data (Only PNG image allowed)
+
+8. DATA - Custom data. Optional. Can appear multiple times
+    string - Filename. Path separator must be in forward slash
+    string - File data
+
+9. ADIO - Audio/song file. Optional. Only one can be specificed
+    byte   - Audio type.
+             * bit 0-3: 0 is PCM in WAV, 1 is Vorbis in OGG, 2 is MP3
+             * If bit 0-3 is 1, FFmpeg extension audio data.
+                * bit 4-7: extension string length (without dot), prepended in audio data below
+                * Note: If FFmpeg extension not supported, throw error.
+    string - Audio data, including the extension prepended if FFmpeg extension audio is used.
+
+10. COVR - Cover data. Optional. Only one can be specificed
+    string - Image data (Only PNG image allowed)
+    string - Cover title (can be empty, defaults to filename)
+    string - Cover arrangement (can be empty, optional)
+
+11. LCLR - Live Clear Audio SFX. Optional. Only one can be specificed
+    * Note: same as ADIO
+
+Changelog: Date follows dd/mm/yyyy convention
+
+18/06/2017: v2.0
+- Undefined sections no longer allowed
+- Added mandatoy MTDT section
+- Changed order of COVR data
+- Changed the way it interprets beatmap data, for advanced swing note support
+- ADIO (and LCLR) now can use audio unsupported by LOVE2D IF FFmpeg extension is available
+- Removed SCRI, moved to MTDT
+
+xx/yy/2017: v1.2
+- Swing note support
+
+xx/yy/2016: v1.0
+- Initial draft
