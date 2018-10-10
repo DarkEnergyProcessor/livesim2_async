@@ -11,6 +11,7 @@ local setting = require("setting")
 local util = require("util")
 
 local timer = require("libs.hump.timer")
+local lsr = require("libs.lsr")
 
 local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
@@ -23,6 +24,7 @@ local note = require("game.live.note")
 local pause = require("game.live.pause")
 local result = require("game.live.result")
 local liveUI = require("game.live.ui")
+local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 
 local DEPLS = gamestate.create {
@@ -43,6 +45,14 @@ local scoreMultipler = {
 	great = 0.88,
 	good = 0.8,
 	bad = 0.4,
+	miss = 0
+}
+
+local accuracyGraphValue = {
+	perfect = 1,
+	great = 0.75,
+	good = 0.5,
+	bad = 0.25,
 	miss = 0
 }
 
@@ -92,15 +102,42 @@ local function isLiveClear(self)
 end
 
 local function liveClearCallback(self)
+	local accuracyData = self.persist.replayMode and self.persist.replayMode.accuracy or self.persist.accuracyData
 	self.persist.noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
 	self.persist.noteInfo.score = self.data.liveUI:getScore()
 
 	table.foreach(self.persist.noteInfo, print)
 	self.data.resultObject:setReplayCallback(function() end)
 	self.data.resultObject:setSaveReplayCallback(function()
-		return "Unimplemented"
+		if self.persist.autoplay then
+			return "Cannot save while autoplay"
+		end
+
+		local name
+		if not(love.filesystem.createDirectory("replays/"..self.persist.beatmapName)) then
+			return "Cannot create directory"
+		end
+
+		if self.persist.replayMode then
+			name = "replays/"..self.persist.beatmapName.."/"..self.persist.replayMode.timestamp..".lsr"
+			if util.fileExists(name) then
+				return "Already saved"
+			end
+		end
+
+		name = "replays/"..self.persist.beatmapName.."/"..self.persist.startTimestamp..".lsr"
+		if util.fileExists(name) then
+			return "Already saved"
+		end
+
+		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, self.persist.noteInfo, accuracyData, replay.getEventData())
+		if s then
+			return "Saved"
+		else
+			return "Cannot save"
+		end
 	end)
-	self.data.resultObject:setInformation(self.persist.noteInfo, self.persist.accuracyData, self.persist.comboRange)
+	self.data.resultObject:setInformation(self.persist.noteInfo, accuracyData, self.persist.comboRange)
 	self.persist.showLiveResult = true
 end
 
@@ -108,14 +145,28 @@ function DEPLS:load(arg)
 	-- sanity check
 	assert(arg.summary, "summary data missing")
 	assert(arg.beatmapName, "beatmap name id missing")
+	self.persist.beatmapName = arg.beatmapName
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
 
 	-- autoplay
-	local autoplay = arg.autoplay
-	if autoplay == nil then
+	local autoplay
+	if not(arg.autoplay) then
 		autoplay = setting.get("AUTOPLAY") == 1
+	elseif arg.replay then
+		autoplay = false
+	else
+		autoplay = not(not(arg.autoplay))
 	end
+	self.persist.autoplay = autoplay
 
+	-- replay
+	self.persist.replayMode = false
+	replay.clear()
+	print("replay mode blablablabla", arg.replay)
+	if arg.replay then
+		self.persist.replayMode = arg.replay
+		replay.setEventData(arg.replay.events)
+	end
 	-- window dimensions
 	self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
 	-- dim delay
@@ -173,7 +224,7 @@ function DEPLS:load(arg)
 				end
 
 				-- counter
-				self.persist.accuracyData[#self.persist.accuracyData + 1] = scoreMultipler[judgement]
+				self.persist.accuracyData[#self.persist.accuracyData + 1] = accuracyGraphValue[judgement]
 				self.persist.noteInfo.totalNotes = self.persist.noteInfo.totalNotes + 1
 				self.persist.noteInfo[judgement] = self.persist.noteInfo[judgement] + 1
 				if judgement ~= "miss" and object.token then
@@ -202,7 +253,7 @@ function DEPLS:load(arg)
 			end
 
 			-- damage
-			if not(self.persist.noFail) then
+			if not(self.persist.noFail or self.persist.replayMode) then
 				self.data.liveUI:addStamina(-math.floor(staminaJudgmentDamage[judgement] * (object.star and 2 or 1)))
 				if self.data.liveUI:getStamina() == 0 then
 					-- fail
@@ -475,6 +526,7 @@ function DEPLS:start()
 			)
 		end
 	end)
+	self.persist.startTimestamp = os.time()
 	self.persist.showLiveResult = false
 end
 
@@ -507,6 +559,31 @@ function DEPLS:update(dt)
 						self.data.song:seek(updtDt)
 						self.data.song:play()
 					end
+				end
+				if self.persist.replayMode then
+					local timeUpdt = updtDt / 2
+					for _ = 1, 2 do -- update rate is twice faster
+						replay.update(timeUpdt)
+						for ev in replay.pull() do
+							if ev.type == "keyboard" then
+								if ev.mode == "pressed" then
+									self.data.noteManager:setTouch(ev.key, "l"..ev.key)
+								elseif ev.mode == "released" then
+									self.data.noteManager:setTouch(ev.key, "l"..ev.key, true)
+								end
+							elseif ev.type == "touch" then
+								if ev.mode == "pressed" then
+									self.data.noteManager:touchPressed(ev.id, ev.x, ev.y)
+								elseif ev.mode == "moved" then
+									self.data.noteManager:touchMoved(ev.id, ev.x, ev.y)
+								elseif ev.mode == "released" then
+									self.data.noteManager:touchReleased(ev.id, ev.x, ev.y)
+								end
+							end
+						end
+					end
+				else
+					replay.update(updtDt)
 				end
 				self.data.noteManager:update(updtDt)
 			end
@@ -593,6 +670,9 @@ function DEPLS:draw()
 		-- draw pause overlay
 		self.data.pauseObject:draw()
 	end
+
+	-- draw replay touch overlay
+	return replay.drawTouchLine()
 end
 
 local function livesimInputPressed(self, id, x, y)
@@ -604,12 +684,22 @@ local function livesimInputPressed(self, id, x, y)
 	then
 		return
 	end
-	return self.data.noteManager:touchPressed(id, x, y)
+	if not(self.persist.autoplay or self.persist.replayMode) then
+		replay.recordTouchpressed(id, x, y)
+	end
+	if not(self.persist.replayMode) then
+		return self.data.noteManager:touchPressed(id, x, y)
+	end
 end
 
 local function livesimInputMoved(self, id, x, y)
 	if self.persist.showLiveResult or self.data.pauseObject:isPaused() then return end
-	return self.data.noteManager:touchMoved(id, x, y)
+	if not(self.persist.autoplay or self.persist.replayMode) then
+		replay.recordTouchmoved(id, x, y)
+	end
+	if not(self.persist.replayMode) then
+		return self.data.noteManager:touchMoved(id, x, y)
+	end
 end
 
 local function livesimInputReleased(self, id, x, y)
@@ -618,11 +708,17 @@ local function livesimInputReleased(self, id, x, y)
 		return self.data.pauseObject:mouseReleased(x, y)
 	end
 
-	if self.data.liveUI:checkPause(x, y) then
+	if not(self.persist.autoplay or self.persist.replayMode) then
+		replay.recordTouchreleased(id, x, y)
+	end
+
+	if self.data.liveUI:checkPause(x, y) and type(id) ~= "string" then
 		return pauseGame(self)
 	end
 
-	return self.data.noteManager:touchReleased(id, x, y)
+	if not(self.persist.replayMode) then
+		return self.data.noteManager:touchReleased(id, x, y)
+	end
 end
 
 DEPLS:registerEvent("resize", function(self, w, h)
@@ -632,7 +728,15 @@ end)
 DEPLS:registerEvent("keypressed", function(self, key, _, rep)
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
-	if not(rep) and not(self.data.pauseObject:isPaused()) and self.persist.keymap[key] then
+	if
+		not(rep) and
+		not(self.persist.replayMode) and
+		not(self.data.pauseObject:isPaused()) and
+		self.persist.keymap[key]
+	then
+		if not(self.persist.autoplay) then
+			replay.recordKeypressed(self.persist.keymap[key])
+		end
 		return self.data.noteManager:setTouch(self.persist.keymap[key], key)
 	end
 end)
@@ -654,26 +758,33 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 		return pauseGame(self)
 	end
 
-	if not(self.data.pauseObject:isPaused()) and self.persist.keymap[key] then
+	if not(self.persist.replayMode) and not(self.data.pauseObject:isPaused()) and self.persist.keymap[key] then
+		if not(self.persist.autoplay) then
+			replay.recordKeyreleased(self.persist.keymap[key])
+		end
 		return self.data.noteManager:setTouch(self.persist.keymap[key], key, true)
 	end
 end)
 
+local mouseIsDown = false
+
 DEPLS:registerEvent("mousepressed", function(self, x, y, b, ist)
 	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end -- handled separately/handle left click only
+	mouseIsDown = true
 	return livesimInputPressed(self, 0, x, y)
 end)
 
 DEPLS:registerEvent("mousemoved", function(self, x, y, _, _, ist)
 	if not(self.persist.coverArtDisplayDone) then return end
-	if ist or not(love.mouse.isDown(1)) then return end
+	if ist or not(mouseIsDown) then return end
 	return livesimInputMoved(self, 0, x, y)
 end)
 
 DEPLS:registerEvent("mousereleased", function(self, x, y, b, ist)
 	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end
+	mouseIsDown = false
 	return livesimInputReleased(self, 0, x, y)
 end)
 
