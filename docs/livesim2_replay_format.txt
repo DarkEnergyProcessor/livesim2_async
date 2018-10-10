@@ -1,0 +1,53 @@
+Live Simulator: 2 binary replay file format. Extension: .lsr
+Version 0.1 (subject to change)
+
+Datatypes ("u" suffix means unsigned, except string). All are in little endian:
+    qword - 8 bytes
+    dword - 4 bytes
+    word - 2 bytes
+    byte - 1 byte
+	byte[n] - n bytes
+    string - variable-length string. first dwordu is string length in bytes followed by the data
+	
+Header: File header
+	dwordu - Header signature (string "ls2r")
+	byte[16] - Raw MD5 hash of the beatmap used. If not match, don't load this replay file. Hash data is beatmap format dependent!
+	dwordu - Score
+	dwordu - Combo
+	dwordu - Max combo
+	dwordu - Perfect
+	dwordu - Great
+	dwordu - Good
+	dwordu - Bad
+	dwordu - Miss
+	dwordu - Token
+	dwordu - Max token
+	dwordu[20] - Reserved (encouraged to set to 0)
+
+Accuracy points data:
+	dwordu - amount
+	for every amount of points data below
+		byte - Accuracy. 0 = miss, 1 = bad, 2 = good, 3 = great, 4 = perfect
+	end for
+
+Events data: Union type (16 bytes long), so it's easy to be represented as structs (set alignment to 1)
+	dword - amount of events
+	for every amount of events data below (represented as union)
+		byte - type: 0 = keyboard, 1 = touch
+		elseif type == 0 then
+			byte - event: 0 = pressed, 1 = released
+			byte[7] - keyboard key (null terminated), follows https://love2d.org/wiki/KeyConstant
+			byte[7] - reserved (padding)
+		elseif type == 1 then
+			byte - event: 0 = pressed, 1 = moved, 2 = released
+			byte[4] - random touch identifier (any char, even unprintable ones). zero byte touch identifier means mouse events.
+			float - x position
+			float - y position
+			byte[2] - reserved (padding)
+		end
+	end for
+
+Changelog: Date follows dd/mm/yyyy convention
+
+10/10/2018: v0.1
+- Initial release of the specification
