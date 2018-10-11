@@ -410,7 +410,6 @@ function love.load(argv, gameargv)
 
 		if playBeatmapName then
 			-- Play beatmap directly
-			print("replay load", replayFile)
 			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
 				playBeatmapName,
 				false,

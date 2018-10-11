@@ -22,7 +22,7 @@
 --]]---------------------------------------------------------------------------
 
 local lsr = {
-	_VERSION = "0.2",
+	_VERSION = "0.3",
 	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
@@ -137,26 +137,32 @@ function lsr.loadReplay(path, beatmapHash)
 	if beatmapHash and hash ~= beatmapHash then return nil end
 
 	-- load it
-	local hand = {}
-	hand.storyboardSeed = string2dwordu(lsr.file.read(file, 4))
-	hand.score = string2dwordu(lsr.file.read(file, 4))
-	hand.combo = string2dwordu(lsr.file.read(file, 4))
-	hand.maxCombo = string2dwordu(lsr.file.read(file, 4))
-	hand.perfect = string2dwordu(lsr.file.read(file, 4))
-	hand.great = string2dwordu(lsr.file.read(file, 4))
-	hand.good = string2dwordu(lsr.file.read(file, 4))
-	hand.bad = string2dwordu(lsr.file.read(file, 4))
-	hand.miss = string2dwordu(lsr.file.read(file, 4))
-	hand.token = string2dwordu(lsr.file.read(file, 4))
-	hand.maxToken = string2dwordu(lsr.file.read(file, 4))
-	lsr.file.read(file, 4*19) -- reserved
+	local hand = {
+		filename = path,
+		storyboardSeed = string2dwordu(lsr.file.read(file, 4)),
+		score = string2dwordu(lsr.file.read(file, 4)),
+		maxCombo = string2dwordu(lsr.file.read(file, 4)),
+		totalNotes = string2dwordu(lsr.file.read(file, 4)),
+		perfect = string2dwordu(lsr.file.read(file, 4)),
+		great = string2dwordu(lsr.file.read(file, 4)),
+		good = string2dwordu(lsr.file.read(file, 4)),
+		bad = string2dwordu(lsr.file.read(file, 4)),
+		miss = string2dwordu(lsr.file.read(file, 4)),
+		token = string2dwordu(lsr.file.read(file, 4)),
+		tokenAmount = string2dwordu(lsr.file.read(file, 4)),
+		perfectNote = string2dwordu(lsr.file.read(file, 4)),
+		perfectSwing = string2dwordu(lsr.file.read(file, 4)),
+		perfectSimultaneous = string2dwordu(lsr.file.read(file, 4))
+	}
+	lsr.file.read(file, 4*15) -- reserved
+	hand.timestamp = string2dwordu(lsr.file.read(file, 4))
 
 	-- accuracy points
 	local accuracyLen = string2dwordu(lsr.file.read(file, 4))
 	local accuracyData = lsr.file.read(file, accuracyLen)
 	hand.accuracy = {}
 	for i = 1, accuracyLen do
-		hand.accuracy = accuracyData:byte(i, i) / 4
+		hand.accuracy[i] = accuracyData:byte(i, i) / 4
 	end
 
 	-- events data
@@ -207,7 +213,11 @@ function lsr.saveReplay(path, beatmapHash, seed, noteInfo, accuracyData, events)
 		dwordu2string(noteInfo.miss)..
 		dwordu2string(noteInfo.token)..
 		dwordu2string(noteInfo.tokenAmount)..
-		string.rep("\0\0\0\0", 19) -- reserved
+		dwordu2string(noteInfo.perfectNote)..
+		dwordu2string(noteInfo.perfectSwing)..
+		dwordu2string(noteInfo.perfectSimultaneous)..
+		string.rep("\0\0\0\0", 15).. -- reserved
+		dwordu2string(noteInfo.timestamp or os.time())
 	)
 
 	-- accuracy graph

@@ -39,7 +39,6 @@ function replay.pull()
 end
 
 function replay.setEventData(events)
-	print("add events", #events)
 	for i = 1, #events do
 		replay.replayEvents[#replay.replayEvents + 1] = events[i]
 	end
@@ -152,6 +151,9 @@ function replay.update(dt)
 				l.time = l.time - dt
 				if l.time <= 0 then
 					left = left - 1
+				else
+					replay.replayTouchLine[index] = replay.replayTouchLine[i]
+					index = index + 1
 				end
 			else
 				replay.replayTouchLine[index] = replay.replayTouchLine[i]
@@ -170,14 +172,11 @@ function replay.update(dt)
 		if replay.deltaT >= ev.time then
 			if ev.type == "touch" then
 				if ev.mode == "released" then
-					print("released", ev.id:byte(1, 2))
 					replay.replayTouchData[ev.id] = nil
 				else
 					if ev.mode == "pressed" then
-						print("pressed", ev.id:byte(1, 2))
 						replay.replayTouchData[ev.id] = {ev.x, ev.y} -- lastx, lasty
 					end
-					print("idlook", ev.id:byte(1, 2))
 					local id = replay.replayTouchData[ev.id]
 
 					-- write line

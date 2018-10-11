@@ -103,11 +103,38 @@ end
 
 local function liveClearCallback(self)
 	local accuracyData = self.persist.replayMode and self.persist.replayMode.accuracy or self.persist.accuracyData
-	self.persist.noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
-	self.persist.noteInfo.score = self.data.liveUI:getScore()
+	local noteInfo = self.persist.noteInfo
+	noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
+	noteInfo.score = self.data.liveUI:getScore()
+
+	local replayData = self.persist.replayMode or {
+		storyboardSeed = 0,
+		score = noteInfo.score,
+		maxCombo = noteInfo.maxCombo,
+		totalNotes = noteInfo.totalNotes,
+		perfect = noteInfo.perfect,
+		great = noteInfo.great,
+		good = noteInfo.good,
+		bad = noteInfo.bad,
+		miss = noteInfo.miss,
+		token = noteInfo.token,
+		tokenAmount = noteInfo.tokenAmount,
+		perfectNote = noteInfo.perfectNote,
+		perfectSwing = noteInfo.perfectSwing,
+		perfectSimultaneous = noteInfo.perfectSimultaneous,
+		timestamp = self.persist.startTimestamp,
+		accuracy = self.persist.accuracyData,
+		events = replay.getEventData()
+	}
 
 	table.foreach(self.persist.noteInfo, print)
-	self.data.resultObject:setReplayCallback(function() end)
+	self.data.resultObject:setReplayCallback(function()
+		gamestate.replace(loadingInstance.getInstance(), "livesim2", {
+			summary = self.persist.summary,
+			beatmapName = self.persist.beatmapName,
+			replay = replayData
+		})
+	end)
 	self.data.resultObject:setSaveReplayCallback(function()
 		if self.persist.autoplay then
 			return "Cannot save while autoplay"
@@ -116,6 +143,10 @@ local function liveClearCallback(self)
 		local name
 		if not(love.filesystem.createDirectory("replays/"..self.persist.beatmapName)) then
 			return "Cannot create directory"
+		end
+
+		if self.persist.replayMode.filename then
+			return "Already saved"
 		end
 
 		if self.persist.replayMode then
@@ -130,14 +161,15 @@ local function liveClearCallback(self)
 			return "Already saved"
 		end
 
-		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, self.persist.noteInfo, accuracyData, replay.getEventData())
+		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, replayData, replayData.accuracy, replayData.events)
 		if s then
+			replayData.filename = name
 			return "Saved"
 		else
 			return "Cannot save"
 		end
 	end)
-	self.data.resultObject:setInformation(self.persist.noteInfo, accuracyData, self.persist.comboRange)
+	self.data.resultObject:setInformation(replayData, accuracyData, self.persist.comboRange)
 	self.persist.showLiveResult = true
 end
 
@@ -145,6 +177,7 @@ function DEPLS:load(arg)
 	-- sanity check
 	assert(arg.summary, "summary data missing")
 	assert(arg.beatmapName, "beatmap name id missing")
+	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
 
@@ -161,8 +194,8 @@ function DEPLS:load(arg)
 
 	-- replay
 	self.persist.replayMode = false
+	self.persist.replayKeyOverlay = {false, false, false, false, false, false, false, false, false}
 	replay.clear()
-	print("replay mode blablablabla", arg.replay)
 	if arg.replay then
 		self.persist.replayMode = arg.replay
 		replay.setEventData(arg.replay.events)
@@ -217,7 +250,7 @@ function DEPLS:load(arg)
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
 				if judgement ~= "miss" then
-					local scoreMulType = releaseFlag == 2 and 1.25 or (object.swing and 0.5 or 1)
+					local scoreMulType = (releaseFlag == 2 and 1.25 or 1) * (object.swing and 0.5 or 1)
 					local scoreMul = scoreMulType * (object.scoreMultipler or 1)
 					self.data.liveUI:addScore(math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore))
 					self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
@@ -247,8 +280,10 @@ function DEPLS:load(arg)
 			if judgement ~= "miss" then
 				playTapSFXSound(self.data.tapSFX, judgement, self.data.tapNoteAccumulation)
 			end
-			if judgement ~= "perfect" and judgement ~= "great" and object.star then
-				playTapSFXSound(self.data.tapSFX, "starExplode", false)
+			if judgement ~= "perfect" and judgement ~= "great" then
+				if object.star then
+					playTapSFXSound(self.data.tapSFX, "starExplode", false)
+				end
 				self.persist.noteInfo.fullCombo = false
 			end
 
@@ -561,14 +596,16 @@ function DEPLS:update(dt)
 					end
 				end
 				if self.persist.replayMode then
-					local timeUpdt = updtDt / 2
-					for _ = 1, 2 do -- update rate is twice faster
+					local timeUpdt = updtDt / 4
+					for _ = 1, 4 do -- update rate is 4x precise
 						replay.update(timeUpdt)
 						for ev in replay.pull() do
 							if ev.type == "keyboard" then
 								if ev.mode == "pressed" then
+									self.persist.replayKeyOverlay[ev.key] = true
 									self.data.noteManager:setTouch(ev.key, "l"..ev.key)
 								elseif ev.mode == "released" then
+									self.persist.replayKeyOverlay[ev.key] = false
 									self.data.noteManager:setTouch(ev.key, "l"..ev.key, true)
 								end
 							elseif ev.type == "touch" then
@@ -671,6 +708,14 @@ function DEPLS:draw()
 		self.data.pauseObject:draw()
 	end
 
+	-- draw replay keyboard overlay
+	for i = 1, 9 do
+		love.graphics.setColor(color.red)
+		if self.persist.replayKeyOverlay[i] then
+			local x = self.persist.lane[i]
+			love.graphics.draw(self.assets.images.dummyUnit, x.x, x.y, 0, 1, 1, 64, 64)
+		end
+	end
 	-- draw replay touch overlay
 	return replay.drawTouchLine()
 end
