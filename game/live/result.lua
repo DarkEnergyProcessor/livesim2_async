@@ -185,7 +185,7 @@ function result:setInformation(noteinfo, accuracyData, comboRange)
 		perfect = noteinfo.perfect,
 		great = noteinfo.great,
 		good = noteinfo.good,
-		bad = noteinfo.good,
+		bad = noteinfo.bad,
 		miss = noteinfo.miss,
 		token = noteinfo.token,
 		combo = noteinfo.combo,

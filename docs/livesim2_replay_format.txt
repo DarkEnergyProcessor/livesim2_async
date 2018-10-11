@@ -1,21 +1,20 @@
 Live Simulator: 2 binary replay file format. Extension: .lsr
-Version 0.2 (subject to change)
+Version 0.3 (subject to change)
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
     qword - 8 bytes
     dword - 4 bytes
     word - 2 bytes
     byte - 1 byte
-	byte[n] - n bytes
-    string - variable-length string. first dwordu is string length in bytes followed by the data
+	Datatype followed by [n] means n-amount of that datatype
 	
 Header: File header
 	dwordu - Header signature (string "ls2r")
 	byte[16] - Raw MD5 hash of the beatmap used. If not match, don't load this replay file. Hash data is beatmap format dependent!
 	dwordu - Storyboard seed
 	dwordu - Score
-	dwordu - Combo
-	dwordu - Max combo
+	dwordu - Max Combo
+	dwordu - Total notes
 	dwordu - Perfect
 	dwordu - Great
 	dwordu - Good
@@ -23,7 +22,11 @@ Header: File header
 	dwordu - Miss
 	dwordu - Token
 	dwordu - Max token
-	dwordu[19] - Reserved (encouraged to set to 0)
+	dwordu - Perfect single tap note
+	dwordu - Perfect swing note
+	dwordu - Perfect simultaneous note (perfect+perfect)
+	dwordu[15] - Reserved (encouraged to set to 0)
+	dwordu - Timestamp in seconds since January 1st 1970
 
 Accuracy points data:
 	dwordu - amount
@@ -49,6 +52,9 @@ Events data: Union type (16 bytes long), so it's easy to be represented as struc
 	end for
 
 Changelog: Date follows dd/mm/yyyy convention
+
+11/10/2018: v0.3
+- Added perfect tap note, swing, and simultaneous
 
 10/10/2018: v0.2
 - Added event time and reduce random touch ID
