@@ -7,6 +7,8 @@ local vires = require("vires")
 local log = require("logging")
 local postExit = require("post_exit")
 local timer = require("libs.hump.timer")
+local util = require("util")
+local color = require("color")
 
 -- Override fusion-ui platform function for LOVE 11.0
 local function fusionUICompat(gui)
@@ -151,15 +153,23 @@ function love.run()
 	local gamestate = require("gamestate")
 	-- delay-load setting library also
 	local setting = require("setting")
+	-- screenshot depends on love.graphics
+	local screenshot = require("screenshot")
 	-- reparse it because we lose it in above code
 	love.arg.parseOptions(arg)
 	-- Now we have LOVE 11.0 behaviour for argument parsing
 	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
+
+	-- debug info code
+	local showDebugInfo = false
+	local defaultText
+
 	-- Only load Fusion UI if window is present, also it must
 	-- be after love.load, because love.load may initialize window.
 	local gui
 	if love.window.isOpen() then
 		gui = require("libs.fusion-ui")
+		defaultText = love.graphics.newText(love.graphics.newFont(20))
 		fusionUICompat(gui)
 	end
 	-- We don't want the first frame's dt to include time taken by love.load.
@@ -203,11 +213,24 @@ function love.run()
 				setting.update()
 			end
 			-- Hardcoded "collectgarbage" button
-			if name == "keyreleased" and a == "f10" then
-				collectgarbage()
-				collectgarbage()
-				log.info("run", "collectgarbage issued")
-				log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
+			if name == "keyreleased" then
+				if a == "f9" then
+					-- force GC
+					collectgarbage()
+					collectgarbage()
+					log.info("run", "collectgarbage issued")
+					log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
+				elseif a == "f10" then
+					-- debug info
+					showDebugInfo = not(showDebugInfo)
+				elseif a == "f12" then
+					-- screenshot
+					local ssName = string.format("screenshots/screenshot_%s_%d.png",
+						os.date("%Y_%m_%d_%H_%M_%S"),
+						math.floor((love.timer.getTime() % 1) * 1000)
+					)
+					love.graphics.captureScreenshot(ssName)
+				end
 			end
 			-- Error on thread error
 			assert(name ~= "threaderror", b)
@@ -222,12 +245,7 @@ function love.run()
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)
-			--[[
-			elseif not(gui) or not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
-				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
-			end
-			]]
-			-- fusion-ui currently has incomplete touch code
+			-- fusion-ui currently has incomplete touch input code
 			elseif gui and name:sub(1, 5) ~= "touch" and gui.eventHandlers[name] then
 				local received = false
 				if name == "mousepressed" then
@@ -262,9 +280,33 @@ function love.run()
 			love.graphics.push("all")
 			vires.set()
 			if currentGame then currentGame:draw() end
+			if showDebugInfo then
+				local stats = love.graphics.getStats()
+				local batchstr = "LACK AUTOBATCH"
+				if love._version >= "11.0" then
+					batchstr = string.format("BATCHED %d", stats.drawcallsbatched)
+				end
+				local text = string.format([[
+%d FPS (%.2fms update)
+LOVE %s: %s
+DRAWCALLS = %d (%s)
+TEXTUREMEMORY = %d Bytes
+LOADED_IMAGES = %d
+LOADED_CANVAS = %d (SWITCHES = %d)
+LOADED_FONTS = %d]],
+					love.timer.getFPS(), dt*1000, love._version, love._version_codename,
+					stats.drawcalls, batchstr, stats.texturememory, stats.images, stats.canvases,
+					stats.canvasswitches, stats.fonts
+				)
+				defaultText:clear()
+				util.addTextWithShadow(defaultText, text, 0, 0, 0.7)
+				love.graphics.setColor(color.white)
+				love.graphics.draw(defaultText)
+			end
 			vires.unset()
 			love.graphics.pop()
 			love.graphics.present()
+			screenshot.update()
 			love.graphics.clear() -- some implementation optimize this just after "present"
 		end
 	end
