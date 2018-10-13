@@ -4,6 +4,7 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local color = require("color")
 local version11 = love._version >= "11.0"
 local util = {}
 
@@ -29,6 +30,12 @@ end
 
 function util.removeExtension(file)
 	return file:sub(1, -(file:reverse():find(".", 1, true) or 0) - 1)
+end
+
+function util.getExtension(file)
+	local pos = file:reverse():find(".", 1, true)
+	if not(pos) then return ""
+	else return file:sub(-pos + 1) end
 end
 
 -- ext nust contain dot
@@ -122,6 +129,14 @@ function util.newFileWrapper(path, mode)
 	local file, msg = io.open(path, mode)
 	if not(file) then return nil, msg end
 	fileWrapClass(path, file)
+end
+
+function util.addTextWithShadow(text, str, x, y, intensity)
+	x = x or 0 y = y or 0
+	intensity = intensity or 1
+	text:add({color.black, str}, x-intensity, y-intensity)
+	text:add({color.black, str}, x+intensity, y+intensity)
+	text:add({color.white, str}, x, y)
 end
 
 return util

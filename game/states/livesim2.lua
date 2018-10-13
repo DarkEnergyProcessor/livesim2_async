@@ -129,11 +129,13 @@ local function liveClearCallback(self)
 
 	table.foreach(self.persist.noteInfo, print)
 	self.data.resultObject:setReplayCallback(function()
-		gamestate.replace(loadingInstance.getInstance(), "livesim2", {
-			summary = self.persist.summary,
-			beatmapName = self.persist.beatmapName,
-			replay = replayData
-		})
+		if not(self.persist.autoplay) then
+			gamestate.replace(loadingInstance.getInstance(), "livesim2", {
+				summary = self.persist.summary,
+				beatmapName = self.persist.beatmapName,
+				replay = replayData
+			})
+		end
 	end)
 	self.data.resultObject:setSaveReplayCallback(function()
 		if self.persist.autoplay then
@@ -145,11 +147,11 @@ local function liveClearCallback(self)
 			return "Cannot create directory"
 		end
 
-		if self.persist.replayMode.filename then
-			return "Already saved"
-		end
-
 		if self.persist.replayMode then
+			if self.persist.replayMode.filename then
+				return "Already saved"
+			end
+
 			name = "replays/"..self.persist.beatmapName.."/"..self.persist.replayMode.timestamp..".lsr"
 			if util.fileExists(name) then
 				return "Already saved"

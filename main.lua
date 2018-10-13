@@ -57,7 +57,7 @@ local function initWindow(w, h, f)
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
 		fullscreen = love._os == "iOS" or love._os == "Android" or f,
 		fullscreentype = "desktop",
-		vsync = true,
+		vsync = 1,
 	})
 	love.window.setTitle("Live Simulator: 2")
 	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
