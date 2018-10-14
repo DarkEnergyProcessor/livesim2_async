@@ -21,12 +21,13 @@ local gamestate = require("gamestate")
 local assetCache = require("asset_cache")
 local timer = require("libs.hump.timer")
 local color = require("color")
+local mainFont = require("font")
 
 local loading = gamestate.create {
 	-- Note that for loading screen gamestate
-	-- the contents of these 3 tables are ignored,
+	-- the contents of these 2 tables are ignored,
 	-- but the table itself must be exist.
-	fonts = {}, images = {}, audios = {}
+	fonts = {}, images = {}
 }
 
 local loadingText = {
@@ -35,7 +36,7 @@ local loadingText = {
 	"Oh oh... Time Lapse Memories",
 	"Oh oh... Time Lapse Starry Sky",
 	"The game logic is written with Lua",
-	"Powered by LOVE framework",
+	"Powered by LÖVE framework",
 	"Overflowing Time Lapse",
 	"Refactoring code...",
 	"1 FPS, 2 FPS, 2 FPS, 50 FPS",
@@ -44,11 +45,13 @@ local loadingText = {
 	"Finding rabbits...",
 	"Chasing rabbits...",
 	"Now comes with multiple languages",
-	"Kira Kira Hikaru!!!"
+	"Kira Kira Hikaru!!!",
+	"MissingNo",
+	"LÖVE "..love._version..": "..love._version_codename,
 }
 
 function loading:start()
-	self.data.mainFont = assetCache.loadFont("fonts/MTLmr3m.ttf", 24)
+	self.data.mainFont = mainFont.get(24)
 	self.data.icon = assetCache.loadImage("assets/image/icon/icon_128x128.png")
 	self.persist.text = love.graphics.newText(self.data.mainFont)
 	self.persist.rotation = 0

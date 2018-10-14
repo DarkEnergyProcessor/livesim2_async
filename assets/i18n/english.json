@@ -19,6 +19,16 @@
 		"beatmapSelect.optionVideo": "Video Bg.",
 		"beatmapSelect.loading": "Loading...",
 		"beatmapSelect.difficulty": "Difficulty: %{difficulty}",
-		"beatmapSelect.diffUnknown": "Unknown"
+		"beatmapSelect.diffUnknown": "Unknown",
+		"livesim2.pause.resume": "Resume",
+		"livesim2.pause.quit": "Quit",
+		"livesim2.pause.restart": "Restart",
+		"setting.general": "General Setting",
+		"setting.volume": "Volume Setting",
+		"setting.background": "Background Setting",
+		"setting.noteStyle": "Note Style Setting",
+		"setting.live": "Live Setting",
+		"setting.stamina": "Score & Stamina Setting",
+		"setting.liveUI": "Live User Interface Setting"
 	}
 }

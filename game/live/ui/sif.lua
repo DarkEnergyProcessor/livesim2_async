@@ -544,7 +544,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		self.currentJudgement = self.images[25]
 		breakCombo = true
 	else
-		error("invalid judgement '"..judgement.."'", 2)
+		error("invalid judgement '"..tostring(judgement).."'", 2)
 	end
 
 	-- reset judgement animation

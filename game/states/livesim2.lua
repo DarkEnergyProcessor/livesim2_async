@@ -127,7 +127,6 @@ local function liveClearCallback(self)
 		events = replay.getEventData()
 	}
 
-	table.foreach(self.persist.noteInfo, print)
 	self.data.resultObject:setReplayCallback(function()
 		if not(self.persist.autoplay) then
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", {
@@ -185,7 +184,7 @@ function DEPLS:load(arg)
 
 	-- autoplay
 	local autoplay
-	if not(arg.autoplay) then
+	if arg.autoplay == nil then
 		autoplay = setting.get("AUTOPLAY") == 1
 	elseif arg.replay then
 		autoplay = false
@@ -598,9 +597,11 @@ function DEPLS:update(dt)
 					end
 				end
 				if self.persist.replayMode then
+					-- replay update rate is 5ms
 					local timeUpdt = updtDt / 4
-					for _ = 1, 4 do -- update rate is 4x precise
-						replay.update(timeUpdt)
+					while timeUpdt > 0 do
+						replay.update(math.min(timeUpdt, 0.005))
+						timeUpdt = timeUpdt - 0.005
 						for ev in replay.pull() do
 							if ev.type == "keyboard" then
 								if ev.mode == "pressed" then
@@ -624,7 +625,10 @@ function DEPLS:update(dt)
 				else
 					replay.update(updtDt)
 				end
-				self.data.noteManager:update(updtDt)
+				while updtDt > 0 do
+					self.data.noteManager:update(math.min(updtDt, 0.02))
+					updtDt = updtDt - 0.02
+				end
 			end
 		end
 

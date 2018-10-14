@@ -4,17 +4,20 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local Yohane = require("libs.Yohane")
+
 local assetCache = require("asset_cache")
 local color = require("color")
-local Yohane = require("libs.Yohane")
+local mainFont = require("font")
+local L = require("language")
 
 local pause = Luaoop.class("livesim2.Pause")
 
 -- must be in async
 -- callbacks must be table: resume, quit, restart
 function pause:__construct(callbacks, opaque)
-	self.font = assetCache.loadFont("fonts/MTLmr3m.ttf", 36)
-	self.mainCounterFont = assetCache.loadFont("fonts/MTLmr3m.ttf", 72)
+	self.font = mainFont.get(36)
+	self.mainCounterFont = mainFont.get(72)
 	self.timer = math.huge
 	self.paused = false
 	self.callback = callbacks
@@ -61,19 +64,19 @@ end
 
 local buttons = {
 	{
-		display = "Resume",
+		display = L"livesim2.pause.resume",
 		callback = function(pauseObject)
 			pauseObject.timer = 3
 		end,
 		color = {color.get(0, 138, 255, 0.5)}
 	},
 	{
-		display = "Quit",
+		display = L"livesim2.pause.quit",
 		callback = "quit",
 		color = {color.get(251, 148, 0, 0.5)}
 	},
 	{
-		display = "Restart",
+		display = L"livesim2.pause.restart",
 		callback = "restart",
 		color = {color.get(255, 28, 124, 0.5)}
 	}
@@ -100,7 +103,7 @@ function pause:_drawPause()
 		w = self.font:getWidth(b.display)
 
 		love.graphics.setColor(b.color)
-		love.graphics.rectangle("fill", 416, y, 128, 48)
+		love.graphics.rectangle("fill", 384, y, 192, 48)
 		love.graphics.setColor(color.white52PT)
 		love.graphics.print(b.display, 480, y + 5, 0, 1, 1, w * 0.5, 0)
 	end
@@ -144,9 +147,9 @@ end
 function pause:mouseReleased(x, y)
 	if self.paused then
 		local maxy = 300 + #buttons * 72
-		if x >= 416 and y >= 300 and x < 544 and y < maxy then
+		if x >= 384 and y >= 300 and x < 576 and y < maxy then
 			local index = (y - 300) / 72
-			if index % 1 < 48/72 then -- button only has size of 48px
+			if index % 1 < 48/72 then -- button only has height of 48px
 				-- direct indexing
 				index = math.floor(index)
 				if index == 0 and self.isFailed then return end -- no resume
