@@ -66,7 +66,8 @@ end
 
 function beatmap.findSuitableForFolder(dir)
 	-- make sure to guarantee path separator
-	if dir:sub(-1) ~= "/" then dir = dir.."/" end
+	dir = dir:sub(-1) ~= "/" and dir.."/" or dir
+
 	for i = 1, #beatmap.fileLoader do
 		local status, value = pcall(beatmap.folderLoader[i], dir)
 
@@ -207,7 +208,7 @@ do
 					if type == "file" then
 						beatmap.fileLoader[#beatmap.fileLoader + 1] = data
 					elseif type == "folder" then
-						beatmap.folderLoader[#beatmap.fileLoader + 1] = data
+						beatmap.folderLoader[#beatmap.folderLoader + 1] = data
 					end
 				else
 					log.errorf("beatmap.thread", "cannot register loader %s: %s", v, func)

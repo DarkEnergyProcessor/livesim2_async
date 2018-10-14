@@ -12,10 +12,11 @@ local replay = {
 	replayEvents = {},
 	replayTouchLine = {},
 	replayTouchData = {},
-	deltaT = 0
+	deltaT = 0,
+	eventsToStdout = false,
 }
 
-function replay.clear()
+function replay.clear(printEvents)
 	replay.recordedEvents = {}
 	replay.recordedTouchID = {[0] = "\0\0", ["\0\0"] = 0}
 	replay.recordedKey = {false, false, false, false, false, false, false, false, false}
@@ -23,6 +24,11 @@ function replay.clear()
 	replay.replayTouchLine = {}
 	replay.replayTouchData = {}
 	replay.deltaT = 0
+	replay.eventsToStdout = not(not(printEvents))
+
+	if replay.eventsToStdout then
+		io.stdout:write("record events to stdout start")
+	end
 end
 
 local function replayPullIter()
@@ -54,6 +60,10 @@ function replay.recordKeypressed(lane)
 		time = replay.deltaT
 	}
 	replay.recordedKey[lane] = true
+
+	if replay.eventsToStdout then
+		io.stdout:write(string.format("event:keyboard|time:%.6f|mode:pressed|key:", replay.deltaT), lane, "\n")
+	end
 end
 
 function replay.recordKeyreleased(lane)
@@ -66,6 +76,10 @@ function replay.recordKeyreleased(lane)
 		time = replay.deltaT
 	}
 	replay.recordedKey[lane] = false
+
+	if replay.eventsToStdout then
+		io.stdout:write(string.format("event:keyboard|time:%.6f|mode:released|key:", replay.deltaT), lane, "\n")
+	end
 end
 
 function replay.recordTouchpressed(id, x, y)
@@ -92,6 +106,14 @@ function replay.recordTouchpressed(id, x, y)
 		time = replay.deltaT
 	}
 	log.debugf("replay", "recordTouchpressed: record pos: %.2fx%.2f, id: %02x%02x", x, y, randID:byte(1, 2))
+
+	if replay.eventsToStdout then
+		io.stdout:write(
+			string.format("event:touch|time:%.6f|mode:pressed|id:%02x%02x|x:%.4f|y:%.4f",
+			replay.deltaT, randID:byte(1, 1), randID:byte(2, 2), x, y
+			), "\n"
+		)
+	end
 end
 
 function replay.recordTouchmoved(id, x, y)
@@ -110,6 +132,14 @@ function replay.recordTouchmoved(id, x, y)
 		time = replay.deltaT
 	}
 	log.debugf("replay", "recordTouchmoved: record pos: %.2fx%.2f, id: %02x%02x", x, y, randID:byte(1, 2))
+
+	if replay.eventsToStdout then
+		io.stdout:write(
+			string.format("event:touch|time:%.6f|mode:moved|id:%02x%02x|x:%.4f|y:%.4f",
+			replay.deltaT, randID:byte(1, 1), randID:byte(2, 2), x, y
+			), "\n"
+		)
+	end
 end
 
 function replay.recordTouchreleased(id, x, y)
@@ -129,8 +159,17 @@ function replay.recordTouchreleased(id, x, y)
 	}
 	if id ~= 0 then
 		replay.recordedTouchID[id] = nil
+		replay.recordedTouchID[randID] = nil
 	end
 	log.debugf("replay", "recordTouchreleased: record id: %02x%02x", randID:byte(1, 2))
+
+	if replay.eventsToStdout then
+		io.stdout:write(
+			string.format("event:touch|time:%.6f|mode:released|id:%02x%02x|x:%.4f|y:%.4f",
+			replay.deltaT, randID:byte(1, 1), randID:byte(2, 2), x, y
+			), "\n"
+		)
+	end
 end
 
 function replay.getEventData()

@@ -50,15 +50,13 @@ function result:__construct(beatmapName)
 	self.returnButtonCallback = nil
 	self.returnButtonOpaque = nil
 	self.returnRetryTimer = -math.huge
-	self.returnButton = longButtonUI.new("Return")
+	self.returnButton = longButtonUI.new("Return/Hold to retry")
 	self.returnButton:addEventListener("released", function()
-		print(self.returnRetryTimer)
 		self.returnButtonCallback(self.returnButtonOpaque, self.returnRetryTimer >= 2)
 		self.returnRetryTimer = -math.huge
 	end)
 	self.returnButton:addEventListener("pressed", function()
 		self.returnRetryTimer = 0
-		print(self.returnRetryTimer)
 	end)
 	-- replay button
 	self.replayButtonCallback = nil

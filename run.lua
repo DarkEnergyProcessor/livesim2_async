@@ -177,7 +177,7 @@ function love.run()
 
 	-- We create step function in here
 	-- for portability code path you can see below.
-	local step = function()
+	local function step()
 		-- Update dt, as we'll be passing it to update
 		love.timer.step()
 		local dt = love.timer.getDelta()
@@ -305,8 +305,8 @@ LOADED_FONTS = %d]],
 			end
 			vires.unset()
 			love.graphics.pop()
+			screenshot.update() -- slime: call love.graphics.newScreenshot just before love.graphics.present
 			love.graphics.present()
-			screenshot.update()
 			love.graphics.clear() -- some implementation optimize this just after "present"
 		end
 	end

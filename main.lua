@@ -19,6 +19,7 @@
 -- 3. This notice may not be removed or altered from any source
 --    distribution.
 --]]---------------------------------------------------------------------------
+
 -- luacheck: globals DEPLS_VERSION
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
@@ -346,17 +347,19 @@ function love.load(argv, gameargv)
 		assert(playBeatmapName or absolutePlayBeatmapName, "Please specify beatmap file to dump")
 		-- TODO: Dump to LS2 beatmap
 
+		local function encodeToJSON(data)
+			io.write(JSON:encode(data))
+			love.event.quit()
+		end
 		beatmapList.push()
 		if playBeatmapName then
 			beatmapList.enumerate()
+			beatmapList.getNotes(playBeatmapName or absolutePlayBeatmapName, encodeToJSON)
 		else
-			beatmapList.registerAbsolute(absolutePlayBeatmapName, function() end)
+			beatmapList.registerAbsolute(absolutePlayBeatmapName, function(id)
+				beatmapList.getNotes(id, encodeToJSON)
+			end)
 		end
-
-		beatmapList.getNotes(playBeatmapName, function(data)
-			io.write(JSON:encode(data))
-			love.event.quit()
-		end)
 	elseif listingMode then
 		beatmapList.push()
 

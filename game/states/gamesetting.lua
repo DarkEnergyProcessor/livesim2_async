@@ -4,9 +4,9 @@
 
 local love = require("love")
 local color = require("color")
-
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 
@@ -26,18 +26,18 @@ end
 function gameSetting:load()
 	if self.data.settingButtons == nil then
 		self.data.settingButtons = {
-			longButtonUI.new("General Setting"),
-			longButtonUI.new("Volume Setting"),
-			longButtonUI.new("Background Setting"),
-			longButtonUI.new("Note Style Setting"),
-			longButtonUI.new("Live Setting"),
-			longButtonUI.new("Score & Stamina Setting"),
-			longButtonUI.new("Live User Interface Setting")
+			longButtonUI.new(L"setting.general"),
+			longButtonUI.new(L"setting.volume"),
+			longButtonUI.new(L"setting.background"),
+			longButtonUI.new(L"setting.noteStyle"),
+			longButtonUI.new(L"setting.live"),
+			longButtonUI.new(L"setting.stamina"),
+			longButtonUI.new(L"setting.liveUI")
 		}
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new("Settings", leave)
+		self.data.back = backNavigation.new(L"menu.settings", leave)
 	end
 
 	if self.data.background == nil then

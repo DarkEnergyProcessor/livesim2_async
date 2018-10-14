@@ -90,7 +90,11 @@ local function initializeSummary(self, data)
 		end
 
 		if data.coverArt.info then
-			addTextWithShadow(self.persist.beatmapDetailInfo, data.coverArt.info, 470, 342, 0.5)
+			-- cannot use addTextWithShadow (requires automatic break)
+			--addTextWithShadow(self.persist.beatmapDetailInfo, data.coverArt.info, 470, 338, 0.5)
+			self.persist.beatmapDetailInfo:addf({color.black, data.coverArt.info}, 474, "left", 470-0.5, 338-0.5)
+			self.persist.beatmapDetailInfo:addf({color.black, data.coverArt.info}, 474, "left", 470+0.5, 338+0.5)
+			self.persist.beatmapDetailInfo:addf({color.white, data.coverArt.info}, 474, "left", 470, 338)
 		end
 	else
 		self.persist.beatmapCover = ""

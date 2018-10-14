@@ -128,7 +128,7 @@ end
 function util.newFileWrapper(path, mode)
 	local file, msg = io.open(path, mode)
 	if not(file) then return nil, msg end
-	fileWrapClass(path, file)
+	return fileWrapClass(path, file)
 end
 
 function util.addTextWithShadow(text, str, x, y, intensity)
