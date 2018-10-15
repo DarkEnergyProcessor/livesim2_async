@@ -231,6 +231,10 @@ function love.run()
 					)
 					love.graphics.captureScreenshot(ssName)
 				end
+			elseif name == "keypressed" then
+				if a == "return" and love.keyboard.isDown("lalt") then
+					love.window.setFullscreen(not(love.window.getFullscreen()))
+				end
 			end
 			-- Error on thread error
 			assert(name ~= "threaderror", b)
