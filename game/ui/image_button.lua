@@ -31,14 +31,17 @@ function imageButton.new(name)
 			backgroundImageColor = {255, 255, 255, 255},
 		})
 
+		button.imgw, button.imgh = images[1]:getDimensions()
 		imageButton.class[name] = button
 	end
 
-	return imageButton.class[name]:newElement("")
+	local elem = imageButton.class[name]:newElement("")
+	elem.tempimgw, elem.tempimgh = imageButton.class[name].imgw, imageButton.class[name].imgh
+	return elem
 end
 
 function imageButton.draw(elem, x, y)
-	return elem:draw(x, y, 144, 58)
+	return elem:draw(x, y, elem.tempimgw, elem.tempimgh)
 end
 
 return imageButton

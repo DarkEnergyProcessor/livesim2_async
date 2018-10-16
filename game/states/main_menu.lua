@@ -15,6 +15,7 @@ local backgroundLoader = require("game.background_loader")
 
 local gui = require("libs.fusion-ui")
 local menuButtonUI = require("game.ui.menu_button")
+local imageButtonUI = require("game.ui.image_button")
 
 local mainMenu = gamestate.create {
 	fonts = {
@@ -50,6 +51,10 @@ local function initializeButtons()
 			gamestate.leave()
 		end
 	end)
+
+	blist.language = imageButtonUI.new("assets/image/ui/lang")
+	blist.language:addEventListener("released", makeEnterGamestateFunction("language"))
+
 	return blist
 end
 
@@ -161,6 +166,7 @@ function mainMenu:draw()
 	menuButtonUI.draw(self.data.buttons.changeUnits, 16, 120+80*2)
 	menuButtonUI.draw(self.data.buttons.settings, 16, 120+80*3)
 	menuButtonUI.draw(self.data.buttons.exit, 16, 120+80*4)
+	imageButtonUI.draw(self.data.buttons.language, 914, 592)
 	gui.draw()
 end
 

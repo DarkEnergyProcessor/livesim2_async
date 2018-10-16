@@ -42,6 +42,8 @@ function language.enum()
 			code = x.code
 		}
 	end
+
+	return list
 end
 
 function language.set(code)

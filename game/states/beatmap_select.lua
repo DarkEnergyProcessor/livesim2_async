@@ -180,10 +180,10 @@ function beatmapSelect:load()
 
 	if self.data.checkLabel == nil then
 		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
-		addTextWithShadow(self.data.checkLabel, L("beatmapSelect.optionAutoplay"), 770, 372)
-		addTextWithShadow(self.data.checkLabel, L("beatmapSelect.optionRandom"), 770, 408)
-		addTextWithShadow(self.data.checkLabel, L("beatmapSelect.optionStoryboard"), 770, 444)
-		addTextWithShadow(self.data.checkLabel, L("beatmapSelect.optionVideo"), 770, 480)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionAutoplay", 770, 372)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionRandom", 770, 408)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionStoryboard", 770, 444)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionVideo", 770, 480)
 	end
 
 	if self.data.checkButton == nil then
