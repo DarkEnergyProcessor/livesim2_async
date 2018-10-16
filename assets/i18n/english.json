@@ -29,6 +29,9 @@
 		"setting.noteStyle": "Note Style Setting",
 		"setting.live": "Live Setting",
 		"setting.stamina": "Score & Stamina Setting",
-		"setting.liveUI": "Live User Interface Setting"
+		"setting.liveUI": "Live User Interface Setting",
+		"setting.language": "Language Setting",
+		"setting.language.current": "Current Language: %{name} (%{code})",
+		"language.current": "Current Language: %{name} (%{code})"
 	}
 }
