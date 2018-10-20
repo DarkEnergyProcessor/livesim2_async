@@ -35,7 +35,7 @@ function element.bufferUpdate(dt)
 	local lrIndex = #element.renderQueue
 	--lazy renderer
 	for i = #element.renderQueue,1,-1 do
-		if love.timer.getTime()-lr<1/60 then
+		if love.timer.getTime()-lr<1/120 then
 			element.renderQueue[i]:reRender()
 
 			table.remove(element.renderQueue, i)
@@ -335,8 +335,19 @@ function element:manageProperties()
 
 end
 
+function element:lockStyle()
+	self.lockedStyle = true
+end
+
+function element:unlockStyle()
+	self.lockedStyle = false
+end
+
 function element:styleOverride(style, priority)
 	local index = tostring(love.timer.getTime())
+	if self.lockedStyle then
+		return index
+	end
 	priority = priority or 1
 
 	if self.styleBuffer == nil then
@@ -361,6 +372,9 @@ function element:styleOverride(style, priority)
 end
 
 function element:releaseStyle(index)
+	if self.lockedStyle then
+		return
+	end
 	self.redraw = true
 
 	if (self.styleBuffer and #self.styleBuffer == 1) or not self.styleBuffer then

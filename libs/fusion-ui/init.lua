@@ -52,6 +52,7 @@ gui.slider      = require(path..'.elements.slider')
 gui.text        = require(path..'.elements.text') 
 gui.textBox     = require(path..'.elements.textBox') 
 gui.checkbox    = require(path..'.elements.checkbox') 
+gui.customDraw  = require(path..'.elements.customDraw') 
 
 --[[ External tool for optimization ]]
 gui.timing = require(path..'.utilities.timing')

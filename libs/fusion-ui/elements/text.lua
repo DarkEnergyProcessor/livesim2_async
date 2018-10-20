@@ -51,9 +51,9 @@ function text:update(x, y, overw, overh, str, style, callbacks, element)
 			self.h = self.multiStr.h + style.padding[2] + style.padding[4]
 			self.w = self.multiStr.maxLn + style.padding[1] + style.padding[3]
 		else
-			self.h = self.fontH + style.padding[2] + style.padding[4] 
 			self.fontW = style.font:getWidth(str)
 			self.fontH = style.font:getHeight()
+			self.h = self.fontH + style.padding[2] + style.padding[4] 
 			self.w = self.fontW + style.padding[1] + style.padding[3]
 		end
 	end

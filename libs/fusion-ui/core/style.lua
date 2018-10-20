@@ -282,6 +282,15 @@ function style:drawBackground(x, y, w, h)
 				vOdr = imgH*hRatio-h
 	
 				gui.platform.draw(self.backgroundImage, x, y-((vOdr/2)), 0, hRatio, hRatio)
+			elseif self.backgroundSize == 'cover' then
+				local imgRatio, vOdr, hRatio, imgW, imgH
+
+				imgW, imgH = self.backgroundImage:getDimensions()
+				
+				hRatio = h/imgH
+				vOdr = imgH*hRatio-h
+	
+				gui.platform.draw(self.backgroundImage, x, y-((vOdr/2)), 0, hRatio, hRatio)
 			end
 		end
 
