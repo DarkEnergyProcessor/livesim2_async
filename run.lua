@@ -130,13 +130,13 @@ love.arg.parse_options = love.arg.parseOptions
 -- Game loop --
 ---------------
 
---[[
+
 local u = print
 function print(...)
 	u(...)
 	u(debug.traceback())
 end
-]]
+
 
 function love.createhandlers()
 	love.handlers = {}
@@ -249,6 +249,10 @@ function love.run()
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)
+			elseif not(gui) or not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
+				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
+			end
+			--[[
 			-- fusion-ui currently has incomplete touch input code
 			elseif gui and name:sub(1, 5) ~= "touch" and gui.eventHandlers[name] then
 				local received = false
@@ -266,6 +270,7 @@ function love.run()
 			else
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end
+			]]
 		end
 		-- We have to pass the mouse position to virtual resolution
 		-- screen coordinate to logical coordinate conversion

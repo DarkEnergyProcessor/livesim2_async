@@ -182,9 +182,56 @@ function frame:elementRender()
 end
 
 function frame:update(x, y, w, h, content, style, elem)
+	self.lastUpdate = self.currentTime
+	self.currentTime = love.timer.getTime()
+
+	local function touchCheck(event, eventType)
+		if eventType == 'touchmoved' then
+			if math.abs(math.abs(event.startY)-math.abs(event.y)) > 50 then
+				
+				self:elementRender()
+				
+				if self.slider then
+					
+					if (self.slider.content.current - event.dy)<0 or (self.slider.content.current - event.dy)>self.slider.content.max then
+						print(self.slider.content.current..'+'..event.dy)
+					else
+						self.slider.content.current = self.slider.content.current - event.dy
+					end
+
+					return false
+				end
+			end
+		elseif eventType == 'touchreleased' then
+			if math.abs(math.abs(event.startX)-math.abs(event.x)) > 50 then
+
+				self:elementRender()
+
+				if self.slider then
+					if (self.slider.content.current - event.dy)<0 or (self.slider.content.current - event.dy)>self.slider.content.max then
+					
+					else
+						self.slider.content.current = self.slider.content.current - event.dy
+					end
+
+					self.vOffsetVelocity = -event.dy
+
+					return false
+				end
+			end
+		end
+
+		return true
+	end
+
 	if self.redraw then
 		elem:emitEvent('changed')
 	end
+
+	elem:addEventListener('stylechange', frame.elementRender, self)
+	elem:addEventListener('styleswitch', frame.elementRender, self)
+	elem:addEventListener('animationFinish', frame.elementRender, self)
+	elem:addEventListener('animationProgress', frame.elementRender, self)
 
 	if self.w ~= w or self.h ~= h then
 		self.mkLayout = true
@@ -194,7 +241,7 @@ function frame:update(x, y, w, h, content, style, elem)
 	self.h = h
 
 	if not self.box then
-		self.box = gui.input.addBox(x, y, self.w, self.h, style.z, 1)
+		self.box = gui.input.addBox(x, y, self.w, self.h, style.z, 1, true, touchCheck)
 	end
 	
 	if self.mkLayout then
@@ -243,7 +290,7 @@ function frame:update(x, y, w, h, content, style, elem)
 		
 		if curH > self.h then
 			if self.slider then
-				self.slider.type.max = curH-self.h+30
+				self.slider.content.max = curH-self.h+30
 			else
 				self.slider = gui.element.newElement('slider',{min = 0, max = curH-self.h+30, step = 1, current = 0},{})
 				
@@ -261,6 +308,8 @@ function frame:update(x, y, w, h, content, style, elem)
 		elem:emitEvent('changed')
 	end
 
+
+
 	for i, eCont in ipairs(self.elementContainers) do
 		local p = eCont.props
 		if not( p.y+self.vOffset-p.h>self.h or p.y-self.vOffset+p.h<0 ) or self.init then
@@ -275,8 +324,28 @@ function frame:update(x, y, w, h, content, style, elem)
 	if self.slider then
 		self.slider:draw(self.w-25+x, 0+y+15, 25, self.h-30, nil, false)
 		self.slider:update(0, false)
-		self.vOffset = -self.slider.type.current
+
+		if self.vOffsetVelocity then
+			
+			elem:emitEvent('changed')
+			if self.slider.content.max > self.slider.content.current+self.vOffsetVelocity then
+				self.slider.content.current = self.slider.content.current + self.vOffsetVelocity
+
+				self.vOffsetVelocity = self.vOffsetVelocity*(1-(1/(self.lastUpdate-self.currentTime)))
+				
+				if math.abs(self.vOffsetVelocity) <= 9 then
+					self.vOffsetVelocity = nil
+				end
+			else
+				self.slider.content.current = self.slider.content.max
+				self.vOffsetVelocity = nil
+			end
+		end
+
+		self.vOffset = -self.slider.content.current
 	end
+
+	gui.input.closeParent()
 
 	self.box.w = self.w
 	self.box.h = self.h

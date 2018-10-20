@@ -27,6 +27,40 @@ function gui.element:addAnimation(eventName, func, length, interpolation)
 	self:addEventListener(eventName, anim.start, anim)
 end
 
+--[[
+steps = {
+	{
+		step = 0.5,
+
+		style = {
+			backgroundColor = {255, 255, 255}
+		}
+	},
+	{
+		step = 1,
+
+		style = {
+			backgroundColor = {150, 150, 150}
+		}
+	}
+
+}
+
+
+function gui.element:addAutoAnimation(eventName, steps, lenght, interpolation)
+	local stepInterpolation = {}
+	local previousStep = 0
+
+	for i, e in ipairs(steps) do
+
+	end
+
+	local func = function(style, progress, event, element)
+
+	end
+end]]
+
+
 function animation.new(func, length, element, bStyle, eventName, interpolation)
 	local anim = setmetatable({
 		interpolation = interpolation,
@@ -91,6 +125,7 @@ function animation:update(event, _, num)
 
 			self.func(self.style, self.progress, event, self.element) 
 			self.element.redraw = true
+			self.element:emitEvent('animationProgress', self.eventName)
 		end
 		self.element.animationProgress = self.progress
 	else

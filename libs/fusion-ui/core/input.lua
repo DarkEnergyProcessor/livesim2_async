@@ -22,6 +22,9 @@ gui.inputBuffer = {
 		},
 		pressEvent = nil,
 	},
+	touch = {
+		events = {}
+	},
 	keyboard = {
 		currentCapture = nil,
 
@@ -141,18 +144,73 @@ function gui.eventHandlers.mousePos(x, y)
 	}
 end
 
+function gui.eventHandlers.touchmoved(id, x, y, dx, dy)
+	local t
+	dx = dx or 0
+	dy = dy or 0
+
+	if gui.inputBuffer.touch.events[id] then
+		if gui.inputBuffer.touch.events[id].startBox.hasParent then
+			if gui.inputBuffer.touch.events[id].startBox.hasParent.checkFunc({x = x, y = y, dx = dx, dy = dy, time = love.timer.getTime(), id = id, startX = gui.inputBuffer.touch.events[id].x, startY = gui.inputBuffer.touch.events[id].y} ,'touchmoved') then
+				gui.inputBuffer.touch.events[id].startBox['dragged']={x = x, y = y, dx = dx, dy = dy, time = love.timer.getTime(), touch = true}
+			else
+				--t = false
+			end
+		else
+			gui.inputBuffer.touch.events[id].startBox['dragged']={x = x, y = y, dx = dx, dy = dy, time = love.timer.getTime(), touch = true}
+		end
+		t = true
+	else
+		t = false
+	end
+
+	return t
+end
+
 function gui.eventHandlers.touchpressed(id, x, y)
-	local t, i = gui.input.checkBoxes(x, y, button)
+	local t, i = gui.input.checkBoxes(x, y, 1)
 
+	if i then
+		if gui.mouseBoxes[i].hasParent then
+			if gui.mouseBoxes[i].hasParent.checkFunc({x = x, y = y, time = love.timer.getTime(), id = id} ,'touchpressed') then
+				gui.mouseBoxes[i]['pressed']={x = x, y = y, time = love.timer.getTime()}
+				gui.inputBuffer.touch.events[id] = {x = x, y = y, button = 1, startBox = gui.mouseBoxes[i], touch = true}
+			else
+				gui.inputBuffer.touch.events[id] = {x = x, y = y, button = 1, startBox = gui.mouseBoxes[i], touch = true}
+			end
+		else
+			gui.mouseBoxes[i]['pressed']={x = x, y = y, time = love.timer.getTime()}
+			gui.inputBuffer.touch.events[id] = {x = x, y = y, button = 1, startBox = gui.mouseBoxes[i], touch = true}
+		end
+	end
 
+	return t
 end
 
-function gui.eventHandlers.touchmoved(id, x, y)
-	local t, i = gui.input.checkBoxes(x, y, button)
-end
+function gui.eventHandlers.touchreleased(id, x, y, dx, dy)
+	dx = dx or 0
+	dy = dy or 0
+	local t
 
-function gui.eventHandlers.touchreleased(id, x, y)
-	local t, i = gui.input.checkBoxes(x, y, button)
+	if gui.inputBuffer.touch.events[id] then
+		if gui.inputBuffer.touch.events[id].startBox.hasParent then
+			if gui.inputBuffer.touch.events[id].startBox.hasParent.checkFunc({x = x, y = y, dx = dx, dy = dy, time = love.timer.getTime(), id = id, startX = gui.inputBuffer.touch.events[id].x, startY = gui.inputBuffer.touch.events[id].y} ,'touchreleased') then
+				gui.inputBuffer.touch.events[id].startBox['released']={x = x, y = y, time = love.timer.getTime(), touch = true}
+				gui.inputBuffer.touch.events[id] = nil
+				print('release regd')
+			else
+				gui.inputBuffer.touch.events[id] = nil
+			end
+		else
+			gui.inputBuffer.touch.events[id].startBox['released']={x = x, y = y, time = love.timer.getTime(), touch = true}
+			gui.inputBuffer.touch.events[id] = nil
+		end
+		t = true
+	else
+		t = false
+	end
+
+	return t
 end
 
 -- [[ Internal utility functions used by the box mouse&touch system ]]
@@ -192,7 +250,7 @@ local function zsort(b1, b2)
 	end
 end
 
-local boxParentStack = {}
+local boxParentRef = {}
 local boxParent = false
 
 function gui.input.addBox(x, y, w, h, z, button, parent, checkFunc, element)
@@ -204,21 +262,23 @@ function gui.input.addBox(x, y, w, h, z, button, parent, checkFunc, element)
 		h = h,
 		element = element,
 		button = button or '1',
-		parent = parent or false,
-		checkFunc = checkFunc or function() return true end
+		isParent = parent or false,
+		hasParent = nil,
+		checkFunc = checkFunc or function(event, eventName) return true end
 	}
 
 	box.index = tostring(box)
 
 	if parent then
-		box.children = {}
+		--box.children = {}
 		boxParent = true
-		table.insert(boxParentStack, box)
+		boxParentRef = box
 	end
 
 	if boxParent then
-		boxParentStack[#boxParentStack].child = box
-	else
+		box.hasParent = boxParentRef
+	end
+
 		--See if the last box has a smaller z than the box being inserted
 		if #gui.mouseBoxes>=1 and gui.mouseBoxes[#gui.mouseBoxes].z <= z then
 			table.insert(gui.mouseBoxes, box)
@@ -231,15 +291,13 @@ function gui.input.addBox(x, y, w, h, z, button, parent, checkFunc, element)
 
 			table.sort(gui.mouseBoxes, zsort)
 		end
-	end
+
 	return box
 end
 
 function gui.input.closeParent()
-	boxParentStack[#boxParentStack] = nil
-	if #boxParentStack < 1 then
-		boxParent = false
-	end
+	boxParentRef = nil
+	boxParent = false
 end
 
 function gui.input.removeBox(box)
