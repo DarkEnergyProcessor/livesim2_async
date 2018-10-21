@@ -130,12 +130,13 @@ love.arg.parse_options = love.arg.parseOptions
 -- Game loop --
 ---------------
 
-
+--[[
 local u = print
 function print(...)
 	u(...)
 	u(debug.traceback())
 end
+]]
 
 
 function love.createhandlers()
@@ -202,9 +203,7 @@ function love.run()
 				end
 			elseif name == "touchpressed" or name == "touchreleased" or name == "touchmoved" then
 				b, c = vires.screenToLogical(b, c)
-				if name == "touchmoved" then
-					d, e = d * vires.data.scaleOverall, e * vires.data.scaleOverall
-				end
+				d, e = d * vires.data.scaleOverall, e * vires.data.scaleOverall
 			-- print information (debug). sent from another thread
 			--elseif name == "print" then
 				--print(a)

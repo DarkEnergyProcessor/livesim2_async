@@ -111,13 +111,7 @@ function slider:update(x, y, w, h, properties, style, elem)
 			self.current =  round((((st.pressEvent.y-y)/h)*(self.max-self.min)+self.min)/self.step)*self.step
 		end
 
-		if self.current < self.min then
-			self.current = self.min
-		end
-
-		if self.current > self.max then
-			self.current = self.max
-		end
+		self.current = math.max(math.min(self.current, self.max), self.min)
 
 		elem:emitEvent('changed', { value = self.current })
 	end
@@ -144,20 +138,21 @@ function slider:getSize(str, style)
 end
 
 function slider:render(x, y, w, h, str, style, animation)
+	local percent = (self.current-self.min)/(self.max-self.min)
 	style:drawBackground(x, y, w, h)
 
 	gui.platform.setColor(style.slider.fillIndicator)
 	if self.orientation == 'horizontal' then
-		gui.platform.rectangle('fill', x, y+5, w*(self.current/(self.max-self.min)), h-10)
+		gui.platform.rectangle('fill', x, y+5, w*percent, h-10)
 	else
-		gui.platform.rectangle('fill', x+5, y, w-10, h*(self.current/(self.max-self.min)))
+		gui.platform.rectangle('fill', x+5, y, w-10, percent*h)
 	end
 
 	gui.platform.setColor(style.slider.handleColor)
 	if self.orientation == 'horizontal' then
 		gui.platform.rectangle('fill', x-h/2+5+w*(self.current/(self.max-self.min)), y+5, h-10, h-10)
 	else
-		gui.platform.rectangle('fill', x+5, y-w/2+h*(self.current/(self.max-self.min)), w-10, w-10)
+		gui.platform.rectangle('fill', x+5, percent*h+5-w/2, w-10, w-10)
 	end
 
 	gui.platform.setStencilTest()

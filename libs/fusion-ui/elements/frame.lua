@@ -185,45 +185,6 @@ function frame:update(x, y, w, h, content, style, elem)
 	self.lastUpdate = self.currentTime
 	self.currentTime = love.timer.getTime()
 
-	local function touchCheck(event, eventType)
-		if eventType == 'touchmoved' then
-			if math.abs(math.abs(event.startY)-math.abs(event.y)) > 50 then
-				
-				self:elementRender()
-				
-				if self.slider then
-					
-					if (self.slider.content.current - event.dy)<0 or (self.slider.content.current - event.dy)>self.slider.content.max then
-						print(self.slider.content.current..'+'..event.dy)
-					else
-						self.slider.content.current = self.slider.content.current - event.dy
-					end
-
-					return false
-				end
-			end
-		elseif eventType == 'touchreleased' then
-			if math.abs(math.abs(event.startX)-math.abs(event.x)) > 50 then
-
-				self:elementRender()
-
-				if self.slider then
-					if (self.slider.content.current - event.dy)<0 or (self.slider.content.current - event.dy)>self.slider.content.max then
-					
-					else
-						self.slider.content.current = self.slider.content.current - event.dy
-					end
-
-					self.vOffsetVelocity = -event.dy
-
-					return false
-				end
-			end
-		end
-
-		return true
-	end
-
 	if self.redraw then
 		elem:emitEvent('changed')
 	end
@@ -241,9 +202,48 @@ function frame:update(x, y, w, h, content, style, elem)
 	self.h = h
 
 	if not self.box then
-		self.box = gui.input.addBox(x, y, self.w, self.h, style.z, 1, true, touchCheck)
+		self.box = gui.input.addBox(x, y, self.w, self.h, style.z, 1, true, function(event, eventType)
+		if eventType == 'touchmoved' then
+			if math.abs(math.abs(event.startY)-math.abs(event.y)) > 50 then
+				
+				self:elementRender()
+				
+				if self.slider then
+					
+						if (self.slider.type.current - event.dy)<0 or (self.slider.type.current - event.dy)>self.slider.type.max then
+							print(self.slider.type.current..'+'..event.dy)
+					else
+							self.slider.type.current = self.slider.type.current - event.dy
+							self.slider:emitEvent('changed', { value = self.slider.type.current - event.dy })
+					end
+
+					return false
+				end
+			end
+		elseif eventType == 'touchreleased' then
+			if math.abs(math.abs(event.startX)-math.abs(event.x)) > 50 then
+
+				self:elementRender()
+
+				if self.slider then
+						if (self.slider.type.current - event.dy)<0 or (self.slider.type.current - event.dy)>self.slider.type.max then
+					
+					else
+							self.slider.type.current = self.slider.type.current - event.dy
+							self.slider:emitEvent('changed', { value = self.slider.type.current - event.dy })
+					end
+
+					self.vOffsetVelocity = -event.dy
+
+					return false
+				end
+			end
+		end
+
+		return true
+		end)
 	end
-	
+
 	if self.mkLayout then
 		local elemTree = {}
 		for index, eCont in ipairs(self.elementContainers) do
@@ -290,7 +290,7 @@ function frame:update(x, y, w, h, content, style, elem)
 		
 		if curH > self.h then
 			if self.slider then
-				self.slider.content.max = curH-self.h+30
+				self.slider.type.max = curH-self.h+30
 			else
 				self.slider = gui.element.newElement('slider',{min = 0, max = curH-self.h+30, step = 1, current = 0},{})
 				
@@ -327,9 +327,9 @@ function frame:update(x, y, w, h, content, style, elem)
 
 		if self.vOffsetVelocity then
 			
-			elem:emitEvent('changed')
-			if self.slider.content.max > self.slider.content.current+self.vOffsetVelocity then
-				self.slider.content.current = self.slider.content.current + self.vOffsetVelocity
+			if self.slider.type.max > self.slider.type.current+self.vOffsetVelocity then
+				self.slider.type.current = self.slider.type.current + self.vOffsetVelocity
+				self.slider:emitEvent('changed', { value = self.slider.type.current + self.vOffsetVelocity })
 
 				self.vOffsetVelocity = self.vOffsetVelocity*(1-(1/(self.lastUpdate-self.currentTime)))
 				
@@ -337,12 +337,13 @@ function frame:update(x, y, w, h, content, style, elem)
 					self.vOffsetVelocity = nil
 				end
 			else
-				self.slider.content.current = self.slider.content.max
+				self.slider.type.current = self.slider.type.max
 				self.vOffsetVelocity = nil
+				self.slider:emitEvent('changed', { value = self.slider.type.max })
 			end
 		end
 
-		self.vOffset = -self.slider.content.current
+		self.vOffset = -self.slider.type.current
 	end
 
 	gui.input.closeParent()

@@ -137,11 +137,10 @@ function gui.eventHandlers.mousemoved(x, y, dx, dy, touch)
 end
 
 function gui.eventHandlers.mousePos(x, y)
-	gui.inputBuffer.mouse.previous = {x = gui.inputBuffer.mouse.current.x, y = gui.inputBuffer.mouse.current.y}
-	gui.inputBuffer.mouse.current = {
-		x = x,
-		y = y
-	}
+	gui.inputBuffer.mouse.previous.x = gui.inputBuffer.mouse.current.x
+	gui.inputBuffer.mouse.previous.y = gui.inputBuffer.mouse.current.y
+	gui.inputBuffer.mouse.current.x = x
+	gui.inputBuffer.mouse.current.y = y
 end
 
 function gui.eventHandlers.touchmoved(id, x, y, dx, dy)

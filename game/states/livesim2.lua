@@ -9,6 +9,7 @@ local assetCache = require("asset_cache")
 local log = require("logging")
 local setting = require("setting")
 local util = require("util")
+local L = require("language")
 
 local timer = require("libs.hump.timer")
 local lsr = require("libs.lsr")
@@ -138,36 +139,36 @@ local function liveClearCallback(self)
 	end)
 	self.data.resultObject:setSaveReplayCallback(function()
 		if self.persist.autoplay then
-			return "Cannot save while autoplay"
+			return L"livesim2:replay:save:errorAutoplay"
 		end
 
 		local name
 		if not(love.filesystem.createDirectory("replays/"..self.persist.beatmapName)) then
-			return "Cannot create directory"
+			return L"livesim2:replay:save:errorDirectory"
 		end
 
 		if self.persist.replayMode then
 			if self.persist.replayMode.filename then
-				return "Already saved"
+				return L"livesim2:replay:save:errorAlreadySaved"
 			end
 
 			name = "replays/"..self.persist.beatmapName.."/"..self.persist.replayMode.timestamp..".lsr"
 			if util.fileExists(name) then
-				return "Already saved"
+				return L"livesim2:replay:save:errorAlreadySaved"
 			end
 		end
 
 		name = "replays/"..self.persist.beatmapName.."/"..self.persist.startTimestamp..".lsr"
 		if util.fileExists(name) then
-			return "Already saved"
+			return L"livesim2:replay:save:errorAlreadySaved"
 		end
 
 		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, replayData, replayData.accuracy, replayData.events)
 		if s then
 			replayData.filename = name
-			return "Saved"
+			return L"livesim2:replay:saved"
 		else
-			return "Cannot save"
+			return L"livesim2:replay:errorSaveGeneric"
 		end
 	end)
 	self.data.resultObject:setInformation(replayData, accuracyData, self.persist.comboRange)

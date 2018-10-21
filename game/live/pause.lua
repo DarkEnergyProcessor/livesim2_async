@@ -6,7 +6,6 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local Yohane = require("libs.Yohane")
 
-local assetCache = require("asset_cache")
 local color = require("color")
 local mainFont = require("font")
 local L = require("language")
@@ -59,24 +58,26 @@ function pause:_drawCounter()
 	w = self.font:getWidth(fractStr)
 	love.graphics.setFont(self.font)
 	love.graphics.print(fractStr, 480, 302, 0, 1, 1, w * 0.5, 0)
-	love.graphics.print("Resume in", 411, 192)
+	local resumeIn = L"livesim2:pause:resumeIn"
+	w = self.font:getWidth(resumeIn)
+	love.graphics.print(resumeIn, 480-w*0.5, 192)
 end
 
 local buttons = {
 	{
-		display = L"livesim2.pause.resume",
+		display = L"livesim2:pause:resume",
 		callback = function(pauseObject)
 			pauseObject.timer = 3
 		end,
 		color = {color.get(0, 138, 255, 0.5)}
 	},
 	{
-		display = L"livesim2.pause.quit",
+		display = L"livesim2:pause:quit",
 		callback = "quit",
 		color = {color.get(251, 148, 0, 0.5)}
 	},
 	{
-		display = L"livesim2.pause.restart",
+		display = L"livesim2:pause:restart",
 		callback = "restart",
 		color = {color.get(255, 28, 124, 0.5)}
 	}
@@ -85,15 +86,22 @@ function pause:_drawPause()
 	-- always follow this coordinate:
 	-- x = 416
 	-- y = 228 + i * 72 (where i starts at 1)
-	local w = self.font:getWidth(self.beatmapName)
+	local w
+
 	love.graphics.setFont(self.mainCounterFont)
 	if self.isFailed then
+		local fail = L"livesim2:pause:fail"
+		w = self.mainCounterFont:getWidth(fail)
 		love.graphics.setColor(color.orangeRed)
-		love.graphics.print("Failed", 372, 128) -- coincidence position
+		love.graphics.print("Failed", 480-w*0.5, 128)
 	else
+		local paused = L"livesim2:pause:pause"
+		w = self.mainCounterFont:getWidth(paused)
 		love.graphics.setColor(color.white)
-		love.graphics.print("Paused", 372, 128)
+		love.graphics.print(paused, 480-w*0.5, 128)
 	end
+
+	w = self.font:getWidth(self.beatmapName)
 	love.graphics.setFont(self.font)
 	love.graphics.print(self.beatmapName, 480, 192, 0, 1, 1, w * 0.5, 0)
 

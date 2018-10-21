@@ -36,16 +36,16 @@ end
 local function initializeButtons()
 	local blist = {}
 	-- Play button
-	blist.play = menuButtonUI.new(L"menu.play")
+	blist.play = menuButtonUI.new(L"menu:play")
 	blist.play:addEventListener("released", makeEnterGamestateFunction("beatmapSelect"))
 	-- Change units button
-	blist.changeUnits = menuButtonUI.new(L"menu.changeUnits")
+	blist.changeUnits = menuButtonUI.new(L"menu:changeUnits")
 	blist.changeUnits:addEventListener("released", makeEnterGamestateFunction("changeUnits"))
 	-- Settings button
-	blist.settings = menuButtonUI.new(L"menu.settings")
+	blist.settings = menuButtonUI.new(L"menu:settings")
 	blist.settings:addEventListener("released", makeEnterGamestateFunction("settings"))
 	-- Exit button
-	blist.exit = menuButtonUI.new(L"menu.quit")
+	blist.exit = menuButtonUI.new(L"menu:quit")
 	blist.exit:addEventListener("released", function()
 		if love._os ~= "iOS" then
 			gamestate.leave()
@@ -83,7 +83,7 @@ local function initializeVersionText(self)
 	end
 
 	local renderInfo = {love.graphics.getRendererInfo()}
-	bld[#bld + 1] = "\n"..L("menu.renderer")..": "
+	bld[#bld + 1] = "\n"..L("menu:renderer")..": "
 	bld[#bld + 1] = renderInfo[1]
 
 	for i = 2, 4 do
@@ -93,7 +93,7 @@ local function initializeVersionText(self)
 		end
 	end
 
-	bld[#bld + 1] = "\n"..L("menu.writeDir")..": "
+	bld[#bld + 1] = "\n"..L("menu:writeDir")..": "
 	bld[#bld + 1] = love.filesystem.getSaveDirectory()
 	bld = table.concat(bld)
 
