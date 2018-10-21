@@ -32,7 +32,7 @@ local function updateLanguagString(text, lang)
 	-- The string should be "setting.language.current", but due to issue
 	-- in i18n library above, it must be renamed to "language.current".
 	-- Once this fixed, we can use "setting.language.current" again.
-	util.addTextWithShadow(text, L("language.current", lang), 0, 0)
+	util.addTextWithShadow(text, L("setting:language:current", lang), 0, 0)
 end
 
 function gameLang:load(arg)
@@ -78,7 +78,7 @@ function gameLang:load(arg)
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting.language", leave)
+		self.data.back = backNavigation.new(L"setting:language", leave)
 	end
 end
 
@@ -91,5 +91,9 @@ function gameLang:draw()
 	self.data.buttonFrame:draw(101, 50, 808, 546)
 	gui.draw()
 end
+
+gameLang:registerEvent("keyreleased", function(_, key)
+	if key == "escape" then leave() end
+end)
 
 return gameLang

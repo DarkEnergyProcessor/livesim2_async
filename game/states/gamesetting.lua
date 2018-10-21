@@ -19,6 +19,14 @@ local gameSetting = gamestate.create {
 	images = {},
 }
 
+gamestate.register("settingsGeneral", require("game.settings.general"))
+
+local function makeEnterGamestateFunction(name)
+	return function()
+		return gamestate.enter(loadingInstance.getInstance(), name)
+	end
+end
+
 local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
 end
@@ -26,18 +34,19 @@ end
 function gameSetting:load()
 	if self.data.settingButtons == nil then
 		self.data.settingButtons = {
-			longButtonUI.new(L"setting.general"),
-			longButtonUI.new(L"setting.volume"),
-			longButtonUI.new(L"setting.background"),
-			longButtonUI.new(L"setting.noteStyle"),
-			longButtonUI.new(L"setting.live"),
-			longButtonUI.new(L"setting.stamina"),
-			longButtonUI.new(L"setting.liveUI")
+			longButtonUI.new(L"setting:general"),
+			longButtonUI.new(L"setting:volume"),
+			longButtonUI.new(L"setting:background"),
+			longButtonUI.new(L"setting:noteStyle"),
+			longButtonUI.new(L"setting:live"),
+			longButtonUI.new(L"setting:stamina"),
+			longButtonUI.new(L"setting:liveUI")
 		}
+		self.data.settingButtons[1]:addEventListener("released", makeEnterGamestateFunction("settingsGeneral"))
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"menu.settings", leave)
+		self.data.back = backNavigation.new(L"menu:settings", leave)
 	end
 
 	if self.data.background == nil then
@@ -56,5 +65,9 @@ function gameSetting:draw()
 
 	gui.draw()
 end
+
+gameSetting:registerEvent("keyreleased", function(_, key)
+	if key == "escape" then leave() end
+end)
 
 return gameSetting

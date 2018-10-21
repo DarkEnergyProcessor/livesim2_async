@@ -7,6 +7,7 @@ local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 local assetCache = require("asset_cache")
 local color = require("color")
+local L = require("language")
 
 local gui = require("libs.fusion-ui")
 local longButtonUI = require("game.ui.long_button")
@@ -50,7 +51,7 @@ function result:__construct(beatmapName)
 	self.returnButtonCallback = nil
 	self.returnButtonOpaque = nil
 	self.returnRetryTimer = -math.huge
-	self.returnButton = longButtonUI.new("Return/Hold to retry")
+	self.returnButton = longButtonUI.new(L"livesim2:result:returnHoldRetry")
 	self.returnButton:addEventListener("released", function()
 		self.returnButtonCallback(self.returnButtonOpaque, self.returnRetryTimer >= 2)
 		self.returnRetryTimer = -math.huge
@@ -61,7 +62,7 @@ function result:__construct(beatmapName)
 	-- replay button
 	self.replayButtonCallback = nil
 	self.replayButtonOpaque = nil
-	self.replayButton = selectButtonUI.new("Replay")
+	self.replayButton = selectButtonUI.new(L"livesim2:result:replay")
 	self.replayButton:addEventListener("released", function()
 		return self.replayButtonCallback(self.replayButtonOpaque)
 	end)
@@ -69,7 +70,7 @@ function result:__construct(beatmapName)
 	self.saveReplayVanishTimer = 0
 	self.saveReplayButtonCallback = nil
 	self.saveReplayButtonOpaque = nil
-	self.saveReplayButton = selectButtonUI.new("Save Replay")
+	self.saveReplayButton = selectButtonUI.new(L"livesim2:result:saveReplay")
 	self.saveReplayButton:addEventListener("released", function()
 		-- must return status message
 		self.saveReplayStatus = tostring(self.saveReplayButtonCallback(self.saveReplayButtonOpaque))
@@ -77,9 +78,9 @@ function result:__construct(beatmapName)
 	end)
 	-- text objects
 	self.staticText = love.graphics.newText(self.fonts[3])
-	addTextWithShadow(self.staticText, "Max Combo", 600, 80)
-	addTextWithShadow(self.staticText, "Token", 648, 156)
-	addTextWithShadow(self.staticText, "Score", 600, 232)
+	addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
+	addTextWithShadow(self.staticText, L"general:token", 648, 156)
+	addTextWithShadow(self.staticText, L"general:score", 600, 232)
 	self.beatmapNameText = love.graphics.newText(self.fonts[1])
 	addTextWithShadow(self.beatmapNameText, beatmapName, 0, 0)
 	self.statusText = love.graphics.newText(self.fonts[2])
@@ -191,13 +192,13 @@ function result:setInformation(noteinfo, accuracyData, comboRange)
 		value = 1
 	})
 	if noteinfo.maxCombo >= comboRange[4] then
-		self.displayJudgement.comboLevel = "(S combo)"
+		self.displayJudgement.comboLevel = L("livesim2:result:comboRange", {range="S"})
 	elseif noteinfo.maxCombo >= comboRange[3] then
-		self.displayJudgement.comboLevel = "(A combo)"
+		self.displayJudgement.comboLevel = L("livesim2:result:comboRange", {range="A"})
 	elseif noteinfo.maxCombo >= comboRange[2] then
-		self.displayJudgement.comboLevel = "(B combo)"
+		self.displayJudgement.comboLevel = L("livesim2:result:comboRange", {range="B"})
 	elseif noteinfo.maxCombo >= comboRange[1] then
-		self.displayJudgement.comboLevel = "(C combo)"
+		self.displayJudgement.comboLevel = L("livesim2:result:comboRange", {range="C"})
 	end
 	-- create live graph
 	local poly = {0, 128}

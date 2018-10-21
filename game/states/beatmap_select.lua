@@ -66,15 +66,15 @@ local function initializeSummary(self, data)
 	-- Format
 	addTextWithShadow(self.persist.beatmapDetailInfo, data.format, 470, 118)
 	-- Difficulty
-	local diff = L("beatmapSelect.difficulty", {difficulty = data.difficulty or L("beatmapSelect.diffUnknown")})
+	local diff = L("beatmapSelect:difficulty", {difficulty = data.difficulty or L("beatmapSelect:diffUnknown")})
 	-- Cannot use addTextWithShadow here.
 	self.persist.beatmapInfo:addf({color.black, diff}, 270, "left", 470-1, 144-1)
 	self.persist.beatmapInfo:addf({color.black, diff}, 270, "left", 470+1, 144+1)
 	self.persist.beatmapInfo:addf({color.white, diff}, 270, "left", 470, 144)
 
 	-- Score & Combo
-	addTextWithShadow(self.persist.beatmapInfo, L("general.score"), 496, 374)
-	addTextWithShadow(self.persist.beatmapInfo, L("general.combo"), 652, 374)
+	addTextWithShadow(self.persist.beatmapInfo, L"general:score", 496, 374)
+	addTextWithShadow(self.persist.beatmapInfo, L"general:combo", 652, 374)
 	addTextWithShadow(self.persist.beatmapInfo, "S\nA\nB\nC", 470, 400)
 	local sstr = (data.scoreS or "-").."\n"..(data.scoreA or "-").."\n"..(data.scoreB or "-").."\n"..(data.scoreC or "-")
 	addTextWithShadow(self.persist.beatmapInfo, sstr, 496, 400)
@@ -91,7 +91,6 @@ local function initializeSummary(self, data)
 
 		if data.coverArt.info then
 			-- cannot use addTextWithShadow (requires automatic break)
-			--addTextWithShadow(self.persist.beatmapDetailInfo, data.coverArt.info, 470, 338, 0.5)
 			self.persist.beatmapDetailInfo:addf({color.black, data.coverArt.info}, 474, "left", 470-0.5, 338-0.5)
 			self.persist.beatmapDetailInfo:addf({color.black, data.coverArt.info}, 474, "left", 470+0.5, 338+0.5)
 			self.persist.beatmapDetailInfo:addf({color.white, data.coverArt.info}, 474, "left", 470, 338)
@@ -128,7 +127,7 @@ local function initializeBeatmapListUI(self)
 		frameLayout[i] = {
 			position = "absolute",
 			size = "absolute",
-			left = 0,
+			left = 60,
 			top = (i - 1) * 60,
 			w = 324,
 			h = 60
@@ -150,14 +149,14 @@ function beatmapSelect:load()
 	beatmapSelButton.init()
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L("beatmapSelect.title"), leave)
+		self.data.back = backNavigation.new(L"beatmapSelect:title", leave)
 	end
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(1)
 	end
 	if self.data.openBeatmap == nil then
 		local saveUrl = "file://"..love.filesystem.getSaveDirectory().."/beatmap"
-		self.data.openBeatmap = selectButton.new(L("beatmapSelect.openDir"))
+		self.data.openBeatmap = selectButton.new(L"beatmapSelect:openDir")
 		self.data.openBeatmap:addEventListener("released", function()
 			return love.system.openURL(saveUrl)
 		end)
@@ -167,7 +166,7 @@ function beatmapSelect:load()
 	end
 	if self.data.playButton == nil then
 		--self.persist.summary
-		self.data.playButton = selectButton.new(L("beatmapSelect.play"))
+		self.data.playButton = selectButton.new(L"beatmapSelect:play")
 		self.data.playButton:addEventListener("released", function()
 			if self.persist.summary then
 				gamestate.enter(loadingInstance.getInstance(), "livesim2", {
@@ -180,10 +179,10 @@ function beatmapSelect:load()
 
 	if self.data.checkLabel == nil then
 		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionAutoplay", 770, 372)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionRandom", 770, 408)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionStoryboard", 770, 444)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect.optionVideo", 770, 480)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionAutoplay", 770, 372)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionRandom", 770, 408)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionStoryboard", 770, 444)
+		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionVideo", 770, 480)
 	end
 
 	if self.data.checkButton == nil then
@@ -219,7 +218,7 @@ function beatmapSelect:start()
 		}
 		return true
 	end)
-	setStatusText(self, L("beatmapSelect.loading"))
+	setStatusText(self, L"beatmapSelect:loading")
 end
 
 function beatmapSelect.exit()
@@ -248,7 +247,7 @@ function beatmapSelect:draw()
 	selectButton.draw(self.data.openBeatmap, 64, 592)
 
 	if self.data.beatmapFrame then
-		self.data.beatmapFrame:draw(60, 80, 360, 480)
+		self.data.beatmapFrame:draw(0, 80, 460, 480)
 	end
 
 	for i = 1, #self.data.checkButton do
@@ -266,6 +265,15 @@ end
 beatmapSelect:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return leave()
+	end
+end)
+
+beatmapSelect:registerEvent("wheelmoved", function(self, _, y)
+	if self.data.beatmapFrame and self.data.beatmapFrame.type.slider then
+		local slider = self.data.beatmapFrame.type.slider
+		local v = math.max(math.min(slider.type.current - y * 60, slider.type.max), slider.type.min)
+		self.data.beatmapFrame.type.slider.type.current = v
+		self.data.beatmapFrame.type.slider:emitEvent("changed", {value = v})
 	end
 end)
 
