@@ -112,6 +112,8 @@ local function initializeSetting()
 	setting.define("STAMINA_DISPLAY", 32)
 	setting.define("STAMINA_FUNCTIONAL", 0)
 	setting.define("LANGUAGE", "en")
+	setting.define("TIMING_OFFSET", 0)
+	setting.define("CBF_UNIT_LOAD", 1)
 end
 
 local function createDirectories()

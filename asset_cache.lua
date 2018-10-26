@@ -8,7 +8,7 @@ local cache = require("cache")
 local lily = require("libs.lily")
 local assetCache = {enableSync = false}
 
-local function getCacheByParam(a, b)
+local function getCacheByParam(a, b, nob)
 	local s, e = a:find(":", 1, true)
 	local assetName
 	local cacheName
@@ -16,7 +16,7 @@ local function getCacheByParam(a, b)
 		cacheName = a:sub(1, s-1)
 		assetName = a:sub(e+1)
 	else
-		cacheName = a.."_"..tostring(b)
+		cacheName = nob and a or (a.."_"..tostring(b))
 		assetName = a
 	end
 
@@ -60,7 +60,7 @@ function assetCache.loadMultipleImages(images, settings)
 	local lilyload = {}
 
 	for i = 1, #images do
-		local s, a, b = getCacheByParam(images[i], settings)
+		local s, a, b = getCacheByParam(images[i], settings, true)
 		if s then
 			available[i] = a
 		else

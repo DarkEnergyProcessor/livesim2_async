@@ -15,11 +15,12 @@ local backNavigation = require("game.ui.back_navigation")
 local longButtonUI = require("game.ui.long_button")
 
 local gameSetting = gamestate.create {
-	fonts = {},
-	images = {},
+	fonts = {}, images = {},
 }
 
-gamestate.register("settingsGeneral", require("game.settings.general"))
+gamestate.register("settings::general", require("game.settings.states.general"))
+gamestate.register("settings::live", require("game.settings.states.live"))
+gamestate.register("settings::nstyle", require("game.settings.states.nstyle"))
 
 local function makeEnterGamestateFunction(name)
 	return function()
@@ -42,7 +43,9 @@ function gameSetting:load()
 			longButtonUI.new(L"setting:stamina"),
 			longButtonUI.new(L"setting:liveUI")
 		}
-		self.data.settingButtons[1]:addEventListener("released", makeEnterGamestateFunction("settingsGeneral"))
+		self.data.settingButtons[1]:addEventListener("released", makeEnterGamestateFunction("settings::general"))
+		self.data.settingButtons[4]:addEventListener("released", makeEnterGamestateFunction("settings::nstyle"))
+		self.data.settingButtons[5]:addEventListener("released", makeEnterGamestateFunction("settings::live"))
 	end
 
 	if self.data.back == nil then
