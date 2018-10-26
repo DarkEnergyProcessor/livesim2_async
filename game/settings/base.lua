@@ -16,10 +16,10 @@ function baseSettingItem:__construct(name)
 	assert(coroutine.running(), "must be called from async function")
 
 	local internal = baseSettingItem^self
-	local font = mainFont.get(24)
-	internal.image = assetCache.loadImage("assets/image/ui/set_win_03.png", {mipmaps = true})
+	local font = mainFont.get(32)
+	internal.image = assetCache.loadImage("assets/image/ui/com_win_46.png", {mipmaps = true})
 	internal.title = love.graphics.newText(font)
-	internal.title:add({color.black, name}, 0, 0, 0, 1, 1, font:getWidth(name) * 0.5, 0)
+	internal.title:add({color.black, name})
 
 	self.x = 0
 	self.y = 0
@@ -35,6 +35,10 @@ function baseSettingItem:_emitChangedCallback(v)
 	if self.changedCallback then
 		return self.changedCallback(self.changedOpaque, v)
 	end
+end
+
+function baseSettingItem:setValue(v)
+	return self
 end
 
 function baseSettingItem:setChangedCallback(opaque, func)
@@ -53,7 +57,7 @@ function baseSettingItem:draw()
 	local internal = baseSettingItem^self
 	love.graphics.setColor(color.white)
 	love.graphics.draw(internal.image, self.x, self.y)
-	love.graphics.draw(internal.title, self.x + 211, self.y + 4)
+	love.graphics.draw(internal.title, self.x + 21, self.y + 21)
 	return self
 end
 

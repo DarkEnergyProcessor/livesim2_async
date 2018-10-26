@@ -290,6 +290,10 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 	if swing then
 		-- Default note style
 		if self.noteStyleSwing == 1 then
+			-- neon doesn't add frame
+			if self.noteStyleFrame == 2 then
+				layer[#layer + 1] = 16 + attribute
+			end
 			layer[#layer + 1] = 15
 		-- Neon note style
 		elseif self.noteStyleSwing == 2 then
@@ -309,6 +313,10 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 			end
 		-- Matte note style
 		elseif self.noteStyleSwing == 3 then
+			-- neon doesn't add frame
+			if self.noteStyleFrame == 2 then
+				layer[#layer + 1] = 16 + attribute
+			end
 			layer[#layer + 1] = 62 + attribute
 		end
 	end
@@ -1029,4 +1037,5 @@ function noteManager:draw()
 	end
 end
 
+note.manager = noteManager
 return note

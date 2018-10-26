@@ -65,32 +65,65 @@ function switchSetting:__construct(name, settingName, onoffValue)
 	internal.on:addEventListener("released", function()
 		internal.on:emitEvent("selected")
 		internal.off:emitEvent("unselected")
-		setting.set(settingName, internal.onOffValue.on)
+		if settingName then setting.set(settingName, internal.onOffValue.on) end
+		self:_emitChangedCallback(internal.onOffValue.on)
+	end)
+	internal.on:addEventListener("selected", function()
+		if settingName then setting.set(settingName, internal.onOffValue.on) end
+		self:_emitChangedCallback(internal.onOffValue.on)
 	end)
 	internal.off = switchButtons.off:newElement("")
 	internal.off:addEventListener("released", function()
 		internal.off:emitEvent("selected")
 		internal.on:emitEvent("unselected")
-		setting.set(settingName, internal.onOffValue.off)
+	end)
+	internal.off:addEventListener("selected", function()
+		if settingName then setting.set(settingName, internal.onOffValue.off) end
+		self:_emitChangedCallback(internal.onOffValue.off)
 	end)
 
-	local value = tostring(setting.get(settingName))
+	local value
+	if settingName then
+		value = tostring(setting.get(settingName))
+	else
+		value = tostring(internal.onOffValue.value)
+	end
+
 	if value == tostring(internal.onOffValue.on) then
 		internal.on:emitEvent("selected")
 	elseif value == tostring(internal.onOffValue.off) then
 		internal.off:emitEvent("selected")
 	end
 
-	baseSetting.__construct(self, name)
+	return baseSetting.__construct(self, name)
+end
+
+function switchSetting:setValue(v)
+	local internal = switchSetting^self
+
+	if type(v) == "boolean" then
+		v = v and tostring(internal.onOffValue.on) or tostring(internal.onOffValue.off)
+	end
+
+	if v == tostring(internal.onOffValue.on) then
+		internal.on:emitEvent("selected")
+		internal.off:emitEvent("unselected")
+	elseif v == tostring(internal.onOffValue.off) then
+		internal.off:emitEvent("selected")
+		internal.on:emitEvent("unselected")
+	else
+		error("invalid value", 2)
+	end
+
+	return self
 end
 
 function switchSetting:draw()
 	local internal = switchSetting^self
 
 	baseSetting.draw(self)
-	internal.on:draw(self.x + 111, self.y + 44, 100, 42)
-	internal.off:draw(self.x + 211, self.y + 44, 100, 42)
-	gui.draw()
+	internal.on:draw(self.x + 569, self.y + 19, 100, 42)
+	internal.off:draw(self.x + 669, self.y + 19, 100, 42)
 	return self
 end
 
