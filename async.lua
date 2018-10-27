@@ -10,24 +10,19 @@ local coroutine = require("coroutine")
 local Luaoop = require("libs.Luaoop")
 local lily = require("libs.lily")
 
-local async = setmetatable({
+local async = {
 	events = {},
 	backEvents = {},
-}, {
-	__newindex = function(async, var, val)
-		if type(val) == "function" then
-			local oldval = val
-			val = function(...)
-				if coroutine.running() == nil then
-					return nil, "Async cannot function in main thread"
-				end
-				return oldval(...)
-			end
-		end
+}
 
-		return rawset(async, var, val)
+local function asyncFunc(func)
+	return function(...)
+		if coroutine.running() == nil then
+			return nil, "Async cannot function in main thread"
+		end
+		return func(...)
 	end
-})
+end
 
 -----------------------------
 -- Base async object class --
@@ -86,9 +81,9 @@ function funcAsync:__construct(func)
 	self.running = false
 end
 
-function funcAsync:run(arg)
+function funcAsync:run(...)
 	assert(self.running == false, "attempt to run already running function")
-	coroutine.resume(self.coro, arg)
+	coroutine.resume(self.coro, ...)
 	self.running = true
 end
 
@@ -110,7 +105,8 @@ end
 --- Sends control back to async scheduler
 -- @param dt Time to wait
 -- @return Time since the last update in seconds, or none if dt is specified.
-function async.wait(dt)
+function async.wait(dt) end
+async.wait = asyncFunc(function(dt)
 	if dt and dt > 0 then
 		while dt > 0 do
 			dt = dt - async.wait()
@@ -124,13 +120,12 @@ function async.wait(dt)
 		async.events[#async.events + 1] = a
 		return coroutine.yield()
 	end
-end
+end)
 
 -- luacheck: no unused args
 --- Calls pending asynchronous task.
 -- @param dt Time since the last update in seconds.
-function async.loop(dt) end -- tricking LCA
-rawset(async, "loop", function(dt)
+function async.loop(dt)
 	async.backEvents, async.events = async.events, async.backEvents
 	for i = #async.backEvents, 1, -1 do
 		local coro = table.remove(async.backEvents, i)
@@ -139,7 +134,7 @@ rawset(async, "loop", function(dt)
 			error(debug.traceback(coro, err), 0)
 		end
 	end
-end)
+end
 
 ---------------------
 -- Object creation --

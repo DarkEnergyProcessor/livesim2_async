@@ -33,11 +33,11 @@ local function updateStyleData(self)
 	self.persist.styleLayer[1] = note.manager.getLayer(self.persist.styleData, 1, true, true, false, false)
 	self.persist.styleLayer[2] = note.manager.getLayer(self.persist.styleData, 2, true, true, false, false)
 	self.persist.styleLayer[3] = note.manager.getLayer(self.persist.styleData, 3, true, true, false, false)
-	self.persist.styleLayer[4] = note.manager.getLayer(self.persist.styleData, self.persist.defAttr, true, true, false, false)
+	self.persist.curStyle = note.manager.getLayer(self.persist.styleData, self.persist.defAttr, true, true, false, false)
 
 	-- simultaneous neon doesn't provide base frame if base frame is also neon
 	if self.persist.styleData.noteStyleFrame == 2 then
-		self.persist.styleLayer[4][#self.persist.styleLayer[4] + 1] = self.persist.defAttr + 16
+		self.persist.curStyle[#self.persist.curStyle + 1] = self.persist.defAttr + 16
 	end
 
 	-- calculate note style value
@@ -150,10 +150,10 @@ function noteSetting:draw()
 		self.data.settingData[i]:draw()
 	end
 
-	local curLayer = self.persist.styleLayer[4]
+	local curLayer = self.persist.curStyle
 	for i = 1, #curLayer do
 		local xpos = 224
-		local layer = self.persist.styleLayer[4][i]
+		local layer = self.persist.curStyle[i]
 		local quad = note.quadRegion[layer]
 		if isUncolorableLayer(layer) then
 			love.graphics.setColor(color.white)
