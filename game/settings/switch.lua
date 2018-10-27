@@ -58,6 +58,7 @@ function switchSetting:__construct(name, settingName, onoffValue)
 		switchButtons.on:addStyleSwitch("selected", "unselected", selectedOnStyle)
 		switchButtons.off = gui.template.new("button", normalOffStyle)
 		switchButtons.off:addStyleSwitch("selected", "unselected", selectedOffStyle)
+		switchButtons.init = true
 	end
 
 	internal.onOffValue = onoffValue or defaultOnOffValue
@@ -70,6 +71,7 @@ function switchSetting:__construct(name, settingName, onoffValue)
 	end)
 	internal.on:addEventListener("selected", function()
 		if settingName then setting.set(settingName, internal.onOffValue.on) end
+		internal.value = internal.onOffValue.on
 		self:_emitChangedCallback(internal.onOffValue.on)
 	end)
 	internal.off = switchButtons.off:newElement("")
@@ -79,6 +81,7 @@ function switchSetting:__construct(name, settingName, onoffValue)
 	end)
 	internal.off:addEventListener("selected", function()
 		if settingName then setting.set(settingName, internal.onOffValue.off) end
+		internal.value = internal.onOffValue.off
 		self:_emitChangedCallback(internal.onOffValue.off)
 	end)
 
@@ -90,12 +93,19 @@ function switchSetting:__construct(name, settingName, onoffValue)
 	end
 
 	if value == tostring(internal.onOffValue.on) then
+		internal.value = internal.onOffValue.on
 		internal.on:emitEvent("selected")
 	elseif value == tostring(internal.onOffValue.off) then
+		internal.value = internal.onOffValue.off
 		internal.off:emitEvent("selected")
 	end
 
 	return baseSetting.__construct(self, name)
+end
+
+function switchSetting:getValue()
+	local internal = switchSetting^self
+	return internal.value
 end
 
 function switchSetting:setValue(v)
@@ -106,9 +116,11 @@ function switchSetting:setValue(v)
 	end
 
 	if v == tostring(internal.onOffValue.on) then
+		internal.value = internal.onOffValue.on
 		internal.on:emitEvent("selected")
 		internal.off:emitEvent("unselected")
 	elseif v == tostring(internal.onOffValue.off) then
+		internal.value = internal.onOffValue.off
 		internal.off:emitEvent("selected")
 		internal.on:emitEvent("unselected")
 	else

@@ -101,6 +101,11 @@ function numberSetting:update(dt)
 	end
 end
 
+function numberSetting:getValue()
+	local internal = numberSetting^self
+	return internal.value
+end
+
 function numberSetting:setValue(v)
 	local internal = numberSetting^self
 

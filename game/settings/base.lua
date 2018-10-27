@@ -37,6 +37,10 @@ function baseSettingItem:_emitChangedCallback(v)
 	end
 end
 
+function baseSettingItem:getValue()
+	return nil
+end
+
 function baseSettingItem:setValue(v)
 	return self
 end

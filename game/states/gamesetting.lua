@@ -21,6 +21,8 @@ local gameSetting = gamestate.create {
 gamestate.register("settings::general", require("game.settings.states.general"))
 gamestate.register("settings::live", require("game.settings.states.live"))
 gamestate.register("settings::nstyle", require("game.settings.states.nstyle"))
+gamestate.register("settings::score", require("game.settings.states.score"))
+gamestate.register("settings::background", require("game.settings.states.bg"))
 
 local function makeEnterGamestateFunction(name)
 	return function()
@@ -44,8 +46,10 @@ function gameSetting:load()
 			longButtonUI.new(L"setting:liveUI")
 		}
 		self.data.settingButtons[1]:addEventListener("released", makeEnterGamestateFunction("settings::general"))
+		self.data.settingButtons[3]:addEventListener("released", makeEnterGamestateFunction("settings::background"))
 		self.data.settingButtons[4]:addEventListener("released", makeEnterGamestateFunction("settings::nstyle"))
 		self.data.settingButtons[5]:addEventListener("released", makeEnterGamestateFunction("settings::live"))
+		self.data.settingButtons[6]:addEventListener("released", makeEnterGamestateFunction("settings::score"))
 	end
 
 	if self.data.back == nil then
