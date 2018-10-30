@@ -17,6 +17,19 @@ function ui.newLiveUI(name)
 	return ui.list[name]()
 end
 
+function ui.enum()
+	local name = {}
+	for k, _ in pairs(ui.list) do
+		if k == "sif" then
+			table.insert(name, 1, k) -- sif must be at highest
+		else
+			name[#name + 1] = k
+		end
+	end
+
+	return name
+end
+
 for _, dirs in ipairs(love.filesystem.getDirectoryItems("game/live/ui")) do
 	local name = "game/live/ui/"..dirs
 	if util.fileExists(name) and dirs:sub(-4) == ".lua" then

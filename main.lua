@@ -114,6 +114,7 @@ local function initializeSetting()
 	setting.define("LANGUAGE", "en")
 	setting.define("TIMING_OFFSET", 0)
 	setting.define("CBF_UNIT_LOAD", 1)
+	setting.define("PLAY_UI", "sif")
 end
 
 local function createDirectories()
@@ -235,7 +236,7 @@ Options:
 * -dumpformat json           Dump beatmap as JSON beatmap. This is default.
 * -dumpformat ls2            Dump beatmap as Live Simulator: 2 v2.0 binary
                              beatmap. If this is used, -dumpout must be
-                             specified (unimplemented).
+                             specified for Windows (unimplemented).
 
 * -fullscreen                Start Live Simulator: 2 fullscreen.
 
