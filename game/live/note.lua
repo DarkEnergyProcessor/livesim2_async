@@ -146,6 +146,8 @@ function noteManager:__construct(param)
 		-- judgement: judgement string (perfect, great, good, bad, miss)
 		-- releaseFlag: release note information (0 = normal note, 1 = hold note, 2 = release note)
 	end
+	-- timing offset
+	self.timingOffset = param.timingOffset or 0
 	-- lane data
 	self.lane = param.lane
 	-- lane direction vector
@@ -164,29 +166,29 @@ function noteManager:__construct(param)
 		self.laneDistance[i] = dist
 		self.laneAccuracy[i] = {
 			perfect = {
-				(dist - param.accuracy[1]) / dist,
-				(dist + param.accuracy[1]) / dist
+				(dist - param.accuracy[1] + self.timingOffset) / dist,
+				(dist + param.accuracy[1] + self.timingOffset) / dist
 			},
 			great = {
-				(dist - param.accuracy[2]) / dist,
-				(dist + param.accuracy[2]) / dist
+				(dist - param.accuracy[2] + self.timingOffset) / dist,
+				(dist + param.accuracy[2] + self.timingOffset) / dist
 			},
 			good = {
-				(dist - param.accuracy[3]) / dist,
-				(dist + param.accuracy[3]) / dist
+				(dist - param.accuracy[3] + self.timingOffset) / dist,
+				(dist + param.accuracy[3] + self.timingOffset) / dist
 			},
 			bad = {
-				(dist - param.accuracy[4]) / dist,
-				(dist + param.accuracy[4]) / dist
+				(dist - param.accuracy[4] + self.timingOffset) / dist,
+				(dist + param.accuracy[4] + self.timingOffset) / dist
 			},
 			miss = {
-				(dist - param.accuracy[5]) / dist,
-				(dist + param.accuracy[5]) / dist
-			},
+				(dist - param.accuracy[5] + self.timingOffset) / dist,
+				(dist + param.accuracy[5] + self.timingOffset) / dist
+			}
 		}
 	end
-	-- timing offset
-	self.timingOffset = 0 -- TODO
+	-- beatmap offset
+	self.beatmapOffset = param.beatmapOffset or 0
 	-- note spawning position
 	self.noteSpawningPosition = param.noteSpawningPosition
 	-- hitbox rotation
@@ -416,7 +418,7 @@ local normalMovingNote = Luaoop.class("livesim2.NormalMovingNote", baseMovingNot
 
 function normalMovingNote:__construct(definition, param)
 	-- Note target time
-	self.targetTime = definition.timing_sec
+	self.targetTime = definition.timing_sec + param.beatmapOffset
 	-- Note speed
 	self.noteSpeed = param.noteSpeed / (definition.speed or 1)
 	-- Note spawn time
@@ -456,8 +458,6 @@ function normalMovingNote:__construct(definition, param)
 	self.eventTime = self.accuracy.miss[1] * self.noteSpeed
 	-- miss time
 	self.missTime = self.accuracy.miss[2] * self.noteSpeed
-	-- timing offset
-	self.timingOffset = param.timingOffset
 	-- attribute
 	self.attribute = assert(definition.notes_attribute)
 	-- note layers (set later)
@@ -557,7 +557,7 @@ function normalMovingNote:tap()
 	-- only task remain for NormalMovingNote class is to
 	-- return the judgement string
 	self.delete = true
-	return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing)
+	return judgementCheck(self.elapsedTime, self.accuracyTime, self.swing)
 end
 
 function normalMovingNote.unTap()
@@ -731,13 +731,13 @@ function longMovingNote:tap()
 	else
 		self.position = self.manager.noteSpawningPosition + self.distance * self.direction
 		self.lnHolding = true
-		return judgementCheck(self.elapsedTime + self.manager.timingOffset, self.accuracyTime, self.swing)
+		return judgementCheck(self.elapsedTime, self.accuracyTime, self.swing)
 	end
 end
 
 function longMovingNote:unTap()
 	if self.lnHolding then
-		local t = self.elapsedTime - self.lnSpawnTime + self.timingOffset
+		local t = self.elapsedTime - self.lnSpawnTime
 		self.delete = true
 		if t <= self.eventTime then
 			return "miss"

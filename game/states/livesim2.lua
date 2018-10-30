@@ -243,6 +243,8 @@ function DEPLS:load(arg)
 		lane = self.persist.lane,
 		accuracy = {16, 40, 64, 112, 128},
 		autoplay = autoplay,
+		timingOffset = setting.get("TIMING_OFFSET"),
+		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,
 		callback = function(object, lane, position, judgement, releaseFlag)
 			log.debugf(
 				"livesim2", "note cb (%s), lane: %d, position: %s, relmode: %d",

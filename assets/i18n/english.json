@@ -47,6 +47,10 @@
 		"setting:live:noteSpeed": "Note Speed",
 		"setting:live:textScaling": "Text Scaling",
 		"setting:volume": "Volume Setting",
+		"setting:volume:effect": "SE Volume",
+		"setting:volume:master": "Master Volume",
+		"setting:volume:song": "Music Volume",
+		"setting:volume:voice": "Voice Volume",
 		"setting:background": "Background Setting",
 		"setting:background:image": "Background Image Number",
 		"setting:background:loadCustom": "Load Custom Background",
@@ -60,6 +64,8 @@
 		"setting:stamina:noFail": "Functional Stamina Meter",
 		"setting:stamina:score": "Base Score per Tap",
 		"setting:liveUI": "Live User Interface Setting",
+		"setting:liveUI:short": "Live UI Setting",
+		"setting:liveUI:current": "Current Live Show Interface: %{name}",
 		"setting:language": "Language Setting",
 		"setting:language:current": "Current Language: %{name} (%{code})"
 	}

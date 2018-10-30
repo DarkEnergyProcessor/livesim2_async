@@ -1,4 +1,4 @@
--- General settings
+-- Volume Settings
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
@@ -15,7 +15,7 @@ local backNavigation = require("game.ui.back_navigation")
 local switchSetting = require("game.settings.switch")
 local numberSetting = require("game.settings.number")
 
-local generalSetting = gamestate.create {
+local volumeSetting = gamestate.create {
 	images = {}, fonts = {}
 }
 
@@ -23,22 +23,22 @@ local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
-function generalSetting:load()
+function volumeSetting:load()
 	if self.data.settingData == nil then
 		self.data.settingData = {
-			numberSetting(L"setting:general:defaultNote", "LLP_SIFT_DEFATTR", {min = 1, max = 11})
-				:setPosition(61, 60), -- next: y+=86
-			switchSetting(L"setting:general:nsAccumulation", "NS_ACCUMULATION")
+			numberSetting(L"setting:volume:master", nil, {min = 0, max = 100, default = 80, value = 80})
+				:setPosition(61, 60),
+			numberSetting(L"setting:volume:song", nil, {min = 0, max = 100, default = 80, value = 80})
 				:setPosition(61, 146),
-			numberSetting(L"setting:general:timingOffset", "TIMING_OFFSET", {min = -50, max = 50, default = 0})
+			numberSetting(L"setting:volume:effect", "SE_VOLUME", {min = 0, max = 100, default = 80})
 				:setPosition(61, 232),
-			numberSetting(L"setting:general:beatmapOffset", "GLOBAL_OFFSET", {min = -5000, max = 5000, default = 0})
+			numberSetting(L"setting:volume:voice", nil, {min = 0, max = 100, default = 80, value = 80})
 				:setPosition(61, 318),
 		}
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting:general", leave)
+		self.data.back = backNavigation.new(L"setting:volume", leave)
 	end
 
 	if self.data.background == nil then
@@ -46,13 +46,13 @@ function generalSetting:load()
 	end
 end
 
-function generalSetting:update(dt)
+function volumeSetting:update(dt)
 	for i = 1, #self.data.settingData do
 		self.data.settingData[i]:update(dt)
 	end
 end
 
-function generalSetting:draw()
+function volumeSetting:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	backNavigation.draw(self.data.back)
@@ -63,8 +63,8 @@ function generalSetting:draw()
 	gui.draw()
 end
 
-generalSetting:registerEvent("keyreleased", function(_, key)
+volumeSetting:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then leave() end
 end)
 
-return generalSetting
+return volumeSetting
