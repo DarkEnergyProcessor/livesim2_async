@@ -265,15 +265,21 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 	elseif self.noteStyleFrame == 2 then
 		-- There's special case for neon note style.
 		-- If frame and swing is neon, then don't use the base frame
-		if not(swing or self.noteStyleSwing == 2) then
+		if swing then
+			if self.noteStyleSwing == 2 then
+				layer[#layer + 1] = 28 + attribute
+			else
+				layer[#layer + 1] = 16 + attribute
+			end
+		else
 			layer[#layer + 1] = 16 + attribute
+		end
 
-			if token then
-				layer[#layer + 1] = 2
-			end
-			if star then
-				layer[#layer + 1] = 1
-			end
+		if token then
+			layer[#layer + 1] = 2
+		end
+		if star then
+			layer[#layer + 1] = 1
 		end
 	-- Matte note style
 	elseif self.noteStyleFrame == 3 then
@@ -292,33 +298,13 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 	if swing then
 		-- Default note style
 		if self.noteStyleSwing == 1 then
-			-- neon doesn't add frame
-			if self.noteStyleFrame == 2 then
-				layer[#layer + 1] = 16 + attribute
-			end
 			layer[#layer + 1] = 15
 		-- Neon note style
-		elseif self.noteStyleSwing == 2 then
-			if self.noteStyleFrame == 2 then
-				-- The token & star layer is not set, so check here.
-				layer[#layer + 1] = 28 + attribute
-
-				if token then
-					layer[#layer + 1] = 2
-				end
-				if star then
-					layer[#layer + 1] = 1
-				end
-			else
-				-- The frame is either default or matte.
-				layer[#layer + 1] = 39 + attribute
-			end
+		elseif self.noteStyleSwing == 2 and self.noteStyleFrame ~= 2 then
+			-- The base frame is either default or matte.
+			layer[#layer + 1] = 39 + attribute
 		-- Matte note style
 		elseif self.noteStyleSwing == 3 then
-			-- neon doesn't add frame
-			if self.noteStyleFrame == 2 then
-				layer[#layer + 1] = 16 + attribute
-			end
 			layer[#layer + 1] = 62 + attribute
 		end
 	end

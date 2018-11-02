@@ -7,6 +7,7 @@ local async = require("async")
 local color = require("color")
 local setting = require("setting")
 local util = require("util")
+local L = require("language")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -67,7 +68,7 @@ function changeUnits:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new("Change Units", leave)
+		self.data.back = backNavigation.new(L"menu:changeUnits", leave)
 	end
 
 	if self.data.applyButton == nil then
@@ -174,6 +175,9 @@ function changeUnits:draw()
 			)
 		end
 	end
+
+	backNavigation.draw(self.data.back)
+	gui.draw()
 end
 
 changeUnits:registerEvent("keyreleased", function(_, key)

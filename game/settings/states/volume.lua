@@ -12,7 +12,6 @@ local gui = require("libs.fusion-ui")
 
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
-local switchSetting = require("game.settings.switch")
 local numberSetting = require("game.settings.number")
 
 local volumeSetting = gamestate.create {

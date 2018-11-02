@@ -139,28 +139,28 @@ local function liveClearCallback(self)
 	end)
 	self.data.resultObject:setSaveReplayCallback(function()
 		if self.persist.autoplay then
-			return L"livesim2:replay:save:errorAutoplay"
+			return L"livesim2:replay:errorAutoplay"
 		end
 
 		local name
 		if not(love.filesystem.createDirectory("replays/"..self.persist.beatmapName)) then
-			return L"livesim2:replay:save:errorDirectory"
+			return L"livesim2:replay:errorDirectory"
 		end
 
 		if self.persist.replayMode then
 			if self.persist.replayMode.filename then
-				return L"livesim2:replay:save:errorAlreadySaved"
+				return L"livesim2:replay:errorAlreadySaved"
 			end
 
 			name = "replays/"..self.persist.beatmapName.."/"..self.persist.replayMode.timestamp..".lsr"
 			if util.fileExists(name) then
-				return L"livesim2:replay:save:errorAlreadySaved"
+				return L"livesim2:replay:errorAlreadySaved"
 			end
 		end
 
 		name = "replays/"..self.persist.beatmapName.."/"..self.persist.startTimestamp..".lsr"
 		if util.fileExists(name) then
-			return L"livesim2:replay:save:errorAlreadySaved"
+			return L"livesim2:replay:errorAlreadySaved"
 		end
 
 		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, replayData, replayData.accuracy, replayData.events)
@@ -601,7 +601,7 @@ function DEPLS:update(dt)
 				end
 				if self.persist.replayMode then
 					-- replay update rate is 5ms
-					local timeUpdt = updtDt / 4
+					local timeUpdt = updtDt
 					while timeUpdt > 0 do
 						replay.update(math.min(timeUpdt, 0.005))
 						timeUpdt = timeUpdt - 0.005

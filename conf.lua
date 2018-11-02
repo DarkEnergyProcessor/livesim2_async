@@ -2,8 +2,8 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
--- luacheck: ignore DEPLS_VERSION
--- luacheck: ignore DEPLS_VERSION_NUMBER
+-- luacheck: globals DEPLS_VERSION
+-- luacheck: globals DEPLS_VERSION_NUMBER
 
 local love = require("love")
 love._version = love._version or love.getVersion()
