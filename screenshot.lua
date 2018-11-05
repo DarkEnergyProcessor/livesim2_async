@@ -8,7 +8,7 @@ local screenshot = {
 	list = {}
 }
 
-local screenshotUpdateImpl
+local function screenshotUpdateImpl() end
 
 local function cleanListStartFrom(i, len)
 	for j = i, len do
@@ -54,8 +54,6 @@ if love._version <= "11.0" then
 			screenshot.list[#screenshot.list + 1] = obj
 		end
 	end
-else
-	function screenshotUpdateImpl() end
 end
 
 return screenshot

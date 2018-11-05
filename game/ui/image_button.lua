@@ -2,46 +2,46 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local gui = require("libs.fusion-ui")
+local love = require("love")
+local Luaoop = require("libs.Luaoop")
+local color = require("color")
 local assetCache = require("asset_cache")
+local glow = require("game.afterglow")
 
-local imageButton = {class = {}}
+local imageButton = Luaoop.class("Livesim2.ImageButtonUI", glow.element)
 
-function imageButton.new(name)
+function imageButton:new(name, scale)
 	-- name..".png"
 	-- name.."se.png"
-	-- all image should have 144x58 pixels size
-	if imageButton.class[name] == nil then
-		local images = assetCache.loadMultipleImages({
-			name..".png",
-			name.."se.png"
-		}, {mipmaps = true})
-		local button = gui.template.new("button", {
-			backgroundImage = images[1],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		})
-		button:addStyleSwitch("pressed", "released", {
-			backgroundImage = images[2],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		})
+	local images = assetCache.loadMultipleImages({
+		name..".png",
+		name.."se.png"
+	}, {mipmaps = true})
 
-		button.imgw, button.imgh = images[1]:getDimensions()
-		imageButton.class[name] = button
-	end
+	self.scale = scale or 1
+	self.width, self.height = images[1]:getDimensions()
+	self.width = self.width * scale
+	self.height = self.height * scale
+	self.imageNormal = images[1]
+	self.imagePressed = images[2]
+	self.isPressed = false
 
-	local elem = imageButton.class[name]:newElement("")
-	elem.tempimgw, elem.tempimgh = imageButton.class[name].imgw, imageButton.class[name].imgh
-	return elem
+	self:addEventListener("mousepressed", imageButton._pressed)
+	self:addEventListener("mousereleased", imageButton._released)
+	self:addEventListener("mousecanceled", imageButton._released)
 end
 
-function imageButton.draw(elem, x, y)
-	return elem:draw(x, y, elem.tempimgw, elem.tempimgh)
+function imageButton:_pressed(_)
+	self.isPressed = true
+end
+
+function imageButton:_released(_)
+	self.isPressed = false
+end
+
+function imageButton:render(x, y)
+	love.graphics.setColor(color.white)
+	love.graphics.draw(self.isPressed and self.imagePressed or self.imageNormal, x, y, 0, self.scale)
 end
 
 return imageButton

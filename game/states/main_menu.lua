@@ -6,7 +6,6 @@
 local love = require("love")
 local color = require("color")
 local L = require("language")
-local timer = require("libs.hump.timer")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -14,6 +13,7 @@ local loadingInstance = require("loading_instance")
 local backgroundLoader = require("game.background_loader")
 
 local gui = require("libs.fusion-ui")
+local glow = require("game.afterglow")
 local menuButtonUI = require("game.ui.menu_button")
 local imageButtonUI = require("game.ui.image_button")
 
@@ -36,24 +36,24 @@ end
 local function initializeButtons()
 	local blist = {}
 	-- Play button
-	blist.play = menuButtonUI.new(L"menu:play")
-	blist.play:addEventListener("released", makeEnterGamestateFunction("beatmapSelect"))
+	blist.play = menuButtonUI(L"menu:play")
+	blist.play:addEventListener("mousereleased", makeEnterGamestateFunction("beatmapSelect"))
 	-- Change units button
-	blist.changeUnits = menuButtonUI.new(L"menu:changeUnits")
-	blist.changeUnits:addEventListener("released", makeEnterGamestateFunction("changeUnits"))
+	blist.changeUnits = menuButtonUI(L"menu:changeUnits")
+	blist.changeUnits:addEventListener("mousereleased", makeEnterGamestateFunction("changeUnits"))
 	-- Settings button
-	blist.settings = menuButtonUI.new(L"menu:settings")
-	blist.settings:addEventListener("released", makeEnterGamestateFunction("settings"))
+	blist.settings = menuButtonUI(L"menu:settings")
+	blist.settings:addEventListener("mousereleased", makeEnterGamestateFunction("settings"))
 	-- Exit button
-	blist.exit = menuButtonUI.new(L"menu:quit")
-	blist.exit:addEventListener("released", function()
+	blist.exit = menuButtonUI(L"menu:quit")
+	blist.exit:addEventListener("mousereleased", function()
 		if love._os ~= "iOS" then
 			gamestate.leave()
 		end
 	end)
 
-	blist.language = imageButtonUI.new("assets/image/ui/lang")
-	blist.language:addEventListener("released", makeEnterGamestateFunction("language"))
+	blist.language = imageButtonUI("assets/image/ui/lang")
+	blist.language:addEventListener("mousereleased", makeEnterGamestateFunction("language"))
 
 	return blist
 end
@@ -78,7 +78,7 @@ local function initializeVersionText(self)
 		bld[#bld + 1] = "Hz "
 	end
 
-	if jit.status() then
+	if jit and jit.status() then
 		bld[#bld + 1] = "JIT "
 	end
 
@@ -105,18 +105,28 @@ local function initializeVersionText(self)
 end
 
 function mainMenu:load()
+	glow.clear()
+
 	-- Load buttons
 	if self.data.buttons == nil then
 		self.data.buttons = initializeButtons()
 	end
+	glow.addElement(self.data.buttons.play, 16, 120+80*1)
+	glow.addElement(self.data.buttons.changeUnits, 16, 120+80*2)
+	glow.addElement(self.data.buttons.settings, 16, 120+80*3)
+	glow.addElement(self.data.buttons.exit, 16, 120+80*4)
+	glow.addElement(self.data.buttons.language, 914, 592)
+
 	-- Load background
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(14)
 	end
+
 	-- Load version text
 	if self.data.text == nil then
 		self.data.text = initializeVersionText(self)
 	end
+
 	-- Load title text
 	if self.data.titleText == nil then
 		local text = love.graphics.newText(self.assets.fonts.title)
@@ -125,30 +135,6 @@ function mainMenu:load()
 		text:add({color.white, "Live Simulator: 2"}, 0, 0)
 		self.data.titleText = text
 	end
-end
-
-local function animateMainMenu(buttons)
-	local target = {xoffset = 0, canvasColor = {[4] = 255}}
-	buttons.play.xoffset = 60
-	buttons.play.canvasColor[4] = 0
-	timer.tween(0.3, buttons.play, target, "out-quad")
-	buttons.changeUnits.xoffset = 60
-	buttons.changeUnits.canvasColor[4] = 0
-	timer.tween(0.45, buttons.changeUnits, target, "out-quad")
-	buttons.settings.xoffset = 60
-	buttons.settings.canvasColor[4] = 0
-	timer.tween(0.6, buttons.settings, target, "out-quad")
-	buttons.exit.xoffset = 60
-	buttons.exit.canvasColor[4] = 0
-	timer.tween(0.75, buttons.exit, target, "out-quad")
-end
-
-function mainMenu:start()
-	return animateMainMenu(self.data.buttons)
-end
-
-function mainMenu:resumed()
-	return animateMainMenu(self.data.buttons)
 end
 
 function mainMenu:draw()
@@ -161,13 +147,8 @@ function mainMenu:draw()
 	love.graphics.draw(self.assets.images.icon, 140, 46)
 	-- Draw title
 	love.graphics.draw(self.data.titleText, 280, 78)
-	-- Draw buttons
-	menuButtonUI.draw(self.data.buttons.play, 16, 120+80*1)
-	menuButtonUI.draw(self.data.buttons.changeUnits, 16, 120+80*2)
-	menuButtonUI.draw(self.data.buttons.settings, 16, 120+80*3)
-	menuButtonUI.draw(self.data.buttons.exit, 16, 120+80*4)
-	imageButtonUI.draw(self.data.buttons.language, 914, 592)
-	gui.draw()
+	-- Draw UI
+	glow.draw()
 end
 
 return mainMenu
