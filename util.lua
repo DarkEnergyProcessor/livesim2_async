@@ -139,4 +139,8 @@ function util.addTextWithShadow(text, str, x, y, intensity)
 	text:add({color.white, str}, x, y)
 end
 
+function util.lerp(a, b, t)
+	return a * (1 - t) + b * t
+end
+
 return util

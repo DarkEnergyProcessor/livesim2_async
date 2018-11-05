@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local lily = require("libs.lily")
 local async = require("async")
@@ -48,7 +49,7 @@ function gamestateConstructorObject.update() end
 function gamestateConstructorObject.draw() end
 
 function gamestateObject:__construct(constructor)
-	local internal = gamestateObject^self
+	local internal = Luaoop.class.data(self)
 	internal.constructor = constructor
 	internal.data = {}
 	internal.assets = {fonts = {}, images = {}}
@@ -73,7 +74,7 @@ end
 do
 	local function makeShortcutMacro(name)
 		gamestateObject[name] = function(self, ...)
-			return (gamestateObject^self).constructor[name](self, ...)
+			return Luaoop.class.data(self).constructor[name](self, ...)
 		end
 	end
 	makeShortcutMacro("load")
@@ -90,7 +91,7 @@ end
 -------------------------------------
 
 function gamestate.internal.makeWeak(game)
-	local state = gamestateObject^game
+	local state = Luaoop.class.data(game)
 	-- Expensive. Use sparingly!
 	for k in pairs(state.data) do
 		state.data[k] = nil
@@ -105,7 +106,7 @@ function gamestate.internal.makeWeak(game)
 end
 
 function gamestate.internal.makeStrong(game)
-	local state = gamestateObject^game
+	local state = Luaoop.class.data(game)
 	-- Expensive. Use sparingly!
 	for k, v in pairs(game.data) do
 		state.data[k] = v
@@ -144,7 +145,7 @@ local function gamestateHandleMultiLily(udata, index, value)
 	local assetUdata = udata.asset
 	local game = udata.game
 	local assetType = assetUdata[index][1]
-	local internal = gamestateObject^game
+	local internal = Luaoop.class.data(game)
 
 	log.debugf("gamestate", "asset loaded: %s", assetUdata[index][2])
 	internal.assets[assetType][assetUdata[index][2]] = value
@@ -160,7 +161,7 @@ function gamestate.internal.initialize(game, arg)
 end
 
 function gamestate.internal.loadAssets(game)
-	local state = gamestateObject^game
+	local state = Luaoop.class.data(game)
 	local loadedAssetList = {}
 	local assetUdata = {}
 	-- Get fonts
@@ -275,7 +276,7 @@ function gamestate.internal.handleEvents(name, ...)
 	local current = gamestate.stack[#gamestate.stack]
 	if not(current) then return false end
 
-	local constructor = (gamestateObject^current.game).constructor
+	local constructor = Luaoop.class.data(current.game).constructor
 	if constructor.events[name] then
 		constructor.events[name](current.game, select(1, ...))
 		return true

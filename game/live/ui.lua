@@ -6,6 +6,7 @@ local love = require("love")
 local util = require("util")
 local Luaoop = require("libs.Luaoop")
 local log = require("logging")
+local uibase = require("game.live.uibase")
 local ui = {list = {}}
 
 function ui.newLiveUI(name)
@@ -37,7 +38,7 @@ for _, dirs in ipairs(love.filesystem.getDirectoryItems("game/live/ui")) do
 		local s, msg = love.filesystem.load(name)
 		if s then
 			local v = s()
-			if Luaoop.class.is(v, "livesim2.LiveUI") then
+			if Luaoop.class.is(v, uibase) then
 				ui.list[dirs:sub(1, -5)] = v
 			else
 				log.error("live.ui", "cannot load file "..dirs.." (not uibase class)")
