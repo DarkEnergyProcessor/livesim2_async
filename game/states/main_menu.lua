@@ -12,7 +12,6 @@ local loadingInstance = require("loading_instance")
 
 local backgroundLoader = require("game.background_loader")
 
-local gui = require("libs.fusion-ui")
 local glow = require("game.afterglow")
 local menuButtonUI = require("game.ui.menu_button")
 local imageButtonUI = require("game.ui.image_button")
@@ -54,6 +53,8 @@ local function initializeButtons()
 
 	blist.language = imageButtonUI("assets/image/ui/lang")
 	blist.language:addEventListener("mousereleased", makeEnterGamestateFunction("language"))
+
+	blist.test = imageButtonUI("assets/image/ui/m_button_16")
 
 	return blist
 end
