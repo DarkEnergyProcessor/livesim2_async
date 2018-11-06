@@ -2,7 +2,9 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local slider = require("game.afterglow.slider")
 
 -- You definely need a "Frame" object to store all your GUIs
 -- because Frame is responsible of rendering it.
@@ -21,7 +23,7 @@ function frame:__construct(x, y, w, h)
 	self.width, self.height = assert(w), assert(h)
 	self.x, self.y = assert(x), assert(y)
 	self.offsetX, self.offsetY = 0, 0
-	--self.framebuffer = love.graphics.newCanvas(w, h)
+	self.sliderH, self.sliderV = nil, nil
 
 	internal.mouseBuffer = {
 		pressed = false,
@@ -30,6 +32,7 @@ function frame:__construct(x, y, w, h)
 		targetElement = nil
 	}
 	internal.elementList = {}
+	internal.fixedElementList = {}
 end
 
 --! Add new element to frame
@@ -54,6 +57,31 @@ function frame:addElement(element, x, y, ...)
 	return elem
 end
 
+--! Add new fixed element
+--!
+--! Fixed element doesn't affected by scroll
+--! @param element Element constructor function
+--! @param x element x position
+--! @param y element y position
+--! @return Created element
+function frame:addFixedElement(element, x, y, ...)
+	local internal = Luaoop.class.data(self)
+	local elem
+	if Luaoop.class.type(element) then
+		elem = element
+	else
+		elem = element(...)
+	end
+
+	internal.fixedElementList[#internal.fixedElementList + 1] = {
+		element = elem,
+		x = x,
+		y = y,
+		fixed = true
+	}
+	return elem
+end
+
 --! Remove element from frame
 --! @param element Element object
 function frame:removeElement(element)
@@ -71,6 +99,43 @@ function frame:removeElement(element)
 			return table.remove(internal.elementList, i)
 		end
 	end
+
+	for i = 1, #internal.fixedElementList do
+		if internal.fixedElementList[i].element == element then
+			local target = internal.mouseBuffer.targetElement
+			if target and target.element == element then
+				element:triggerEvent("mousecancel")
+				internal.mouseBuffer.pressed = false
+				internal.mouseBuffer.targetElement = nil
+			end
+
+			return table.remove(internal.fixedElementList, i)
+		end
+	end
+end
+
+local function checkMousepressed(self, internal, info, a, b)
+	local w, h = info.element:getDimensions()
+	local c, d = a, b
+
+	if not(info.fixed) then
+		c, d = a + self.offsetX, b + self.offsetY
+	end
+
+	if c >= info.x and d >= info.y and c < info.x + w and d < info.y + h then
+		-- enter
+		info.element:triggerEvent("mousepressed",
+			a - info.x + (info.fixed and 0 or self.offsetX),
+			b - info.y + (info.fixed and 0 or self.offsetY)
+		)
+		internal.mouseBuffer.pressed = true
+		internal.mouseBuffer.targetElement = info
+		internal.mouseBuffer.x, internal.mouseBuffer.y = a, b
+
+		return true
+	end
+
+	return false
 end
 
 --! Handle frame events
@@ -84,32 +149,62 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 			return false
 		end
 
-		for i = #internal.elementList, 1, -1 do
-			local info = internal.elementList[i]
-			local w, h = info.element:getDimensions()
-			if a >= info.x and b >= info.y and a < info.x + w and b < info.y + h then
-				-- enter
-				info.element:triggerEvent("mousepressed", a - info.x, b - info.y)
-				internal.mouseBuffer.pressed = true
-				internal.mouseBuffer.targetElement = info
-				internal.mouseBuffer.x, internal.mouseBuffer.y = a, b
-
+		-- Fixed element first
+		for i = #internal.fixedElementList, 1, -1 do
+			if checkMousepressed(self, internal, internal.fixedElementList[i], a, b) then
 				return true
 			end
 		end
-	elseif name == "mousemoved" and internal.mouseBuffer.pressed then
-		local info = internal.mouseBuffer.targetElement
-		local w, h = info.element:getDimensions()
 
-		if a < info.x or b < info.y or a >= info.x + w or b >= info.y + h then
-			info.element:triggerEvent("mousecanceled")
-			internal.mouseBuffer.pressed = false
-			internal.mouseBuffer.targetElement = nil
-		else
-			info.element:triggerEvent("mousemoved", a - info.x, b - info.y)
+		-- Then slider
+		if self.sliderV and checkMousepressed(self, internal, self.sliderV, a, b) then
+			return true
+		end
+		if self.sliderH and checkMousepressed(self, internal, self.sliderH, a, b) then
+			return true
 		end
 
-		return true
+		-- Then normal element list
+		for i = #internal.elementList, 1, -1 do
+			if checkMousepressed(self, internal, internal.elementList[i], a, b) then
+				return true
+			end
+		end
+	elseif name == "mousemoved" then
+		internal.mouseBuffer.x, internal.mouseBuffer.y = a, b
+
+		if internal.mouseBuffer.pressed then
+			local info = internal.mouseBuffer.targetElement
+			local w, h = info.element:getDimensions()
+
+			if info.fixed then
+				if
+					a < (info == self.sliderV and -100 or 0) + info.x or
+					b < (info == self.sliderH and -100 or 0) + info.y or
+					a >= info.x + w or
+					b >= info.y + h
+				then
+					info.element:triggerEvent("mousecanceled")
+					internal.mouseBuffer.pressed = false
+					internal.mouseBuffer.targetElement = nil
+				else
+					info.element:triggerEvent("mousemoved", a - info.x, b - info.y)
+				end
+			elseif
+				a + self.offsetX < info.x or
+				b + self.offsetY < info.y or
+				a + self.offsetX >= info.x + w or
+				b + self.offsetY >= info.y + h
+			then
+				info.element:triggerEvent("mousecanceled")
+				internal.mouseBuffer.pressed = false
+				internal.mouseBuffer.targetElement = nil
+			else
+				info.element:triggerEvent("mousemoved", a - info.x + self.offsetX, b - info.y + self.offsetY)
+			end
+
+			return true
+		end
 	elseif name == "mousereleased" and internal.mouseBuffer.pressed then
 		internal.mouseBuffer.targetElement.element:triggerEvent("mousereleased")
 		internal.mouseBuffer.pressed = false
@@ -124,6 +219,20 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 				return true
 			end
 		end
+	elseif name == "wheelmoved" then
+		local handled = false
+		if a ~= 0 and self.sliderH then
+			self.sliderH.element:setValue(self.sliderH.element:getValue() - a * 10)
+			handled = true
+		end
+		if b ~= 0 and self.sliderV then
+			self.sliderV.element:setValue(self.sliderV.element:getValue() - b * 10)
+			handled = true
+		end
+
+		if handled then
+			return true
+		end
 	end
 
 	return false
@@ -133,27 +242,73 @@ end
 function frame:clear()
 	local internal = Luaoop.class.data(self)
 
-	for i = #internal.elementList, 1, -1 do
-		self:removeElement(internal.elementList[i].element)
+	for i = math.max(#internal.elementList, #internal.fixedElementList), 1, -1 do
+		if internal.fixedElementList[i] then
+			self:removeElement(internal.fixedElementList[i].element)
+		elseif internal.elementList[i] then
+			self:removeElement(internal.elementList[i].element)
+		end
 	end
 end
 
 --! Resize frame size
 function frame:resize(w, h)
 	self.width, self.height = w, h
-	self.framebuffer = love.graphics.newCanvas(w, h)
 end
 
-local temp = {nil, stencil = true}
 --! Update elements
 function frame:update(dt)
 	local internal = Luaoop.class.data(self)
-	love.graphics.push("all") temp[1] = self.framebuffer
-	love.graphics.setCanvas(temp)
-	for _, v in ipairs(internal.elementList) do
+	local maxX, maxY = 0, 0
+	for _, v in ipairs(internal.fixedElementList) do
 		v.element:update(dt)
 	end
-	love.graphics.pop()
+	for _, v in ipairs(internal.elementList) do
+		v.element:update(dt)
+		local w, h = v.element:getDimensions()
+
+		maxX = math.max(v.x + w, maxX)
+		maxY = math.max(v.y + h, maxY)
+	end
+
+	local sliderOffCompX = self.sliderV and 30 or 0
+	local sliderOffCompY = self.sliderH and 30 or 0
+	-- if it's beyond the viewport size
+	if maxX > self.width - sliderOffCompX then
+		if not(self.sliderH) then
+			self.sliderH = {
+				element = slider("horizontal", self.width - 30, maxX - self.width + sliderOffCompX),
+				x = 0,
+				y = self.height - 30,
+				fixed = true
+			}
+		else
+			self.sliderH.element:setMaxValue(maxX - self.width)
+		end
+
+		self.offsetX = self.sliderH.element:getValue()
+	elseif self.sliderH then
+		self.sliderH = nil
+		self.offsetX = 0
+	end
+
+	if maxY > self.height - sliderOffCompY then
+		if not(self.sliderV) then
+			self.sliderV = {
+				element = slider("vertical", self.height - 30, maxY - self.height + sliderOffCompY),
+				x = self.width - 30,
+				y = 0,
+				fixed = true
+			}
+		else
+			self.sliderV.element:setMaxValue(maxY - self.height)
+		end
+
+		self.offsetY = self.sliderV.element:getValue()
+	elseif self.sliderV then
+		self.sliderV = nil
+		self.offsetY = 0
+	end
 end
 
 local singleton = nil
@@ -185,8 +340,20 @@ function frame:draw()
 		end
 	end
 
+	if self.sliderH then
+		self.sliderH.element:render(0, self.sliderH.y)
+	end
+	if self.sliderV then
+		self.sliderV.element:render(self.sliderV.x, 0)
+	end
+
 	love.graphics.pop()
 	singleton = nil
+
+	for _, v in ipairs(internal.fixedElementList) do
+		-- Render regardless
+		v.element:render(self.x + v.x, self.y + v.y)
+	end
 end
 
 return frame

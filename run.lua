@@ -257,6 +257,7 @@ function love.run()
 		local currentGame = gamestate.internal.getActive()
 		-- Call update and draw
 		if currentGame then currentGame:update(dt) end
+		if glow then glow.update(dt) end
 
 		if love.graphics and love.graphics.isActive() then
 			love.graphics.push("all")

@@ -13,17 +13,22 @@ local imageButton = Luaoop.class("Livesim2.ImageButtonUI", glow.element)
 function imageButton:new(name, scale)
 	-- name..".png"
 	-- name.."se.png"
-	local images = assetCache.loadMultipleImages({
-		name..".png",
-		name.."se.png"
-	}, {mipmaps = true})
+	local images
+	if type(name) == "table" then
+		images = name
+	else
+		images = assetCache.loadMultipleImages({
+			name..".png",
+			name.."se.png"
+		}, {mipmaps = true})
+	end
 
 	self.scale = scale or 1
 	self.width, self.height = images[1]:getDimensions()
-	self.width = self.width * scale
-	self.height = self.height * scale
-	self.imageNormal = images[1]
-	self.imagePressed = images[2]
+	self.width = self.width * self.scale
+	self.height = self.height * self.scale
+	self.imageNormal = assert(images[1])
+	self.imagePressed = assert(images[2])
 	self.isPressed = false
 
 	self:addEventListener("mousepressed", imageButton._pressed)
