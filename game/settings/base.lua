@@ -9,13 +9,13 @@ local color = require("color")
 local assetCache = require("asset_cache")
 local mainFont = require("font")
 
-local baseSettingItem = Luaoop.class("settingitem.Base")
+local baseSettingItem = Luaoop.class("Livesim2.SettingItem.Base")
 
 -- must be async (and called at least)
 function baseSettingItem:__construct(name)
 	assert(coroutine.running(), "must be called from async function")
 
-	local internal = baseSettingItem^self
+	local internal = Luaoop.class.data(self)
 	local font = mainFont.get(32)
 	internal.image = assetCache.loadImage("assets/image/ui/com_win_46.png", {mipmaps = true})
 	internal.title = love.graphics.newText(font)
@@ -53,12 +53,16 @@ end
 
 function baseSettingItem:setPosition(x, y)
 	self.x, self.y = x, y
+	self:_positionChanged()
 	return self
+end
+
+function baseSettingItem:_positionChanged()
 end
 
 -- must be called before drawing your own gui (automatically set color to white)
 function baseSettingItem:draw()
-	local internal = baseSettingItem^self
+	local internal = Luaoop.class.data(self)
 	love.graphics.setColor(color.white)
 	love.graphics.draw(internal.image, self.x, self.y)
 	love.graphics.draw(internal.title, self.x + 21, self.y + 21)

@@ -10,8 +10,7 @@ local loadingInstance = require("loading_instance")
 local setting = require("setting")
 local L = require("language")
 
-local gui = require("libs.fusion-ui")
-
+local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local numberSetting = require("game.settings.number")
@@ -74,32 +73,34 @@ local function isSimultaneousLayer(layerIndex)
 end
 
 function noteSetting:load()
-	if self.data.settingData == nil then
-		self.data.settingData = {
-			numberSetting(L"setting:noteStyle:base", nil, {min = 1, max = 3, value = 1})
-				:setPosition(61, 60)
-				:setChangedCallback(self, function(obj, v)
-					obj.persist.styleData.noteStyleFrame = v
-					return updateStyleData(obj)
-				end),
-			numberSetting(L"setting:noteStyle:swing", nil, {min = 1, max = 3, value = 1})
-				:setPosition(61, 146)
-				:setChangedCallback(self, function(obj, v)
-					obj.persist.styleData.noteStyleSwing = v
-					return updateStyleData(obj)
-				end),
-			numberSetting(L"setting:noteStyle:simul", nil, {min = 1, max = 3, value = 1})
-				:setPosition(61, 232)
-				:setChangedCallback(self, function(obj, v)
-					obj.persist.styleData.noteStyleSimul = v
-					return updateStyleData(obj)
-				end),
-		}
-	end
+	glow.clear()
+
+	self.data.settingData = {
+		numberSetting(L"setting:noteStyle:base", nil, {min = 1, max = 3, value = 1})
+			:setPosition(61, 60)
+			:setChangedCallback(self, function(obj, v)
+				obj.persist.styleData.noteStyleFrame = v
+				return updateStyleData(obj)
+			end),
+		numberSetting(L"setting:noteStyle:swing", nil, {min = 1, max = 3, value = 1})
+			:setPosition(61, 146)
+			:setChangedCallback(self, function(obj, v)
+				obj.persist.styleData.noteStyleSwing = v
+				return updateStyleData(obj)
+			end),
+		numberSetting(L"setting:noteStyle:simul", nil, {min = 1, max = 3, value = 1})
+			:setPosition(61, 232)
+			:setChangedCallback(self, function(obj, v)
+				obj.persist.styleData.noteStyleSimul = v
+				return updateStyleData(obj)
+			end),
+	}
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting:noteStyle", leave)
+		self.data.back = backNavigation(L"setting:noteStyle")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addElement(self.data.back, 0, 0)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
@@ -144,7 +145,6 @@ end
 function noteSetting:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
-	backNavigation.draw(self.data.back)
 
 	for i = 1, #self.data.settingData do
 		self.data.settingData[i]:draw()
@@ -174,7 +174,7 @@ function noteSetting:draw()
 	drawLayerAt(self.persist.styleData, self.persist.styleLayer[1], 224, 560)
 	drawLayerAt(self.persist.styleData, self.persist.styleLayer[2], 480, 560)
 	drawLayerAt(self.persist.styleData, self.persist.styleLayer[3], 736, 560)
-	gui.draw()
+	glow.draw()
 end
 
 noteSetting:registerEvent("keyreleased", function(_, key)

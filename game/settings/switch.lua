@@ -8,82 +8,64 @@ local gui = require("libs.fusion-ui")
 local Luaoop = require("libs.Luaoop")
 local baseSetting = require("game.settings.base")
 
+local glow = require("game.afterglow")
+local toggleButton = require("game.ui.toggle_button")
+
 local defaultOnOffValue = {
 	on = 1,
 	off = 0
 }
 local switchButtons = {init = false}
 
-local switchSetting = Luaoop.class("settingitem.Switch", baseSetting)
+local switchSetting = Luaoop.class("Livesim2.SettingItem.Switch", baseSetting)
 
-function switchSetting:__construct(name, settingName, onoffValue)
-	local internal = switchSetting^self
+local function onButtonReleased(elem, switch)
+	local internal = Luaoop.class.data(switch)
 
-	if not(switchButtons.init) then
-		local images = assetCache.loadMultipleImages({
-			"assets/image/ui/set_button_14.png",
-			"assets/image/ui/set_button_14se.png",
-			"assets/image/ui/set_button_15.png",
-			"assets/image/ui/set_button_15se.png"
-		}, {mipmaps = true})
-		local normalOnStyle = {
-			backgroundImage = images[1],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		}
-		local selectedOnStyle = {
-			backgroundImage = images[2],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		}
-		local normalOffStyle = {
-			backgroundImage = images[3],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		}
-		local selectedOffStyle = {
-			backgroundImage = images[4],
-			backgroundSize = 'fit',
-			foregroundColor = {255, 255, 255, 255},
-			backgroundColor = {0, 0, 0, 0},
-			backgroundImageColor = {255, 255, 255, 255},
-		}
-		switchButtons.on = gui.template.new("button", normalOnStyle)
-		switchButtons.on:addStyleSwitch("selected", "unselected", selectedOnStyle)
-		switchButtons.off = gui.template.new("button", normalOffStyle)
-		switchButtons.off:addStyleSwitch("selected", "unselected", selectedOffStyle)
-		switchButtons.init = true
+	if internal.settingName then
+		setting.set(internal.settingName, internal.onOffValue.on)
 	end
 
+	elem.active = true
+	internal.off.active = false
+	internal.value = internal.onOffValue.on
+	switch:_emitChangedCallback(internal.onOffValue.on)
+end
+
+local function offButtonReleased(elem, switch)
+	local internal = Luaoop.class.data(switch)
+
+	if internal.settingName then
+		setting.set(internal.settingName, internal.onOffValue.off)
+	end
+
+	elem.active = true
+	internal.on.active = false
+	internal.value = internal.onOffValue.off
+	switch:_emitChangedCallback(internal.onOffValue.off)
+end
+
+function switchSetting:__construct(name, settingName, onoffValue)
+	baseSetting.__construct(self, name)
+
+	local internal = Luaoop.class.data(self)
+	local images = assetCache.loadMultipleImages({
+		"assets/image/ui/set_button_14.png",
+		"assets/image/ui/set_button_14se.png",
+		"assets/image/ui/set_button_15.png",
+		"assets/image/ui/set_button_15se.png"
+	}, {mipmaps = true})
+
+	internal.settingName = settingName
 	internal.onOffValue = onoffValue or defaultOnOffValue
-	internal.on = switchButtons.on:newElement("")
-	internal.on:addEventListener("released", function()
-		internal.on:emitEvent("selected")
-		internal.off:emitEvent("unselected")
-		if settingName then setting.set(settingName, internal.onOffValue.on) end
-		self:_emitChangedCallback(internal.onOffValue.on)
-	end)
-	internal.on:addEventListener("selected", function()
-		if settingName then setting.set(settingName, internal.onOffValue.on) end
-		internal.value = internal.onOffValue.on
-		self:_emitChangedCallback(internal.onOffValue.on)
-	end)
-	internal.off = switchButtons.off:newElement("")
-	internal.off:addEventListener("released", function()
-		internal.off:emitEvent("selected")
-		internal.on:emitEvent("unselected")
-	end)
-	internal.off:addEventListener("selected", function()
-		if settingName then setting.set(settingName, internal.onOffValue.off) end
-		internal.value = internal.onOffValue.off
-		self:_emitChangedCallback(internal.onOffValue.off)
-	end)
+	internal.on = toggleButton(images)
+	internal.on:addEventListener("mousereleased", onButtonReleased)
+	internal.on:setData(self)
+	glow.addElement(internal.on, self.x + 569, self.y + 19)
+	internal.off = toggleButton({select(3, unpack(images))})
+	internal.off:addEventListener("mousereleased", offButtonReleased)
+	internal.off:setData(self)
+	glow.addElement(internal.off, self.x + 669, self.y + 19)
 
 	local value
 	if settingName then
@@ -94,22 +76,26 @@ function switchSetting:__construct(name, settingName, onoffValue)
 
 	if value == tostring(internal.onOffValue.on) then
 		internal.value = internal.onOffValue.on
-		internal.on:emitEvent("selected")
+		internal.on.active = true
 	elseif value == tostring(internal.onOffValue.off) then
 		internal.value = internal.onOffValue.off
-		internal.off:emitEvent("selected")
+		internal.off.active = true
 	end
+end
 
-	return baseSetting.__construct(self, name)
+function switchSetting:__destruct()
+	local internal = Luaoop.class.data(self)
+
+	glow.removeElement(internal.on)
+	glow.removeElement(internal.off)
 end
 
 function switchSetting:getValue()
-	local internal = switchSetting^self
-	return internal.value
+	return Luaoop.class.data(self).value
 end
 
 function switchSetting:setValue(v)
-	local internal = switchSetting^self
+	local internal = Luaoop.class.data(self)
 
 	if type(v) == "boolean" then
 		v = v and tostring(internal.onOffValue.on) or tostring(internal.onOffValue.off)
@@ -117,12 +103,12 @@ function switchSetting:setValue(v)
 
 	if v == tostring(internal.onOffValue.on) then
 		internal.value = internal.onOffValue.on
-		internal.on:emitEvent("selected")
-		internal.off:emitEvent("unselected")
+		internal.on.active = true
+		internal.off.active = false
 	elseif v == tostring(internal.onOffValue.off) then
 		internal.value = internal.onOffValue.off
-		internal.off:emitEvent("selected")
-		internal.on:emitEvent("unselected")
+		internal.off.active = true
+		internal.on.active = false
 	else
 		error("invalid value", 2)
 	end
@@ -130,13 +116,10 @@ function switchSetting:setValue(v)
 	return self
 end
 
-function switchSetting:draw()
-	local internal = switchSetting^self
-
-	baseSetting.draw(self)
-	internal.on:draw(self.x + 569, self.y + 19, 100, 42)
-	internal.off:draw(self.x + 669, self.y + 19, 100, 42)
-	return self
+function switchSetting:_positionChanged()
+	local internal = Luaoop.class.data(self)
+	glow.setElementPosition(internal.on, self.x + 569, self.y + 19)
+	glow.setElementPosition(internal.off, self.x + 669, self.y + 19)
 end
 
 return switchSetting

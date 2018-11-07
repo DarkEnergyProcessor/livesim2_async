@@ -82,6 +82,32 @@ function frame:addFixedElement(element, x, y, ...)
 	return elem
 end
 
+--! Set element position
+--! @param element Existing element
+--! @param x New X position
+--! @param y New Y position
+function frame:setElementPosition(element, x, y)
+	local internal = Luaoop.class.data(self)
+
+	for i = 1, #internal.fixedElementList do
+		local info = internal.fixedElementList[i]
+		if info.element == element then
+			info.x, info.y = x, y
+			return true
+		end
+	end
+
+	for i = 1, #internal.elementList do
+		local info = internal.elementList[i]
+		if info.element == element then
+			info.x, info.y = x, y
+			return true
+		end
+	end
+
+	return false
+end
+
 --! Remove element from frame
 --! @param element Element object
 function frame:removeElement(element)
@@ -245,7 +271,8 @@ function frame:clear()
 	for i = math.max(#internal.elementList, #internal.fixedElementList), 1, -1 do
 		if internal.fixedElementList[i] then
 			self:removeElement(internal.fixedElementList[i].element)
-		elseif internal.elementList[i] then
+		end
+		if internal.elementList[i] then
 			self:removeElement(internal.elementList[i].element)
 		end
 	end

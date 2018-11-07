@@ -18,6 +18,7 @@ local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
+local glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
@@ -176,6 +177,8 @@ local function liveClearCallback(self)
 end
 
 function DEPLS:load(arg)
+	glow.clear()
+
 	-- sanity check
 	assert(arg.summary, "summary data missing")
 	assert(arg.beatmapName, "beatmap name id missing")

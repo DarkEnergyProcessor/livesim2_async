@@ -42,18 +42,18 @@ ls2.setstreamwrapper {
 local ls2Loader = Luaoop.class("beatmap.LS2", baseLoader)
 
 function ls2Loader:__construct(file)
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 	internal.ls2 = ls2.loadstream(file)
 	internal.file = file
 end
 
 function ls2Loader:getFormatName()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 	return string.format("Live Simulator: 2 v%s Beatmap", internal.ls2.version_2 and "2.0" or "1.x"), "ls2"
 end
 
 function ls2Loader:getNotesList()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 	local nlist = {}
 
 	-- Select and process BMPM and BMPT sections
@@ -91,7 +91,7 @@ function ls2Loader:getNotesList()
 end
 
 function ls2Loader:_getMetadata()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 
 	if not(internal.metadata) then
 		if internal.ls2.sections.MTDT then
@@ -121,7 +121,7 @@ function ls2Loader:getName()
 end
 
 function ls2Loader:getCoverArt()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 
 	if not(internal.coverArtLoaded) then
 		if internal.ls2.sections.COVR then
@@ -140,7 +140,7 @@ function ls2Loader:getCoverArt()
 end
 
 function ls2Loader:getScoreInformation()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 	local metadata = self:_getMetadata()
 
 	-- Try to get from metadata first (v1 or v2)
@@ -171,7 +171,7 @@ function ls2Loader:getStarDifficultyInfo()
 end
 
 function ls2Loader:getAudio()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 
 	if internal.ls2.sections.ADIO then
 		internal.file:seek(internal.ls2.sections.ADIO[1])
@@ -209,7 +209,7 @@ function ls2Loader:getBackground()
 	-- 4. has top bottom background (index 5 and 6)
 	-- 8. has video background, refer to File object (index 7)
 	-- background refer to ImageData object
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 
 	if internal.ls2.sections.BIMG then
 		local backgrounds = {}
@@ -252,7 +252,7 @@ function ls2Loader:getBackground()
 end
 
 function ls2Loader:getCustomUnitInformation()
-	local internal = ls2Loader^self
+	local internal = Luaoop.class.data(self)
 	local unitData = {}
 
 	if internal.ls2.sections.UNIT and internal.ls2.sections.UIMG then
