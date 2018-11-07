@@ -273,12 +273,13 @@ function love.run()
 %d FPS (%.2fms update)
 LOVE %s: %s
 DRAWCALLS = %d (%s)
+LUAMEMORY = %.2f MB
 TEXTUREMEMORY = %d Bytes
 LOADED_IMAGES = %d
 LOADED_CANVAS = %d (SWITCHES = %d)
 LOADED_FONTS = %d]],
-					love.timer.getFPS(), dt*1000, love._version, love._version_codename,
-					stats.drawcalls, batchstr, stats.texturememory, stats.images, stats.canvases,
+					love.timer.getFPS(), dt*1000, love._version, love._version_codename, stats.drawcalls,
+					batchstr, collectgarbage("count")/1024, stats.texturememory, stats.images, stats.canvases,
 					stats.canvasswitches, stats.fonts
 				)
 				defaultText:clear()

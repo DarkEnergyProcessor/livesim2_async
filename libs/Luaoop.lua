@@ -358,7 +358,7 @@ function class.instantiate(classdef, ...)
       local destructor = t.__destruct
 
       if destructor then
-        local mtable, luaoop = force_custom_mtable(meta, t) -- gc requires custom properties
+        local mtable, luaoop = force_custom_mtable(luaoop.meta, t) -- gc requires custom properties
 
         local gc = function()
           destructor(t)

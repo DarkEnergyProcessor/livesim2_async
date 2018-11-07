@@ -240,7 +240,7 @@ end
 local midiLoader = Luaoop.class("beatmap.MIDI", baseLoader)
 
 function midiLoader:__construct(file)
-	local internal = midiLoader^self
+	local internal = Luaoop.class.data(self)
 	internal.data = midi2sif(file)
 end
 
@@ -249,7 +249,7 @@ function midiLoader.getFormatName()
 end
 
 function midiLoader:getNotesList()
-	local internal = midiLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.data
 end
 

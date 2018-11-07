@@ -15,7 +15,7 @@ local beatmap = require("beatmap")
 local deplsLoader = Luaoop.class("beatmap.DEPLS", baseLoader)
 
 function deplsLoader:__construct(path)
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	internal.path = path
 
 	-- get list of files named "beatmap"
@@ -65,19 +65,19 @@ function deplsLoader:__construct(path)
 end
 
 function deplsLoader:getFormatName()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	local s1, s2 = internal.beatmap:getFormatName()
 	return "DEPLS: "..s1, "depls_"..s2
 end
 
 function deplsLoader:getNotesList()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.beatmap:getNotesList()
 end
 
 local customUnitPossibleExt = {".png", ".tga", ".txt"}
 function deplsLoader:getCustomUnitInformation()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	local beatmapUnitInfo = internal.beatmap:getCustomUnitInformation()
 	local imageCache = {}
 	local res = {}
@@ -123,7 +123,7 @@ end
 
 local coverArtExtensions = {".png", ".jpg", ".jpeg", ".tga", ".bmp"}
 function deplsLoader:getCoverArt()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	local coverInfo = internal.beatmap:getCoverArt()
 
 	if coverInfo then
@@ -146,12 +146,12 @@ function deplsLoader:getCoverArt()
 end
 
 function deplsLoader:getAudioPathList()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	return {internal.path.."songFile"}
 end
 
 function deplsLoader:getAudio()
-	local internal = deplsLoader^self
+	local internal = Luaoop.class.data(self)
 	local beatmapAudio = internal.beatmap:getAudio()
 
 	if beatmapAudio then

@@ -9,8 +9,7 @@ local color = require("color")
 local loadingInstance = require("loading_instance")
 local L = require("language")
 
-local gui = require("libs.fusion-ui")
-
+local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local switchSetting = require("game.settings.switch")
@@ -28,22 +27,27 @@ local function changeBackgroundAsync(obj, v)
 	obj.persist.background = backgroundLoader.load(v)
 end
 
+local function startChangeBackground(obj, v)
+	return async.runFunction(changeBackgroundAsync):run(obj, v)
+end
+
 function bgSetting:load()
-	if self.data.settingData == nil then
-		self.data.settingData = {
-			switchSetting(L"setting:background:loadCustom", "AUTO_BACKGROUND")
-				:setPosition(61, 60),
-			numberSetting(L"setting:background:image", "BACKGROUND_IMAGE", {min = 1, max = 15})
-				:setChangedCallback(self, function(obj, v)
-					async.runFunction(changeBackgroundAsync):run(obj, v)
-				end)
-				:setPosition(61, 554),
-		}
-	end
+	glow.clear()
+
+	-- always must be recreated anyway
+	self.data.settingData = {
+		switchSetting(L"setting:background:loadCustom", "AUTO_BACKGROUND")
+			:setPosition(61, 60),
+		numberSetting(L"setting:background:image", "BACKGROUND_IMAGE", {min = 1, max = 15})
+			:setChangedCallback(self, startChangeBackground)
+			:setPosition(61, 554),
+	}
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting:stamina", leave)
+		self.data.back = backNavigation(L"setting:stamina")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addElement(self.data.back, 0, 0)
 end
 
 function bgSetting:start()
@@ -63,12 +67,12 @@ function bgSetting:draw()
 	if self.persist.background then
 		love.graphics.draw(self.persist.background)
 	end
-	backNavigation.draw(self.data.back)
 
 	for i = 1, #self.data.settingData do
 		self.data.settingData[i]:draw()
 	end
-	gui.draw()
+
+	return glow.draw()
 end
 
 bgSetting:registerEvent("keyreleased", function(_, key)

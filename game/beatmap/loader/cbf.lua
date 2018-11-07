@@ -282,7 +282,7 @@ end
 local cbfLoader = Luaoop.class("beatmap.CBF", baseLoader)
 
 function cbfLoader:__construct(path)
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 
 	if util.fileExists(path.."projectConfig.txt") and util.fileExists(path.."beatmap.txt") then
 		-- load conf
@@ -342,7 +342,7 @@ local function parseNote(str)
 end
 
 function cbfLoader:getNotesList()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	local notesData = {}
 	local attribute
 
@@ -433,13 +433,13 @@ function cbfLoader:getNotesList()
 end
 
 function cbfLoader:getName()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	return tostring(internal.config.SONG_NAME)
 end
 
 local supportedImages = {".png", ".jpg", ".jpeg", ".bmp"}
 function cbfLoader:getCoverArt()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	local file = util.substituteExtension(internal.path.."cover", supportedImages)
 
 	if file then
@@ -454,12 +454,12 @@ function cbfLoader:getCoverArt()
 end
 
 function cbfLoader:getDifficultyString()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.config.DIFFICULTY_TEMPLATE
 end
 
 function cbfLoader:getAudioPathList()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	return {internal.path.."songFile"}
 end
 
@@ -530,7 +530,7 @@ end
 
 -- implementing this one can be harder
 function cbfLoader:getCustomUnitInformation()
-	local internal = cbfLoader^self
+	local internal = Luaoop.class.data(self)
 	local unitData = {}
 
 	if util.fileExists(internal.path.."characterPositions.txt") then

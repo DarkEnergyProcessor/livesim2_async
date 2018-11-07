@@ -21,7 +21,7 @@ end
 local sifLoader = Luaoop.class("beatmap.SIF", baseLoader)
 
 function sifLoader:__construct(bm)
-	local internal = sifLoader^self
+	local internal = Luaoop.class.data(self)
 
 	if bm.response_data and bm.response_data.live_info then
 		bm = bm.response_data
@@ -55,17 +55,17 @@ function sifLoader.getFormatName()
 end
 
 function sifLoader:getNotesList()
-	local internal = sifLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.notesList
 end
 
 function sifLoader:getScoreInformation()
-	local internal = sifLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.score
 end
 
 function sifLoader:getComboInformation()
-	local internal = sifLoader^self
+	local internal = Luaoop.class.data(self)
 	local total = #internal.notesList
 
 	return {
@@ -83,7 +83,7 @@ end
 local siftLoader = Luaoop.class("beatmap.SIFTrain", baseLoader)
 
 function siftLoader:__construct(bm, file)
-	local i = siftLoader^self
+	local i = Luaoop.class.data(self)
 	i.data = bm
 	i.filename = basename(file:getFilename())
 end
@@ -93,7 +93,7 @@ function siftLoader.getFormatName()
 end
 
 function siftLoader:getNotesList()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	local sif_notes = {}
 	local defattr = setting.get("LLP_SIFT_DEFATTR")
 	local nd = internal.data.song_info[1].notes
@@ -137,12 +137,12 @@ function siftLoader:getNotesList()
 end
 
 function siftLoader:getName()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	return internal.data.song_name
 end
 
 function siftLoader:getCoverArt()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 
 	if internal.data.live_icon and util.fileExists("live_icon/"..internal.data.live_icon) then
 		-- Can't use love.graphics.newImage here
@@ -158,7 +158,7 @@ function siftLoader:getCoverArt()
 end
 
 function siftLoader:getScoreInformation()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	local ranks = {}
 	local invalid = false
 
@@ -183,7 +183,7 @@ function siftLoader:getScoreInformation()
 end
 
 function siftLoader:getComboInformation()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	local ranks = {}
 	local invalid = false
 
@@ -208,7 +208,7 @@ function siftLoader:getComboInformation()
 end
 
 function siftLoader:getStarDifficultyInfo()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	local s = internal.data.star or 0
 	local rs = internal.data.random_star or 0
 
@@ -217,7 +217,7 @@ function siftLoader:getStarDifficultyInfo()
 end
 
 function siftLoader:getAudioPathList()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	local paths = {}
 
 	local s, e = internal.filename:match("(.)_(%d+)")
@@ -237,7 +237,7 @@ local diffString = {
 	"Easy", "Normal", "Hard", "Expert"
 }
 function siftLoader:getDifficultyString()
-	local internal = siftLoader^self
+	local internal = Luaoop.class.data(self)
 	if internal.data.difficulty then
 		return diffString[internal.data.difficulty] or string.format("Number %d", internal.data.difficulty)
 	end
