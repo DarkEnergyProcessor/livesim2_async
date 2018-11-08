@@ -4,7 +4,6 @@
 
 local assetCache = require("asset_cache")
 local setting = require("setting")
-local gui = require("libs.fusion-ui")
 local Luaoop = require("libs.Luaoop")
 local baseSetting = require("game.settings.base")
 
@@ -15,7 +14,6 @@ local defaultOnOffValue = {
 	on = 1,
 	off = 0
 }
-local switchButtons = {init = false}
 
 local switchSetting = Luaoop.class("Livesim2.SettingItem.Switch", baseSetting)
 

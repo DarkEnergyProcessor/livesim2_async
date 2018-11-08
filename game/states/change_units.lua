@@ -13,7 +13,7 @@ local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
 local lily = require("libs.lily")
-local gui = require("libs.fusion-ui")
+--local gui = require("libs.fusion-ui")
 
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")

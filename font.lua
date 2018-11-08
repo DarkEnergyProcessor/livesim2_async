@@ -6,18 +6,28 @@ local cache = require("cache")
 local assetCache = require("asset_cache")
 local font = {}
 
-function font.get(size)
-	local setFallback = not(cache.get("RobotoMainFont"..size))
-	local fonts = assetCache.loadMultipleFonts({
-		{"RobotoMainFont"..size..":fonts/Roboto-Regular.ttf", size},
-		{"fonts/MTLmr3m.ttf", size}
-	})
+function font.get(...)
+	local arg = {...}
+	local isFallback = {}
+	local fontsLoadQueue = {}
 
-	if setFallback then
-		fonts[1]:setFallbacks(fonts[2])
+	for i = 1, #arg do
+		isFallback[i] = not(cache.get("RobotoMainFont"..arg[i]))
+		fontsLoadQueue[i * 2 - 1] = {"RobotoMainFont"..arg[i]..":fonts/Roboto-Regular.ttf", arg[i]}
+		fontsLoadQueue[i * 2] = {"fonts/MTLmr3m.ttf", arg[i]}
 	end
 
-	return fonts[1]
+	local fontsData = assetCache.loadMultipleFonts(fontsLoadQueue)
+	local result = {}
+
+	for i = 1, #arg do
+		result[i] = fontsData[i * 2 - 1]
+		if isFallback[i] then
+			fontsData[i * 2 - 1]:setFallbacks(fontsData[i * 2])
+		end
+	end
+
+	return unpack(result)
 end
 
 return font

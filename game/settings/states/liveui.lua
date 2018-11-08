@@ -14,7 +14,7 @@ local L = require("language")
 local backgroundLoader = require("game.background_loader")
 local liveUI = require("game.live.ui")
 
-local gui = require("libs.fusion-ui")
+local glow = require("game.afterglow")
 local backNavigation = require("game.ui.back_navigation")
 local longButtonUI = require("game.ui.long_button")
 
@@ -33,42 +33,31 @@ local function updateString(text, value)
 	util.addTextWithShadow(text, L("setting:liveUI:current", {name = value}), 0, 0)
 end
 
+local function setPlayUI(_, value)
+	setting.set("PLAY_UI", value.real)
+	updateString(value.instance.persist.text, value.real)
+end
+
 function liveUISetting:load()
-	local curui = setting.get("PLAY_UI")
-	self.persist.text = love.graphics.newText(mainFont.get(26))
+	glow.clear()
+
+	if self.persist.text == nil then
+		self.persist.text = love.graphics.newText(mainFont.get(26))
+	end
 
 	if self.data.buttonFrame == nil then
-		local frameElem = {}
-		local frameLayout = {}
+		local elements = {}
 		for i, v in ipairs(liveUI.enum()) do
-			local elem = longButtonUI.new(v)
-			elem:addEventListener("released", function()
-				setting.set("PLAY_UI", v)
-				updateString(self.persist.text, v)
-			end)
-			frameElem[#frameElem + 1] = {element = elem, index = i}
-			frameLayout[i] = {
-				position = "absolute",
-				size = "absolute",
-				left = 0,
-				top = (i - 1) * 78,
-				w = 758,
-				h = 78
-			}
-
-			if v == curui then
-				updateString(self.persist.text, v)
-			end
+			local elem = longButtonUI(v)
+			elem:addEventListener("mousereleased", setPlayUI)
+			elem:setData({real = v, instance = self})
+			elements[i] = elem
 		end
 
-		self.data.buttonFrame = gui.element.newElement("frame", {
-			elements = frameElem,
-			layout = frameLayout
-		}, {
-			backgroundColor = {0, 0, 0, 0},
-			padding = {0, #frameElem * 78, 0, 0},
-			margin = {0, 0, 0, 0}
-		})
+		self.data.buttonFrame = elements
+	end
+	for i = 1, #self.data.buttonFrame do
+		glow.addElement(self.data.buttonFrame[i], 101, i * 78 - 28)
 	end
 
 	if self.data.background == nil then
@@ -76,8 +65,14 @@ function liveUISetting:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting:liveUI:short", leave)
+		self.data.back = backNavigation(L"setting:liveUI:short")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addFixedElement(self.data.back, 0, 0)
+end
+
+function liveUISetting:start()
+	updateString(self.persist.text, setting.get("PLAY_UI"))
 end
 
 function liveUISetting:draw()
@@ -85,9 +80,7 @@ function liveUISetting:draw()
 	love.graphics.draw(self.data.background)
 	love.graphics.draw(self.persist.text, 480, 8)
 
-	backNavigation.draw(self.data.back)
-	self.data.buttonFrame:draw(101, 50, 808, 546)
-	gui.draw()
+	glow.draw()
 end
 
 liveUISetting:registerEvent("keyreleased", function(_, key)

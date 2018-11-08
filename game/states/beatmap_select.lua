@@ -10,7 +10,7 @@ local L = require("language")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
-local gui = require("libs.fusion-ui")
+local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local selectButton = require("game.ui.select_button")
@@ -100,82 +100,79 @@ local function initializeSummary(self, data)
 	end
 end
 
+local function beatmapButtonCallback(_, value)
+	beatmapList.getSummary(value.beatmap.id, function(data)
+		value.instance.persist.selectedBeatmapID = value.beatmap.id
+		return initializeSummary(value.instance, data)
+	end)
+end
+
 local function initializeBeatmapListUI(self)
 	if not(self.persist.beatmapList) then return end
 
-	local frameElements = {}
-	local frameLayout = {}
-	local frameButton2Beatmap = {}
+	-- Async wrap
+	coroutine.wrap(function()
+		local frame = glow.frame(0, 80, 460, 480)
 
-	local function frameButtonCallback(frame)
-		local beatmap = frameButton2Beatmap[frame]
-		beatmapList.getSummary(beatmap.id, function(data)
-			self.persist.selectedBeatmapID = beatmap.id
-			return initializeSummary(self, data)
-		end)
+		for i = 1, #self.persist.beatmapList do
+			local v = self.persist.beatmapList[i]
+			-- TODO callback
+			local element = beatmapSelButton(v.name, v.format, v.difficulty)
+			element:addEventListener("mousereleased", beatmapButtonCallback)
+			element:setData({instance = self, beatmap = v})
+			frame:addElement(element, 60, (i - 1) * 60)
+		end
+
+		self.data.beatmapFrame = frame
+		glow.addFrame(frame)
+		setStatusText(self)
+	end)()
+end
+
+local function openBeatmapDirCallback(_, url)
+	love.system.openURL(url)
+end
+
+local function playButtonCallback(_, self)
+	if self.persist.summary then
+		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+			summary = self.persist.summary,
+			beatmapName = self.persist.selectedBeatmapID
+		})
 	end
-
-	for i = 1, #self.persist.beatmapList do
-		local v = self.persist.beatmapList[i]
-		-- TODO callback
-		local element = beatmapSelButton.new(v.name, v.format, frameButtonCallback, v.difficulty)
-		frameButton2Beatmap[element] = v
-		frameElements[#frameElements + 1] = {
-			element = element,
-			index = i
-		}
-		frameLayout[i] = {
-			position = "absolute",
-			size = "absolute",
-			left = 60,
-			top = (i - 1) * 60,
-			w = 324,
-			h = 60
-		}
-	end
-
-	self.data.beatmapFrame = gui.element.newElement("frame", {
-		elements = frameElements,
-		layout = frameLayout
-	}, {
-		backgroundColor = {0, 0, 0, 0},
-		padding = {0, #self.persist.beatmapList * 60, 0, 0},
-		margin = {0, 0, 0, 0}
-	})
-	setStatusText(self)
 end
 
 function beatmapSelect:load()
-	beatmapSelButton.init()
+	glow.clear()
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"beatmapSelect:title", leave)
+		self.data.back = backNavigation(L"beatmapSelect:title", leave)
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addFixedElement(self.data.back, 0, 0)
+
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(1)
 	end
+
 	if self.data.openBeatmap == nil then
-		local saveUrl = "file://"..love.filesystem.getSaveDirectory().."/beatmap"
-		self.data.openBeatmap = selectButton.new(L"beatmapSelect:openDir")
-		self.data.openBeatmap:addEventListener("released", function()
-			return love.system.openURL(saveUrl)
-		end)
+		self.data.openBeatmap = selectButton(L"beatmapSelect:openDir")
+		self.data.openBeatmap:addEventListener("mousereleased", openBeatmapDirCallback)
+		self.data.openBeatmap:setData("file://"..love.filesystem.getSaveDirectory().."/beatmap")
 	end
+	glow.addElement(self.data.openBeatmap, 64, 592)
+
 	if self.data.beatmapFrame == nil then
 		initializeBeatmapListUI(self)
 	end
+
 	if self.data.playButton == nil then
 		--self.persist.summary
-		self.data.playButton = selectButton.new(L"beatmapSelect:play")
-		self.data.playButton:addEventListener("released", function()
-			if self.persist.summary then
-				gamestate.enter(loadingInstance.getInstance(), "livesim2", {
-					summary = self.persist.summary,
-					beatmapName = self.persist.selectedBeatmapID
-				})
-			end
-		end)
+		self.data.playButton = selectButton(L"beatmapSelect:play")
+		self.data.playButton:addEventListener("mousereleased", playButtonCallback)
+		self.data.playButton:setData(self)
 	end
+	glow.addElement(self.data.playButton, 470, 520)
 
 	if self.data.checkLabel == nil then
 		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
@@ -187,13 +184,17 @@ function beatmapSelect:load()
 
 	if self.data.checkButton == nil then
 		self.data.checkButton = {
-			checkbox.new(setting.get("AUTOPLAY") == 1, function(_, elem)
-				setting.set("AUTOPLAY", elem.type.state and 1 or 0)
-			end),
-			checkbox.new(false),
-			checkbox.new(false),
-			checkbox.new(false)
+			checkbox(setting.get("AUTOPLAY") == 1),
+			checkbox(false),
+			checkbox(false),
+			checkbox(false)
 		}
+		self.data.checkButton[1]:addEventListener("changed", function(_, _, value)
+			setting.set("AUTOPLAY", value and 1 or 0)
+		end)
+	end
+	for i = 1, 4 do
+		glow.addElement(self.data.checkButton[i], 738, 336 + i * 36)
 	end
 end
 
@@ -225,7 +226,10 @@ function beatmapSelect.exit()
 	beatmapList.pop()
 end
 
-function beatmapSelect.update()
+function beatmapSelect:update(dt)
+	if self.data.beatmapFrame then
+		self.data.beatmapFrame:update(dt)
+	end
 end
 
 function beatmapSelect:draw()
@@ -241,39 +245,18 @@ function beatmapSelect:draw()
 		local w, h = self.persist.beatmapCover:getDimensions() -- should be cached, but who cares.
 		love.graphics.draw(self.persist.beatmapCover, 738, 144, 0, 192/w, 192/h)
 	end
-
-	-- GUI draw
-	backNavigation.draw(self.data.back)
-	selectButton.draw(self.data.openBeatmap, 64, 592)
-
-	if self.data.beatmapFrame then
-		self.data.beatmapFrame:draw(0, 80, 460, 480)
-	end
-
-	for i = 1, #self.data.checkButton do
-		checkbox.draw(self.data.checkButton[i], 738, 336 + i * 36)
-	end
 	love.graphics.draw(self.data.checkLabel)
 
-	if self.persist.summary then
-		selectButton.draw(self.data.playButton, 470, 520)
+	-- GUI draw
+	if self.data.beatmapFrame then
+		self.data.beatmapFrame:draw()
 	end
-
-	gui.draw()
+	glow.draw()
 end
 
 beatmapSelect:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return leave()
-	end
-end)
-
-beatmapSelect:registerEvent("wheelmoved", function(self, _, y)
-	if self.data.beatmapFrame and self.data.beatmapFrame.type.slider then
-		local slider = self.data.beatmapFrame.type.slider
-		local v = math.max(math.min(slider.type.current - y * 60, slider.type.max), slider.type.min)
-		self.data.beatmapFrame.type.slider.type.current = v
-		self.data.beatmapFrame.type.slider:emitEvent("changed", {value = v})
 	end
 end)
 
