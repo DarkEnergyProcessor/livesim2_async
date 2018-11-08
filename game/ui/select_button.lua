@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = require("love")
+local love = love or require("love")
 local Luaoop = require("libs.Luaoop")
 
 local mainFont = require("font")
@@ -18,7 +18,7 @@ function selectButton:new(text)
 
 	imageButtonUI.new(self, "assets/image/ui/s_button_03", 0.5)
 	self.text = love.graphics.newText(font)
-	self.text:add({color.white, text}, 8, 40 - 0.5 * h)
+	self.text:add({color.white, text}, 8, 16 - 0.5 * h)
 end
 
 function selectButton:render(x, y)

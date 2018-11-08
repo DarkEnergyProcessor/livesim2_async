@@ -142,17 +142,17 @@ end
 
 local function checkMousepressed(self, internal, info, a, b)
 	local w, h = info.element:getDimensions()
-	local c, d = a, b
+	local c, d = a - self.x, b - self.y
 
 	if not(info.fixed) then
-		c, d = a + self.offsetX, b + self.offsetY
+		c, d = c + self.offsetX, d + self.offsetY
 	end
 
 	if c >= info.x and d >= info.y and c < info.x + w and d < info.y + h then
 		-- enter
 		info.element:triggerEvent("mousepressed",
-			a - info.x + (info.fixed and 0 or self.offsetX),
-			b - info.y + (info.fixed and 0 or self.offsetY)
+			a - info.x + (info.fixed and 0 or self.offsetX) - self.x,
+			b - info.y + (info.fixed and 0 or self.offsetY) - self.y
 		)
 		internal.mouseBuffer.pressed = true
 		internal.mouseBuffer.targetElement = info
@@ -205,28 +205,31 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 
 			if info.fixed then
 				if
-					a < (info == self.sliderV and -100 or 0) + info.x or
-					b < (info == self.sliderH and -100 or 0) + info.y or
-					a >= info.x + w or
-					b >= info.y + h
+					a - self.x < (info == self.sliderV and -100 or 0) + info.x or
+					b - self.y < (info == self.sliderH and -100 or 0) + info.y or
+					a - self.x >= info.x + w or
+					b - self.y >= info.y + h
 				then
 					info.element:triggerEvent("mousecanceled")
 					internal.mouseBuffer.pressed = false
 					internal.mouseBuffer.targetElement = nil
 				else
-					info.element:triggerEvent("mousemoved", a - info.x, b - info.y)
+					info.element:triggerEvent("mousemoved", a - info.x - self.x, b - info.y - self.y)
 				end
 			elseif
-				a + self.offsetX < info.x or
-				b + self.offsetY < info.y or
-				a + self.offsetX >= info.x + w or
-				b + self.offsetY >= info.y + h
+				a + self.offsetX - self.x < info.x or
+				b + self.offsetY - self.y < info.y or
+				a + self.offsetX - self.x >= info.x + w or
+				b + self.offsetY - self.y >= info.y + h
 			then
 				info.element:triggerEvent("mousecanceled")
 				internal.mouseBuffer.pressed = false
 				internal.mouseBuffer.targetElement = nil
 			else
-				info.element:triggerEvent("mousemoved", a - info.x + self.offsetX, b - info.y + self.offsetY)
+				info.element:triggerEvent("mousemoved",
+					a - info.x + self.offsetX - self.x,
+					b - info.y + self.offsetY - self.y
+				)
 			end
 
 			return true
@@ -368,10 +371,10 @@ function frame:draw()
 	end
 
 	if self.sliderH then
-		self.sliderH.element:render(0, self.sliderH.y)
+		self.sliderH.element:render(self.x, self.sliderH.y + self.y)
 	end
 	if self.sliderV then
-		self.sliderV.element:render(self.sliderV.x, 0)
+		self.sliderV.element:render(self.x + self.sliderV.x, self.y)
 	end
 
 	love.graphics.pop()

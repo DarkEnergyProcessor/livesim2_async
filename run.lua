@@ -10,29 +10,6 @@ local timer = require("libs.hump.timer")
 local util = require("util")
 local color = require("color")
 
--- Override fusion-ui platform function for LOVE 11.0
-local function fusionUICompat(gui)
-	if love._version >= "11.0" then
-		function gui.platform.setColor(r, g, b, a)
-			if type(r) == "table" then
-				return love.graphics.setColor(r[1] / 255, r[2] / 255, r[3] / 255, (r[4] or 255) / 255)
-			else
-				return love.graphics.setColor(r / 255, g / 255, b / 255, a / 255)
-			end
-		end
-
-		local tempTable = {nil, stencil = true}
-		function gui.platform.setCanvas(fbo)
-			if fbo ~= nil then
-				tempTable[1] = fbo
-				return love.graphics.setCanvas(tempTable)
-			else
-				return love.graphics.setCanvas()
-			end
-		end
-	end
-end
-
 --------------------------------
 -- LOVE 11.0 argument parsing --
 --------------------------------
@@ -165,14 +142,12 @@ function love.run()
 	local showDebugInfo = false
 	local defaultText
 
-	-- Only load Fusion UI if window is present, also it must
-	-- be after love.load, because love.load may initialize window.
-	local gui, glow
+	-- Only load UI if window is present, also it must be after
+	-- love.load, because love.load may initialize window.
+	local glow
 	if love.window.isOpen() then
-		gui = require("libs.fusion-ui")
 		glow = require("game.afterglow")
 		defaultText = love.graphics.newText(love.graphics.newFont(20))
-		fusionUICompat(gui)
 	end
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
