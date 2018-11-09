@@ -8,8 +8,7 @@ local color = require("color")
 local loadingInstance = require("loading_instance")
 local L = require("language")
 
-local gui = require("libs.fusion-ui")
-
+local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local switchSetting = require("game.settings.switch")
@@ -24,20 +23,22 @@ local function leave()
 end
 
 function scoreSetting:load()
-	if self.data.settingData == nil then
-		self.data.settingData = {
-			numberSetting(L"setting:stamina:score", "SCORE_ADD_NOTE", {min = 100, max = 8192})
-				:setPosition(61, 60),
-			numberSetting(L"setting:stamina:display", "STAMINA_DISPLAY", {min = 1, max = 99})
-				:setPosition(61, 146),
-			switchSetting(L"setting:stamina:noFail", "STAMINA_FUNCTIONAL")
-				:setPosition(61, 232),
-		}
-	end
+	glow.clear()
+
+	self.data.settingData = {
+		numberSetting(L"setting:stamina:score", "SCORE_ADD_NOTE", {min = 100, max = 8192})
+			:setPosition(61, 60),
+		numberSetting(L"setting:stamina:display", "STAMINA_DISPLAY", {min = 1, max = 99})
+			:setPosition(61, 146),
+		switchSetting(L"setting:stamina:noFail", "STAMINA_FUNCTIONAL")
+			:setPosition(61, 232),
+	}
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"setting:stamina", leave)
+		self.data.back = backNavigation(L"setting:stamina")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addElement(self.data.back, 0, 0)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
@@ -53,12 +54,12 @@ end
 function scoreSetting:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
-	backNavigation.draw(self.data.back)
 
 	for i = 1, #self.data.settingData do
 		self.data.settingData[i]:draw()
 	end
-	gui.draw()
+
+	return glow.draw()
 end
 
 scoreSetting:registerEvent("keyreleased", function(_, key)

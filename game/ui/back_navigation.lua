@@ -2,92 +2,35 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local gui = require("libs.fusion-ui")
+local love = require("love")
+local Luaoop = require("libs.Luaoop")
+
 local assetCache = require("asset_cache")
-local backNavigation = {init = false}
+local mainFont = require("font")
+local color = require("color")
 
-local function initialize()
-	if backNavigation.init then return end
+local imageButtonUI = require("game.ui.image_button")
+local backNavigation = Luaoop.class("Livesim2.BackNavigation", imageButtonUI)
 
+function backNavigation:new(name)
+	local font = mainFont.get(22)
 	local images = assetCache.loadMultipleImages({
-		"assets/image/ui/com_win_02.png",
 		"assets/image/ui/com_button_01.png",
-		"assets/image/ui/com_button_01se.png"
-	})
-	backNavigation.backImage = images[1]
-	local font = assetCache.loadFont("fonts/MTLmr3m.ttf", 22)
-	backNavigation.staticClass = gui.template.new("button", {
-		backgroundImage = images[1],
-		font = font,
-		padding = {193, 0, 0, 0},
-		backgroundSize = 'fit',
-		foregroundColor = {0, 0, 0, 255},
-		backgroundColor = {0, 0, 0, 0},
-		backgroundImageColor = {255, 255, 255, 255},
-		align = 'left',
-	})
-	backNavigation.buttonClass = gui.template.new("button", {
-		backgroundImage = images[2],
-		backgroundSize = 'fit',
-		foregroundColor = {255, 255, 255, 255},
-		backgroundColor = {0, 0, 0, 0},
-		backgroundImageColor = {255, 255, 255, 255},
-	})
-	backNavigation.buttonClass:addStyleSwitch("pressed", "released", {
-		backgroundImage = images[3],
-		backgroundSize = 'fit',
-		foregroundColor = {255, 255, 255, 255},
-		backgroundColor = {0, 0, 0, 0},
-		backgroundImageColor = {255, 255, 255, 255},
-	})
+		"assets/image/ui/com_button_01se.png",
+		"assets/image/ui/com_win_02.png"
+	}, {mipmaps = true})
+
+	imageButtonUI.new(self, images)
+	self.bar = images[3]
+	self.text = love.graphics.newText(font)
+	self.text:add({color.black, name}, 95, 9)
 end
 
-local frameLayout = {
-	static = {
-		position = 'absolute',
-		left = 0,
-		top = 0,
-		size = 'absolute',
-		w = 504,
-		h = 40
-	},
-	button = {
-		position = 'absolute',
-		left = 98,
-		top = 0,
-		size = 'absolute',
-		w = 86,
-		h = 58
-	}
-}
-
-local defaultFrameLayout = {
-	backgroundColor = {0, 0, 0, 0},
-	margin = {0, 0, 0, 0},
-	padding = {0, 0, 0, 0},
-}
-
-function backNavigation.new(statename, target)
-	initialize()
-
-	local static = backNavigation.staticClass:newElement(statename)
-	local button = backNavigation.buttonClass:newElement("")
-	button:addEventListener("released", target)
-	local frame = gui.element.newElement("frame", {
-		elements = {
-			{element = static, index = "static"},
-			{element = button, index = "button"}
-		},
-		layout = frameLayout
-	}, defaultFrameLayout)
-	frame.xoffset, frame.yoffset = -5, -5
-
-	return frame
+function backNavigation:render(x, y)
+	love.graphics.setColor(color.white)
+	love.graphics.draw(self.bar, x - 98, y)
+	love.graphics.draw(self.text, x, y)
+	return imageButtonUI.render(self, x, y)
 end
 
-function backNavigation.draw(elem)
-	return elem:draw(-98, 0, 508, 58)
-end
-
-setmetatable(backNavigation, {__call = function(_, ...) return backNavigation.new(...) end})
 return backNavigation

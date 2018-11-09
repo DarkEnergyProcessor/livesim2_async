@@ -2,75 +2,46 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local gui = require("libs.fusion-ui")
+local love = require("love")
+local Luaoop = require("libs.Luaoop")
 local assetCache = require("asset_cache")
+local glow = require("game.afterglow")
 
-local checkbox = {init = false}
-local checkboxClass = {}
-checkboxClass.checked = nil
-checkboxClass.font = nil
+local checkbox = Luaoop.class("Livesim2.CheckboxUI", glow.element)
 
-function checkboxClass.__index(a, var)
-	return rawget(checkboxClass, var) or gui.checkbox[var]
-end
-
-function checkboxClass.new(state)
-	return setmetatable({
-		state = not(not(state)),
-	}, checkboxClass)
-end
-
-function checkboxClass.getSize()
-	return 24, 24
-end
-
-function checkboxClass:render(x, y, w, h, _, style)
-	style:drawBackground(x, y, w, h)
-
-	if self.state then
-		gui.platform.setColor(style.foregroundColor)
-		gui.platform.draw(checkboxClass.checked, x + 12, y + 14, 0, 1, 1, 12, 14)
-	end
-
-	gui.platform.setStencilTest()
-end
-
-local defStyle = {
-	backgroundImage = nil,
-	backgroundSize = 'center',
-	foregroundColor = {255, 255, 255, 255},
-	backgroundColor = {0, 0, 0, 0},
-	backgroundImageColor = {255, 255, 255, 255},
-}
-
-local function initialize()
-	if not(checkbox.init) then
-		local images = assetCache.loadMultipleImages({
+function checkbox:new(checked, scale)
+	if not(checkbox.images) then
+		checkbox.images = assetCache.loadMultipleImages({
 			"assets/image/ui/com_etc_292.png",
 			"assets/image/ui/com_etc_293.png"
-		})
-		checkboxClass.font = assetCache.loadFont("fonts/MTLmr3m.ttf", 22)
-		defStyle.backgroundImage, checkboxClass.checked = images[1], images[2]
-		checkbox.init = true
-	end
-end
-
-function checkbox.new(checked, onchange)
-	initialize()
-
-	local element = gui.element.newElement("checkbox", checked, defStyle)
-	element.type = checkboxClass.new(checked)
-	element:releaseStyle()
-
-	if onchange then
-		element:addEventListener("changed", onchange)
+		}, {mipmaps = true})
+		checkbox.imageWidth, checkbox.imageHeight = checkbox.images[1]:getDimensions()
 	end
 
-	return element
+	self.checked = not(not(checked))
+	self.scale = scale or 1
+	self.width, self.height = checkbox.imageWidth * self.scale, checkbox.imageHeight * self.scale
+	self:addEventListener("mousereleased", checkbox._released)
 end
 
-function checkbox.draw(element, x, y)
-	return element:draw(x-4, y, 28, 24)
+function checkbox:_released()
+	self.checked = not(self.checked)
+	self:triggerEvent("changed", self.checked)
+end
+
+function checkbox:isChecked()
+	return self.checked
+end
+
+function checkbox:setChecked(checked)
+	self.checked = not(not(checked))
+end
+
+function checkbox:render(x, y)
+	love.graphics.draw(checkbox.images[1], x, y, 0, self.scale)
+	if self.checked then
+		love.graphics.draw(checkbox.images[2], x, y, 0, self.scale, self.scale, 4, 0)
+	end
 end
 
 return checkbox

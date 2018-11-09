@@ -28,8 +28,6 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [hump.vector](https://github.com/vrld/hump)
 
-* Fusion UI
-
 * [LS2X](https://github.com/MikuAuahDark/ls2x)
 
 * [i18n](https://github.com/kikito/i18n.lua)
@@ -50,8 +48,6 @@ Special Thanks
 
 * MilesElectric168 - Note randomization algorithm.
 
-* qfx - Allowing me as the person to test Fusion UI and provide feedback.
-
 * Some other people who suggest something and helping me which I forgot his/her name
 
 License
@@ -68,8 +64,6 @@ Live Simulator: 2 uses Venera-700 font by Joe Prince and licensed under The Lost
 Live Simulator: 2 uses JSON library by Jeffrey Friedl. It's licensed under Creative Commons Attribution 3.0 Unported License.
 
 Live Simulator: 2 uses some hump libraries (`timer` and `vector`). Please see https://github.com/vrld/hump for more information
-
-Live Simulator: 2 uses Fusion UI by qfx. Please see `libs/fusion-ui/LICENSE` for more information.
 
 Live Simulator: 2 uses Lily v2.x branch. It's licensed under [zLib](https://github.com/MikuAuahDark/lily/blob/master/LICENSE.md) license.
 

@@ -10,29 +10,6 @@ local timer = require("libs.hump.timer")
 local util = require("util")
 local color = require("color")
 
--- Override fusion-ui platform function for LOVE 11.0
-local function fusionUICompat(gui)
-	if love._version >= "11.0" then
-		function gui.platform.setColor(r, g, b, a)
-			if type(r) == "table" then
-				return love.graphics.setColor(r[1] / 255, r[2] / 255, r[3] / 255, (r[4] or 255) / 255)
-			else
-				return love.graphics.setColor(r / 255, g / 255, b / 255, a / 255)
-			end
-		end
-
-		local tempTable = {nil, stencil = true}
-		function gui.platform.setCanvas(fbo)
-			if fbo ~= nil then
-				tempTable[1] = fbo
-				return love.graphics.setCanvas(tempTable)
-			else
-				return love.graphics.setCanvas()
-			end
-		end
-	end
-end
-
 --------------------------------
 -- LOVE 11.0 argument parsing --
 --------------------------------
@@ -165,13 +142,12 @@ function love.run()
 	local showDebugInfo = false
 	local defaultText
 
-	-- Only load Fusion UI if window is present, also it must
-	-- be after love.load, because love.load may initialize window.
-	local gui
+	-- Only load UI if window is present, also it must be after
+	-- love.load, because love.load may initialize window.
+	local glow
 	if love.window.isOpen() then
-		gui = require("libs.fusion-ui")
+		glow = require("game.afterglow")
 		defaultText = love.graphics.newText(love.graphics.newFont(20))
-		fusionUICompat(gui)
 	end
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
@@ -248,49 +224,23 @@ function love.run()
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)
-			elseif not(gui) or not(gui.eventHandlers[name]) or not(gui.eventHandlers[name](a, b, c, d, e, f)) then
+			elseif not(glow) or not(glow.handleEvents(name, a, b, c, d, e, f)) then
 				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
 			end
-			--[[
-			-- fusion-ui currently has incomplete touch input code
-			elseif gui and name:sub(1, 5) ~= "touch" and gui.eventHandlers[name] then
-				local received = false
-				if name == "mousepressed" then
-					received = gui.eventHandlers.mousepressed(a, b, c, false)
-				elseif name == "mousemoved" then
-					received = gui.eventHandlers.mousemoved(a, b, c, d, false)
-				elseif name == "mousereleased" then
-					received = gui.eventHandlers.mousereleased(a, b, c, false)
-				end
-
-				if not(received) then
-					gamestate.internal.handleEvents(name, a, b, c, d, e, f)
-				end
-			else
-				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
-			end
-			]]
-		end
-		-- We have to pass the mouse position to virtual resolution
-		-- screen coordinate to logical coordinate conversion
-		if gui then
-			gui.eventHandlers.mousePos(vires.screenToLogical(love.mouse.getPosition()))
 		end
 
 		local currentGame = gamestate.internal.getActive()
 		-- Call update and draw
 		if currentGame then currentGame:update(dt) end
+		if glow then glow.update(dt) end
 
 		if love.graphics and love.graphics.isActive() then
-			if gui then
-				gui.element.bufferUpdate(dt)
-			end
 			love.graphics.push("all")
 			vires.set()
 			if currentGame then currentGame:draw() end
 			if showDebugInfo then
 				local stats = love.graphics.getStats()
-				local batchstr = "LACK AUTOBATCH"
+				local batchstr = "NO AUTOBATCH"
 				if love._version >= "11.0" then
 					batchstr = string.format("BATCHED %d", stats.drawcallsbatched)
 				end
@@ -298,12 +248,13 @@ function love.run()
 %d FPS (%.2fms update)
 LOVE %s: %s
 DRAWCALLS = %d (%s)
+LUAMEMORY = %.2f MB
 TEXTUREMEMORY = %d Bytes
 LOADED_IMAGES = %d
 LOADED_CANVAS = %d (SWITCHES = %d)
 LOADED_FONTS = %d]],
-					love.timer.getFPS(), dt*1000, love._version, love._version_codename,
-					stats.drawcalls, batchstr, stats.texturememory, stats.images, stats.canvases,
+					love.timer.getFPS(), dt*1000, love._version, love._version_codename, stats.drawcalls,
+					batchstr, collectgarbage("count")/1024, stats.texturememory, stats.images, stats.canvases,
 					stats.canvasswitches, stats.fonts
 				)
 				defaultText:clear()

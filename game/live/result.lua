@@ -9,7 +9,7 @@ local assetCache = require("asset_cache")
 local color = require("color")
 local L = require("language")
 
-local gui = require("libs.fusion-ui")
+local glow = require("game.afterglow")
 local longButtonUI = require("game.ui.long_button")
 local selectButtonUI = require("game.ui.select_button")
 
@@ -43,6 +43,9 @@ function result:__construct(beatmapName)
 		{"fonts/MTLmr3m.ttf", 40},
 	})
 	self.tokenQuad = love.graphics.newQuad(14 * 128, 15 * 128, 128, 128, 2048, 2048)
+	-- frame
+	self.frame = glow.frame(0, 0, 960, 640)
+	self.frameAdded = false
 	-- timer
 	self.timer = timer.new()
 	-- live graph mesh
@@ -51,31 +54,34 @@ function result:__construct(beatmapName)
 	self.returnButtonCallback = nil
 	self.returnButtonOpaque = nil
 	self.returnRetryTimer = -math.huge
-	self.returnButton = longButtonUI.new(L"livesim2:result:returnHoldRetry")
-	self.returnButton:addEventListener("released", function()
+	self.returnButton = longButtonUI(L"livesim2:result:returnHoldRetry")
+	self.returnButton:addEventListener("mousereleased", function()
 		self.returnButtonCallback(self.returnButtonOpaque, self.returnRetryTimer >= 2)
 		self.returnRetryTimer = -math.huge
 	end)
-	self.returnButton:addEventListener("pressed", function()
+	self.returnButton:addEventListener("mousepressed", function()
 		self.returnRetryTimer = 0
 	end)
+	self.frame:addElement(self.returnButton, 101, 556)
 	-- replay button
 	self.replayButtonCallback = nil
 	self.replayButtonOpaque = nil
-	self.replayButton = selectButtonUI.new(L"livesim2:result:replay")
-	self.replayButton:addEventListener("released", function()
+	self.replayButton = selectButtonUI(L"livesim2:result:replay")
+	self.replayButton:addEventListener("mousereleased", function()
 		return self.replayButtonCallback(self.replayButtonOpaque)
 	end)
+	self.frame:addElement(self.replayButton, 600, 314)
 	-- save replay button
 	self.saveReplayVanishTimer = 0
 	self.saveReplayButtonCallback = nil
 	self.saveReplayButtonOpaque = nil
-	self.saveReplayButton = selectButtonUI.new(L"livesim2:result:saveReplay")
-	self.saveReplayButton:addEventListener("released", function()
+	self.saveReplayButton = selectButtonUI(L"livesim2:result:saveReplay")
+	self.saveReplayButton:addEventListener("mousereleased", function()
 		-- must return status message
 		self.saveReplayStatus = tostring(self.saveReplayButtonCallback(self.saveReplayButtonOpaque))
-		self.saveReplayVanishTimer = 3
+		self.saveReplayVanishTimer = 1
 	end)
+	self.frame:addElement(self.saveReplayButton, 600, 356)
 	-- text objects
 	self.staticText = love.graphics.newText(self.fonts[3])
 	addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
@@ -104,6 +110,11 @@ function result:__construct(beatmapName)
 end
 
 function result:update(dt)
+	if not(self.frameAdded) then
+		glow.addFrame(self.frame)
+		self.frameAdded = true
+	end
+
 	self.timer:update(dt)
 	self.saveReplayVanishTimer = self.saveReplayVanishTimer - dt
 	self.returnRetryTimer = self.returnRetryTimer + dt
@@ -168,10 +179,9 @@ function result:draw()
 	end
 
 	-- draw buttons (gui)
-	selectButtonUI.draw(self.replayButton, 600, 314)
-	selectButtonUI.draw(self.saveReplayButton, 600, 356)
-	longButtonUI.draw(self.returnButton, 101, 556)
-	gui.draw()
+	if self.frameAdded then
+		self.frame:draw()
+	end
 end
 
 function result:setInformation(noteinfo, accuracyData, comboRange)

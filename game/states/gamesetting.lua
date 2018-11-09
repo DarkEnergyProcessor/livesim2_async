@@ -10,7 +10,7 @@ local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 
-local gui = require("libs.fusion-ui")
+local glow = require("game.afterglow")
 local backNavigation = require("game.ui.back_navigation")
 local longButtonUI = require("game.ui.long_button")
 
@@ -37,28 +37,35 @@ local function leave()
 end
 
 function gameSetting:load()
+	glow.clear()
+
 	if self.data.settingButtons == nil then
 		self.data.settingButtons = {
-			longButtonUI.new(L"setting:general"),
-			longButtonUI.new(L"setting:volume"),
-			longButtonUI.new(L"setting:background"),
-			longButtonUI.new(L"setting:noteStyle"),
-			longButtonUI.new(L"setting:live"),
-			longButtonUI.new(L"setting:stamina"),
-			longButtonUI.new(L"setting:liveUI")
+			longButtonUI(L"setting:general"),
+			longButtonUI(L"setting:volume"),
+			longButtonUI(L"setting:background"),
+			longButtonUI(L"setting:noteStyle"),
+			longButtonUI(L"setting:live"),
+			longButtonUI(L"setting:stamina"),
+			longButtonUI(L"setting:liveUI")
 		}
-		self.data.settingButtons[1]:addEventListener("released", makeEnterGamestateFunction("settings::general"))
-		self.data.settingButtons[2]:addEventListener("released", makeEnterGamestateFunction("settings::volume"))
-		self.data.settingButtons[3]:addEventListener("released", makeEnterGamestateFunction("settings::background"))
-		self.data.settingButtons[4]:addEventListener("released", makeEnterGamestateFunction("settings::nstyle"))
-		self.data.settingButtons[5]:addEventListener("released", makeEnterGamestateFunction("settings::live"))
-		self.data.settingButtons[6]:addEventListener("released", makeEnterGamestateFunction("settings::score"))
-		self.data.settingButtons[7]:addEventListener("released", makeEnterGamestateFunction("settings::liveui"))
+		self.data.settingButtons[1]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::general"))
+		self.data.settingButtons[2]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::volume"))
+		self.data.settingButtons[3]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::background"))
+		self.data.settingButtons[4]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::nstyle"))
+		self.data.settingButtons[5]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::live"))
+		self.data.settingButtons[6]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::score"))
+		self.data.settingButtons[7]:addEventListener("mousereleased", makeEnterGamestateFunction("settings::liveui"))
+	end
+	for i = 1, #self.data.settingButtons do
+		glow.addElement(self.data.settingButtons[i], 101, (i - 1) * 78 + 50)
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"menu:settings", leave)
+		self.data.back = backNavigation(L"menu:settings")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	glow.addFixedElement(self.data.back, 0, 0)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
@@ -68,13 +75,7 @@ end
 function gameSetting:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
-
-	backNavigation.draw(self.data.back)
-	for i = 1, #self.data.settingButtons do
-		longButtonUI.draw(self.data.settingButtons[i], 101, (i - 1) * 78 + 50)
-	end
-
-	gui.draw()
+	glow.draw()
 end
 
 gameSetting:registerEvent("keyreleased", function(_, key)
