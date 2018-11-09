@@ -62,7 +62,7 @@ function result:__construct(beatmapName)
 	self.returnButton:addEventListener("mousepressed", function()
 		self.returnRetryTimer = 0
 	end)
-	self.frame:addElement(self.returnButton)
+	self.frame:addElement(self.returnButton, 101, 556)
 	-- replay button
 	self.replayButtonCallback = nil
 	self.replayButtonOpaque = nil
@@ -70,7 +70,7 @@ function result:__construct(beatmapName)
 	self.replayButton:addEventListener("mousereleased", function()
 		return self.replayButtonCallback(self.replayButtonOpaque)
 	end)
-	self.frame:addElement(self.replayButton)
+	self.frame:addElement(self.replayButton, 600, 314)
 	-- save replay button
 	self.saveReplayVanishTimer = 0
 	self.saveReplayButtonCallback = nil
@@ -79,9 +79,9 @@ function result:__construct(beatmapName)
 	self.saveReplayButton:addEventListener("mousereleased", function()
 		-- must return status message
 		self.saveReplayStatus = tostring(self.saveReplayButtonCallback(self.saveReplayButtonOpaque))
-		self.saveReplayVanishTimer = 3
+		self.saveReplayVanishTimer = 1
 	end)
-	self.frame:addElement(self.saveReplayButton)
+	self.frame:addElement(self.saveReplayButton, 600, 356)
 	-- text objects
 	self.staticText = love.graphics.newText(self.fonts[3])
 	addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
@@ -179,9 +179,9 @@ function result:draw()
 	end
 
 	-- draw buttons (gui)
-	selectButtonUI.draw(self.replayButton, 600, 314)
-	selectButtonUI.draw(self.saveReplayButton, 600, 356)
-	longButtonUI.draw(self.returnButton, 101, 556)
+	if self.frameAdded then
+		self.frame:draw()
+	end
 end
 
 function result:setInformation(noteinfo, accuracyData, comboRange)
