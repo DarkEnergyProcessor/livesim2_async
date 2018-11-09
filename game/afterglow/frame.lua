@@ -51,8 +51,8 @@ function frame:addElement(element, x, y, ...)
 
 	internal.elementList[#internal.elementList + 1] = {
 		element = elem,
-		x = x,
-		y = y
+		x = assert(x),
+		y = assert(y)
 	}
 	return elem
 end
