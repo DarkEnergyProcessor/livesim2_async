@@ -638,7 +638,7 @@ function DEPLS:update(dt)
 			end
 		end
 
-		self.data.liveUI:update(dt)
+		self.data.liveUI:update(dt, self.data.pauseObject:isPaused())
 
 		if isLiveClear(self) then
 			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, liveClearCallback, self)

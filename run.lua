@@ -139,7 +139,7 @@ function love.run()
 	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
 
 	-- debug info code
-	local showDebugInfo = false
+	local showDebugInfo = log.level >= 4
 	local defaultText
 
 	-- Only load UI if window is present, also it must be after
@@ -189,13 +189,14 @@ function love.run()
 			end
 			-- Hardcoded "collectgarbage" button
 			if name == "keyreleased" then
+				log.debugf("run", "keypressed: key=%s scancode=%s", a, b)
 				if a == "f9" then
 					-- force GC
 					collectgarbage()
 					collectgarbage()
 					log.info("run", "collectgarbage issued")
 					log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
-				elseif a == "f10" then
+				elseif a == "f10" or (b == "volumeup" and love.keyboard.isScancodeDown("volumedown")) then
 					-- debug info
 					showDebugInfo = not(showDebugInfo)
 				elseif a == "f12" then
