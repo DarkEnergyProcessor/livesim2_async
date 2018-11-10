@@ -292,6 +292,13 @@ function love.load(argv, gameargv)
 	initLSR()
 	language.init()
 	language.set(setting.get("LANGUAGE"))
+	-- Try to load command line
+	if love._os == "Android" or love._os == "iOS" and util.fileExists("commandline.txt") then
+		argv = {}
+		for line in love.filesystem.lines("commandline.txt") do
+			argv[#argv + 1] = line
+		end
+	end
 	-- Process command line
 	local absolutePlayBeatmapName
 	local playBeatmapName

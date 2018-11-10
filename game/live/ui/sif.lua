@@ -249,9 +249,11 @@ function sifui:__construct()
 	self.liveClearAnim:setMovie("ef_311")
 end
 
-function sifui:update(dt)
+function sifui:update(dt, paused)
 	-- timer
-	self.timer:update(dt)
+	if not(paused) then
+		self.timer:update(dt)
+	end
 	-- combo cheer
 	if not(self.minimalEffect) and self.comboCheer then
 		if self.currentCombo >= 100 then
@@ -821,44 +823,6 @@ function sifui:drawHeader()
 end
 
 function sifui:drawStatus()
-	-- judgement
-	if self.judgementOpacity > 0 then
-		love.graphics.setColor(color.compat(255, 255, 255, self.judgementOpacity * self.opacity))
-		love.graphics.draw(
-			self.currentJudgement, 480, 320, 0,
-			self.judgementScale * self.textScaling,
-			self.judgementScale * self.textScaling,
-			self.judgementCenterPosition[self.currentJudgement][1],
-			self.judgementCenterPosition[self.currentJudgement][2]
-		)
-	end
-
-	-- combo
-	if self.currentCombo > 0 then
-		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
-		love.graphics.draw(self.comboSpriteBatch, 480, 320 - 8 * (1 - self.textScaling), 0, self.textScaling)
-	end
-	-- note icon
-	do
-		-- draw circles (each needs 1.6s with 0s, 0.3s, and 0.6s delay respectively)
-		for i = 0, 600, 300 do
-			-- this value is used for scaling and opacity
-			local v = math.min(math.max(self.noteIconTime - (i * 0.001), 0) / 1.6, 1)
-			if v > 0 then
-				local s = v * 1.9 + 0.6
-				love.graphics.setColor(color.compat(255, 255, 255, self.opacity * (1-v)))
-				love.graphics.draw(self.images[19], self.noteIconQuad.circle, 480, 160, 0, s, s, 34, 34)
-			end
-		end
-		-- Note icon notation is pulsating indicator.
-		-- It's scaling down to 0.8 first (tween in 0.8s) then back to 1 (tween in 1.4s)
-		-- which gives total of 2.2 seconds elapsed time.
-		local secondScale = timer.tween["out-sine"](math.max(self.noteIconTime - 0.8, 0) / 1.4) * 0.2
-		local scale = 1 - math.min(self.noteIconTime, 0.8) / 4 + secondScale
-		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
-		love.graphics.draw(self.images[19], self.noteIconQuad.notation, 480, 160, 0, scale, scale, 54, 52)
-	end
-
 	-- tap effect
 	for i = #self.tapEffectList, 1, -1 do
 		local tap = self.tapEffectList[i]
@@ -900,6 +864,46 @@ function sifui:drawStatus()
 			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)
 		end
 	end
+
+	-- judgement
+	if self.judgementOpacity > 0 then
+		love.graphics.setColor(color.compat(255, 255, 255, self.judgementOpacity * self.opacity))
+		love.graphics.draw(
+			self.currentJudgement, 480, 320, 0,
+			self.judgementScale * self.textScaling,
+			self.judgementScale * self.textScaling,
+			self.judgementCenterPosition[self.currentJudgement][1],
+			self.judgementCenterPosition[self.currentJudgement][2]
+		)
+	end
+
+	-- combo
+	if self.currentCombo > 0 then
+		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
+		love.graphics.draw(self.comboSpriteBatch, 480, 320 - 8 * (1 - self.textScaling), 0, self.textScaling)
+	end
+
+	-- note icon
+	do
+		-- draw circles (each needs 1.6s with 0s, 0.3s, and 0.6s delay respectively)
+		for i = 0, 600, 300 do
+			-- this value is used for scaling and opacity
+			local v = math.min(math.max(self.noteIconTime - (i * 0.001), 0) / 1.6, 1)
+			if v > 0 then
+				local s = v * 1.9 + 0.6
+				love.graphics.setColor(color.compat(255, 255, 255, self.opacity * (1-v)))
+				love.graphics.draw(self.images[19], self.noteIconQuad.circle, 480, 160, 0, s, s, 34, 34)
+			end
+		end
+		-- Note icon notation is pulsating indicator.
+		-- It's scaling down to 0.8 first (tween in 0.8s) then back to 1 (tween in 1.4s)
+		-- which gives total of 2.2 seconds elapsed time.
+		local secondScale = timer.tween["out-sine"](math.max(self.noteIconTime - 0.8, 0) / 1.4) * 0.2
+		local scale = 1 - math.min(self.noteIconTime, 0.8) / 4 + secondScale
+		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
+		love.graphics.draw(self.images[19], self.noteIconQuad.notation, 480, 160, 0, scale, scale, 54, 52)
+	end
+
 	-- live clear
 	if self.liveClearTime ~= -math.huge then
 		local flash = self.liveClearTime > 5 and self.fullComboAnim or self.liveClearAnim

@@ -19,7 +19,7 @@ function uibase.__construct()
 	error("attempt to construct abstract class 'UI'", 2)
 end
 
-function uibase:update(dt)
+function uibase:update(dt, paused)
 	error("pure virtual method 'update'", 2)
 end
 
