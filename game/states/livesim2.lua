@@ -126,7 +126,8 @@ local function liveClearCallback(self)
 		perfectSimultaneous = noteInfo.perfectSimultaneous,
 		timestamp = self.persist.startTimestamp,
 		accuracy = self.persist.accuracyData,
-		events = replay.getEventData()
+		events = replay.getEventData(),
+		scorePerTap = self.persist.tapScore
 	}
 
 	self.data.resultObject:setReplayCallback(function()
@@ -164,7 +165,14 @@ local function liveClearCallback(self)
 			return L"livesim2:replay:errorAlreadySaved"
 		end
 
-		local s = lsr.saveReplay(name, string.rep("\0", 16), 0, replayData, replayData.accuracy, replayData.events)
+		local s = lsr.saveReplay(
+			name,
+			self.persist.summary.hash,
+			0,
+			replayData,
+			replayData.accuracy,
+			replayData.events
+		)
 		if s then
 			replayData.filename = name
 			return L"livesim2:replay:saved"
@@ -212,7 +220,11 @@ function DEPLS:load(arg)
 	self.persist.liveDelayCounter = self.persist.liveDelay
 	self.persist.dimValue = util.clamp(setting.get("LIVESIM_DIM") * 0.01, 0, 1)
 	-- score and stamina
-	self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
+	self.persist.tapScore = arg.replay and self.persist.replayMode.scorePerTap or 0
+	if self.persist.tapScore == 0 then
+		self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
+	end
+	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
 	self.persist.stamina = setting.get("STAMINA_DISPLAY")
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 	-- load live UI

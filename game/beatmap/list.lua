@@ -10,6 +10,7 @@ Beatmap list returns these summary data (all fields must exists unless noted):
 {
 	name = beatmap name,
 	audio = audio file path (or FileData; can be nil),
+	hash = beatmap MD5 hash,
 	format = beatmap format name (readable),
 	formatInternal = beatmap format (internal name),
 	scoreS, scoreA, scoreB, scoreC = score meter (all nil or all available),

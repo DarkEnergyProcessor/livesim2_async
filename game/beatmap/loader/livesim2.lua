@@ -7,6 +7,7 @@ local love = require("love")
 local ls2 = require("libs.ls2")
 local util = require("util")
 local log = require("logging")
+local md5 = require("md5")
 local baseLoader = require("game.beatmap.base")
 
 ------------------------------
@@ -43,6 +44,8 @@ local ls2Loader = Luaoop.class("beatmap.LS2", baseLoader)
 
 function ls2Loader:__construct(file)
 	local internal = Luaoop.class.data(self)
+	internal.hash = md5(love.filesystem.newFileData(file))
+	file:seek(0)
 	internal.ls2 = ls2.loadstream(file)
 	internal.file = file
 end
@@ -50,6 +53,10 @@ end
 function ls2Loader:getFormatName()
 	local internal = Luaoop.class.data(self)
 	return string.format("Live Simulator: 2 v%s Beatmap", internal.ls2.version_2 and "2.0" or "1.x"), "ls2"
+end
+
+function ls2Loader:getHash()
+	return Luaoop.class.data(self).hash
 end
 
 function ls2Loader:getNotesList()

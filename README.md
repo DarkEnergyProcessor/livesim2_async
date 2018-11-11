@@ -32,6 +32,8 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [i18n](https://github.com/kikito/i18n.lua)
 
+* [md5.lua](https://github.com/kikito/md5.lua)
+
 Live Simulator: 2 uses these external libraries if available:
 
 * [FFmpeg 3.x](http://ffmpeg.org/)
@@ -68,6 +70,8 @@ Live Simulator: 2 uses some hump libraries (`timer` and `vector`). Please see ht
 Live Simulator: 2 uses Lily v2.x branch. It's licensed under [zLib](https://github.com/MikuAuahDark/lily/blob/master/LICENSE.md) license.
 
 Live Simulator: 2 uses i18n library. It's licensed under [MIT](https://github.com/kikito/i18n.lua/blob/master/LICENSE)
+
+Live Simulator: 2 uses md5.lua library. It's licensed under [MIT](https://github.com/kikito/md5.lua/blob/master/MIT-LICENSE.txt)
 
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 

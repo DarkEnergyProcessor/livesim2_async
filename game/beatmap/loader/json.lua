@@ -8,6 +8,7 @@ local Luaoop = require("libs.Luaoop")
 local love = require("love")
 local setting = require("setting")
 local util = require("util")
+local md5 = require("md5")
 local baseLoader = require("game.beatmap.base")
 
 local function basename(file)
@@ -20,8 +21,9 @@ end
 
 local sifLoader = Luaoop.class("beatmap.SIF", baseLoader)
 
-function sifLoader:__construct(bm)
+function sifLoader:__construct(bm, hash)
 	local internal = Luaoop.class.data(self)
+	internal.hash = hash
 
 	if bm.response_data and bm.response_data.live_info then
 		bm = bm.response_data
@@ -54,6 +56,10 @@ function sifLoader.getFormatName()
 	return "SIF Beatmap", "sif"
 end
 
+function sifLoader:getHash()
+	return assert(Luaoop.class.data(self).hash)
+end
+
 function sifLoader:getNotesList()
 	local internal = Luaoop.class.data(self)
 	return internal.notesList
@@ -82,14 +88,19 @@ end
 
 local siftLoader = Luaoop.class("beatmap.SIFTrain", baseLoader)
 
-function siftLoader:__construct(bm, file)
+function siftLoader:__construct(bm, file, hash)
 	local i = Luaoop.class.data(self)
+	i.hash = hash
 	i.data = bm
 	i.filename = basename(file:getFilename())
 end
 
 function siftLoader.getFormatName()
 	return "SIFTrain Beatmap", "sift"
+end
+
+function siftLoader:getHash()
+	return assert(Luaoop.class.data(self).hash)
 end
 
 function siftLoader:getNotesList()
@@ -249,8 +260,10 @@ return function(f)
 	assert(f:read(30):find("%s*{"), "invalid JSON")
 	f:seek(0)
 
-	local s, bm = pcall(JSON.decode, JSON, f:read())
+	local data = f:read()
+	local s, bm = pcall(JSON.decode, JSON, data)
 	assert(s, "failed to decode JSON")
+	local hash = md5(data)
 
 	if
 		bm.song_info and
@@ -260,13 +273,13 @@ return function(f)
 		bm.song_name
 	then
 		-- SIFTrain
-		return siftLoader(bm, f)
+		return siftLoader(bm, f, hash)
 
 	--elseif bm.lane and bm.audiofile then
 		-- LLP
 		--loader = Loaders.LLP(bm, file)
 	else
 		-- SIF
-		return sifLoader(bm)
+		return sifLoader(bm, hash)
 	end
 end, "file"

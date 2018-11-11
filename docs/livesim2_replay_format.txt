@@ -1,5 +1,5 @@
 Live Simulator: 2 binary replay file format. Extension: .lsr
-Version 0.3 (subject to change)
+Version 0.4 (subject to change)
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
     qword - 8 bytes
@@ -25,7 +25,8 @@ Header: File header
 	dwordu - Perfect single tap note
 	dwordu - Perfect swing note
 	dwordu - Perfect simultaneous note (perfect+perfect)
-	dwordu[15] - Reserved (encouraged to set to 0)
+	dwordu - Used Score per Tap
+	dwordu[14] - Reserved (encouraged to set to 0)
 	dwordu - Timestamp in seconds since January 1st 1970
 
 Accuracy points data:
@@ -52,6 +53,9 @@ Events data: Union type (16 bytes long), so it's easy to be represented as struc
 	end for
 
 Changelog: Date follows dd/mm/yyyy convention
+
+11/11/2018: v0.4
+- Added score per tap value
 
 11/10/2018: v0.3
 - Added perfect tap note, swing, and simultaneous

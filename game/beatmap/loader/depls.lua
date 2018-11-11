@@ -70,6 +70,11 @@ function deplsLoader:getFormatName()
 	return "DEPLS: "..s1, "depls_"..s2
 end
 
+function deplsLoader:getHash()
+	local internal = Luaoop.class.data(self)
+	return internal.beatmap:getHash()
+end
+
 function deplsLoader:getNotesList()
 	local internal = Luaoop.class.data(self)
 	return internal.beatmap:getNotesList()

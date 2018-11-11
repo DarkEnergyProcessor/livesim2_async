@@ -24,6 +24,11 @@ function base.getFormatName()
 	return "readable name", "internal name"
 end
 
+function base.getHash()
+	error("pure virtual method 'getHash'")
+	return string.rep("\0", 16)
+end
+
 function base.getNotesList()
 	error("pure virtual method 'getNotesList'", 2)
 end
