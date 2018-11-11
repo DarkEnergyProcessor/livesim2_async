@@ -8,6 +8,7 @@ local bit = require("bit")
 local util = require("util")
 local log = require("logging")
 local setting = require("setting")
+local md5 = require("md5")
 local baseLoader = require("game.beatmap.base")
 
 local function imageCache(link)
@@ -319,6 +320,11 @@ end
 
 function cbfLoader.getFormatName()
 	return "Custom Beatmap Festival", "cbf"
+end
+
+function cbfLoader:getHash()
+	local internal = Luaoop.class.data(self)
+	return md5(love.filesystem.newFileData(internal.path.."beatmap.txt"))
 end
 
 local function parseNote(str)

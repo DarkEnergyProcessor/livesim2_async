@@ -408,11 +408,6 @@ function love.load(argv, gameargv)
 				error("cannot use -replay with -autoplay")
 			elseif not(playBeatmapName) then
 				error("cannot use -replay without -play")
-			else
-				replayFile = lsr.loadReplay("replays/"..playBeatmapName.."/"..replayFile..".lsr")
-				if replayFile == nil then
-					error("cannot load replay file")
-				end
 			end
 		end
 

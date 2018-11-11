@@ -15,6 +15,22 @@ local log = require("logging")
 
 math.randomseed(os.time())
 
+-- Initialize MD5
+if love._version >= "11.0" then
+	package.loaded.md5 = function(code)
+		return love.data.hash("md5", code)
+	end
+else
+	local lib = require("libs.md5")
+	package.loaded.md5 = function(code)
+		if type(code) == "userdata" and code:typeOf("Data") then
+			return lib.sum(code:getString())
+		else
+			return lib.sum(code)
+		end
+	end
+end
+
 local commandChannel = ...
 local beatmap = {
 	fileLoader = {},
@@ -134,6 +150,7 @@ local function getSummary(bv)
 	local info = {}
 	info.name = bv.data:getName() or bv.name
 	info.format, info.formatInternal = bv.data:getFormatName()
+	info.hash = bv.data:getHash()
 	info.audio = bv.data:getAudio() or substituteAudio(bv.name, bv.type == "folder")
 	info.difficulty = bv.data:getDifficultyString()
 	info.coverArt = bv.data:getCoverArt()

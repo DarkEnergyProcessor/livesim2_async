@@ -4,6 +4,7 @@
 
 local bit = require("bit")
 local Luaoop = require("libs.Luaoop")
+local md5 = require("md5")
 local baseLoader = require("game.beatmap.base")
 
 local function str2dwordBE(str)
@@ -241,11 +242,17 @@ local midiLoader = Luaoop.class("beatmap.MIDI", baseLoader)
 
 function midiLoader:__construct(file)
 	local internal = Luaoop.class.data(self)
+	internal.hash = md5(love.filesystem.newFileData(file))
+	file:seek(0)
 	internal.data = midi2sif(file)
 end
 
 function midiLoader.getFormatName()
 	return "MIDI Beatmap", "midi"
+end
+
+function midiLoader:getHash()
+	return Luaoop.class.data(self).hash
 end
 
 function midiLoader:getNotesList()

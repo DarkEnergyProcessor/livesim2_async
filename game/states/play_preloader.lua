@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local lsr = require("libs.lsr")
 local async = require("async")
 local gamestate = require("gamestate")
 local beatmapList = require("game.beatmap.list")
@@ -32,6 +33,13 @@ function playPreloader:load(arg)
 			beatmapList.getSummary(arg[1], function(data)
 				self.data.beatmapData = data
 				self.data.beatmapName = arg[1]
+
+				if arg.replay then
+					self.data.replayData = lsr.loadReplay("replays/"..arg[1].."/"..arg.replay..".lsr", data.hash)
+					if self.data.replayData == nil then
+						error("cannot load replay file")
+					end
+				end
 			end)
 		end
 
@@ -44,12 +52,12 @@ function playPreloader:load(arg)
 	end
 end
 
-function playPreloader:start(arg)
+function playPreloader:start()
 	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData,
 		autoplay = self.persist.autoplayMode,
-		replay = arg.replay,
+		replay = self.data.replayData,
 	})
 end
 
