@@ -88,6 +88,7 @@ local function registerGamestates()
 	gamestate.register("changeUnits", require("game.states.change_units"))
 	gamestate.register("settings", require("game.states.gamesetting"))
 	gamestate.register("language", require("game.states.gamelang"))
+	gamestate.register("selectUnits", require("game.states.select_units"))
 end
 
 local function initializeSetting()
@@ -293,7 +294,7 @@ function love.load(argv, gameargv)
 	language.init()
 	language.set(setting.get("LANGUAGE"))
 	-- Try to load command line
-	if love._os == "Android" or love._os == "iOS" and util.fileExists("commandline.txt") then
+	if (love._os == "Android" or love._os == "iOS") and util.fileExists("commandline.txt") then
 		argv = {}
 		for line in love.filesystem.lines("commandline.txt") do
 			argv[#argv + 1] = line
