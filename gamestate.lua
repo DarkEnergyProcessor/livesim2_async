@@ -328,6 +328,11 @@ function gamestate.register(name, obj)
 end
 
 function gamestate.enter(loading, name, arg)
+	if gamestate.preparedGamestate then
+		log.warn("gamestate", "attempt to enter new gamestate but one is in progress")
+		return
+	end
+
 	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
 	log.infof("gamestate", "entering gamestate: %s", name)
 	gamestate.internal.makeStrong(game)
@@ -344,6 +349,11 @@ function gamestate.leave(loading)
 		return
 	end
 
+	if gamestate.preparedGamestate then
+		log.warn("gamestate", "attempt to enter leave gamestate but one is in progress")
+		return
+	end
+
 	local game = gamestate.stack[#gamestate.stack - 1]
 	log.infof("gamestate", "leaving gamestate")
 	gamestate.internal.makeStrong(game.game)
@@ -354,6 +364,11 @@ function gamestate.leave(loading)
 end
 
 function gamestate.replace(loading, name, arg)
+	if gamestate.preparedGamestate then
+		log.warn("gamestate", "attempt to enter new gamestate but one is in progress")
+		return
+	end
+
 	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
 	log.infof("gamestate", "replace current gamestate: %s", name)
 	gamestate.internal.makeStrong(game)

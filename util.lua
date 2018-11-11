@@ -143,4 +143,13 @@ function util.lerp(a, b, t)
 	return a * (1 - t) + b * t
 end
 
+function util.distance(x1, y1, x2, y2, squared)
+	local value = (x2-x1)^2+(y2-y1)^2
+	if squared then
+		return value
+	else
+		return math.sqrt(value)
+	end
+end
+
 return util

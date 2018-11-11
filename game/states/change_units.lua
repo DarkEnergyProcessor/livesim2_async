@@ -7,17 +7,19 @@ local async = require("async")
 local color = require("color")
 local setting = require("setting")
 local util = require("util")
+local mainFont = require("font")
 local L = require("language")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
 local lily = require("libs.lily")
---local gui = require("libs.fusion-ui")
 
+local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local imageButton = require("game.ui.image_button")
+local selectButton = require("game.ui.select_button")
 
 local mipmap = {mipmaps = true}
 
@@ -25,9 +27,7 @@ local changeUnits = gamestate.create {
 	images = {
 		dummyUnit = {"assets/image/dummy.png", mipmap}
 	},
-	fonts = {
-		main = {"fonts/MTLmr3m.ttf", 22}
-	},
+	fonts = {},
 	audios = {}
 }
 
@@ -43,58 +43,138 @@ local idolPosition = {
 	{16+64 , 96+64 },
 }
 
-local function leave()
+local function constructCenteredText(font, start, text)
+	local t = love.graphics.newText(font)
+	for i = 1, 0, -1 do
+		local c = 255 - i * 255
+		local ct = {color.compat(c, c, c, 1)}
+		local h = font:getHeight()
+
+		local j = 0
+		for k in text:gmatch("[^\n]+") do
+			local w = font:getWidth(k)
+			t:add({ct, k}, 480 - w * 0.5 + i, start + j * h + i)
+			j = j + 1
+		end
+	end
+
+	return t
+end
+
+local function updateCurrentMode(text, button, mode)
+	local buttonMode
+
+	if mode == "units" then
+		mode = L"changeUnits:unitsMode"
+		buttonMode = L"changeUnits:keymapMode"
+	elseif mode == "keymap" then
+		mode = L"changeUnits:keymapMode"
+		buttonMode = L"changeUnits:unitsMode"
+	else
+		error("invalid mode")
+	end
+
+	text:clear()
+	util.addTextWithShadow(text, L("changeUnits:mode", {mode = mode}), 420, 8)
+	button:setText(buttonMode)
+end
+
+local function applySetting(_, self)
+	local uval, kval = {}, {}
+
+	for i = 9, 1, -1 do
+		uval[#uval + 1] = self.persist.unitList[i]
+		kval[#kval + 1] = self.persist.keymap[i]
+		self.persist.currentUnitList[i] = self.persist.unitList[i]
+		self.persist.currentKeymap[i] = self.persist.keymap[i]
+	end
+
+	setting.set("IDOL_IMAGE", table.concat(uval, "\t"))
+	setting.set("IDOL_KEYS", table.concat(kval, "\t"))
+end
+
+local function revertSetting(_, self)
+	for i = 1, 9 do
+		self.persist.unitList[i] = self.persist.currentUnitList[i]
+		self.persist.keymap[i] = self.persist.currentKeymap[i]
+	end
+end
+
+local function setMode(_, self)
+	if self.persist.mode == "units" then
+		self.persist.mode = "keymap"
+	elseif self.persist.mode == "keymap" then
+		self.persist.mode = "units"
+	else
+		error("invalid mode")
+	end
+
+	updateCurrentMode(self.data.modeText, self.data.modeButton, self.persist.mode)
+end
+
+local function leave(_, self)
+	revertSetting(nil, self)
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
 function changeUnits:load()
-	if self.data.changeUnitText == nil then
-		local t = love.graphics.newText(self.assets.fonts.main)
-		for i = 1, 0, -1 do
-			local c = 255 - i * 255
-			local ct = {color.compat(c, c, c, 1)}
-			t:add({ct, "Click unit icon to change."}, 337 + i, 160 + i)
-			t:add({ct, "Please note that some beatmap"}, 320.5 + i, 182 + i)
-			t:add({ct, "can override unit icon shown in here"}, 282 + i, 204 + i)
-			t:add({ct, "Press OK to apply changes,"}, 337 + i, 276 + i)
-			t:add({ct, "Cancel to discard any changes"}, 320.5 + i, 298 + i)
-			t:add({ct, "Back to discard any changes and back to"}, 265.5 + i, 320 + i)
-			t:add({ct, "Live Simulator: 2 main menu"}, 331.5 + i, 342 + i)
-		end
-		self.data.changeUnitText = t
+	glow.clear()
+
+	if self.data.mainFont == nil then
+		self.data.mainFont = mainFont.get(24)
 	end
+	local font = self.data.mainFont
+
+	if self.data.changeUnitText == nil then
+		self.data.changeUnitText = constructCenteredText(font, 120, L"changeUnits:unitsText")
+	end
+
+	if self.data.keymapText == nil then
+		self.data.keymapText = constructCenteredText(font, 120, L"changeUnits:keymapText")
+	end
+
+	if self.data.applyText == nil then
+		self.data.applyText = constructCenteredText(font, 260, L"changeUnits:applyText")
+	end
+
+	if self.data.modeText == nil then
+		self.data.modeText = love.graphics.newText(font)
+	end
+
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation.new(L"menu:changeUnits", leave)
+		self.data.back = backNavigation(L"menu:changeUnits")
+		self.data.back:addEventListener("mousereleased", leave)
 	end
+	self.data.back:setData(self)
+	glow.addFixedElement(self.data.back, 0, 0)
 
 	if self.data.applyButton == nil then
-		self.data.applyButton = imageButton.new("assets/image/ui/com_button_14")
-		self.data.applyButton:addEventListener("released", function()
-			local tval = {}
-			for i = 9, 1, -1 do
-				tval[#tval + 1] = self.persist.unitList[i]
-				self.persist.currentUnitList[i] = self.persist.unitList[i]
-			end
-
-			setting.set("IDOL_IMAGE", table.concat(tval, "\t"))
-		end)
+		self.data.applyButton = imageButton("assets/image/ui/com_button_14")
+		self.data.applyButton:addEventListener("mousereleased", applySetting)
 	end
+	self.data.applyButton:setData(self)
+	glow.addElement(self.data.applyButton, 808, 574)
 
 	if self.data.cancelButton == nil then
-		self.data.cancelButton = imageButton.new("assets/image/ui/com_button_15")
-		self.data.cancelButton:addEventListener("released", function()
-			for i = 1, 9 do
-				self.persist.unitList[i] = self.persist.currentUnitList[i]
-			end
-		end)
+		self.data.cancelButton = imageButton("assets/image/ui/com_button_15")
+		self.data.cancelButton:addEventListener("mousereleased", revertSetting)
 	end
+	self.data.cancelButton:setData(self)
+	glow.addElement(self.data.cancelButton, 808, 500)
 
-	if self.data.unitImageList == nil then
-		self.data.unitImageList = setmetatable({}, {
+	if self.data.modeButton == nil then
+		self.data.modeButton = selectButton("dummy")
+		self.data.modeButton:addEventListener("mousereleased", setMode)
+	end
+	self.data.modeButton:setData(self)
+	glow.addElement(self.data.modeButton, 8, 592)
+
+	if self.persist.unitImageList == nil then
+		self.persist.unitImageList = setmetatable({}, {
 			__index = function()
 				return self.assets.images.dummyUnit
 			end
@@ -111,13 +191,15 @@ function changeUnits:load()
 			end
 		end
 
-		-- load (cannot use assetCache because assetCache caches the image)
+		-- load (cannot use assetCache because it caches the image)
 		local unitImage = lily.loadMulti(unitLoad)
-		while unitImage:isComplete() == false do
-			async.wait()
-		end
+		async.syncLily(unitImage):sync()
 		for i = 1, #unitFilename do
-			self.data.unitImageList[unitFilename[i]] = unitImage:getValues(i)
+			local image = unitImage:getValues(i)
+			local w, h = image:getDimensions()
+			if w == 128 and h == 128 then
+				self.persist.unitImageList[unitFilename[i]] = unitImage:getValues(i)
+			end
 		end
 	end
 end
@@ -127,6 +209,9 @@ function changeUnits:start()
 	self.persist.unitList = {}
 	self.persist.currentKeymap = {}
 	self.persist.keymap = {}
+	self.persist.mode = "units"
+	self.persist.selectUnits = nil
+	updateCurrentMode(self.data.modeText, self.data.modeButton, self.persist.mode)
 
 	-- load unit image name
 	do
@@ -153,36 +238,167 @@ function changeUnits:start()
 	end
 end
 
+function changeUnits:resumed()
+	if self.persist.selectUnits and self.persist.selectUnits.reference.value then
+		self.persist.unitList[self.persist.selectUnits.index] = self.persist.selectUnits.reference.value
+	end
+
+	updateCurrentMode(self.data.modeText, self.data.modeButton, self.persist.mode)
+end
+
 function changeUnits:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
-	love.graphics.draw(self.data.changeUnitText)
+	love.graphics.draw(self.data.applyText)
+	love.graphics.draw(self.data.modeText)
 
 	for i = 1, 9 do
 		love.graphics.draw(
-			self.data.unitImageList[self.persist.unitList[i]],
+			self.persist.unitImageList[self.persist.unitList[i]],
 			idolPosition[i][1], idolPosition[i][2], 0, 1, 1, 64, 64
 		)
 	end
 
 	-- keymap test
-	love.graphics.setColor(color.orangeRed)
-	for i = 1, 9 do
-		if love.keyboard.isDown(self.persist.keymap[i]) then
-			love.graphics.draw(
-				self.assets.images.dummyUnit,
-				idolPosition[i][1], idolPosition[i][2], 0, 1, 1, 64, 64
-			)
+	if not(self.persist.keymapIndex) then
+		love.graphics.setColor(color.orangeRed)
+		for i = 1, 9 do
+			if love.keyboard.isDown(self.persist.keymap[i]) then
+				love.graphics.draw(
+					self.assets.images.dummyUnit,
+					idolPosition[i][1], idolPosition[i][2], 0, 1, 1, 64, 64
+				)
+			end
 		end
+		love.graphics.setColor(color.white)
 	end
 
-	backNavigation.draw(self.data.back)
-	gui.draw()
+	if self.persist.mode == "units" then
+		love.graphics.draw(self.data.changeUnitText)
+	elseif self.persist.mode == "keymap" then
+		love.graphics.setFont(self.data.mainFont)
+		love.graphics.draw(self.data.keymapText)
+
+		-- keymap overlay
+		local h = self.data.mainFont:getHeight()
+		for i = 1, 9 do
+			local key = self.persist.keymapIndex == i and "..." or self.persist.keymap[i]
+			local pos = idolPosition[i]
+			love.graphics.setColor(color.white75PT)
+			love.graphics.rectangle("fill", pos[1] - 64, pos[2] + 40, 128, h)
+			love.graphics.setColor(color.black75PT)
+			love.graphics.print(key, pos[1] - self.data.mainFont:getWidth(key) * 0.5, pos[2] + 40)
+		end
+	else
+		error("invalid mode")
+	end
+
+	glow.draw()
 end
 
-changeUnits:registerEvent("keyreleased", function(_, key)
-	if key == "escape" then
-		return leave()
+changeUnits:registerEvent("mousereleased", function(self, x, y)
+	for i = 1, 9 do
+		if util.distance(x, y, idolPosition[i][1], idolPosition[i][2]) <= 64 then
+			if self.persist.mode == "units" then
+				local ref = {}
+				self.persist.selectUnits = {
+					index = i,
+					reference = ref
+				}
+				gamestate.enter(nil, "selectUnits", {self.persist.unitImageList, ref})
+			elseif self.persist.mode == "keymap" then
+				self.persist.keymapIndex = i
+			end
+
+			return
+		end
+	end
+end)
+
+local unmapableKeys = {
+	-- Navigation Keys
+	"up", "down", "left", "right",
+	"home", "end",
+	"pageup", "pagedown",
+	-- Editing Keys
+	"insert",
+	"backspace",
+	"tab",
+	"clear",
+	"return",
+	"delete",
+	-- Function Keys (some used specially by game)
+	"f1", "f2", "f3", "f4",
+	"f5", "f6", "f7", "f8",
+	"f9", "f10", "f11", "f12",
+	"f13", "f14", "f15", "f16",
+	-- Modifier keys
+	"numlock",
+	"capslock",
+	"scrolllock",
+	"rshift", "lshift",
+	"rctrl", "lctrl",
+	"ralt", "lalt",
+	"rgui", "lgui",
+	"mode",
+	-- Application Keys
+	"www",
+	"mail",
+	"calculator",
+	"computer",
+	"appsearch",
+	"apphome",
+	"appback",
+	"appforward",
+	"apprefresh",
+	"appbookmarks",
+	-- Misc. Keys
+	"pause",
+	"escape",
+	"help",
+	"printscreen",
+	"sysreq",
+	"menu",
+	"application",
+	"power",
+	"currencyunit",
+	"undo",
+}
+
+changeUnits:registerEvent("keyreleased", function(self, key)
+	if self.persist.keymapIndex then
+		-- unmappable keys means "cancel"
+		for i = 1, #unmapableKeys do
+			if unmapableKeys[i] == key then
+				self.persist.keymapIndex = nil
+				return
+			end
+		end
+
+		-- Key is mappable
+		local kmap = self.persist.keymap
+		-- check if it's same key
+		if kmap[self.persist.keymapIndex] == key then
+			-- cancel
+			self.persist.keymapIndex = nil
+			return
+		end
+
+		-- Check if this key is already used by different unit
+		for i = 1, 9 do
+			if kmap[i] == key then
+				-- swap keys
+				kmap[i], kmap[self.persist.keymapIndex] = kmap[self.persist.keymapIndex], kmap[i]
+				self.persist.keymapIndex = nil
+				return
+			end
+		end
+
+		-- It's not used anywhere. Assign.
+		kmap[self.persist.keymapIndex] = key
+		self.persist.keymapIndex = nil
+	elseif key == "escape" then
+		return leave(nil, self)
 	end
 end)
 

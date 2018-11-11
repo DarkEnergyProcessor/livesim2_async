@@ -21,6 +21,12 @@ function selectButton:new(text)
 	self.text:add({color.white, text}, 8, 16 - 0.5 * h)
 end
 
+function selectButton:setText(text)
+	local h = self.text:getFont():getHeight()
+	self.text:clear()
+	self.text:add({color.white, text}, 8, 16 - 0.5 * h)
+end
+
 function selectButton:render(x, y)
 	imageButtonUI.render(self, x, y)
 	love.graphics.draw(self.text, x, y)

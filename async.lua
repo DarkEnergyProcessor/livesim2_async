@@ -83,15 +83,18 @@ end
 
 function funcAsync:run(...)
 	assert(self.running == false, "attempt to run already running function")
-	coroutine.resume(self.coro, ...)
+	local status, msg = coroutine.resume(self.coro, ...)
+	if status == false then
+		error(debug.traceback(self.coro, msg), 0)
+	end
 	self.running = true
 end
 
 function funcAsync:sync()
-	local status = coroutine.status(self.func)
+	local status = coroutine.status(self.coro)
 	while status ~= "dead" do
 		async.wait()
-		status = coroutine.status(self.func)
+		status = coroutine.status(self.coro)
 	end
 
 	self.coro = coroutine.create(self.func)
@@ -114,8 +117,7 @@ async.wait = asyncFunc(function(dt)
 	else
 		local a = coroutine.running()
 		if a == nil then
-			print("nil coro", debug.traceback())
-			return nil, "Async cannot function in main thread"
+			error("async cannot function in main thread", 2)
 		end
 		async.events[#async.events + 1] = a
 		return coroutine.yield()
