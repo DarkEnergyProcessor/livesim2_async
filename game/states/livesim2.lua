@@ -666,7 +666,9 @@ end
 function DEPLS:draw()
 	-- draw background
 	love.graphics.setColor(color.white)
+	love.graphics.setBlendMode("replace", "alphamultiply")
 	love.graphics.draw(self.data.background)
+	love.graphics.setBlendMode("alpha", "alphamultiply")
 	if self.persist.coverArtDisplayDone == false then
 		local x = self.data.coverArtDisplay
 		local fOpacity
