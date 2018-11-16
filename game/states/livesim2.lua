@@ -28,6 +28,7 @@ local result = require("game.live.result")
 local liveUI = require("game.live.ui")
 local replay = require("game.live.replay")
 local BGM = require("game.bgm")
+local beatmapRandomizer = require("game.live.randomizer3")
 
 local DEPLS = gamestate.create {
 	fonts = {
@@ -38,7 +39,8 @@ local DEPLS = gamestate.create {
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
 		longNoteTrail = {"assets/image/ef_326_000.png"},
-		dummyUnit = {"assets/image/dummy.png", {mipmaps = true}}
+		dummyUnit = {"assets/image/dummy.png", {mipmaps = true}},
+		random = {"assets/image/live/l_win_32.png", {mipmaps = true}}
 	}
 }
 
@@ -109,6 +111,10 @@ local function liveClearCallback(self)
 	noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
 	noteInfo.score = self.data.liveUI:getScore()
 
+	local replayRand = nil
+	if self.persist.beatmapRandomized then
+		replayRand = self.persist.replayMode.randomSeed or self.persist.randomGeneratedSeed
+	end
 	local replayData = self.persist.replayMode or {
 		storyboardSeed = 0,
 		score = noteInfo.score,
@@ -127,7 +133,8 @@ local function liveClearCallback(self)
 		timestamp = self.persist.startTimestamp,
 		accuracy = self.persist.accuracyData,
 		events = replay.getEventData(),
-		scorePerTap = self.persist.tapScore
+		scorePerTap = self.persist.tapScore,
+		randomSeed = replayRand,
 	}
 
 	self.data.resultObject:setReplayCallback(function()
@@ -258,7 +265,7 @@ function DEPLS:load(arg)
 		lane = self.persist.lane,
 		accuracy = {16, 40, 64, 112, 128},
 		autoplay = autoplay,
-		timingOffset = setting.get("TIMING_OFFSET"),
+		timingOffset = -setting.get("TIMING_OFFSET"), -- inverted for some reason
 		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,
 		callback = function(object, lane, position, judgement, releaseFlag)
 			log.debugf(
@@ -317,10 +324,43 @@ function DEPLS:load(arg)
 		end,
 	})
 
+	-- Randomizer
+	self.persist.beatmapRandomized = false
+	-- too long for ternary operator
+	if self.persist.replayMode and self.persist.replayMode.randomSeed then
+		self.persist.beatmapRandomized = true
+	elseif arg.random then
+		self.persist.beatmapRandomized = true
+	end
+	self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
+
 	-- Load notes data
 	local isBeatmapInit = 0
 	beatmapList.getNotes(arg.beatmapName, function(notes)
 		local fullScore = 0
+
+		if self.persist.beatmapRandomized then
+			local seed
+			if self.persist.replayMode then
+				seed = self.persist.replayMode.randomSeed
+				if seed[1] == 0 and seed[2] == 0 then
+					seed = self.persist.randomGeneratedSeed
+				end
+			elseif arg.randomseed then
+				seed = arg.randomseed
+			else
+				seed = self.persist.randomGeneratedSeed
+			end
+
+			local newnotes = beatmapRandomizer(notes, seed[1], seed[2])
+			if newnotes then
+				self.persist.noteRandomized = true
+				notes = newnotes
+			else
+				log.warnf("livesim2", "cannot randomize beatmap, using original beatmap")
+			end
+		end
+
 		for i = 1, #notes do
 			local t = notes[i]
 			if self.data.noteManager:addNote(t) then
@@ -329,6 +369,7 @@ function DEPLS:load(arg)
 			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 		end
 		self.data.noteManager:initialize()
+
 		-- Set score range (c,b,a,s order)
 		log.debugf("livesim2", "calculated s score is %d", fullScore)
 		self.data.liveUI:setScoreRange(
@@ -684,6 +725,9 @@ function DEPLS:draw()
 		-- Draw image
 		love.graphics.setColor(color.compat(255, 255, 255, fOpacity))
 		love.graphics.draw(x.image, 280, 80, 0, x.scaleX, x.scaleY)
+		if self.persist.beatmapRandomized then
+			love.graphics.draw(self.assets.images.random, 280, 80, 0, 400/272, 400/272)
+		end
 		-- Text aura
 		if x.time >= 0.25 and x.time < 0.75 then
 			local val = math.min(x.time - 0.25, 1) * 2

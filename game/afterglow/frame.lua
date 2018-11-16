@@ -390,14 +390,16 @@ function frame:update(dt)
 	end
 
 	local mbuf = internal.mouseBuffer
-	mbuf.scX = math.max(math.abs(mbuf.scX) - dt * 20, 0) * util.sign(mbuf.scX)
-	mbuf.scY = math.max(math.abs(mbuf.scY) - dt * 20, 0) * util.sign(mbuf.scY)
+	if not(mbuf.pressed) then
+		mbuf.scX = math.max(math.abs(mbuf.scX) - dt * 20, 0) * util.sign(mbuf.scX)
+		mbuf.scY = math.max(math.abs(mbuf.scY) - dt * 20, 0) * util.sign(mbuf.scY)
 
-	if self.sliderH then
-		self.sliderH.element:setValue(self.sliderH.element:getValue() - mbuf.scX)
-	end
-	if self.sliderV then
-		self.sliderV.element:setValue(self.sliderV.element:getValue() - mbuf.scY)
+		if self.sliderH then
+			self.sliderH.element:setValue(self.sliderH.element:getValue() - mbuf.scX)
+		end
+		if self.sliderV then
+			self.sliderV.element:setValue(self.sliderV.element:getValue() - mbuf.scY)
+		end
 	end
 end
 
