@@ -22,7 +22,7 @@
 --]]---------------------------------------------------------------------------
 
 local lsr = {
-	_VERSION = "0.4",
+	_VERSION = "0.5",
 	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
@@ -155,7 +155,12 @@ function lsr.loadReplay(path, beatmapHash)
 		perfectSimultaneous = string2dwordu(lsr.file.read(file, 4)),
 		scorePerTap = string2dwordu(lsr.file.read(file, 4)),
 	}
-	lsr.file.read(file, 4*14) -- reserved
+	lsr.file.read(file, 4*12) -- reserved
+	local rslo = string2dwordu(lsr.file.read(file, 4))
+	local rshi = string2dwordu(lsr.file.read(file, 4))
+	if rslo ~= 0 or rshi ~= 0 then
+		hand.randomSeed = {rslo, rshi}
+	end
 	hand.timestamp = string2dwordu(lsr.file.read(file, 4))
 
 	-- accuracy points
@@ -218,7 +223,9 @@ function lsr.saveReplay(path, beatmapHash, seed, noteInfo, accuracyData, events)
 		dwordu2string(noteInfo.perfectSwing)..
 		dwordu2string(noteInfo.perfectSimultaneous)..
 		dwordu2string(noteInfo.scorePerTap),
-		string.rep("\0\0\0\0", 14).. -- reserved
+		string.rep("\0\0\0\0", 12).. -- reserved
+		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[1] or 0)..
+		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[2] or 0)..
 		dwordu2string(noteInfo.timestamp or os.time())
 	)
 

@@ -52,12 +52,23 @@ function playPreloader:load(arg)
 	end
 end
 
-function playPreloader:start()
+function playPreloader:start(arg)
+	local rnd
+	if arg.random then
+		if type(arg.random) == "boolean" then
+			rnd = {}
+		else
+			rnd = arg.random
+		end
+	end
+
 	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData,
 		autoplay = self.persist.autoplayMode,
 		replay = self.data.replayData,
+		random = not(not(arg.random)),
+		randomseed = rnd,
 	})
 end
 

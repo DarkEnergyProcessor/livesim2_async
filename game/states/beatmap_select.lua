@@ -5,6 +5,7 @@
 local love = require("love")
 local color = require("color")
 local setting = require("setting")
+local util = require("util")
 local L = require("language")
 
 local gamestate = require("gamestate")
@@ -43,28 +44,20 @@ local function setStatusText(self, text)
 	self.persist.loadingText:add({color.white, text})
 end
 
-local function addTextWithShadow(text, str, x, y, intensity)
-	x = x or 0 y = y or 0
-	intensity = intensity or 1
-	text:add({color.black, str}, x-intensity, y-intensity)
-	text:add({color.black, str}, x+intensity, y+intensity)
-	text:add({color.white, str}, x, y)
-end
-
 local function initializeSummary(self, data)
 	-- Set
 	self.persist.summary = data
 
 	-- Title
 	self.persist.titleText:clear()
-	addTextWithShadow(self.persist.titleText, data.name)
+	util.addTextWithShadow(self.persist.titleText, data.name)
 
 	-- Beatmap information
 	self.persist.beatmapInfo:clear()
 	self.persist.beatmapDetailInfo:clear()
 
 	-- Format
-	addTextWithShadow(self.persist.beatmapDetailInfo, data.format, 470, 118)
+	util.addTextWithShadow(self.persist.beatmapDetailInfo, data.format, 470, 118)
 	-- Difficulty
 	local diff = L("beatmapSelect:difficulty", {difficulty = data.difficulty or L("beatmapSelect:diffUnknown")})
 	-- Cannot use addTextWithShadow here.
@@ -73,13 +66,13 @@ local function initializeSummary(self, data)
 	self.persist.beatmapInfo:addf({color.white, diff}, 270, "left", 470, 144)
 
 	-- Score & Combo
-	addTextWithShadow(self.persist.beatmapInfo, L"general:score", 496, 374)
-	addTextWithShadow(self.persist.beatmapInfo, L"general:combo", 652, 374)
-	addTextWithShadow(self.persist.beatmapInfo, "S\nA\nB\nC", 470, 400)
+	util.addTextWithShadow(self.persist.beatmapInfo, L"general:score", 496, 374)
+	util.addTextWithShadow(self.persist.beatmapInfo, L"general:combo", 652, 374)
+	util.addTextWithShadow(self.persist.beatmapInfo, "S\nA\nB\nC", 470, 400)
 	local sstr = (data.scoreS or "-").."\n"..(data.scoreA or "-").."\n"..(data.scoreB or "-").."\n"..(data.scoreC or "-")
-	addTextWithShadow(self.persist.beatmapInfo, sstr, 496, 400)
+	util.addTextWithShadow(self.persist.beatmapInfo, sstr, 496, 400)
 	sstr = (data.comboS or "-").."\n"..(data.comboA or "-").."\n"..(data.comboB or "-").."\n"..(data.comboC or "-")
-	addTextWithShadow(self.persist.beatmapInfo, sstr, 652, 400)
+	util.addTextWithShadow(self.persist.beatmapInfo, sstr, 652, 400)
 
 	-- Cover art
 	if data.coverArt then
@@ -137,7 +130,8 @@ local function playButtonCallback(_, self)
 	if self.persist.summary then
 		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
 			summary = self.persist.summary,
-			beatmapName = self.persist.selectedBeatmapID
+			beatmapName = self.persist.selectedBeatmapID,
+			random = self.data.checkButton[2]:isChecked()
 		})
 	end
 end
@@ -176,10 +170,10 @@ function beatmapSelect:load()
 
 	if self.data.checkLabel == nil then
 		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionAutoplay", 770, 372)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionRandom", 770, 408)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionStoryboard", 770, 444)
-		addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionVideo", 770, 480)
+		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionAutoplay", 770, 372)
+		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionRandom", 770, 408)
+		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionStoryboard", 770, 444)
+		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionVideo", 770, 480)
 	end
 
 	if self.data.checkButton == nil then

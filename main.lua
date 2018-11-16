@@ -46,6 +46,7 @@ local log = require("logging")
 local audioManager = require("audio_manager")
 
 local beatmapList = require("game.beatmap.list")
+local beatmapRandomizer = require("game.live.randomizer3")
 
 local function initWindow(w, h, f)
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
@@ -257,6 +258,10 @@ Options:
                              This argument takes precedence of passed beatmap
                              path as 1st argument.
 
+* -random [seedlow,seedhi]   Enable note randomization when possible. Affects
+                             dumped beatmap output. Seed of "0,0" means random
+                             seed will be used.
+
 * -replay <file>             Use replay file for preview. Replay file is
                              stored in replays/<beatmap_filename>/<file>.lsr
 
@@ -311,6 +316,7 @@ function love.load(argv, gameargv)
 	local windowHeight = 640
 	local dumpBeatmap = false
 	local replayFile = nil
+	local randomizeBeatmap
 	do
 		local i = 1
 		while i <= #argv do
@@ -342,6 +348,19 @@ function love.load(argv, gameargv)
 			elseif arg == "-play" then
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
 				i = i + 1
+			elseif arg == "-random" then
+				local seed = assert(argv[i+1], "please specify seed in format <low>,<hi>")
+				local slo, shi = seed:match("(%d+),(%d+)")
+				slo, shi = tonumber(slo), tonumber(shi)
+				assert(slo and shi, "please specify seed in format <low>,<hi>")
+
+				if slo == 0 and shi == 0 then
+					randomizeBeatmap = true
+				else
+					randomizeBeatmap = {slo%4294967296, shi%4294967296}
+				end
+
+				i = i + 1
 			elseif arg == "-replay" then
 				replayFile = assert(argv[i+1], "please specify replay file")
 				i = i + 1
@@ -361,6 +380,20 @@ function love.load(argv, gameargv)
 		-- TODO: Dump to LS2 beatmap
 
 		local function encodeToJSON(data)
+			if randomizeBeatmap then
+				local rndout
+				if type(randomizeBeatmap) == "boolean" then
+					rndout = beatmapRandomizer(data)
+				else
+					rndout = beatmapRandomizer(data, randomizeBeatmap[1], randomizeBeatmap[2])
+				end
+
+				if rndout then
+					data = rndout
+				else
+					log.warnf("main", "cannot randomize beatmap, using original beatmap")
+				end
+			end
 			io.write(JSON:encode(data))
 			love.event.quit()
 		end
@@ -426,7 +459,8 @@ function love.load(argv, gameargv)
 				false,
 
 				autoplay = autoplayMode,
-				replay = replayFile
+				replay = replayFile,
+				random = randomizeBeatmap,
 			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
@@ -435,6 +469,7 @@ function love.load(argv, gameargv)
 				true,
 
 				autoplay = autoplayMode,
+				random = randomizeBeatmap,
 			})
 		else
 			-- Jump to default game state
