@@ -27,8 +27,13 @@ local function socketReceive(s, ...)
 		return nil, "cancelled"
 	end
 
+	local time = love.timer.getTime()
 	local a, b, c = s:receive(...)
 	while a == nil and b == "timeout" do
+		if love.timer.getTime() - time >= 20 then
+			return nil, "timeout", c
+		end
+
 		love.timer.sleep(0.005)
 		a, b, c = s:receive(...)
 	end
