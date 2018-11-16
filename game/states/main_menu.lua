@@ -4,9 +4,11 @@
 -- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER
 
 local love = require("love")
-local color = require("color")
-local L = require("language")
+local Luaoop = require("libs.Luaoop")
 
+local color = require("color")
+local mainFont = require("font")
+local L = require("language")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
@@ -18,17 +20,30 @@ local imageButtonUI = require("game.ui.image_button")
 
 local mainMenu = gamestate.create {
 	fonts = {
-		main = {"fonts/MTLmr3m.ttf", 16},
-		title = {"fonts/MTLmr3m.ttf", 72},
+		title = {"fonts/MTLmr3m.ttf", 72}
 	},
 	images = {
 		icon = {"assets/image/icon/icon_128x128.png"}
 	},
 }
 
-local function makeEnterGamestateFunction(name)
-	return function()
-		return gamestate.enter(loadingInstance.getInstance(), name)
+local invisibleButton = Luaoop.class("Livesim2.InvisibleButtonUI", glow.element)
+
+function invisibleButton:new(w, h)
+	self.width, self.height = w, h
+end
+
+function invisibleButton.render() end
+
+local function makeEnterGamestateFunction(name, noloading)
+	if noloading then
+		return function()
+			return gamestate.enter(nil, name)
+		end
+	else
+		return function()
+			return gamestate.enter(loadingInstance.getInstance(), name)
+		end
 	end
 end
 
@@ -52,7 +67,7 @@ local function initializeButtons()
 	end)
 
 	blist.language = imageButtonUI("assets/image/ui/lang")
-	blist.language:addEventListener("mousereleased", makeEnterGamestateFunction("language"))
+	blist.language:addEventListener("mousereleased", makeEnterGamestateFunction("language", true))
 
 	blist.test = imageButtonUI("assets/image/ui/m_button_16")
 
@@ -61,6 +76,7 @@ end
 
 local function initializeVersionText(self)
 	local bld = {}
+	local font = mainFont.get(16)
 
 	bld[#bld + 1] = "Live Simulator: 2 v"
 	bld[#bld + 1] = DEPLS_VERSION
@@ -83,24 +99,19 @@ local function initializeVersionText(self)
 		bld[#bld + 1] = "JIT "
 	end
 
-	local renderInfo = {love.graphics.getRendererInfo()}
-	bld[#bld + 1] = "\n"..L("menu:renderer")..": "
-	bld[#bld + 1] = renderInfo[1]
-
-	for i = 2, 4 do
-		if renderInfo[i] then
-			bld[#bld + 1] = " "
-			bld[#bld + 1] = renderInfo[i]
-		end
-	end
-
+	bld[#bld + 1] = "\n"..L("menu:renderer")..": "..table.concat({love.graphics.getRendererInfo()}, " ")
 	bld[#bld + 1] = "\n"..L("menu:writeDir")..": "
 	bld[#bld + 1] = love.filesystem.getSaveDirectory()
 	bld = table.concat(bld)
 
-	local text = love.graphics.newText(self.assets.fonts.main)
-	text:add({color.black, bld}, 1.25, 1.25)
-	text:add({color.white, bld}, 0, 0)
+	local text = love.graphics.newText(font)
+	local height = font:getHeight() * (select(2, bld:gsub("\n", "\n")) + 1)
+	text:add({color.black, bld}, 1.25, 1.25 + 640 - height)
+	text:add({color.white, bld}, 0, 640 - height)
+
+	local invbtn = invisibleButton(font:getWidth(bld), height)
+	invbtn:addEventListener("mousereleased", makeEnterGamestateFunction("systemInfo", true))
+	glow.addFixedElement(invbtn, 0, 640 - height)
 
 	return text
 end
@@ -124,9 +135,7 @@ function mainMenu:load()
 	end
 
 	-- Load version text
-	if self.data.text == nil then
-		self.data.text = initializeVersionText(self)
-	end
+	self.data.text = initializeVersionText(self)
 
 	-- Load title text
 	if self.data.titleText == nil then
@@ -143,7 +152,7 @@ function mainMenu:draw()
 	-- Draw background
 	love.graphics.draw(self.data.background)
 	-- Draw version text
-	love.graphics.draw(self.data.text, 2, 592)
+	love.graphics.draw(self.data.text, 2, 0)
 	-- Draw icon
 	love.graphics.draw(self.assets.images.icon, 140, 46)
 	-- Draw title

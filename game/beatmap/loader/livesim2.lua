@@ -2,13 +2,24 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local Luaoop = require("libs.Luaoop")
+local bit = require("bit")
 local love = require("love")
+local Luaoop = require("libs.Luaoop")
 local ls2 = require("libs.ls2")
 local util = require("util")
 local log = require("logging")
 local md5 = require("md5")
 local baseLoader = require("game.beatmap.base")
+
+-- String to little endian dword (signed)
+local function string2dword(str)
+	return bit.bor(
+		str:byte(),
+		bit.lshift(str:sub(2,2):byte(), 8),
+		bit.lshift(str:sub(3,3):byte(), 16),
+		bit.lshift(str:sub(4,4):byte(), 24)
+	)
+end
 
 ------------------------------
 -- Setup LS2 Stream Wrapper --
@@ -44,8 +55,6 @@ local ls2Loader = Luaoop.class("beatmap.LS2", baseLoader)
 
 function ls2Loader:__construct(file)
 	local internal = Luaoop.class.data(self)
-	internal.hash = md5(love.filesystem.newFileData(file))
-	file:seek(0)
 	internal.ls2 = ls2.loadstream(file)
 	internal.file = file
 end
@@ -56,7 +65,52 @@ function ls2Loader:getFormatName()
 end
 
 function ls2Loader:getHash()
-	return Luaoop.class.data(self).hash
+	local internal = Luaoop.class.data(self)
+
+	if internal.ls2.sections.BMPM or internal.ls2.sections.BMPT then
+		local a = love.timer.getTime()
+		-- hash the beatmap data
+		local data = {0, 0, 0, 0}
+
+		local function xorCycle(int)
+			data[1] = bit.bxor(int, data[4])
+			data[2] = bit.bxor(data[2], data[1])
+			data[3] = bit.bxor(data[3], data[2])
+			data[4] = bit.bxor(data[4], data[3])
+		end
+
+		if internal.ls2.sections.BMPM then
+			for _, v in ipairs(internal.ls2.sections.BMPM) do
+				internal.file:seek(v)
+				local amount = string2dword(internal.file:read(4))
+				for _ = 1, amount do
+					local d = internal.file:read(12)
+					xorCycle(string2dword(d))
+					xorCycle(string2dword(d:sub(4)))
+					xorCycle(string2dword(d:sub(8)))
+				end
+			end
+		end
+
+		if internal.ls2.sections.BMPT then
+			for _, v in ipairs(internal.ls2.sections.BMPT) do
+				internal.file:seek(v)
+				local amount = string2dword(internal.file:read(4))
+				for _ = 1, amount do
+					local d = internal.file:read(12)
+					xorCycle(string2dword(d))
+					xorCycle(string2dword(d:sub(4)))
+					xorCycle(string2dword(d:sub(8)))
+				end
+			end
+		end
+
+		return md5(table.concat(data, ","))
+	else
+		-- Should not happen for valid LS2 beatmap
+		log.warning("noteloader.livesim2", "Hashing full beatmap file")
+		return md5(love.filesystem.newFileData(internal.file:getFilename()))
+	end
 end
 
 function ls2Loader:getNotesList()
