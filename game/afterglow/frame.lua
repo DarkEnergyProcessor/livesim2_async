@@ -4,6 +4,7 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local util = require("util")
 local slider = require("game.afterglow.slider")
 
 -- You definely need a "Frame" object to store all your GUIs
@@ -29,6 +30,11 @@ function frame:__construct(x, y, w, h)
 		pressed = false,
 		x = 0,
 		y = 0,
+		scroll = false,
+		sX = 0,
+		sY = 0,
+		scX = 0,
+		scY = 0,
 		targetElement = nil
 	}
 	internal.elementList = {}
@@ -175,6 +181,9 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 			return false
 		end
 
+		internal.mouseBuffer.x, internal.mouseBuffer.y = a - self.x, b - self.y
+		internal.mouseBuffer.sX, internal.mouseBuffer.sY = a - self.x, b - self.y
+
 		-- Fixed element first
 		for i = #internal.fixedElementList, 1, -1 do
 			if checkMousepressed(self, internal, internal.fixedElementList[i], a, b) then
@@ -196,48 +205,88 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 				return true
 			end
 		end
-	elseif name == "mousemoved" then
-		internal.mouseBuffer.x, internal.mouseBuffer.y = a, b
 
-		if internal.mouseBuffer.pressed then
-			local info = internal.mouseBuffer.targetElement
-			local w, h = info.element:getDimensions()
-
-			if info.fixed then
-				if
-					a - self.x < (info == self.sliderV and -100 or 0) + info.x or
-					b - self.y < (info == self.sliderH and -100 or 0) + info.y or
-					a - self.x >= info.x + w or
-					b - self.y >= info.y + h
-				then
-					info.element:triggerEvent("mousecanceled")
-					internal.mouseBuffer.pressed = false
-					internal.mouseBuffer.targetElement = nil
-				else
-					info.element:triggerEvent("mousemoved", a - info.x - self.x, b - info.y - self.y)
-				end
-			elseif
-				a + self.offsetX - self.x < info.x or
-				b + self.offsetY - self.y < info.y or
-				a + self.offsetX - self.x >= info.x + w or
-				b + self.offsetY - self.y >= info.y + h
-			then
-				info.element:triggerEvent("mousecanceled")
-				internal.mouseBuffer.pressed = false
-				internal.mouseBuffer.targetElement = nil
-			else
-				info.element:triggerEvent("mousemoved",
-					a - info.x + self.offsetX - self.x,
-					b - info.y + self.offsetY - self.y
-				)
-			end
-
+		if self.sliderH or self.sliderV then
+			internal.mouseBuffer.pressed = true
 			return true
 		end
+	elseif name == "mousemoved" then
+		local mbuf = internal.mouseBuffer
+		mbuf.x, mbuf.y = a - self.x, b - self.y
+
+		if mbuf.pressed then
+			local info = mbuf.targetElement
+
+			if self.sliderV or self.sliderH then
+				if mbuf.scroll then
+					mbuf.scX, mbuf.scY = c, d
+
+					if self.sliderH then
+						self.sliderH.element:setValue(self.sliderH.element:getValue() - c)
+					end
+					if self.sliderV then
+						self.sliderV.element:setValue(self.sliderV.element:getValue() - d)
+					end
+
+					return true
+				-- treshold is 40px
+				elseif util.distance(mbuf.x, mbuf.y, mbuf.sX, mbuf.sY) >= 40 then
+					if info then
+						if not(info.fixed) then
+							info.element:triggerEvent("mousecanceled")
+							mbuf.targetElement = nil
+							mbuf.scroll = true
+							return true
+						end
+					else
+						mbuf.scroll = true
+						return true
+					end
+				end
+			end
+
+			if info then
+				local w, h = info.element:getDimensions()
+
+				if info.fixed then
+					if
+						a - self.x < (info == self.sliderV and -100 or 0) + info.x or
+						b - self.y < (info == self.sliderH and -100 or 0) + info.y or
+						a - self.x >= info.x + w or
+						b - self.y >= info.y + h
+					then
+						info.element:triggerEvent("mousecanceled")
+						internal.mouseBuffer.targetElement = nil
+					else
+						info.element:triggerEvent("mousemoved", a - info.x - self.x, b - info.y - self.y)
+					end
+				elseif
+					a + self.offsetX - self.x < info.x or
+					b + self.offsetY - self.y < info.y or
+					a + self.offsetX - self.x >= info.x + w or
+					b + self.offsetY - self.y >= info.y + h
+				then
+					info.element:triggerEvent("mousecanceled")
+					internal.mouseBuffer.targetElement = nil
+				else
+					info.element:triggerEvent("mousemoved",
+						a - info.x + self.offsetX - self.x,
+						b - info.y + self.offsetY - self.y
+					)
+				end
+
+				return true
+			end
+		end
 	elseif name == "mousereleased" and internal.mouseBuffer.pressed then
-		internal.mouseBuffer.targetElement.element:triggerEvent("mousereleased")
+		if internal.mouseBuffer.targetElement then
+			internal.mouseBuffer.targetElement.element:triggerEvent("mousereleased")
+			internal.mouseBuffer.targetElement = nil
+		end
+
 		internal.mouseBuffer.pressed = false
-		internal.mouseBuffer.targetElement = nil
+		internal.mouseBuffer.scroll = false
+
 		return true
 	elseif name == "textinput" then
 		for i = #internal.elementList, 1, -1 do
@@ -338,6 +387,17 @@ function frame:update(dt)
 	elseif self.sliderV then
 		self.sliderV = nil
 		self.offsetY = 0
+	end
+
+	local mbuf = internal.mouseBuffer
+	mbuf.scX = math.max(math.abs(mbuf.scX) - dt * 20, 0) * util.sign(mbuf.scX)
+	mbuf.scY = math.max(math.abs(mbuf.scY) - dt * 20, 0) * util.sign(mbuf.scY)
+
+	if self.sliderH then
+		self.sliderH.element:setValue(self.sliderH.element:getValue() - mbuf.scX)
+	end
+	if self.sliderV then
+		self.sliderV.element:setValue(self.sliderV.element:getValue() - mbuf.scY)
 	end
 end
 

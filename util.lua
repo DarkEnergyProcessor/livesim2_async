@@ -152,4 +152,8 @@ function util.distance(x1, y1, x2, y2, squared)
 	end
 end
 
+function util.sign(n)
+	return n > 0 and 1 or (n < 0 and -1 or 0)
+end
+
 return util

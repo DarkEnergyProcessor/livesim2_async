@@ -5,7 +5,6 @@
 local love = require("love")
 local color = require("color")
 local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
 local setting = require("setting")
 local mainFont = require("font")
 local util = require("util")
@@ -22,10 +21,6 @@ local gameLang = gamestate.create {
 	images = {},
 }
 
-local function leave()
-	return gamestate.leave(loadingInstance.getInstance())
-end
-
 local function updateLanguagString(text, lang)
 	text:clear()
 	util.addTextWithShadow(text, L("setting:language:current", lang), 0, 0)
@@ -34,6 +29,10 @@ end
 local function setLanguage(_, value)
 	L.set(value.language.code)
 	return updateLanguagString(value.instance.persist.languageText, value.language)
+end
+
+local function leave()
+	return gamestate.leave(nil)
 end
 
 function gameLang:load()
@@ -89,7 +88,9 @@ function gameLang:draw()
 end
 
 gameLang:registerEvent("keyreleased", function(_, key)
-	if key == "escape" then leave() end
+	if key == "escape" then
+		leave()
+	end
 end)
 
 return gameLang

@@ -32,6 +32,8 @@ DEPLS_VERSION_NUMBER = 02030000
 local love = require("love")
 local Yohane = require("libs.Yohane")
 local JSON = require("libs.JSON")
+local lsr = require("libs.lsr")
+
 local assetCache = require("asset_cache")
 local vires = require("vires")
 local gamestate = require("gamestate")
@@ -44,8 +46,6 @@ local log = require("logging")
 local audioManager = require("audio_manager")
 
 local beatmapList = require("game.beatmap.list")
-
-local lsr = require("libs.lsr")
 
 local function initWindow(w, h, f)
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
@@ -89,6 +89,7 @@ local function registerGamestates()
 	gamestate.register("settings", require("game.states.gamesetting"))
 	gamestate.register("language", require("game.states.gamelang"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
+	gamestate.register("systemInfo", require("game.states.systeminfo"))
 end
 
 local function initializeSetting()

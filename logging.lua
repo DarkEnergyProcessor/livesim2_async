@@ -13,8 +13,12 @@ local log = {level = 2}
 -- 4 = debug
 log.level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
 if not(log.level) or (log.level < 0 or log.level > 4) then
-	log.level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
-	if not(log.level) or (log.level < 0 or log.level > 4) then
+	if love.filesystem then
+		log.level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
+		if not(log.level) or (log.level < 0 or log.level > 4) then
+			log.level = 2
+		end
+	else
 		log.level = 2
 	end
 end
@@ -194,6 +198,10 @@ end
 
 function log.warning(tag, text)
 	if log.level >= 2 then
+		if log.level >= 4 then
+			text = debug.traceback(text, 2)
+		end
+
 		if initMutex() then
 			return log.mutex:performAtomic(warnImplMutex, tag, text)
 		else
@@ -210,6 +218,10 @@ log.warnf = log.warningf
 
 function log.error(tag, text)
 	if log.level >= 1 then
+		if log.level >= 4 then
+			text = debug.traceback(text, 2)
+		end
+
 		if initMutex() then
 			return log.mutex:performAtomic(errorImplMutex, tag, text)
 		else

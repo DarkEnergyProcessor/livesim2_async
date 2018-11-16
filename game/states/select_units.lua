@@ -6,14 +6,11 @@ local love = require("love")
 local utf8 = require("utf8")
 local Luaoop = require("libs.Luaoop")
 
+local gamestate = require("gamestate")
 local async = require("async")
 local color = require("color")
-local util = require("util")
 local mainFont = require("font")
 local L = require("language")
-
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
 
 local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
@@ -109,9 +106,7 @@ function selectUnits:load()
 end
 
 local function generateFrame(self, ref, unitListTemp)
-	print("it's running", #unitListTemp)
 	for i, v in ipairs(unitListTemp) do
-		print("run", i, v)
 		local x, y = (i - 1) % 3, math.floor((i - 1) / 3)
 		local elem = unitButton(v.image, v.name)
 		elem:addEventListener("mousereleased", unitButtonPressed)
