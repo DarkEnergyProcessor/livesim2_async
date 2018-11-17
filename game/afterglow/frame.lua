@@ -81,8 +81,8 @@ function frame:addFixedElement(element, x, y, ...)
 
 	internal.fixedElementList[#internal.fixedElementList + 1] = {
 		element = elem,
-		x = x,
-		y = y,
+		x = assert(x),
+		y = assert(y),
 		fixed = true
 	}
 	return elem
@@ -123,7 +123,7 @@ function frame:removeElement(element)
 		if internal.elementList[i].element == element then
 			local target = internal.mouseBuffer.targetElement
 			if target and target.element == element then
-				element:triggerEvent("mousecancel")
+				element:triggerEvent("mousecanceled")
 				internal.mouseBuffer.pressed = false
 				internal.mouseBuffer.targetElement = nil
 			end
@@ -136,7 +136,7 @@ function frame:removeElement(element)
 		if internal.fixedElementList[i].element == element then
 			local target = internal.mouseBuffer.targetElement
 			if target and target.element == element then
-				element:triggerEvent("mousecancel")
+				element:triggerEvent("mousecanceled")
 				internal.mouseBuffer.pressed = false
 				internal.mouseBuffer.targetElement = nil
 			end

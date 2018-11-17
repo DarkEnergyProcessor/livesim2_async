@@ -22,10 +22,6 @@ local selectUnits = gamestate.create {
 
 local unitButton = Luaoop.class("Livesim2.UnitSelectButtonUI", glow.element)
 
-local function leave()
-	return gamestate.leave(nil)
-end
-
 function unitButton:new(image, name)
 	local font = mainFont.get(22)
 	local textBuilder = {}
@@ -59,7 +55,7 @@ function unitButton:new(image, name)
 	self.text:add({color.black, usedText}, 128, 64 - font:getHeight() * #textBuilder * 0.5)
 
 	self:addEventListener("mousepressed", unitButton._pressed)
-	self:addEventListener("mousecancel", unitButton._released)
+	self:addEventListener("mousecanceled", unitButton._released)
 	self:addEventListener("mousereleased", unitButton._released)
 end
 
@@ -78,6 +74,10 @@ function unitButton:render(x, y)
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.unit, x + 64, y + 64, 0, 112/128, 112/128, 64, 64)
 	love.graphics.draw(self.text, x, y)
+end
+
+local function leave()
+	return gamestate.leave(nil)
 end
 
 local function unitButtonPressed(_, value)

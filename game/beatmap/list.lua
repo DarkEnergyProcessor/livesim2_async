@@ -186,15 +186,16 @@ end
 postExit.add(function()
 	if beatmapList.count > 0 then
 		beatmapList.channel:performAtomic(sendData, "quit", {})
-		beatmapList.channel = nil
 		if beatmapList.thread and beatmapList.thread:isRunning() then
 			beatmapList.thread:wait()
-			beatmapList.thread = nil
 		end
 		beatmapList.count = 0
 	elseif beatmapList.thread and beatmapList.thread:isRunning() then
 		beatmapList.thread:wait()
 	end
+
+	beatmapList.thread = nil
+	beatmapList.channel = nil
 end)
 
 return beatmapList

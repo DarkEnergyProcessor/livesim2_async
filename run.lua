@@ -149,6 +149,11 @@ function love.run()
 		glow = require("game.afterglow")
 		defaultText = love.graphics.newText(love.graphics.newFont(20))
 	end
+
+	-- Register post exit
+	postExit.add(gamestate.internal.quit)
+	postExit.add(lily.quit)
+	postExit.add(setting.quit)
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
 

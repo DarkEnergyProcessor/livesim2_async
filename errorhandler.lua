@@ -13,15 +13,7 @@ local function error_printer(msg, layer)
 end
 
 function love.errorhandler(msg)
-	local lily = require("libs.lily")
-	local gamestate = require("gamestate")
-	local setting = require("setting")
-
-	lily.quit()
-	gamestate.internal.quit()
-	setting.quit()
 	postExit.exit()
-
 	msg = tostring(msg)
 	error_printer(msg, 2)
 	if not love.window or not love.graphics or not love.event then

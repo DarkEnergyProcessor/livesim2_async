@@ -91,6 +91,7 @@ local function registerGamestates()
 	gamestate.register("language", require("game.states.gamelang"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
+	gamestate.register("beatmapDownload", require("game.states.download_list"))
 end
 
 local function initializeSetting()

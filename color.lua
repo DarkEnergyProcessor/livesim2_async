@@ -1,6 +1,5 @@
 -- Color macro management
--- Part of Live Simulator: 2
--- See copyright notice in main.lua
+-- Donated to public domain
 
 -- Some forms:
 -- * <color name>
@@ -125,7 +124,7 @@ color.gainsboro = color.hexDCDCDC
 color.cornflowerBlue = color.hex6495ED
 color.lightYellow = color.hexFFFFE0
 color.orange = color.hexFFA500
-color.lightpPink = color.hexFFB6C1
+color.lightPink = color.hexFFB6C1
 color.gold = color.hexFFD700
 color.darkOliveGreen = color.hex556B2F
 color.aliceBlue = color.hexF0F8FF
