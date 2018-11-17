@@ -156,6 +156,17 @@ function beatmapSelect:load()
 	end
 	glow.addElement(self.data.openBeatmap, 64, 592)
 
+	if self.data.downloadBeatmap == nil then
+		self.data.downloadBeatmap = selectButton(L"beatmapSelect:download")
+		self.data.downloadBeatmap:addEventListener("mousereleased", function(_, obj)
+			if obj.data.beatmapFrame then
+				gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
+			end
+		end)
+		self.data.downloadBeatmap:setData(self)
+	end
+	glow.addElement(self.data.downloadBeatmap, 512, 8)
+
 	if self.data.beatmapFrame == nil then
 		initializeBeatmapListUI(self)
 	end

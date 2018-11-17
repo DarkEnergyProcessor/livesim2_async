@@ -67,6 +67,7 @@ function downloadObject:download(url, headers)
 
 	log.debugf(TAG, "downloading %s", url)
 	internal.chan:performAtomic(sendRequest, url, headers)
+	return self
 end
 
 function downloadObject:isDownloading()
@@ -160,7 +161,7 @@ postExit.add(function()
 	for _, v in pairs(download.list) do
 		local internal = Luaoop.class.data(v)
 		threadList[#threadList + 1] = internal.thread
-		v:destroy()
+		v:release()
 	end
 
 	for _, v in ipairs(threadList) do
