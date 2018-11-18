@@ -311,6 +311,37 @@ local function processCommand(chan, command)
 		else
 			sendBeatmapData("error", id, summary)
 		end
+	elseif command == "loadrel" then
+		if beatmap.list[arg[1]] then
+			local summary = getSummary(beatmap.list[arg[1]])
+			local c = love.thread.newChannel()
+			for k, v in pairs(summary) do
+				c:push(k)
+				c:push(v)
+			end
+
+			sendBeatmapData("load", id, arg[1], c)
+		else
+			print(arg[1])
+			local beatmapObject, type = beatmap.findSuitable("beatmap/"..arg[1])
+
+			if beatmapObject then
+				local value = {name = arg[1], data = beatmapObject, type = type}
+				beatmap.list[#beatmap.list + 1] = value
+				beatmap.list[arg[1]] = value
+
+				local summary = getSummary(value)
+				local c = love.thread.newChannel()
+				for k, v in pairs(summary) do
+					c:push(k)
+					c:push(v)
+				end
+
+				sendBeatmapData("load", id, arg[1], c)
+			else
+				sendBeatmapData("error", id, "beatmap doesn't exist")
+			end
+		end
 	elseif command == "loaders" then
 		for i = 1, #beatmap.fileLoader do
 			sendBeatmapData("loaders", id, beatmap.fileLoader[i].name, "file")
