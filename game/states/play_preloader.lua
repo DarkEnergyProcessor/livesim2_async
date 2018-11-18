@@ -29,13 +29,12 @@ function playPreloader:load(arg)
 				self.data.beatmapData = summary
 			end)
 		else
-			beatmapList.enumerate() -- initialize
-			beatmapList.getSummary(arg[1], function(data)
-				self.data.beatmapData = data
-				self.data.beatmapName = arg[1]
+			beatmapList.registerRelative(arg[1], function(name, summary)
+				self.data.beatmapData = summary
+				self.data.beatmapName = name
 
 				if arg.replay then
-					self.data.replayData = lsr.loadReplay("replays/"..arg[1].."/"..arg.replay..".lsr", data.hash)
+					self.data.replayData = lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", summary.hash)
 					if self.data.replayData == nil then
 						error("cannot load replay file")
 					end

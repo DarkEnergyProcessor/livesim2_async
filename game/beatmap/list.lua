@@ -183,6 +183,11 @@ function beatmapList.registerAbsolute(path, callback)
 	beatmapList.channel:performAtomic(sendData, "load", {registerRequestID(callback), path})
 end
 
+function beatmapList.registerRelative(path, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "loadrel", {registerRequestID(callback), path})
+end
+
 postExit.add(function()
 	if beatmapList.count > 0 then
 		beatmapList.channel:performAtomic(sendData, "quit", {})
