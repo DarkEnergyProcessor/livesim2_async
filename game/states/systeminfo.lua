@@ -20,34 +20,8 @@ local sysInfo = gamestate.create {
 	fonts = {}
 }
 
--- Build version information
-local textString
+local osVersionString
 do
-	local sb = {
-		"Before reporting bug, please screenshot this window",
-		"",
-		string.format("Live Simulator: 2 v%s -- %08d", DEPLS_VERSION, DEPLS_VERSION_NUMBER),
-	}
-
-	do
-		local feature = {}
-		if os.getenv("LLA_IS_SET") then
-			-- From modified Openal-Soft
-			feature[#feature + 1] = "LLA: "..os.getenv("LLA_BUFSIZE").."smp/"..os.getenv("LLA_FREQUENCY").."Hz"
-		end
-
-		if jit then
-			feature[#feature + 1] = jit.version
-			if jit.status() then
-				feature[#feature + 1] = "JIT ON"
-			end
-		end
-
-		sb[#sb + 1] = "Opts: "..table.concat(feature, " ")
-		sb[#sb + 1] = ""
-	end
-
-	-- System Information
 	local sos = love._os
 	if sos == "Windows" then
 		-- Get Windows Version
@@ -83,35 +57,35 @@ do
 				relidf:close()
 
 				if release then
-					sb[#sb + 1] = string.format("OS: Windows 10 %d (%s)", release, build)
+					osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
 				else
-					sb[#sb + 1] = string.format("OS: Windows 10 (%s)", build)
+					osVersionString = string.format("OS: Windows 10 (%s)", build)
 				end
 			elseif ver.dwMajorVersion == 6 then
 				if ver.dwMinorVersion == 3 then
-					sb[#sb + 1] = string.format("OS: Windows 8.1 (%s)", build)
+					osVersionString = string.format("OS: Windows 8.1 (%s)", build)
 				elseif ver.dwMinorVersion == 2 then
-					sb[#sb + 1] = string.format("OS: Windows 8 (%s)", build)
+					osVersionString = string.format("OS: Windows 8 (%s)", build)
 				elseif ver.dwMinorVersion == 1 then
-					sb[#sb + 1] = string.format("OS: Windows 7 (%s)", build)
+					osVersionString = string.format("OS: Windows 7 (%s)", build)
 				elseif ver.dwMinorVersion == 0 then
-					sb[#sb + 1] = string.format("OS: Windows Vista (%s)", build)
+					osVersionString = string.format("OS: Windows Vista (%s)", build)
 				else
-					sb[#sb + 1] = string.format("OS: Windows (%s)", build)
+					osVersionString = string.format("OS: Windows (%s)", build)
 				end
 			elseif ver.dwMajorVersion == 5 then
 				if ver.dwMinorVersion == 2 then
-					sb[#sb + 1] = string.format("OS: Windows XP Professional 64-bit (%s)", build)
+					osVersionString = string.format("OS: Windows XP Professional 64-bit (%s)", build)
 				elseif ver.dwMinorVersion == 1 then
-					sb[#sb + 1] = string.format("OS: Windows XP (%s)", build)
+					osVersionString = string.format("OS: Windows XP (%s)", build)
 				else
-					sb[#sb + 1] = string.format("OS: Windows (%s)", build)
+					osVersionString = string.format("OS: Windows (%s)", build)
 				end
 			else
-				sb[#sb + 1] = string.format("OS: Windows (%s)", build)
+				osVersionString = string.format("OS: Windows (%s)", build)
 			end
 		else
-			sb[#sb + 1] = "OS: Windows"
+			osVersionString = "OS: Windows"
 		end
 	elseif sos == "Android" then
 		-- Get Android API level
@@ -119,15 +93,43 @@ do
 		local sdk = tonumber(out:read("*l"))
 
 		out:close()
-		sb[#sb + 1] = "OS: Android (API Level "..sdk..")"
+		osVersionString = "OS: Android (API Level "..sdk..")"
 	else
-		sb[#sb + 1] = "OS: "..sos
+		osVersionString = "OS: "..sos
 	end
-	sb[#sb + 1] = ""
-	sb[#sb + 1] = "Renderer: "..table.concat({love.graphics.getRendererInfo()}, " ")
-	sb[#sb + 1] = ""
+end
+
+-- Build version information
+local function buildTextString()
+	local sb = {
+		"Before reporting bug, please screenshot this window",
+		"",
+		string.format("Live Simulator: 2 v%s -- %08d", DEPLS_VERSION, DEPLS_VERSION_NUMBER),
+	}
+
+	do
+		local feature = {}
+		if os.getenv("LLA_IS_SET") then
+			-- From modified Openal-Soft
+			feature[#feature + 1] = "LLA: "..os.getenv("LLA_BUFSIZE").."smp/"..os.getenv("LLA_FREQUENCY").."Hz"
+		end
+
+		local hasJIT, jit = pcall(require, "jit")
+		if hasJIT then
+			feature[#feature + 1] = jit.version
+			if jit.status() then
+				feature[#feature + 1] = "JIT ON"
+			end
+		end
+
+		sb[#sb + 1] = "Opts: "..table.concat(feature, " ")
+	end
+
+	-- System Information
+	sb[#sb + 1] = osVersionString
 	sb[#sb + 1] = "R/W Directory: "..love.filesystem.getSaveDirectory()
 	sb[#sb + 1] = ""
+	sb[#sb + 1] = "Renderer: "..table.concat({love.graphics.getRendererInfo()}, " ")
 
 	-- LOVE Information
 	do
@@ -159,16 +161,16 @@ do
 			end
 		end
 
+		local dpiScale = love.graphics.getDPIScale and love.graphics.getDPIScale() or 1
+		local w, h = love.graphics.getDimensions()
+		sb[#sb + 1] = string.format("Window: %dx%d (DPI Scale %d)", w, h, dpiScale)
 		sb[#sb + 1] = "Image Formats: "..table.concat(fmts, " ")
-		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Canvas Formats: "..table.concat(fbos, " ")
-		sb[#sb + 1] = ""
 		sb[#sb + 1] = "System Limits: "..table.concat(syslim, " ")
-		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Graphics Features: "..table.concat(gftr, " ")
 	end
 
-	textString = table.concat(sb, "\n")
+	return table.concat(sb, "\n")
 end
 
 local function leave()
@@ -189,6 +191,7 @@ function sysInfo:load()
 
 	if self.data.text == nil then
 		local font = mainFont.get(20)
+		local textString = buildTextString()
 		self.data.text = love.graphics.newText(font)
 		-- border
 		for i = 0, 360, 45 do
