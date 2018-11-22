@@ -79,16 +79,16 @@ local cbfUnitIconFrame = {
 		},
 		SR = imageCache {
 			"assets/image/cbf/star4circleSR_Custom.png",
-			"assets/image/cbf/star4circleSR_Custom_fore.png"
+			"assets/image/unit_icon/sr_custom_bg02.png",
 		},
 		R = imageCache {
-			"assets/image/cbf/star4circleR_Custom.png",
-			"assets/image/cbf/star4circleR_Custom_fore.png"
+			"assets/image/unit_icon/r_custom.png",
+			"assets/image/unit_icon/r_custom_bg01.png"
 		},
 	},
 	Smile = {
 		UR = imageCache {
-			"assets/image/cbf/star4circleURSmile.png",
+			"assets/image/unit_icon/f_UR_1.png",
 			"assets/image/cbf/star4foreURSmile.png"
 		},
 		["UR (Old)"] = imageCache {
@@ -96,17 +96,17 @@ local cbfUnitIconFrame = {
 			"assets/image/cbf/star4foreURSmile.png"
 		},
 		SSR = imageCache {
-			"assets/image/cbf/star4circleSSRSmile.png",
-			"assets/image/cbf/star4foreSRSmileIdolized.png"
+			"assets/image/unit_icon/f_SSR_1.png",
+			"assets/image/unit_icon/b_smile_SR_002.png"
 		},
 		SR = imageCache {
-			"assets/image/cbf/star4circleSRSmile.png",
-			"assets/image/cbf/star4foreSRSmileIdolized.png"
+			"assets/image/unit_icon/f_SR_1.png",
+			"assets/image/unit_icon/b_smile_SR_002.png"
 		},
 	},
 	Pure = {
 		UR = imageCache {
-			"assets/image/cbf/star4circleURPure.png",
+			"assets/image/unit_icon/f_UR_2.png",
 			"assets/image/cbf/star4foreURPure.png"
 		},
 		["UR (Old)"] = imageCache {
@@ -114,17 +114,17 @@ local cbfUnitIconFrame = {
 			"assets/image/cbf/star4foreURPure.png"
 		},
 		SSR = imageCache {
-			"assets/image/cbf/star4circleSSRPure.png",
-			"assets/image/cbf/star4foreSRPureIdolized.png"
+			"assets/image/unit_icon/f_SSR_2.png",
+			"assets/image/unit_icon/b_pure_SR_002.png"
 		},
 		SR = imageCache {
-			"assets/image/cbf/star4circleSRPure.png",
-			"assets/image/cbf/star4foreSRPureIdolized.png"
+			"assets/image/unit_icon/f_SR_2.png",
+			"assets/image/unit_icon/b_pure_SR_002.png"
 		},
 	},
 	Cool = {
 		UR = imageCache {
-			"assets/image/cbf/star4circleURCool.png",
+			"assets/image/unit_icon/f_UR_3.png",
 			"assets/image/cbf/star4foreURCool.png"
 		},
 		["UR (Old)"] = imageCache {
@@ -132,12 +132,12 @@ local cbfUnitIconFrame = {
 			"assets/image/cbf/star4foreURCool.png"
 		},
 		SSR = imageCache {
-			"assets/image/cbf/star4circleSSRCool.png",
-			"assets/image/cbf/star4foreSRCoolIdolized.png"
+			"assets/image/unit_icon/f_SSR_3.png",
+			"assets/image/unit_icon/b_cool_SR_002.png"
 		},
 		SR = imageCache {
-			"assets/image/cbf/star4circleSRCool.png",
-			"assets/image/cbf/star4foreSRCoolIdolized.png"
+			"assets/image/unit_icon/f_SR_3.png",
+			"assets/image/unit_icon/b_cool_SR_002.png"
 		},
 	},
 }
