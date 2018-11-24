@@ -8,7 +8,7 @@ local Luaoop = require("libs.Luaoop")
 local ls2 = require("libs.ls2")
 local util = require("util")
 local log = require("logging")
-local md5 = require("md5")
+local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
 -- String to little endian dword (signed)

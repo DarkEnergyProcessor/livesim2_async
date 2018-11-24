@@ -8,7 +8,7 @@ local Luaoop = require("libs.Luaoop")
 local love = require("love")
 local setting = require("setting")
 local util = require("util")
-local md5 = require("md5")
+local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
 local function basename(file)

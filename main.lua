@@ -32,6 +32,7 @@ DEPLS_VERSION_NUMBER = 02030000
 local love = require("love")
 local Yohane = require("libs.Yohane")
 local JSON = require("libs.JSON")
+local ls2 = require("libs.ls2")
 local lsr = require("libs.lsr")
 
 local assetCache = require("asset_cache")
@@ -92,6 +93,7 @@ local function registerGamestates()
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
 	gamestate.register("beatmapDownload", require("game.states.download_list"))
+	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
 end
 
 local function initializeSetting()
@@ -222,6 +224,32 @@ local function initLSR()
 	end
 end
 
+local function initLS2()
+	-- LOVE File object to be FILE*-like object
+	ls2.setstreamwrapper {
+		read = function(stream, val)
+			return (stream:read(assert(val)))
+		end,
+		write = function(stream, data)
+			return stream:write(data)
+		end,
+		seek = function(stream, whence, offset)
+			local set = 0
+
+			if whence == "cur" then
+				set = stream:tell()
+			elseif whence == "end" then
+				set = stream:getSize()
+			elseif whence ~= "set" then
+				assert(false, "Invalid whence")
+			end
+
+			stream:seek(set + (offset or 0))
+			return stream:tell()
+		end
+	}
+end
+
 local usage = [[
 Usage: %s [options] [absolute beatmap path]
 
@@ -294,9 +322,10 @@ freely, subject to the following restrictions:
 function love.load(argv, gameargv)
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
-	-- Early initialization (crash on failure)
+	-- Early initialization (crash on failure which means serious error)
 	createDirectories()
 	initializeSetting()
+	initLS2()
 	initLSR()
 	language.init()
 	language.set(setting.get("LANGUAGE"))
