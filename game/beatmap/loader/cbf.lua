@@ -8,7 +8,7 @@ local bit = require("bit")
 local util = require("util")
 local log = require("logging")
 local setting = require("setting")
-local md5 = require("md5")
+local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
 local function imageCache(link)

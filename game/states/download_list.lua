@@ -27,6 +27,8 @@ local beatmapDownload = gamestate.create {
 
 local beatmapButton = Luaoop.class("Livesim2.BeatmapDLSelectButtonUI", glow.element)
 
+local SERVER_ADDRESS = require("game.beatmap.download_address")
+
 function beatmapButton:new(name, member)
 	local font = mainFont.get(22)
 	local textBuilder = {}
@@ -142,11 +144,7 @@ local function initializeBeatmapList(self, mapdata, etag)
 		-- Load maps.json
 		local sync = async.syncLily(lily.decompress("zlib", love.filesystem.newFileData("maps.json")))
 		sync:sync()
-		print("get mapdata")
-		local oof = sync:getValues()
-		print("get mappdata 2", oof:sub(1, 50))
 		mapdata = JSON:decode(sync:getValues())
-		print("get mapdata ok")
 	elseif etag then
 		-- Save maps.json
 		local mapString = love.filesystem.newFileData(mapdata, "")
@@ -296,7 +294,7 @@ function beatmapDownload:start()
 	:setReceiveCallback(downloadReceiveCallback)
 	:setFinishCallback(downloadFinishCallback)
 	:setErrorCallback(downloadErrorCallback)
-	:download("http://r.llsif.win/maps.json", {
+	:download(SERVER_ADDRESS.."/maps.json", {
 		["If-None-Match"] = lastTag
 	})
 end
@@ -318,5 +316,11 @@ function beatmapDownload:exit()
 	self.persist.download:release()
 	self.persist.download = nil
 end
+
+beatmapDownload:registerEvent("keyreleased", function(_, key)
+	if key == "escape" then
+		leave()
+	end
+end)
 
 return beatmapDownload

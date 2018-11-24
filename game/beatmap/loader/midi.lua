@@ -4,7 +4,7 @@
 
 local bit = require("bit")
 local Luaoop = require("libs.Luaoop")
-local md5 = require("md5")
+local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
 local function str2dwordBE(str)

@@ -22,6 +22,7 @@
 		"beatmapSelect:download:localCopy": "Local copy used",
 		"beatmapSelect:download:refreshed": "List refreshed",
 		"beatmapSelect:download:title": "Beatmap Downloader",
+		"beatmapSelect:download:view": "Beatmap Info",
 		"beatmapSelect:loading": "Loading...",
 		"beatmapSelect:openDir": "Open Beatmap Directory",
 		"beatmapSelect:optionAutoplay": "Autoplay",
