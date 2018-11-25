@@ -4,7 +4,7 @@
 
 local love = require("love")
 local async = require("async")
-local lily = require("libs.lily")
+local lily = require("lily")
 local audioManager = require("audio_manager")
 local util = require("util")
 local Luaoop = require("libs.Luaoop")

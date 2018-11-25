@@ -31,6 +31,7 @@ local beatmapList = {
 	count = 0,
 	thread = nil,
 	channel = nil,
+	hasQuit = false,
 	callback = {}
 }
 
@@ -117,6 +118,7 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d)
 end
 
 function beatmapList.push()
+	assert(beatmapList.hasQuit == false, "beatmap list is already uninitialized")
 	if beatmapList.count == 0 then
 		if beatmapList.thread and beatmapList.thread:isRunning() then
 			beatmapList.thread:wait()
@@ -134,6 +136,7 @@ local function sendData(chan, name, arg)
 end
 
 function beatmapList.pop()
+	if beatmapList.hasQuit then return end
 	assert(beatmapList.count > 0, "unable to pop")
 
 	beatmapList.count = beatmapList.count - 1
@@ -201,6 +204,7 @@ postExit.add(function()
 
 	beatmapList.thread = nil
 	beatmapList.channel = nil
+	beatmapList.hasQuit = true
 end)
 
 return beatmapList

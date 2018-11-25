@@ -3,14 +3,16 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local Luaoop = require("libs.Luaoop")
 local JSON = require("libs.JSON")
 local ls2 = require("libs.ls2")
 
+local async = require("async")
+local assetCache = require("asset_cache")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local color = require("color")
 local mainFont = require("font")
+local setting = require("setting")
 local util = require("util")
 local md5 = require("game.md5")
 local L = require("language")
@@ -20,6 +22,8 @@ local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 local selectButton = require("game.ui.select_button")
 local checkbox = require("game.ui.checkbox")
+
+local beatmapList = require("game.beatmap.list")
 
 local beatmapInfoDL = gamestate.create {
 	images = {
@@ -43,10 +47,12 @@ end
 local function setStatusText(self, fmt, ...)
 	self.data.statusText:clear()
 
-	if fmt then
+	if fmt and #fmt > 0 then
 		local str = string.format(fmt, ...)
-		util.addTextWithShadow(self.data.statusText, str, 52, 590)
+		util.addTextWithShadow(self.data.statusText, str, 296, 460)
 		self.persist.statusText = str
+	else
+		self.persist.statusText = ""
 	end
 end
 
@@ -61,8 +67,8 @@ local function setDifficulty(self, diffname)
 	local text = L("beatmapSelect:difficulty", {difficulty = diffname})
 
 	self.data.diffText:clear()
-	self.data.titleText:addf({color.black, text}, 719, "center", 172, 575)
-	self.data.titleText:addf({color.white, text}, 719, "center", 170, 574)
+	self.data.diffText:addf({color.black, text}, 719, "center", 171, 571)
+	self.data.diffText:addf({color.white, text}, 719, "center", 170, 570)
 end
 
 local function setGoalsInfo(self, infodata)
@@ -86,9 +92,25 @@ local function setGoalsInfo(self, infodata)
 	end
 end
 
+local function setBeatmapInfo(_, data)
+	local self, diff = data[1], data[2]
+	local infodata = self.persist.trackData.live[diff]
+	setDifficulty(self, string.format("%s, %d\226\152\134", diff, infodata.star))
+	setGoalsInfo(self, infodata)
+	self.data.playButton:setData({self, infodata})
+end
+
+local function stringToHex(str)
+	local a = {}
+	for i = 1, #str do
+		a[#a + 1] = string.format("%02x", str:sub(i, i):byte())
+	end
+	return table.concat(a)
+end
+
 local function getHashedName(str)
-	local keyhash = md5("The quick brown fox jumps over the lazy dog"..str)
-	local filehash = md5(str)
+	local keyhash = stringToHex(md5("The quick brown fox jumps over the lazy dog"..str))
+	local filehash = stringToHex(md5(str))
 	local strb = {}
 	local seed = tonumber(keyhash:sub(1, 8), 16) % 2147483648
 
@@ -104,9 +126,256 @@ local function getHashedName(str)
 	return table.concat(strb)
 end
 
-local function getLS2Name(difficulty)
-	local hashedname = DLBeatmap.GetHashedName(DLBeatmap.TrackData.live[difficulty].livejson)
-	return "beatmap/"..hashedname:sub(1, -#DLBeatmap.TrackData.live[difficulty].livejson - 1)..".sif."..difficulty..".ls2"
+local function getLS2Name(infodata)
+	local hashedname = getHashedName(infodata.livejson)
+	return hashedname:sub(1, -#infodata.livejson - 1)..".sif."..infodata.difficulty..".ls2"
+end
+
+local function getLiveIconPath(self)
+	return "live_icon/"..getHashedName(util.basename(self.persist.trackData.icon))
+end
+
+local function getAudioPath(self)
+	return "audio/"..getHashedName(util.basename(self.persist.trackData.song))
+end
+
+local function initializeDifficultyButton(self)
+	self.data.diffFrame:clear()
+	if not(self.persist.trackData) then return end
+
+	if self.data.diffButtons == nil then
+		local diffData = {}
+
+		for i = 1, #difficultyString do
+			local diff = difficultyString[i]
+			if self.persist.trackData.live[diff] then
+				local elem = selectButton(string.format("%s (%d\226\152\134)", diff, self.persist.trackData.live[diff].star))
+				elem:addEventListener("mousereleased", setBeatmapInfo)
+				elem:setData({self, diff})
+				diffData[#diffData + 1] = elem
+			end
+		end
+
+		self.data.diffButtons = diffData
+	end
+
+	for i = 1, #self.data.diffButtons do
+		self.data.diffFrame:addElement(self.data.diffButtons[i], 16, (i - 1) * 40)
+	end
+end
+
+local function beatmapToLS2(self, file, infodata, beatmap)
+	local cover = love.filesystem.read(getLiveIconPath(self))
+
+	-- There are some -30ms offset, so decrease it.
+	for i = 1, #beatmap do
+		beatmap[i].timing_sec = beatmap[i].timing_sec - 0.03
+	end
+
+	-- New LS2 writer
+	ls2.encoder.new(file, {
+		name = self.persist.trackData.name,
+		song_file = getAudioPath(self),
+		star = infodata.star,
+		score = infodata.score,
+		combo = infodata.combo
+	})
+	-- Set background image
+	:set_background_id(infodata.star)
+	-- Add beatmap
+	:add_beatmap(beatmap)
+	-- Add cover art
+	:add_cover_art({
+		image = cover,
+		title = self.persist.trackData.name
+	})
+	-- Write
+	:write()
+end
+
+local function downloadCoverArt(self)
+	if self.persist.isCoverDownloading or self.data.coverArt then return end
+	self.persist.isCoverDownloading = true
+	setStatusText(self, L"beatmapSelect:download:downloadingCoverArt")
+
+	local coverPath = getLiveIconPath(self)
+	local coverLength
+	local coverWritten = 0
+	local file
+	self.persist.download
+	:setResponseCallback(function(_, statusCode, _, length)
+		if statusCode == 200 then
+			coverLength = length
+			file = love.filesystem.newFile(coverPath, "w")
+		else
+			self.persist.isCoverDownloading = false
+			setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
+		end
+	end)
+	:setReceiveCallback(function(_, data)
+		if self.persist.isCoverDownloading then
+			file:write(data)
+			if coverLength then
+				coverWritten = coverWritten + #data
+				setStatusText(self, "%s (%d/%d bytes)", L"beatmapSelect:download:downloadingCoverArt", coverWritten, coverLength)
+			end
+		end
+	end)
+	:setFinishCallback(function(_)
+		if self.persist.isCoverDownloading then
+			file:close()
+			async.runFunction(function()
+				self.data.coverArt = assetCache.loadImage(coverPath, {mipmaps = true})
+			end):run()
+			setStatusText(self, L"beatmapSelect:download:ready")
+			self.persist.isCoverDownloading = false
+		end
+	end)
+	:setErrorCallback(function(_, msg)
+		if file then file:close() end
+		if self.persist.isCoverDownloading then
+			setStatusText(self, L("beatmapSelect:download:errorGeneric", {message = msg}))
+		end
+		self.persist.isCoverDownloading = false
+	end)
+	:download(SERVER_ADDRESS.."/"..self.persist.trackData.icon)
+end
+
+local function downloadBeatmap(self, infodata, dest)
+	if self.persist.isBeatmapDownloading then return end
+	self.persist.isBeatmapDownloading = true
+	setStatusText(self, L("beatmapSelect:download:downloadingBeatmap", {difficulty = infodata.difficulty}))
+
+	local length
+	local written = 0
+	local jsonData = {}
+	self.persist.download
+	:setResponseCallback(function(_, statusCode, _, len)
+		if statusCode == 200 then
+			length = len
+		else
+			self.persist.isBeatmapDownloading = false
+			setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
+		end
+	end)
+	:setReceiveCallback(function(_, data)
+		if self.persist.isBeatmapDownloading then
+			jsonData[#jsonData + 1] = data
+			if length then
+				written = written + #data
+				local str = L("beatmapSelect:download:downloadingBeatmap", {difficulty = infodata.difficulty})
+				setStatusText(self, "%s (%d/%d bytes)", str, written, length)
+			end
+		end
+	end)
+	:setFinishCallback(function(_)
+		if self.persist.isBeatmapDownloading then
+			self.persist.isBeatmapDownloading = false
+			beatmapToLS2(self, love.filesystem.newFile(dest, "w"), infodata, JSON:decode(table.concat(jsonData)))
+			setStatusText(self, L"beatmapSelect:download:ready")
+		end
+	end)
+	:setErrorCallback(function(_, msg)
+		if self.persist.isBeatmapDownloading then
+			setStatusText(self, L("beatmapSelect:download:errorGeneric", {message = msg}))
+		end
+		self.persist.isBeatmapDownloading = false
+	end)
+	:download(SERVER_ADDRESS.."/"..infodata.livejson)
+end
+
+local function downloadAudio(self, infodata, dest)
+	if self.persist.isAudioDownloading then return end
+	self.persist.isAudioDownloading = true
+	setStatusText(self, L"beatmapSelect:download:downloadingAudio")
+
+	local length
+	local written = 0
+	local file
+	self.persist.download
+	:setResponseCallback(function(_, statusCode, _, len)
+		if statusCode == 200 then
+			length = len
+			file = love.filesystem.newFile(dest, "w")
+		else
+			self.persist.isAudioDownloading = false
+			setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
+		end
+	end)
+	:setReceiveCallback(function(_, data)
+		if self.persist.isAudioDownloading then
+			file:write(data)
+			if length then
+				written = written + #data
+				setStatusText(self, "%s (%d/%d bytes)", L"beatmapSelect:download:downloadingAudio", written, length)
+			end
+		end
+	end)
+	:setFinishCallback(function(_)
+		if self.persist.isAudioDownloading then
+			self.persist.isAudioDownloading = false
+			file:close()
+
+			-- Try to download beatmap
+			local beatmapFile = "beatmap/"..getLS2Name(infodata)
+			if util.fileExists(beatmapFile) then
+				setStatusText(self, L"beatmapSelect:download:ready")
+			else
+				downloadBeatmap(self, infodata, beatmapFile)
+			end
+		end
+	end)
+	:setErrorCallback(function(_, msg)
+		if file then file:close() end
+		if self.persist.isAudioDownloading then
+			setStatusText(self, L("beatmapSelect:download:errorGeneric", {message = msg}))
+		end
+		self.persist.isAudioDownloading = false
+	end)
+	:download(SERVER_ADDRESS.."/"..self.persist.trackData.song)
+end
+
+local function selectPlayButton(_, data)
+	local self, infodata = data[1], data[2]
+
+	if infodata == nil then
+		setStatusText(self, L"beatmapSelect:download:errorDifficulty")
+		return
+	end
+
+	if
+		self.persist.isCoverDownloading or
+		self.persist.isAudioDownloading or
+		self.persist.isBeatmapDownloading or
+		self.persist.gamestateEntering
+	then
+		return
+	end
+
+	-- If audio file doesn't exists, download it first
+	local audioName = getAudioPath(self)
+	if not(util.fileExists(audioName)) then
+		downloadAudio(self, infodata, audioName)
+		return
+	end
+
+	-- If beatmap doesn't exists, download it
+	local beatmapName = getLS2Name(infodata)
+	local beatmapNamePath = "beatmap/"..beatmapName
+	if not(util.fileExists(beatmapNamePath)) then
+		downloadBeatmap(self, infodata, beatmapNamePath)
+		return
+	end
+
+	-- Okay play beatmap
+	self.persist.gamestateEntering = true
+	beatmapList.registerRelative(beatmapName, function(name, summary)
+		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+			beatmapName = name,
+			summary = summary,
+			random = self.data.randomCheck:isChecked()
+		})
+	end)
 end
 
 local function leave()
@@ -119,6 +388,9 @@ function beatmapInfoDL:load()
 
 	if self.data.titleText == nil then
 		self.data.titleText = love.graphics.newText(mainFont.get(36))
+		if self.persist.trackData then
+			setTitle(self, self.persist.trackData.name)
+		end
 	end
 
 	if self.data.diffText == nil then
@@ -132,7 +404,7 @@ function beatmapInfoDL:load()
 	if self.data.diffFrame == nil then
 		self.data.diffFrame = glow.frame(6, 70, 280, 370)
 	end
-	self.data.diffFrame:clear()
+	initializeDifficultyButton(self)
 	glow.addFrame(self.data.diffFrame)
 
 	if self.data.background == nil then
@@ -157,10 +429,37 @@ function beatmapInfoDL:load()
 	end
 	glow.addElement(self.data.autoplayCheck, 24, 524)
 
+	if self.data.randomCheck == nil then
+		self.data.randomCheck = checkbox(false)
+	end
+	glow.addElement(self.data.randomCheck, 24, 582)
+
+	if self.data.playButton == nil then
+		self.data.playButton = selectButton(L"beatmapSelect:play")
+		self.data.playButton:addEventListener("mousereleased", selectPlayButton)
+		self.data.playButton:setData({self, nil})
+	end
+	glow.addElement(self.data.playButton, 710, 382)
+
 	if self.data.statusText == nil then
 		self.data.statusText = love.graphics.newText(font22)
 		if self.persist.statusText then
-			util.addTextWithShadow(self.data.statusText, self.persist.statusText, 296, 460)
+			setStatusText(self, self.persist.statusText)
+		else
+			setStatusText(self, L"beatmapSelect:download:ready")
+		end
+	end
+
+	if self.data.staticText == nil then
+		self.data.staticText = love.graphics.newText(font22)
+		util.addTextWithShadow(self.data.staticText, L"beatmapSelect:optionAutoplay", 56, 524)
+		util.addTextWithShadow(self.data.staticText, L"beatmapSelect:optionRandom", 56, 582)
+	end
+
+	if self.data.coverArt == nil and self.persist.trackData then
+		local name = getLiveIconPath(self)
+		if util.fileExists(name) then
+			self.data.coverArt = assetCache.loadImage(name, {mipmaps = true})
 		end
 	end
 end
@@ -168,9 +467,29 @@ end
 function beatmapInfoDL:start(arg)
 	-- arg[1] is download object
 	-- arg[2] is selected beatmap track data
+	beatmapList.push()
+	self.persist.isCoverDownloading = false
+	self.persist.isAudioDownloading = false
+	self.persist.isBeatmapDownloading = false
+	self.persist.gamestateEntering = false
 	self.persist.download = arg[1]
-	self.persist.beatmapTrackData = arg[2]
+	self.persist.trackData = arg[2]
 
+	if self.data.coverArt == nil then
+		local name = getLiveIconPath(self)
+		if util.fileExists(name) then
+			async.runFunction(function()
+				self.data.coverArt = assetCache.loadImage(name, {mipmaps = true})
+			end):run()
+		else
+			downloadCoverArt(self)
+		end
+	end
+
+	-- Set title
+	setTitle(self, self.persist.trackData.name)
+	-- List difficulty
+	async.runFunction(initializeDifficultyButton):run(self)
 end
 
 function beatmapInfoDL:draw()
@@ -194,13 +513,19 @@ function beatmapInfoDL:draw()
 	love.graphics.draw(self.assets.images.goalInfo, 670, 70, 0, 8/9, 8/9)
 	love.graphics.draw(self.data.goalsText)
 	love.graphics.draw(self.data.statusText)
+	love.graphics.draw(self.data.staticText)
 
 	self.data.diffFrame:draw()
 	glow.draw()
 end
 
 function beatmapInfoDL:exit()
+	beatmapList.pop()
 	self.persist.download:cancel()
+end
+
+function beatmapInfoDL:paused()
+	self.persist.gamestateEntering = false
 end
 
 beatmapInfoDL:registerEvent("resize", function(self, w, h)
@@ -212,3 +537,5 @@ beatmapInfoDL:registerEvent("keyreleased", function(_, key)
 		leave()
 	end
 end)
+
+return beatmapInfoDL

@@ -3,17 +3,17 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+
 local async = require("async")
 local color = require("color")
 local setting = require("setting")
 local util = require("util")
 local mainFont = require("font")
+local lily = require("lily")
 local L = require("language")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
-
-local lily = require("libs.lily")
 
 local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")

@@ -66,13 +66,15 @@ function downloadObject:download(url, headers)
 	assert(internal.downloading == false, "download is in progress")
 
 	log.debugf(TAG, "downloading %s", url)
+	internal.downloading = true
 	internal.chan:performAtomic(sendRequest, url, headers)
 	return self
 end
 
 function downloadObject:isDownloading()
+	local internal = Luaoop.class.data(self)
 	assert(internal.dead == false, "object is already released")
-	return Luaoop.class.data(self).downloading
+	return internal.downloading
 end
 
 function downloadObject:setData(data)
@@ -117,7 +119,7 @@ end
 
 function downloadObject:cancel()
 	local internal = Luaoop.class.data(self)
-	assert(internal.dead == false, "object is already released")
+	if internal.dead then return end
 
 	if internal.downloading then
 		log.debugf(TAG, "cancelling download")

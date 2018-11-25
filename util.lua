@@ -9,7 +9,9 @@ local version11 = love._version >= "11.0"
 local util = {}
 
 function util.basename(file)
-	return ((file:match("^(.+)%..*$") or file):gsub("(.*/)(.*)", "%2"))
+	if not(file) then return end
+	local x = file:reverse()
+	return x:sub(1, (x:find("/") or x:find("\\") or #x + 1) - 1):reverse()
 end
 
 function util.fileExists(path)

@@ -3,6 +3,8 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+
+local async = require("async")
 local color = require("color")
 local setting = require("setting")
 local util = require("util")
@@ -104,8 +106,9 @@ local function initializeBeatmapListUI(self)
 	if not(self.persist.beatmapList) then return end
 
 	-- Async wrap
-	coroutine.wrap(function()
-		local frame = glow.frame(0, 80, 460, 480)
+	async.runFunction(function()
+		local frame = self.data.beatmapFrame or glow.frame(0, 80, 460, 480)
+		frame:clear()
 
 		for i = 1, #self.persist.beatmapList do
 			local v = self.persist.beatmapList[i]
@@ -119,7 +122,7 @@ local function initializeBeatmapListUI(self)
 		self.data.beatmapFrame = frame
 		glow.addFrame(frame)
 		setStatusText(self)
-	end)()
+	end):run()
 end
 
 local function openBeatmapDirCallback(_, url)
@@ -158,18 +161,14 @@ function beatmapSelect:load()
 
 	if self.data.downloadBeatmap == nil then
 		self.data.downloadBeatmap = selectButton(L"beatmapSelect:download")
-		self.data.downloadBeatmap:addEventListener("mousereleased", function(_, obj)
-			if obj.data.beatmapFrame then
-				gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
-			end
+		self.data.downloadBeatmap:addEventListener("mousereleased", function()
+			gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
 		end)
 		self.data.downloadBeatmap:setData(self)
 	end
 	glow.addElement(self.data.downloadBeatmap, 512, 8)
 
-	if self.data.beatmapFrame == nil then
-		initializeBeatmapListUI(self)
-	end
+	initializeBeatmapListUI(self)
 
 	if self.data.playButton == nil then
 		--self.persist.summary
@@ -209,11 +208,14 @@ function beatmapSelect:start()
 	self.persist.beatmapInfo = love.graphics.newText(self.assets.fonts.status)
 	self.persist.beatmapDetailInfo = love.graphics.newText(self.assets.fonts.detail)
 	self.persist.titleText = love.graphics.newText(self.assets.fonts.title)
+	self.persist.active = true
 	beatmapList.push()
 	beatmapList.enumerate(function(id, name, fmt, diff)
 		if id == "" then
-			initializeBeatmapListUI(self)
-			setStatusText(self)
+			if self.persist.active then
+				initializeBeatmapListUI(self)
+				setStatusText(self)
+			end
 			return false
 		end
 		self.persist.beatmapList[#self.persist.beatmapList + 1] = {
@@ -227,8 +229,17 @@ function beatmapSelect:start()
 	setStatusText(self, L"beatmapSelect:loading")
 end
 
-function beatmapSelect.exit()
+function beatmapSelect:exit()
+	self.persist.active = false
 	beatmapList.pop()
+end
+
+function beatmapSelect:resumed()
+	self.persist.active = true
+end
+
+function beatmapSelect:paused()
+	self.persist.active = false
 end
 
 function beatmapSelect:update(dt)

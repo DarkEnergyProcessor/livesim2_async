@@ -6,10 +6,10 @@ local love = require("love")
 local utf8 = require("utf8")
 local Luaoop = require("libs.Luaoop")
 local JSON = require("libs.JSON")
-local lily = require("libs.lily")
 
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local lily = require("lily")
 local async = require("async")
 local color = require("color")
 local mainFont = require("font")
@@ -139,6 +139,10 @@ local function setStatusText(self, fmt, ...)
 	end
 end
 
+local function onSelectButton(_, data)
+	gamestate.enter(nil, "beatmapInfoDL", data)
+end
+
 local function initializeBeatmapList(self, mapdata, etag)
 	if not(mapdata) then
 		-- Load maps.json
@@ -149,11 +153,13 @@ local function initializeBeatmapList(self, mapdata, etag)
 		-- Save maps.json
 		local mapString = love.filesystem.newFileData(mapdata, "")
 		local sync = async.syncLily(lily.compress("zlib", mapString, 9))
-		sync:sync()
 		love.filesystem.write("maps.json.etag", etag)
+		sync:sync()
 		love.filesystem.write("maps.json", sync:getValues())
 		mapdata = JSON:decode(mapdata)
 	end
+
+	self.persist.mapData = mapdata
 
 	local liveTrack = {}
 	for _, v in ipairs(mapdata) do
@@ -191,7 +197,7 @@ local function initializeBeatmapList(self, mapdata, etag)
 			end
 
 			-- Create information data
-			local infodata = {}
+			local infodata = {difficulty = v.difficulty_text}
 			trackidx.live[v.difficulty_text] = infodata
 
 			-- in C, B, A, S format
@@ -218,11 +224,14 @@ local function initializeBeatmapList(self, mapdata, etag)
 
 	-- Setup frame
 	for i = 1, #liveTrack do
+		if not(self.data.frame) then break end
+
 		local track = liveTrack[i]
 		local x = ((i - 1) % 3) * 310
 		local y = math.floor((i - 1) / 3) * 64
 		local elem = beatmapButton(track.name, track.member)
-		-- TODO: add event listener
+		elem:addEventListener("mousereleased", onSelectButton)
+		elem:setData({self.persist.download, track})
 		self.data.frame:addElement(elem, x, y)
 	end
 end
@@ -251,7 +260,7 @@ local function downloadReceiveCallback(self, data)
 	dldata.bytesWritten = dldata.bytesWritten + #data
 
 	if dldata.length then
-		setStatusText(self, L("beatmapSelect:download:downloadingPercent", dldata))
+		setStatusText(self, "%s (%d/%d bytes)", L"beatmapSelect:download:downloading", dldata.bytesWritten, dldata.length)
 	end
 end
 
@@ -310,6 +319,12 @@ function beatmapDownload:draw()
 
 	self.data.frame:draw()
 	glow.draw()
+end
+
+function beatmapDownload:resumed()
+	if self.persist.mapData then
+		async.runFunction(initializeBeatmapList):run(self, self.persist.mapData)
+	end
 end
 
 function beatmapDownload:exit()
