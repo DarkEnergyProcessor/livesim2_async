@@ -56,7 +56,12 @@ function result:__construct(beatmapName)
 	self.returnRetryTimer = -math.huge
 	self.returnButton = longButtonUI(L"livesim2:result:returnHoldRetry")
 	self.returnButton:addEventListener("mousereleased", function()
-		self.returnButtonCallback(self.returnButtonOpaque, self.returnRetryTimer >= 2)
+		if self.returnRetryTimer ~= -math.huge then
+			self.returnButtonCallback(self.returnButtonOpaque, false)
+		end
+		self.returnRetryTimer = -math.huge
+	end)
+	self.returnButton:addEventListener("mousecanceled", function()
 		self.returnRetryTimer = -math.huge
 	end)
 	self.returnButton:addEventListener("mousepressed", function()
@@ -118,6 +123,11 @@ function result:update(dt)
 	self.timer:update(dt)
 	self.saveReplayVanishTimer = self.saveReplayVanishTimer - dt
 	self.returnRetryTimer = self.returnRetryTimer + dt
+
+	if self.returnRetryTimer >= 2 then
+		self.returnRetryTimer = -math.huge
+		self.returnButtonCallback(self.returnButtonOpaque, true)
+	end
 
 	if self.noteInfoTable then
 		-- some little animation

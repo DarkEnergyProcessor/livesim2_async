@@ -127,7 +127,7 @@ function love.run()
 	-- because Lily checks the loaded library
 	-- and doesn't require them.
 	local async = require("async")
-	local lily = require("libs.lily")
+	local lily = require("lily")
 	local gamestate = require("gamestate")
 	-- delay-load setting library also
 	local setting = require("setting")

@@ -126,7 +126,15 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 		error(msg)
 	end
 
-	local statusLine = assert(socketReceive(h, "*l"))
+	local statusLine, msg = socketReceive(h, "*l")
+	if statusLine == nil and msg == "closed" then
+		-- Well, the keep-alive connection is closed
+		h = getHTTPHandle(url, true)
+		assert(socketSend(h, headerstr))
+		statusLine = assert(socketReceive(h, "*l"))
+	elseif statusLine == nil then
+		error(msg)
+	end
 	local statusCode = tonumber(statusLine:match("HTTP/%d+%.%d+ (%d+)"))
 
 	-- receive headers
@@ -231,20 +239,24 @@ while true do
 	end
 	log.debugf(TAG, "received download command %s", destURL)
 
-	local extraHeaders = {}
-	local hasExtraHeaders = input:demand()
-	while hasExtraHeaders do
-		local n = input:demand()
-		local v = input:demand()
-		log.debugf(TAG, "collect extra headers: %s = %s", n, v)
-		extraHeaders[n] = v
-		hasExtraHeaders = input:demand()
-	end
+	if destURL == nil then
+		pushEvent("error", "empty URL")
+	else
+		local extraHeaders = {}
+		local hasExtraHeaders = input:demand()
+		while hasExtraHeaders do
+			local n = input:demand()
+			local v = input:demand()
+			log.debugf(TAG, "collect extra headers: %s = %s", n, v)
+			extraHeaders[n] = v
+			hasExtraHeaders = input:demand()
+		end
 
-	log.debugf(TAG, "initiating download call")
-	local a, b = pcall(requestHTTP, destURL, extraHeaders)
-	if not(a) then
-		pushEvent("error", b)
+		log.debugf(TAG, "initiating download call")
+		local a, b = pcall(requestHTTP, destURL, extraHeaders)
+		if not(a) then
+			pushEvent("error", b)
+		end
 	end
 
 	collectgarbage()

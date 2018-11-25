@@ -68,7 +68,6 @@ function ls2Loader:getHash()
 	local internal = Luaoop.class.data(self)
 
 	if internal.ls2.sections.BMPM or internal.ls2.sections.BMPT then
-		local a = love.timer.getTime()
 		-- hash the beatmap data
 		local data = {0, 0, 0, 0}
 
@@ -251,10 +250,11 @@ end
 
 function ls2Loader:getAudioPathList()
 	local metadata = self:_getMetadata()
-	local paths = {}
+	local paths = {nil, nil}
 
 	if metadata.song_file then
 		paths[1] = util.removeExtension("audio/"..metadata.song_file)
+		paths[2] = util.removeExtension(metadata.song_file)
 	end
 
 	return paths

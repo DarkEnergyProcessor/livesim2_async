@@ -8,7 +8,7 @@
 
 local coroutine = require("coroutine")
 local Luaoop = require("libs.Luaoop")
-local lily = require("libs.lily")
+local lily = require("lily")
 
 local async = {
 	events = {},

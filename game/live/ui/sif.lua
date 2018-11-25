@@ -10,7 +10,7 @@ local color = require("color")
 
 local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
-local lily = require("libs.lily")
+local lily = require("lily")
 local timer = require("libs.hump.timer")
 local vector = require("libs.hump.vector")
 

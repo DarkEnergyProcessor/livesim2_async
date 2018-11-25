@@ -4,7 +4,7 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local lily = require("libs.lily")
+local lily = require("lily")
 local async = require("async")
 local cache = require("cache")
 local log = require("logging")
@@ -62,6 +62,13 @@ function gamestateObject:__construct(constructor)
 			if not(internal.weak) then
 				rawset(internal.data, var, val)
 			end
+		end,
+		__index = function(d, var)
+			local val = rawget(d, var)
+			if val == nil then
+				val = rawget(internal.data, var)
+			end
+			return val
 		end,
 	})
 	self.assets = {
@@ -301,7 +308,10 @@ function gamestate.internal.quit()
 	for i = #gamestate.stack, 1, -1 do
 		local game = gamestate.stack[i]
 		gamestate.stack[i] = nil
-		game.game:exit()
+		local s, msg = pcall(game.game.exit, game.game)
+		if s == false then
+			log.errorf("gamestate", "cleanup stack #%d failed: %s", i, msg)
+		end
 	end
 end
 
@@ -324,6 +334,8 @@ function gamestate.register(name, obj)
 	if gamestate.list[name] then
 		error("gamestate with name '"..name.."' already exist", 2)
 	end
+
+	assert(Luaoop.class.is(obj, gamestateConstructorObject), "invalid gamestate object passed")
 	gamestate.list[name] = obj
 end
 

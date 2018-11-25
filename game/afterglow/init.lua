@@ -23,6 +23,15 @@ function glow.addFrame(...)
 	end
 end
 
+function glow.removeFrame(frame)
+	for i = 1, #frameList do
+		if frameList[i] == frame then
+			table.remove(frameList, i)
+			return
+		end
+	end
+end
+
 function glow.addElement(elem, x, y, ...)
 	return defaultFrame:addElement(elem, x, y, ...)
 end

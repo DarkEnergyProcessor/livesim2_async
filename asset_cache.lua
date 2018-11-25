@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local lily = require("libs.lily")
+local lily = require("lily")
 
 local async = require("async")
 local cache = require("cache")
@@ -40,14 +40,16 @@ function assetCache.loadImage(name, settings)
 		return a
 	else
 		local image
-		if coroutine.running() then
+		if assetCache.enableSync then
+			-- Run synchronously (discouraged)
+			assert(assetCache.enableSync, "synchronous mode is not allowed")
+			image = love.graphics.newImage(b, settings)
+		elseif coroutine.running() then
 			-- Run asynchronously
 			local c = async.loadImage(b, settings)
 			image = c:getValues()
 		else
-			-- Run synchronously (discouraged)
-			assert(assetCache.enableSync, "synchronous mode is not allowed")
-			image = love.graphics.newImage(b, settings)
+			error("synchronous mode is not allowed", 2)
 		end
 
 		cache.set(a, image)
@@ -78,7 +80,14 @@ function assetCache.loadMultipleImages(images, settings)
 	end
 
 	if #needed > 0 then
-		if coroutine.running() then
+		if assetCache.enableSync then
+			-- Run synchronously
+			for i = 1, #lilyload do
+				local img = love.graphics.newImage(lilyload[i][2], lilyload[i][3])
+				available[needed[i]] = img
+				cache.set(cachenames[i], img)
+			end
+		elseif coroutine.running() then
 			-- Run asynchronously
 			local multi = lily.loadMulti(lilyload)
 				:setUserData({avail = available, need = needed, cache = cachenames})
@@ -88,13 +97,7 @@ function assetCache.loadMultipleImages(images, settings)
 				async.wait()
 			end
 		else
-			-- Run synchronously
-			assert(assetCache.enableSync, "synchronous mode is not allowed")
-			for i = 1, #lilyload do
-				local img = love.graphics.newImage(lilyload[i][2], lilyload[i][3])
-				available[needed[i]] = img
-				cache.set(cachenames[i], img)
-			end
+			error("synchronous mode is not allowed", 2)
 		end
 	end
 
@@ -108,14 +111,16 @@ function assetCache.loadFont(name, settings)
 		return a
 	else
 		local image
-		if coroutine.running() then
+		if assetCache.enableSync then
+			-- Run synchronously (discouraged)
+			assert(assetCache.enableSync, "synchronous mode is not allowed")
+			image = love.graphics.newFont(b, settings)
+		elseif coroutine.running() then
 			-- Run asynchronously
 			local c = async.loadFont(b, settings)
 			image = c:getValues()
 		else
-			-- Run synchronously (discouraged)
-			assert(assetCache.enableSync, "synchronous mode is not allowed")
-			image = love.graphics.newFont(b, settings)
+			error("synchronous mode is not allowed", 2)
 		end
 
 		cache.set(a, image)
@@ -140,16 +145,7 @@ function assetCache.loadMultipleFonts(fonts)
 		end
 	end
 
-	if coroutine.running() then
-		-- Run asynchronously
-		local multi = lily.loadMulti(lilyload)
-			:setUserData({avail = available, need = needed, cache = cachenames})
-			:onLoaded(setMultipleLilyCallback)
-		-- Wait
-		while multi:isComplete() == false do
-			async.wait()
-		end
-	else
+	if assetCache.enableSync then
 		-- Run synchronously
 		assert(assetCache.enableSync, "synchronous mode is not allowed")
 		for i = 1, #lilyload do
@@ -157,6 +153,22 @@ function assetCache.loadMultipleFonts(fonts)
 			available[needed[i]] = img
 			cache.set(cachenames[i], img)
 		end
+	elseif coroutine.running() then
+		-- Run asynchronously
+		local multi = lily.loadMulti(lilyload)
+			:setUserData({avail = available, need = needed, cache = cachenames})
+			:onLoaded(setMultipleLilyCallback)
+		-- Wait
+		local time = love.timer.getTime()
+		while multi:isComplete() == false do
+			async.wait()
+			if time and love.timer.getTime() - time >= 1 then
+				log.warn("assetCache", "loadMultipleFonts took longer than 1 second. Is Lily okay?")
+				time = nil
+			end
+		end
+	else
+		error("synchronous mode is not allowed", 2)
 	end
 
 	return available
