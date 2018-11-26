@@ -29,10 +29,11 @@ end
 return function(code)
 	local len = isData(code) and code:getSize() or #code
 	-- https://bitbucket.org/rude/love/issues/1453
-	-- LOVE 11.1 and earlier produces wrong hash for
-	-- data that is exactly 56 bytes long. In that
-	-- case, keep using kikito's MD5 implementation
-	if len == 56 and love._version < "11.2" then
+	-- https://bitbucket.org/rude/love/pull-requests/117
+	-- LOVE 11.2 and earlier produces wrong hash for
+	-- data that is 56 + 64k bytes long (k = 0, 1, 2, ...).
+	-- In that case, keep using kikito's MD5 implementation
+	if len % 64 == 56 and love._version < "11.3" then
 		return md5implfb(code)
 	else
 		return md5impl(code)
