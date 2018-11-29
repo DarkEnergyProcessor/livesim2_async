@@ -1,0 +1,122 @@
+# Live Simulator: 2 v3.0 storyboard.yaml/.yml draft
+
+# There are some pseudo-target for drawing
+# Their properties can be changed like normal drawable object
+# but you don't have to init these. Any attempt to use this name
+# always result in error.
+# __background - current background
+# __unit_<n> - current unit icon (<n> range from 1..9)
+
+# This is place to initialize all drawing object
+init:
+   # this is used for default parameter (except if it's value is "mandatory")
+   # Note that name can't start with two underscores.
+ - name: mandatory
+   draw: mandatory
+   type: mandatory
+   red: 255
+   green: 255
+   blue: 255
+   alpha: 255
+   x: 0
+   y: 0
+   r: 0
+   sx: 1
+   sy: 1
+   ox: 0
+   oy: 0
+   kx: 0
+   ky: 0
+   # if draw: is font
+   text: ''
+   parameters:
+     # if draw: is "font"
+     # format: <font name>[:<size=12>]
+     # pseudo-name "__default" will use Roboto with Motoya L Maru as fallback
+     # pseudo-name "__mtlmr3m" will use Motoya L Maru with Roboto as fallback
+     font: __default
+     font: __mtlmr3m:12
+     font: Noto.ttf:12
+     # if draw: is "image"
+     image: mandatory
+
+# Skill definition for specific unit
+skill:
+   # Unit index (1 is rightmost, 9 is leftmost, outside range is not valid)
+ - index: mandatory
+   # type: can be either:
+   # "score_up" - score up
+   # "healer" - stamina up
+   # "tw+" - timing window+ (yellow)
+   # "tw++" - timing window++ (red)
+   type: mandatory
+   # skill-specific value (0 is not a valid value)
+   # if type: score_up, add score
+   # if type: healer, add stamina
+   # if type: tw+ or type: tw++, time in seconds
+   value: mandatory (number)
+   # Chance, specified in decimal, not in percent
+   chance: mandatory (number < 1)
+   # 
+   draw: navi_draw_name
+   # Trigger conditions. you can specify multiple requirements
+   # but at least one condition below must be specified
+   condition:
+     # trigger if "emit" with this name is triggered
+     emit: emit_name
+     # trigger for every 62 notes (even miss counts)
+     notes: 62
+     # trigger for every star note
+     star: 1
+     # trigger for every token note (not recommended)
+     token: 1
+     # trigger for every 20 seconds
+     time: 20
+     # trigger for every 22 perfect
+     perfect: 20
+     # trigger for every 7 greats
+     great: 7
+     # trigger for every 2 goods
+     good: 2
+     # trigger for every 5 miss
+     miss: 5
+     # trigger for every score multipler (Umi cheerleader for example)
+     scoremultipler: 13500
+
+storyboard:
+   # Explanation:
+   # time - time in seconds when the event occured (must be constant)
+   # type - event type, draw, set, or emit
+   # target - depends on type
+   #  - if type: draw, target is drawable target
+   #  - if type: set, target is parameter target (text value for example)
+   #    specific for this, value is mandatory
+   #  - if type: emit, target is emit name
+ - time: mandatory (number)
+   type: mandatory
+   target: mandatory
+   # if type: set
+   value: mandatory
+   # endif
+   # for multiple events (the "do" key will take precedence)
+ - time: mandatory (number)
+   do:
+      # specify multiple targets here (same keys as above)
+    - type: mandatory
+      target: mandatory
+    - type: mandatory
+      target: mandatory
+
+   # example supported value format for number
+   # "time" key only and must be constant!
+ - time: 0.0
+   type: draw
+   target: drawable
+   x: 200
+   x: tween 500 in 2 seconds
+   x: tween 500 in 2000 ms
+   # example set text value
+ - time: 2.0
+   type: set
+   target: romecin_text
+   text: Romeo and Cinderella
