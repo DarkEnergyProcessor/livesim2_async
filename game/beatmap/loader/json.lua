@@ -11,10 +11,6 @@ local util = require("util")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
-local function basename(file)
-	return ((file:match("^(.+)%..*$") or file):gsub("(.*/)(.*)", "%2"))
-end
-
 ------------------------
 -- SIF beatmap object --
 ------------------------
@@ -92,7 +88,7 @@ function siftLoader:__construct(bm, file, hash)
 	local i = Luaoop.class.data(self)
 	i.hash = hash
 	i.data = bm
-	i.filename = basename(file:getFilename())
+	i.filename = util.basename(file:getFilename())
 end
 
 function siftLoader.getFormatName()
@@ -254,6 +250,65 @@ function siftLoader:getDifficultyString()
 	end
 end
 
+------------------------
+-- LLP Beatmap Loader --
+------------------------
+
+local llpLoader = Luaoop.class("beatmap.LLP", baseLoader)
+
+function llpLoader:__construct(bm, hash)
+	local internal = Luaoop.class.data(self)
+	internal.hash = hash
+	internal.llp = bm
+end
+
+function llpLoader.getFormatName()
+	return "LLPractice Beatmap", "llp"
+end
+
+function llpLoader:getHash()
+	return assert(Luaoop.class.data(self).hash)
+end
+
+function llpLoader:getNotesList()
+	local internal = Luaoop.class.data(self)
+	local attribute = setting.get("LLP_SIFT_DEFATTR")
+	local sifMap = {}
+
+	for _, v in ipairs(internal.llp.lane) do
+		for _, b in ipairs(v) do
+			local newEffect = 1
+			local newEffectVal = 2
+
+			if b.longnote then
+				newEffect = 3
+				newEffectVal = (b.endtime - b.starttime) / 1000
+			end
+
+			sifMap[#sifMap + 1] = {
+				timing_sec = b.starttime / 1000,
+				notes_attribute = attribute or 1,
+				notes_level = 1,
+				effect = newEffect,
+				effect_value = newEffectVal,
+				position = 9 - b.lane
+			}
+		end
+	end
+
+	table.sort(sifMap, function(a, b) return a.timing_sec < b.timing_sec end)
+	return sifMap
+end
+
+function llpLoader:getAudioPathList()
+	local internal = Luaoop.class.data(self)
+	local t = {nil}
+	if internal.llp.audiofile then
+		t[1] = "audio/"..internal.llp.audiofile
+	end
+	return t
+end
+
 return function(f)
 	-- f is File object, beatmap.thread guarantee that the
 	-- read position is always at position 0
@@ -275,9 +330,9 @@ return function(f)
 		-- SIFTrain
 		return siftLoader(bm, f, hash)
 
-	--elseif bm.lane and bm.audiofile then
+	elseif bm.lane and bm.audiofile then
 		-- LLP
-		--loader = Loaders.LLP(bm, file)
+		return llpLoader(bm, hash)
 	else
 		-- SIF
 		return sifLoader(bm, hash)
