@@ -57,7 +57,7 @@ skill:
    value: mandatory (number)
    # Chance, specified in decimal, not in percent
    chance: mandatory (number < 1)
-   # 
+   # Target draw navi (like the full image if the idol)
    draw: navi_draw_name
    # Trigger conditions. you can specify multiple requirements
    # but at least one condition below must be specified
