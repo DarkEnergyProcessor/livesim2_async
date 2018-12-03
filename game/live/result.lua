@@ -7,6 +7,7 @@ local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 local assetCache = require("asset_cache")
 local color = require("color")
+local util = require("util")
 local L = require("language")
 
 local glow = require("game.afterglow")
@@ -15,12 +16,12 @@ local selectButtonUI = require("game.ui.select_button")
 
 local result = Luaoop.class("livesim2.Result")
 
-local function addTextWithShadow(text, str, x, y, intensity)
+local function addTextShadowRight(text, str, x, y, w, intensity)
 	x = x or 0 y = y or 0
 	intensity = intensity or 1
-	text:add({color.black, str}, x-intensity, y-intensity)
-	text:add({color.black, str}, x+intensity, y+intensity)
-	text:add({color.white, str}, x, y)
+	text:addf({color.black, str}, w, "right", x-intensity, y-intensity)
+	text:addf({color.black, str}, w, "right", x+intensity, y+intensity)
+	text:addf({color.white, str}, w, "right", x, y)
 end
 
 -- must be in async
@@ -89,21 +90,21 @@ function result:__construct(beatmapName)
 	self.frame:addElement(self.saveReplayButton, 600, 356)
 	-- text objects
 	self.staticText = love.graphics.newText(self.fonts[3])
-	addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
-	addTextWithShadow(self.staticText, L"general:token", 648, 156)
-	addTextWithShadow(self.staticText, L"general:score", 600, 232)
+	util.addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
+	util.addTextWithShadow(self.staticText, L"general:token", 648, 156)
+	util.addTextWithShadow(self.staticText, L"general:score", 600, 232)
 	self.beatmapNameText = love.graphics.newText(self.fonts[1])
-	addTextWithShadow(self.beatmapNameText, beatmapName, 0, 0)
+	util.addTextWithShadow(self.beatmapNameText, beatmapName, 0, 0)
 	self.statusText = love.graphics.newText(self.fonts[2])
 	self.judgementText = love.graphics.newText(self.fonts[3])
 	-- information table
 	self.noteInfoTable = nil
 	self.displayJudgement = {
-		perfect = 0,
-		great = 0,
-		good = 0,
-		bad = 0,
-		miss = 0,
+		perfect = 0, perfectPercentage = 0,
+		great = 0, greatPercentage = 0,
+		good = 0, goodPercentage = 0,
+		bad = 0, badPercentage = 0,
+		miss = 0, missPercentage = 0,
 		token = 0,
 		maxToken = 0,
 		combo = 0,
@@ -133,25 +134,30 @@ function result:update(dt)
 		-- some little animation
 		-- left side
 		self.judgementText:clear()
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.perfect)), 310, 80)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.great)), 310, 144)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.good)), 310, 208)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.bad)), 310, 272)
-		addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.miss)), 310, 336)
+		util.addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.perfect)), 388, 80)
+		util.addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.great)), 388, 144)
+		util.addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.good)), 388, 208)
+		util.addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.bad)), 388, 272)
+		util.addTextWithShadow(self.judgementText, tostring(math.floor(self.displayJudgement.miss)), 388, 336)
+		addTextShadowRight(self.judgementText, string.format("%.2f%%", self.displayJudgement.perfectPercentage), 0, 80, 160)
+		addTextShadowRight(self.judgementText, string.format("%.2f%%", self.displayJudgement.greatPercentage), 0, 144, 160)
+		addTextShadowRight(self.judgementText, string.format("%.2f%%", self.displayJudgement.goodPercentage), 0, 208, 160)
+		addTextShadowRight(self.judgementText, string.format("%.2f%%", self.displayJudgement.badPercentage), 0, 272, 160)
+		addTextShadowRight(self.judgementText, string.format("%.2f%%", self.displayJudgement.missPercentage), 0, 336, 160)
 		-- right side
 		self.statusText:clear()
 		local comboStatus = self.displayJudgement.value == 1 and self.displayJudgement.comboLevel or ""
-		addTextWithShadow(
+		util.addTextWithShadow(
 			self.statusText,
 			string.format("%d/%d %s", self.displayJudgement.combo, self.displayJudgement.maxCombo, comboStatus),
 			600, 118
 		)
-		addTextWithShadow(
+		util.addTextWithShadow(
 			self.statusText,
 			string.format("%d/%d", self.displayJudgement.token, self.displayJudgement.maxToken),
 			600, 198
 		)
-		addTextWithShadow(
+		util.addTextWithShadow(
 			self.statusText,
 			string.format("%d", self.displayJudgement.score),
 			600, 278
@@ -163,11 +169,11 @@ function result:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.images[3], 230, 0)
 	-- judgement
-	love.graphics.draw(self.images[4], 81, 80, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[5], 107, 144, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[6], 117, 208, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[7], 137, 272, 0, 0.5, 0.5)
-	love.graphics.draw(self.images[8], 134, 336, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[4], 225, 80, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[5], 251, 144, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[6], 261, 208, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[7], 281, 272, 0, 0.5, 0.5)
+	love.graphics.draw(self.images[8], 278, 336, 0, 0.5, 0.5)
 	-- token image
 	love.graphics.draw(self.images[1], self.tokenQuad, 600, 156, 0, 0.3, 0.3)
 	-- live graph
@@ -177,7 +183,7 @@ function result:draw()
 	-- draw text
 	love.graphics.draw(self.staticText)
 	love.graphics.draw(self.statusText)
-	love.graphics.draw(self.judgementText)
+	love.graphics.draw(self.judgementText, 48, 0)
 	love.graphics.draw(self.beatmapNameText, 80, 396)
 	if self.saveReplayVanishTimer > 0 then
 		love.graphics.setFont(self.fonts[1])
@@ -196,16 +202,22 @@ end
 
 function result:setInformation(noteinfo, accuracyData, comboRange)
 	-- see self.persist.noteInfo in game/states/livesim2.lua
+	local weightSum = noteinfo.perfect + noteinfo.great + noteinfo.good + noteinfo.bad + noteinfo.miss
 	self.noteInfoTable = noteinfo
 	self.displayJudgement.combo = noteinfo.maxCombo
 	self.displayJudgement.maxCombo = noteinfo.totalNotes
 	self.displayJudgement.maxToken = noteinfo.tokenAmount
 	self.timer:tween(1, self.displayJudgement, {
 		perfect = noteinfo.perfect,
+		perfectPercentage = util.round(100 * noteinfo.perfect / weightSum, 2),
 		great = noteinfo.great,
+		greatPercentage = util.round(100 * noteinfo.great / weightSum, 2),
 		good = noteinfo.good,
+		goodPercentage = util.round(100 * noteinfo.good / weightSum, 2),
 		bad = noteinfo.bad,
+		badPercentage = util.round(100 * noteinfo.bad / weightSum, 2),
 		miss = noteinfo.miss,
+		missPercentage = util.round(100 * noteinfo.miss / weightSum, 2),
 		token = noteinfo.token,
 		combo = noteinfo.combo,
 		score = noteinfo.score,
