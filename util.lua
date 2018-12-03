@@ -158,4 +158,14 @@ function util.sign(n)
 	return n > 0 and 1 or (n < 0 and -1 or 0)
 end
 
+function util.round(num, numDecimalPlaces)
+	local mult = 10^(numDecimalPlaces or 0)
+	local x = num * mult
+	if util.sign(x) >= 0 then
+		return math.floor(x + 0.5) / mult
+	else
+		return math.ceil(x - 0.5) / mult
+	end
+end
+
 return util
