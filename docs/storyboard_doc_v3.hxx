@@ -158,10 +158,19 @@ void *loadVideo(const char *path);
  * \param path Font file path, relative to current beatmap.
  * \param size Font size.
  * \return [LOVE Font](https://love2d.org/wiki/Font) object.
+ * \note To load default font, pass "__default" as \p path.
  * \exception exception file not found.
  * \exception exception invalid font format.
  **/
 void *loadFont(const char *path, int size = 14);
+
+/**
+ * Load shader from string.
+ * \param shader Shader code which must contain both vertex and pixel shader.
+ * \return [LOVE Shader](https://love2d.org/wiki/Shader) object.
+ * \exception exception invalid shader code.
+ **/
+void *loadShader(const char *str);
 
 /**
  * Read file contents from beatmap.
@@ -169,7 +178,7 @@ void *loadFont(const char *path, int size = 14);
  * \return File contents.
  * \exception exception file not found.
  */
-const char *readfile(const char *path);
+const char *readFile(const char *path);
 
 /**
  * Set unit icon visibility
@@ -247,5 +256,39 @@ bool isRandom();
  * \warning Shader must be specified in order they'll be applied.
  **/
 void *setPostProcessingShader(...);
+
+/**
+ * Contains all function related to drawing stuff
+ **/
+namespace graphics
+{
+
+// Object creation
+void *newCanvas();
+void *newText(void *font, const char *text = nullptr);
+
+// State change
+void setColor(double r, double g, double b, double a = 1.0);
+void setFont(void *font);
+void setShader(void *shader);
+void setCanvas(void *canvas);
+
+// Real drawing
+void clear();
+void drawObject(
+	void *drawable,
+	double x = 0.0,
+	double y = 0.0,
+	double r = 0.0,
+	double sx = 1.0,
+	double sy = 1.0,
+	double ox = 0.0,
+	double oy = 0.0,
+	double kx = 0.0,
+	double ky = 0.0
+)
+
+
+}
 
 }

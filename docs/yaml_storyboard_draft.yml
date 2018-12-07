@@ -1,3 +1,4 @@
+---
 # Live Simulator: 2 v3.0 storyboard.yaml/.yml draft
 
 # There are some pseudo-target for drawing
@@ -13,7 +14,6 @@ init:
    # Note that name can't start with two underscores.
  - name: mandatory
    draw: mandatory
-   type: mandatory
    red: 255
    green: 255
    blue: 255
@@ -27,18 +27,20 @@ init:
    oy: 0
    kx: 0
    ky: 0
-   # if draw: is font
+   # if draw: is "text"
    text: ''
-   parameters:
-     # if draw: is "font"
-     # format: <font name>[:<size=12>]
-     # pseudo-name "__default" will use Roboto with Motoya L Maru as fallback
-     # pseudo-name "__mtlmr3m" will use Motoya L Maru with Roboto as fallback
-     font: __default
-     font: __mtlmr3m:12
-     font: Noto.ttf:12
-     # if draw: is "image"
-     image: mandatory
+   # if draw: is "text"
+   # format: <font name>[:<size=12>]
+   # pseudo-name "__default" will use Roboto with Motoya L Maru as fallback
+   # pseudo-name "__mtlmr3m" will use Motoya L Maru with Roboto as fallback
+   font: __default
+   font: __mtlmr3m:12
+   font: Noto.ttf:12
+   # if draw: is "image"
+   image: mandatory
+   # if draw: is "rectangle"
+   width: mandatory
+   height: mandatory
 
 # Skill definition for specific unit
 skill:
@@ -86,11 +88,9 @@ skill:
 storyboard:
    # Explanation:
    # time - time in seconds when the event occured (must be constant)
-   # type - event type, draw, set, or emit
+   # type - event type, draw, undraw, set, or emit
    # target - depends on type
-   #  - if type: draw, target is drawable target
-   #  - if type: set, target is parameter target (text value for example)
-   #    specific for this, value is mandatory
+   #  - if type: draw, undraw, or set, target is drawable target
    #  - if type: emit, target is emit name
  - time: mandatory (number)
    type: mandatory

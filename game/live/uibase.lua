@@ -6,7 +6,7 @@
 -- Combo counter, score display, stamina display, ...
 
 local Luaoop = require("libs.Luaoop")
-local uibase = Luaoop.class("livesim2.LiveUI")
+local uibase = Luaoop.class("Livesim2.LiveUI")
 
 -- luacheck: no unused args
 
@@ -16,7 +16,7 @@ local uibase = Luaoop.class("livesim2.LiveUI")
 
 function uibase.__construct()
 	-- constructor must run in async manner!
-	error("attempt to construct abstract class 'UI'", 2)
+	error("attempt to construct abstract class 'Livesim2.LiveUI'", 2)
 end
 
 function uibase:update(dt, paused)
