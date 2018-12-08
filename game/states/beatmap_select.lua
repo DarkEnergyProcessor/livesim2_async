@@ -134,7 +134,8 @@ local function playButtonCallback(_, self)
 		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
 			summary = self.persist.summary,
 			beatmapName = self.persist.selectedBeatmapID,
-			random = self.data.checkButton[2]:isChecked()
+			random = self.data.checkButton[2]:isChecked(),
+			storyboard = self.data.checkButton[3]:isChecked(),
 		})
 	end
 end
@@ -188,10 +189,10 @@ function beatmapSelect:load()
 
 	if self.data.checkButton == nil then
 		self.data.checkButton = {
-			checkbox(setting.get("AUTOPLAY") == 1),
-			checkbox(false),
-			checkbox(false),
-			checkbox(false)
+			checkbox(setting.get("AUTOPLAY") == 1), -- autoplay
+			checkbox(false), -- random
+			checkbox(false), -- storyboard
+			checkbox(false) -- video background
 		}
 		self.data.checkButton[1]:addEventListener("changed", function(_, _, value)
 			setting.set("AUTOPLAY", value and 1 or 0)
