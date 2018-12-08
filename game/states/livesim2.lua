@@ -201,6 +201,8 @@ function DEPLS:load(arg)
 	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
+	local loadStoryboard = arg.storyboard
+	if loadStoryboard == nil then loadStoryboard = true end
 
 	-- autoplay
 	local autoplay
@@ -337,6 +339,7 @@ function DEPLS:load(arg)
 
 	-- Load notes data
 	local isBeatmapInit = 0
+	local desiredBeatmapInit = loadStoryboard and 4 or 3
 	beatmapList.getNotes(arg.beatmapName, function(notes)
 		local fullScore = 0
 
@@ -423,15 +426,17 @@ function DEPLS:load(arg)
 		log.debug("livesim2", "received unit data")
 		isBeatmapInit = isBeatmapInit + 1
 	end)
-	-- Load storyboard
-	beatmapList.getStoryboard(arg.beatmapName, function(story)
-		-- Story can be nil
-		if story then
-			-- Parsed later
-			self.data.storyboardData = story
-		end
-		isBeatmapInit = isBeatmapInit + 1
-	end)
+	if loadStoryboard then
+		-- Load storyboard
+		beatmapList.getStoryboard(arg.beatmapName, function(story)
+			-- Story can be nil
+			if story then
+				-- Parsed later
+				self.data.storyboardData = story
+			end
+			isBeatmapInit = isBeatmapInit + 1
+		end)
+	end
 
 	-- load tap SFX
 	self.data.tapSFX = {accumulateTracking = {}}
@@ -530,7 +535,7 @@ function DEPLS:load(arg)
 	end
 
 	-- wait until notes are loaded
-	while isBeatmapInit < 4 do
+	while isBeatmapInit < desiredBeatmapInit do
 		async.wait()
 	end
 	log.debug("livesim2", "beatmap init wait done")
@@ -615,7 +620,7 @@ function DEPLS:load(arg)
 	end
 
 	-- Initialize storyboard
-	if self.data.storyboardData then
+	if loadStoryboard and self.data.storyboardData then
 		local s, msg = storyLoader.load(
 			self.data.storyboardData.type,
 			self.data.storyboardData.storyboard,
