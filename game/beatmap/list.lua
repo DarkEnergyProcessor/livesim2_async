@@ -109,6 +109,33 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d)
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
 			cb(a, channelToTable(b))
+		elseif name == "story" then
+			local cb = beatmapList.callback[id]
+			beatmapList.callback[id] = nil
+
+			if a then
+				local type = a:pop()
+				local storyboard = a:pop()
+				local path = a:pop()
+				local data = a:pop()
+
+				if data then
+					local dataTable = {}
+					while data:getCount() > 0 do
+						dataTable[#dataTable + 1] = data:pop()
+					end
+					data = dataTable
+				end
+
+				cb({
+					type = type,
+					storyboard = storyboard,
+					path = path,
+					data = data
+				})
+			else
+				cb(nil)
+			end
 		else
 			local cb = beatmapList.callback[id]
 			beatmapList.callback[id] = nil
@@ -178,6 +205,11 @@ end
 function beatmapList.enumerateLoaders(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "loaders", {registerRequestID(callback)})
+end
+
+function beatmapList.getStoryboard(name, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
 end
 
 -- callback: id (may print unprintable char), summary

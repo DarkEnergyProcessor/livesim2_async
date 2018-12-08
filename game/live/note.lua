@@ -114,7 +114,7 @@ local swingRotationTable = {
 -- Note Manager object --
 -------------------------
 
-local noteManager = Luaoop.class("livesim2.NoteManager")
+local noteManager = Luaoop.class("Livesim2.NoteManager")
 
 function noteManager:__construct(param)
 	-- luacheck: push no unused args
@@ -371,7 +371,7 @@ end
 -- Base Moving Note object --
 -----------------------------
 
-local baseMovingNote = Luaoop.class("livesim2.BaseMovingNote")
+local baseMovingNote = Luaoop.class("Livesim2.BaseMovingNote")
 
 function baseMovingNote.__construct()
 	error("attempt to construct abstract class 'BaseMovingNote'", 2)
@@ -400,7 +400,7 @@ end
 -- Normal Moving Note object --
 -------------------------------
 
-local normalMovingNote = Luaoop.class("livesim2.NormalMovingNote", baseMovingNote)
+local normalMovingNote = Luaoop.class("Livesim2.NormalMovingNote", baseMovingNote)
 
 function normalMovingNote:__construct(definition, param)
 	-- Note target time
@@ -554,7 +554,7 @@ end
 -- Long Moving Note object --
 -----------------------------
 
-local longMovingNote = Luaoop.class("livesim2.LongMovingNote", normalMovingNote)
+local longMovingNote = Luaoop.class("Livesim2.LongMovingNote", normalMovingNote)
 
 function longMovingNote:__construct(definition, param)
 	normalMovingNote.__construct(self, definition, param)

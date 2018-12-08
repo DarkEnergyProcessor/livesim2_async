@@ -22,6 +22,7 @@ local glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
+local storyLoader = require("game.storyboard.loader")
 local note = require("game.live.note")
 local pause = require("game.live.pause")
 local result = require("game.live.result")
@@ -422,6 +423,15 @@ function DEPLS:load(arg)
 		log.debug("livesim2", "received unit data")
 		isBeatmapInit = isBeatmapInit + 1
 	end)
+	-- Load storyboard
+	beatmapList.getStoryboard(arg.beatmapName, function(story)
+		-- Story can be nil
+		if story then
+			-- Parsed later
+			self.data.storyboardData = story
+		end
+		isBeatmapInit = isBeatmapInit + 1
+	end)
 
 	-- load tap SFX
 	self.data.tapSFX = {accumulateTracking = {}}
@@ -520,7 +530,7 @@ function DEPLS:load(arg)
 	end
 
 	-- wait until notes are loaded
-	while isBeatmapInit < 3 do
+	while isBeatmapInit < 4 do
 		async.wait()
 	end
 	log.debug("livesim2", "beatmap init wait done")
@@ -604,6 +614,25 @@ function DEPLS:load(arg)
 		self.data.unitIcons[i] = image
 	end
 
+	-- Initialize storyboard
+	if self.data.storyboardData then
+		local s, msg = storyLoader.load(
+			self.data.storyboardData.type,
+			self.data.storyboardData.storyboard,
+			{
+				path = self.data.storyboardData.path,
+				data = self.data.storyboardData.data,
+				background = self.data.background,
+				unit = self.data.unitIcons
+			}
+		)
+		if s == nil then
+			log.errorf("livesim2", "failed to load storyboard: %s", msg)
+		else
+			self.data.storyboard = s
+		end
+	end
+
 	log.debug("livesim2", "ready")
 end
 
@@ -646,6 +675,11 @@ function DEPLS:update(dt)
 		self.data.pauseObject:update(dt)
 		if not(self.data.pauseObject:isPaused()) then
 			if self.persist.liveDelayCounter <= 0 then
+				-- update storyboard
+				if self.data.storyboard then
+					self.data.storyboard:update(self.data.pauseObject:isPaused() and 0 or dt)
+				end
+
 				local updtDt = dt
 				if self.persist.liveDelayCounter ~= -math.huge then
 					updtDt = -self.persist.liveDelayCounter
@@ -707,9 +741,13 @@ end
 function DEPLS:draw()
 	-- draw background
 	love.graphics.setColor(color.white)
-	love.graphics.setBlendMode("replace", "alphamultiply")
-	love.graphics.draw(self.data.background)
-	love.graphics.setBlendMode("alpha", "alphamultiply")
+	if self.data.storyboard and self.persist.coverArtDisplayDone then
+		self.data.storyboard:draw()
+	else
+		love.graphics.setBlendMode("replace", "alphamultiply")
+		love.graphics.draw(self.data.background)
+		love.graphics.setBlendMode("alpha", "alphamultiply")
+	end
 	if self.persist.coverArtDisplayDone == false then
 		local x = self.data.coverArtDisplay
 		local fOpacity

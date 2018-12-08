@@ -2,7 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local Luaoop = require("Luaoop")
+local Luaoop = require("libs.Luaoop")
 local baseStoryboard = Luaoop.class("Livesim2.Storyboard.Base")
 
 function baseStoryboard.__construct()

@@ -169,18 +169,25 @@ function util.round(num, numDecimalPlaces)
 end
 
 function util.deepCopy(orig)
-	local orig_type = type(orig)
-	local copy
-	if orig_type == 'table' then
-		copy = {}
+	if type(orig) == 'table' then
+		local copy = {}
 		for orig_key, orig_value in next, orig, nil do
-			copy[util.deepCopy(orig_key)] = util.deepCopy(orig_value)
+			copy[orig_key] = util.deepCopy(orig_value)
 		end
-		setmetatable(copy, util.deepCopy(getmetatable(orig)))
+		return copy
 	else -- number, string, boolean, etc
-		copy = orig
+		return orig
 	end
-	return copy
+end
+
+function util.isValueInArray(array, value)
+	for i = 1, #array do
+		if array[i] == value then
+			return i
+		end
+	end
+
+	return nil
 end
 
 return util

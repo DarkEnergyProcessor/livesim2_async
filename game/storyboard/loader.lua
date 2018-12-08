@@ -8,9 +8,16 @@ local storyboardLoader = {
 	}
 }
 
+local temp = {nil, nil, nil}
+local function callTemp()
+	return temp[1](temp[2], temp[3])
+end
+
 function storyboardLoader.load(type, data, info)
 	if storyboardLoader.loaders[type] then
-		local status, msg = pcall(storyboardLoader.loaders[type], data, info)
+		temp[1] = storyboardLoader.loaders[type]
+		temp[2], temp[3] = data, info
+		local status, msg = xpcall(callTemp, debug.traceback)
 		if status then
 			return msg
 		else

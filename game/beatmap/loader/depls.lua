@@ -53,7 +53,7 @@ function deplsLoader:__construct(path)
 				local s, v = pcall(beatmap.fileLoader[j], file)
 
 				if s then
-					assert(Luaoop.class.instanceof(v, "beatmap.Base"), "invalid beatmap object returned")
+					assert(Luaoop.class.is(v, baseLoader), "invalid beatmap object returned")
 					internal.beatmap = v
 					return
 				end
@@ -164,6 +164,40 @@ function deplsLoader:getAudio()
 	else
 		return baseLoader.getAudio(self)
 	end
+end
+
+function deplsLoader:getStoryboardData()
+	local internal = Luaoop.class.data(self)
+	local embeddedStory = internal.beatmap:getStoryboardData()
+
+	if embeddedStory then
+		embeddedStory.path = internal.path
+		return embeddedStory
+	end
+	local file = util.substituteExtension(internal.path.."storyboard", {".yaml", ".yml"}, false)
+
+	if file then
+		return {
+			type = "yaml",
+			storyboard = love.filesystem.read(file):gsub("\r\n", "\n"),
+			path = internal.path
+		}
+	end
+
+	file = internal.path.."storyboard.lua"
+	if util.fileExists(file) then
+		local script = love.filesystem.read(file)
+		-- Do not load bytecode
+		if script:find("\27", 1, true) == nil and loadstring(script) then
+			return {
+				type = "lua",
+				storyboard = script,
+				path = internal.path
+			}
+		end
+	end
+
+	return nil
 end
 
 return deplsLoader, "folder"
