@@ -57,7 +57,7 @@ function beatmap.findSuitableForFile(filename)
 		if status then
 			return value
 		else
-			love.event.push("print", string.format("%s: %s", filename, value))
+			log.debugf("beatmap.thread", "cannot load '%s' with '%s': %s", filename, beatmap.fileLoader[i].name, value)
 		end
 	end
 
@@ -68,13 +68,13 @@ function beatmap.findSuitableForFolder(dir)
 	-- make sure to guarantee path separator
 	dir = dir:sub(-1) ~= "/" and dir.."/" or dir
 
-	for i = 1, #beatmap.fileLoader do
+	for i = 1, #beatmap.folderLoader do
 		local status, value = pcall(beatmap.folderLoader[i], dir)
 
 		if status then
 			return value
 		else
-			love.event.push("print", string.format("%s: %s", dir, value))
+			log.debugf("beatmap.thread", "cannot load '%s' with '%s': %s", dir, beatmap.folderLoader[i].name, value)
 		end
 	end
 
@@ -306,7 +306,6 @@ local function processCommand(chan, command)
 
 			sendBeatmapData("load", id, arg[1], c)
 		else
-			print(arg[1])
 			local beatmapObject, type = beatmap.findSuitable("beatmap/"..arg[1])
 
 			if beatmapObject then
@@ -334,6 +333,30 @@ local function processCommand(chan, command)
 			sendBeatmapData("loaders", id, beatmap.folderLoader[i].name, "folder")
 		end
 		sendBeatmapData("loaders", id, "")
+	elseif command == "story" then
+		if beatmap.list[arg[1]] then
+			local storyboard = beatmap.list[arg[1]].data:getStoryboardData()
+			if storyboard then
+				local c = love.thread.newChannel()
+				c:push(storyboard.type)
+				c:push(storyboard.storyboard)
+				c:push(storyboard.path)
+
+				if storyboard.data then
+					local c2 = love.thread.newChannel()
+					for i = 1, #storyboard.data do
+						c2:push(storyboard.data[i])
+					end
+					c:push(c2)
+				else
+					c:push(nil)
+				end
+
+				sendBeatmapData("story", id, c)
+			else
+				sendBeatmapData("story", id, nil)
+			end
+		end
 	elseif command == "quit" then
 		return "quit"
 	end
