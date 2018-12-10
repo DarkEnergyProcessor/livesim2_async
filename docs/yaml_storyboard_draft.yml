@@ -61,13 +61,18 @@ skill:
    chance: mandatory (number < 1)
    # Target draw navi (like the full image if the idol)
    draw: navi_draw_name
+   # Skill card type, determines the popup effect
+   # default to SR if not specified
+   rarity: card_rarity
    # Trigger conditions. you can specify multiple requirements
    # but at least one condition below must be specified
    condition:
      # trigger if "emit" with this name is triggered
      emit: emit_name
-     # trigger for every 62 notes (even miss counts)
+     # trigger for every 62 spawned notes
      notes: 62
+     # trigger for every 44 combo (perfect or great)
+     combo: 44
      # trigger for every star note
      star: 1
      # trigger for every token note (not recommended)
@@ -82,7 +87,7 @@ skill:
      good: 2
      # trigger for every 5 miss
      miss: 5
-     # trigger for every score multipler (Umi cheerleader for example)
+     # trigger for every score multipler (Kotori nurse for example)
      scoremultipler: 13500
 
 storyboard:

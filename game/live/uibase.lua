@@ -127,6 +127,10 @@ function uibase:setTextScaling(scale)
 	error("pure virtual method 'setTextScaling'", 2)
 end
 
+function uibase:getOpacity()
+	error("pure virtual method 'getOpacity'", 2)
+end
+
 function uibase:setOpacity(opacity)
 	error("pure virtual method 'setOpacity'", 2)
 end

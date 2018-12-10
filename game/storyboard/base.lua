@@ -17,4 +17,12 @@ function baseStoryboard.draw()
 	error("pure virtual method 'draw'")
 end
 
+function baseStoryboard.setSkillCallback()
+	error("pure virtual method 'setSkillCallback'")
+end
+
+function baseStoryboard.emitCallback()
+	error("pure virtual method 'emitCallback'")
+end
+
 return baseStoryboard

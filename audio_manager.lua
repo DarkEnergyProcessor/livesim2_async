@@ -10,10 +10,12 @@
 
 local love = require("love")
 local ls2x = require("libs.ls2x")
+
 local lily = require("lily")
 local cache = require("cache")
 local async = require("async")
 local util = require("util")
+
 local ffi
 
 local audioManager = {

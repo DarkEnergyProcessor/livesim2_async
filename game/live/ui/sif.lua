@@ -2,6 +2,8 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+-- luacheck: no max line length
+
 local love = require("love")
 local assetCache = require("asset_cache")
 local cache = require("cache")
@@ -18,14 +20,36 @@ local uibase = require("game.live.uibase")
 
 local sifui = Luaoop.class("livesim2.SIFLiveUI", uibase)
 
--- luacheck: no max line length
-
 -----------------
 -- Base system --
 -----------------
 
 local scoreAddTweenTarget = {{x = 570, scale = 1}, {opacity = 0}}
 local comboCheerSteps = {"cut_01_loop_end", "cut_02_loop_end", "cut_03_loop_end"}
+
+local liveHeaderQuad = {
+	scoreBar = love.graphics.newQuad(0, 128, 880, 38, 1024, 512),
+	staminaBar = love.graphics.newQuad(0, 432, 271, 29, 1024, 512),
+	pause = love.graphics.newQuad(964, 0, 60, 60, 1024, 512),
+	header = love.graphics.newQuad(0, 0, 960, 98, 1024, 512),
+	flashAdd = love.graphics.newQuad(0, 356, 876, 34, 1024, 512),
+	flashStatic = love.graphics.newQuad(0, 390, 852, 42, 1024, 512),
+	flashScore = love.graphics.newQuad(892, 128, 68, 318, 1024, 512) -- rotated 90 degree in atlas
+}
+
+local comboQuad = {
+	[0] = love.graphics.newQuad(0, 0, 48, 48, 240, 130),
+	love.graphics.newQuad(48, 0, 48, 48, 240, 130),
+	love.graphics.newQuad(96, 0, 48, 48, 240, 130),
+	love.graphics.newQuad(144, 0, 48, 48, 240, 130),
+	love.graphics.newQuad(192, 0, 48, 48, 240, 130),
+	love.graphics.newQuad(0, 48, 48, 48, 240, 130),
+	love.graphics.newQuad(48, 48, 48, 48, 240, 130),
+	love.graphics.newQuad(96, 48, 48, 48, 240, 130),
+	love.graphics.newQuad(144, 48, 48, 48, 240, 130),
+	love.graphics.newQuad(192, 48, 48, 48, 240, 130),
+	combo = love.graphics.newQuad(0, 96, 123, 34, 240, 130)
+}
 
 function sifui:__construct()
 	-- as per uibase definition, constructor can use
@@ -36,10 +60,11 @@ function sifui:__construct()
 		{lily.newImageData, "assets/image/live/hp_num.png"}
 	})
 	self.timer = timer.new()
+	--[[
 	self.images = assetCache.loadMultipleImages({
 		-- live header
 		"assets/image/live/live_header.png", -- 1
-		"assets/image/live/live_pause.png",
+		"assets/image/live/live_pause.png"
 		-- score gauge
 		"assets/image/live/live_gauge_03_02.png", -- 3
 		"assets/image/live/live_gauge_03_03.png",
@@ -69,7 +94,33 @@ function sifui:__construct()
 		"assets/image/live/ef_313_001_w2x.png",
 		"assets/image/live/ef_313_000_w2x.png",
 		-- combo
-		"assets/image/live/combo/1.png", -- 22
+		"assets/image/live/combo/1.png", -- 26
+		"assets/image/live/combo/2.png",
+		"assets/image/live/combo/3.png",
+		"assets/image/live/combo/4.png",
+		"assets/image/live/combo/5.png",
+		"assets/image/live/combo/6.png",
+		"assets/image/live/combo/7.png",
+		"assets/image/live/combo/8.png",
+		"assets/image/live/combo/9.png",
+		"assets/image/live/combo/10.png",
+	}, {mipmaps = true})
+	]]
+	self.images = assetCache.loadMultipleImages({
+		-- live header
+		"assets/image/live/top.png", -- 1
+		-- effects
+		"assets/image/live/circleeffect.png", -- 2
+		"assets/image/live/ef_308.png",
+		"noteImage:assets/image/tap_circle/notes.png",
+		-- judgement
+		"assets/image/live/ef_313_004_w2x.png", -- 5
+		"assets/image/live/ef_313_003_w2x.png",
+		"assets/image/live/ef_313_002_w2x.png",
+		"assets/image/live/ef_313_001_w2x.png",
+		"assets/image/live/ef_313_000_w2x.png",
+		-- combo
+		"assets/image/live/combo/1.png", -- 10
 		"assets/image/live/combo/2.png",
 		"assets/image/live/combo/3.png",
 		"assets/image/live/combo/4.png",
@@ -87,20 +138,6 @@ function sifui:__construct()
 	self.scoreFont = love.graphics.newImageFont(fontImageDataList:getValues(1), "0123456789", -4)
 	self.addScoreFont = love.graphics.newImageFont(fontImageDataList:getValues(2), "0123456789+", -5)
 	self.staminaFont = love.graphics.newImageFont(fontImageDataList:getValues(3), "0123456789+- ")
-	-- quads
-	self.comboQuad = {
-		[0] = love.graphics.newQuad(0, 0, 48, 48, 240, 130),
-		love.graphics.newQuad(48, 0, 48, 48, 240, 130),
-		love.graphics.newQuad(96, 0, 48, 48, 240, 130),
-		love.graphics.newQuad(144, 0, 48, 48, 240, 130),
-		love.graphics.newQuad(192, 0, 48, 48, 240, 130),
-		love.graphics.newQuad(0, 48, 48, 48, 240, 130),
-		love.graphics.newQuad(48, 48, 48, 48, 240, 130),
-		love.graphics.newQuad(96, 48, 48, 48, 240, 130),
-		love.graphics.newQuad(144, 48, 48, 48, 240, 130),
-		love.graphics.newQuad(192, 48, 48, 48, 240, 130),
-		combo = love.graphics.newQuad(0, 96, 123, 34, 240, 130)
-	}
 	-- variable setup
 	self.opacity = 1
 	self.textScaling = 1
@@ -157,13 +194,12 @@ function sifui:__construct()
 	self.scoreBarFlashTimer = nil
 	self.scoreBarFlashOpacity = 0
 	self.scoreIsMax = false
-	self.scoreBarImage = self.images[4]
-	self.scoreBarQuad = love.graphics.newQuad(0, 0, 880, 38, 880, 38)
-	self.scoreBarQuad:setViewport(0, 0, 42, 38)
+	self.scoreBarImage = 1
+	self.scoreBarQuad = love.graphics.newQuad(0, 166, 42, 38, 1024, 512)
 	-- combo variable setup
 	self.currentCombo = 0
 	self.maxCombo = 0
-	self.comboSpriteBatch = love.graphics.newSpriteBatch(self.images[26], 12, "stream")
+	self.comboSpriteBatch = love.graphics.newSpriteBatch(self.images[10], 12, "stream")
 	self.currentComboTextureIndex = 1
 	self.comboNumberScale1 = 1.15
 	self.comboNumberScale2 = 1.25
@@ -176,13 +212,13 @@ function sifui:__construct()
 	end
 	-- judgement system variable setup
 	self.judgementCenterPosition = {
-		[self.images[21]] = {198, 38},
-		[self.images[22]] = {147, 35},
-		[self.images[23]] = {127, 35},
-		[self.images[24]] = {86, 33},
-		[self.images[25]] = {93, 30}
+		[self.images[5]] = {198, 38},
+		[self.images[6]] = {147, 35},
+		[self.images[7]] = {127, 35},
+		[self.images[8]] = {86, 33},
+		[self.images[9]] = {93, 30}
 	}
-	self.currentJudgement = self.images[21]
+	self.currentJudgement = self.images[5]
 	self.judgementOpacity = 0
 	self.judgementScale = 0
 	self.judgementTimer = nil
@@ -222,8 +258,8 @@ function sifui:__construct()
 	self.staminaLerpVal = 1
 	self.staminaMode = 1
 	self.staminaTimer = nil
-	self.staminaQuad = love.graphics.newQuad(0, 0, 271, 29, 271, 29)
-	self.staminaImage = self.images[13]
+	self.staminaQuad = love.graphics.newQuad(0, 462, 271, 29, 1024, 512)
+	self.staminaImage = 4
 	self.staminaFlashTime = 0 -- limits at 1
 	self.staminaAddText = love.graphics.newText(self.staminaFont, "+ 1")
 	self.staminaText = love.graphics.newText(self.staminaFont, "45")
@@ -254,6 +290,7 @@ function sifui:update(dt, paused)
 	if not(paused) then
 		self.timer:update(dt)
 	end
+
 	-- combo cheer
 	if not(self.minimalEffect) and self.comboCheer then
 		if self.currentCombo >= 100 then
@@ -281,6 +318,7 @@ function sifui:update(dt, paused)
 			self.comboCheerAnim:jumpToLabel("cut_01_loop")
 		end
 	end
+
 	-- score effect
 	if self.currentScoreAdd > 0 then
 		if not(self.minimalEffect) then
@@ -328,19 +366,20 @@ function sifui:update(dt, paused)
 		-- reset flag
 		self.currentScoreAdd = 0
 	end
+
 	-- combo counter
 	if self.currentCombo > 0 then
 		-- set "combo" text
 		self.comboSpriteBatch:setColor(color.compat(255, 255, 255, self.comboNumberOpacity2))
-		self.comboSpriteBatch:set(2, self.comboQuad.combo, 61, -54, 0, self.comboNumberScale2, self.comboNumberScale2, 61, 17)
+		self.comboSpriteBatch:set(2, comboQuad.combo, 61, -54, 0, self.comboNumberScale2, self.comboNumberScale2, 61, 17)
 		self.comboSpriteBatch:setColor(color.white[1], color.white[2], color.white[3])
-		self.comboSpriteBatch:set(1, self.comboQuad.combo, 61, -54, 0, self.comboNumberScale1, self.comboNumberScale1, 61, 17)
+		self.comboSpriteBatch:set(1, comboQuad.combo, 61, -54, 0, self.comboNumberScale1, self.comboNumberScale1, 61, 17)
 		-- set numbers
 		local num = self.currentCombo
 		local i = 3
 		while num > 0 do
 			self.comboSpriteBatch:set(
-				i, self.comboQuad[num % 10],
+				i, comboQuad[num % 10],
 				-29 - (i - 3) * 43, -53, 0,
 				self.comboNumberScale1, self.comboNumberScale1, 24, 24
 			)
@@ -348,32 +387,39 @@ function sifui:update(dt, paused)
 			i = i + 1
 		end
 	end
+
 	-- stamina
 	local noteiconMultipler = 1
 	local staminaPercentage = self.staminaInterpolate / self.maxStamina
 	if staminaPercentage >= 0.8 then
-		self.staminaImage = self.images[13]
+		self.staminaImage = 3
 	elseif staminaPercentage >= 0.6 then
-		self.staminaImage = self.images[14]
+		self.staminaImage = 1
 	elseif staminaPercentage >= 0.4 then
-		self.staminaImage = self.images[15]
+		self.staminaImage = 4
 	elseif staminaPercentage >= 0.2 then
-		self.staminaImage = self.images[16]
+		self.staminaImage = 2
 		noteiconMultipler = 4
 	elseif staminaPercentage > 0 then
-		self.staminaImage = self.images[17]
+		self.staminaImage = 5
 		noteiconMultipler = 8
 	else
 		noteiconMultipler = 8
 		self.staminaImage = nil
 	end
+	if self.staminaImage then
+		local x = self.staminaImage % 3
+		local y = math.floor(self.staminaImage / 3)
+		self.staminaQuad:setViewport(x * 271, y * 29 + 432, 36 + 235 * staminaPercentage, 29)
+	end
 	self.staminaFlashTime = (self.staminaFlashTime + dt) % 1
-	self.staminaQuad:setViewport(0, 0, 36 + 235 * staminaPercentage, 29)
+
 	-- note icon
 	self.noteIconTime = self.noteIconTime + dt * noteiconMultipler
 	while self.noteIconTime >= 2.2 do
 		self.noteIconTime = self.noteIconTime - 2.2
 	end
+
 	-- live clear
 	if self.liveClearTime ~= -math.huge then
 		if self.liveClearTime > 0 then
@@ -427,6 +473,7 @@ function sifui:addScore(amount)
 	-- update text
 	self.currentScoreText:clear()
 	self.currentScoreText:add(tostring(self.currentScore))
+
 	-- replay score flash
 	if self.scoreFlashTimer then
 		self.timer:cancel(self.scoreFlashTimer)
@@ -434,12 +481,13 @@ function sifui:addScore(amount)
 		self.scoreFlashOpacity = 1
 	end
 	self.scoreFlashTimer = self.timer:tween(0.5, self, flashTweenTarget, "out-sine")
+
 	-- update score quad
 	if self.currentScore >= self.scoreBorders[4] and not(self.scoreIsMax) then
 		-- S score
 		self.scoreIsMax = true
-		self.scoreBarImage = self.images[8]
-		self.scoreBarQuad:setViewport(0, 0, 880, 38)
+		self.scoreBarImage = 5
+		self.scoreBarQuad:setViewport(0, 318, 880, 38)
 		-- add timer for S score flashing effect
 		if self.scoreBarFlashTimer then
 			self.timer:cancel(self.scoreBarFlashTimer)
@@ -458,23 +506,23 @@ function sifui:addScore(amount)
 		if self.currentScore >= self.scoreBorders[3] then
 			-- A score
 			w = 790 + math.floor((self.scoreBorders[3] - self.currentScore) / (self.scoreBorders[3] - self.scoreBorders[4]) * 84 + 0.5)
-			self.scoreBarImage = self.images[7]
+			self.scoreBarImage = 4
 		elseif self.currentScore >= self.scoreBorders[2] then
 			-- B score
 			w = 665 + math.floor((self.scoreBorders[2] - self.currentScore) / (self.scoreBorders[2] - self.scoreBorders[3]) * 125 + 0.5)
-			self.scoreBarImage = self.images[6]
+			self.scoreBarImage = 3
 		elseif self.currentScore >= self.scoreBorders[1] then
 			-- C score
 			w = 502 + math.floor((self.scoreBorders[1] - self.currentScore) / (self.scoreBorders[1] - self.scoreBorders[2]) * 163 + 0.5)
-			self.scoreBarImage = self.images[5]
+			self.scoreBarImage = 2
 		else
 			-- No score
 			w = 42 + math.floor(self.currentScore / self.scoreBorders[1] * 460 + 0.5)
-			self.scoreBarImage = self.images[4]
+			self.scoreBarImage = 1
 		end
 
 		-- set quad viewport
-		self.scoreBarQuad:setViewport(0, 0, w, 38)
+		self.scoreBarQuad:setViewport(0, 128 + self.scoreBarImage * 38, w, 38)
 		-- reset score bar flash effect (non-S score)
 		if self.scoreBarFlashTimer then
 			self.timer:cancel(self.scoreBarFlashTimer)
@@ -533,17 +581,17 @@ function sifui:comboJudgement(judgement, addcombo)
 	local breakCombo = false
 
 	if judgement == "perfect" then
-		self.currentJudgement = self.images[21]
+		self.currentJudgement = self.images[5]
 	elseif judgement == "great" then
-		self.currentJudgement = self.images[22]
+		self.currentJudgement = self.images[6]
 	elseif judgement == "good" then
-		self.currentJudgement = self.images[23]
+		self.currentJudgement = self.images[7]
 		breakCombo = true
 	elseif judgement == "bad" then
-		self.currentJudgement = self.images[24]
+		self.currentJudgement = self.images[8]
 		breakCombo = true
 	elseif judgement == "miss" then
-		self.currentJudgement = self.images[25]
+		self.currentJudgement = self.images[9]
 		breakCombo = true
 	else
 		error("invalid judgement '"..tostring(judgement).."'", 2)
@@ -561,7 +609,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		end
 		-- reset texture
 		self.currentComboTextureIndex = 1
-		self.comboSpriteBatch:setTexture(self.images[26])
+		self.comboSpriteBatch:setTexture(self.images[10])
 		self.currentCombo = 0
 	elseif addcombo then
 		-- increment combo
@@ -571,7 +619,7 @@ function sifui:comboJudgement(judgement, addcombo)
 		-- set combo texture when needed
 		local idx = getComboNumberIndex(self.currentCombo)
 		if self.currentComboTextureIndex ~= idx then
-			self.comboSpriteBatch:setTexture(self.images[25 + idx])
+			self.comboSpriteBatch:setTexture(self.images[9 + idx])
 			self.currentComboTextureIndex = idx
 		end
 
@@ -711,6 +759,10 @@ function sifui:addTapEffect(x, y, r, g, b, a)
 	self.tapEffectList[#self.tapEffectList + 1] = tap
 end
 
+function sifui:getOpacity()
+	return self.opacity
+end
+
 function sifui:setOpacity(opacity)
 	self.opacity = opacity
 	self.fullComboAnim:setOpacity(opacity * 255)
@@ -750,22 +802,22 @@ function sifui:drawHeader()
 	end
 	-- draw live header
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
-	love.graphics.draw(self.images[1])
-	love.graphics.draw(self.images[3], 5, 8, 0, 0.99545454, 0.86842105)
+	love.graphics.draw(self.images[1], liveHeaderQuad.header)
+	love.graphics.draw(self.images[1], liveHeaderQuad.scoreBar, 5, 8, 0, 0.99545454, 0.86842105)
 
 	-- draw pause button
 	if self.pauseEnabled then
-		love.graphics.draw(self.images[2], 916, 5, 0, 0.6, 0.6)
+		love.graphics.draw(self.images[1], liveHeaderQuad.pause, 916, 5, 0, 0.6, 0.6)
 	end
 
 	-- score bar
-	love.graphics.draw(self.scoreBarImage, self.scoreBarQuad, 5, 8, 0, 0.99545454, 0.86842105)
+	love.graphics.draw(self.images[1], self.scoreBarQuad, 5, 8, 0, 0.99545454, 0.86842105)
 	if self.scoreIsMax then
 		love.graphics.setColor(color.compat(255, 255, 255, self.scoreBarFlashOpacity * self.opacity))
-		love.graphics.draw(self.images[11], 36, 3)
+		love.graphics.draw(self.images[1], liveHeaderQuad.flashStatic, 36, 3)
 	elseif self.scoreBarFlashOpacity > 0 then
 		love.graphics.setColor(color.compat(255, 255, 255, self.scoreBarFlashOpacity * self.opacity))
-		love.graphics.draw(self.images[9], 5, 8)
+		love.graphics.draw(self.images[1], liveHeaderQuad.flashAdd, 5, 8)
 	end
 
 	-- score number
@@ -774,8 +826,9 @@ function sifui:drawHeader()
 
 	-- score flash
 	if self.scoreBarFlashOpacity > 0 then
+		-- flashScore is rotated 90 degree in atlas, so rotate it -90 degree in here
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * self.scoreFlashOpacity))
-		love.graphics.draw(self.images[10], 484, 72, 0, self.scoreFlashScale, self.scoreFlashScale, 159, 34)
+		love.graphics.draw(self.images[1], liveHeaderQuad.flashScore, 484, 72, -math.pi/2, self.scoreFlashScale, self.scoreFlashScale, 34, 159)
 	end
 
 	-- score add effect
@@ -800,22 +853,20 @@ function sifui:drawHeader()
 		stGreenTint = 127 + (1 - math.sin(self.staminaLerpVal * math.pi)) * 128
 	end
 	love.graphics.setColor(color.compat(255, stRedTint, stRedTint, self.opacity))
-	love.graphics.draw(self.images[12], 16 + stOff, 62 + stOff)
+	love.graphics.draw(self.images[1], liveHeaderQuad.staminaBar, 16 + stOff, 62 + stOff)
 	if self.staminaImage then
 		-- if it's yellow, then 2Hz. if it's red, then 4Hz
 		local freq = 0
-		if self.staminaImage == self.images[17] then
-			-- red
+		if self.staminaImage == 5 then -- red
 			freq = 4
-		elseif self.staminaImage == self.images[16] then
-			-- yellow
+		elseif self.staminaImage == 2 then -- yellow
 			freq = 2
 		end
 
 		-- flash to black, in range 64...255
 		local col = math.cos(self.staminaFlashTime * math.pi * freq) * 0.5 + 0.5
 		love.graphics.setColor(color.compat(255, stRedTint, stRedTint, self.opacity * col))
-		love.graphics.draw(self.staminaImage, self.staminaQuad, 16 + stOff, 62 + stOff)
+		love.graphics.draw(self.images[1], self.staminaQuad, 16 + stOff, 62 + stOff)
 	end
 	love.graphics.draw(self.staminaText, 306, 64)
 	love.graphics.setColor(color.compat(stGreenTint, 255, stGreenTint, self.opacity * math.sin(self.staminaLerpVal * math.pi)))
@@ -834,7 +885,7 @@ function sifui:drawStatus()
 				255 * tap.b / 255,
 				tap.starEffectOpacity * tap.opacity * self.opacity
 			))
-			love.graphics.draw(self.images[20], self.tapEffectQuad.star, tap.x, tap.y, 0, tap.starEffectScale, tap.starEffectScale, 50, 50)
+			love.graphics.draw(self.images[4], self.tapEffectQuad.star, tap.x, tap.y, 0, tap.starEffectScale, tap.starEffectScale, 50, 50)
 		end
 		if tap.circle1Opacity > 0 then
 			love.graphics.setColor(color.compat(
@@ -843,7 +894,7 @@ function sifui:drawStatus()
 				255 * tap.b / 255,
 				tap.circle1Opacity * tap.opacity * self.opacity
 			))
-			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle1Scale, tap.circle1Scale, 37.5, 37.5)
+			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle1Scale, tap.circle1Scale, 37.5, 37.5)
 		end
 		if tap.circle2Opacity > 0 then
 			love.graphics.setColor(color.compat(
@@ -852,7 +903,7 @@ function sifui:drawStatus()
 				255 * tap.b / 255,
 				tap.circle2Opacity * tap.opacity * self.opacity
 			))
-			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle2Scale, tap.circle2Scale, 37.5, 37.5)
+			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle2Scale, tap.circle2Scale, 37.5, 37.5)
 		end
 		if tap.circle3Opacity > 0 then
 			love.graphics.setColor(color.compat(
@@ -861,7 +912,7 @@ function sifui:drawStatus()
 				255 * tap.b / 255,
 				tap.circle3Opacity * tap.opacity * self.opacity
 			))
-			love.graphics.draw(self.images[20], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)
+			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)
 		end
 	end
 
@@ -892,7 +943,7 @@ function sifui:drawStatus()
 			if v > 0 then
 				local s = v * 1.9 + 0.6
 				love.graphics.setColor(color.compat(255, 255, 255, self.opacity * (1-v)))
-				love.graphics.draw(self.images[19], self.noteIconQuad.circle, 480, 160, 0, s, s, 34, 34)
+				love.graphics.draw(self.images[3], self.noteIconQuad.circle, 480, 160, 0, s, s, 34, 34)
 			end
 		end
 		-- Note icon notation is pulsating indicator.
@@ -901,7 +952,7 @@ function sifui:drawStatus()
 		local secondScale = timer.tween["out-sine"](math.max(self.noteIconTime - 0.8, 0) / 1.4) * 0.2
 		local scale = 1 - math.min(self.noteIconTime, 0.8) / 4 + secondScale
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
-		love.graphics.draw(self.images[19], self.noteIconQuad.notation, 480, 160, 0, scale, scale, 54, 52)
+		love.graphics.draw(self.images[3], self.noteIconQuad.notation, 480, 160, 0, scale, scale, 54, 52)
 	end
 
 	-- live clear
