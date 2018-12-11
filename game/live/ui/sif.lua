@@ -60,52 +60,6 @@ function sifui:__construct()
 		{lily.newImageData, "assets/image/live/hp_num.png"}
 	})
 	self.timer = timer.new()
-	--[[
-	self.images = assetCache.loadMultipleImages({
-		-- live header
-		"assets/image/live/live_header.png", -- 1
-		"assets/image/live/live_pause.png"
-		-- score gauge
-		"assets/image/live/live_gauge_03_02.png", -- 3
-		"assets/image/live/live_gauge_03_03.png",
-		"assets/image/live/live_gauge_03_04.png",
-		"assets/image/live/live_gauge_03_05.png",
-		"assets/image/live/live_gauge_03_06.png",
-		"assets/image/live/live_gauge_03_07.png",
-		"assets/image/live/l_gauge_17.png",
-		-- scoring
-		"assets/image/live/l_etc_46.png", -- 10
-		"assets/image/live/ef_318_000.png",
-		-- stamina
-		"assets/image/live/live_gauge_02_01.png", -- 12
-		"assets/image/live/live_gauge_02_02.png",
-		"assets/image/live/live_gauge_02_03.png",
-		"assets/image/live/live_gauge_02_04.png",
-		"assets/image/live/live_gauge_02_05.png",
-		"assets/image/live/live_gauge_02_06.png",
-		-- effects
-		"assets/image/live/circleeffect.png", -- 18
-		"assets/image/live/ef_308.png",
-		"noteImage:assets/image/tap_circle/notes.png",
-		-- judgement
-		"assets/image/live/ef_313_004_w2x.png", -- 21
-		"assets/image/live/ef_313_003_w2x.png",
-		"assets/image/live/ef_313_002_w2x.png",
-		"assets/image/live/ef_313_001_w2x.png",
-		"assets/image/live/ef_313_000_w2x.png",
-		-- combo
-		"assets/image/live/combo/1.png", -- 26
-		"assets/image/live/combo/2.png",
-		"assets/image/live/combo/3.png",
-		"assets/image/live/combo/4.png",
-		"assets/image/live/combo/5.png",
-		"assets/image/live/combo/6.png",
-		"assets/image/live/combo/7.png",
-		"assets/image/live/combo/8.png",
-		"assets/image/live/combo/9.png",
-		"assets/image/live/combo/10.png",
-	}, {mipmaps = true})
-	]]
 	self.images = assetCache.loadMultipleImages({
 		-- live header
 		"assets/image/live/top.png", -- 1

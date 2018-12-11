@@ -190,4 +190,8 @@ function util.isValueInArray(array, value)
 	return nil
 end
 
+function util.isMobile()
+	return love._os == "iOS" or love._os == "Android"
+end
+
 return util

@@ -136,6 +136,7 @@ local function playButtonCallback(_, self)
 			beatmapName = self.persist.selectedBeatmapID,
 			random = self.data.checkButton[2]:isChecked(),
 			storyboard = self.data.checkButton[3]:isChecked(),
+			videoBackground = self.data.cbeckButton[4]:isChecked()
 		})
 	end
 end
@@ -191,11 +192,14 @@ function beatmapSelect:load()
 		self.data.checkButton = {
 			checkbox(setting.get("AUTOPLAY") == 1), -- autoplay
 			checkbox(false), -- random
-			checkbox(false), -- storyboard
+			checkbox(setting.get("STORYBOARD_LOAD") == 1), -- storyboard
 			checkbox(false) -- video background
 		}
 		self.data.checkButton[1]:addEventListener("changed", function(_, _, value)
 			setting.set("AUTOPLAY", value and 1 or 0)
+		end)
+		self.data.checkButton[3]:addEventListener("changed", function(_, _, value)
+			setting.set("STORYBOARD_LOAD", value and 1 or 0)
 		end)
 	end
 	for i = 1, 4 do

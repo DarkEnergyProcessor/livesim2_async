@@ -4,10 +4,13 @@
 
 local bit = require("bit")
 local love = require("love")
+local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
+
+local assetCache = require("asset_cache")
 local setting = require("setting")
 local color = require("color")
-local Yohane = require("libs.Yohane")
+
 local note = {}
 
 local function region(x, y, s)
@@ -110,6 +113,9 @@ local swingRotationTable = {
 	math.pi / 2
 }
 
+local redTimingQuad = love.graphics.newQuad(64, 0, 32, 32, 128, 64)
+local yellowTimingQuad = love.graphics.newQuad(32, 0, 32, 32, 128, 64)
+
 -------------------------
 -- Note Manager object --
 -------------------------
@@ -203,6 +209,14 @@ function noteManager:__construct(param)
 	self.opacity = 1
 	-- autoplay flag
 	self.autoplay = not(not(param.autoplay))
+	-- timing window image
+	self.timingImage = assetCache.loadImage("assets/image/live/skill_icon.png", {mipmaps = true})
+	-- timing window++ parameters
+	self.redTimingWindow = {duration = 0, rotation = 0}
+	-- timing window+ parameters
+	self.yellowTimingWindow = {duration = 0, rotation = 0}
+	-- timing window next rotation
+	self.timingWindowRotation = math.random(0, 11)
 
 	-- Note style needs additional parsing
 	local noteStyle = setting.get("NOTE_STYLE")
@@ -367,6 +381,46 @@ function noteManager:getLongNoteAnimation()
 	return self.lnFlashAnimation:clone()
 end
 
+function noteManager:getYellowTimingWindow()
+	return self.yellowTimingWindow.duration
+end
+
+function noteManager:setYellowTimingWindow(duration)
+	if self.yellowTimingWindow.duration == 0 then
+		-- Retrieve new rotation sequence
+		self.yellowTimingWindow.rotation = self.timingWindowRotation
+		self.timingWindowRotation = (self.timingWindowRotation + 1) % 12
+
+		-- If it's same rotation sequence, re-retrieve
+		if self.yellowTimingWindow.rotation == self.redTimingWindow.rotation and self.redTimingWindow.duration > 0 then
+			self.yellowTimingWindow.rotation = self.timingWindowRotation
+			self.timingWindowRotation = (self.timingWindowRotation + 1) % 12
+		end
+	end
+
+	self.yellowTimingWindow.duration = math.max(duration, self.yellowTimingWindow.duration)
+end
+
+function noteManager:getRedTimingWindow()
+	return self.redTimingWindow.duration
+end
+
+function noteManager:setRedTimingWindow(duration)
+	if self.redTimingWindow.duration == 0 then
+		-- Retrieve new rotation sequence
+		self.redTimingWindow.rotation = self.timingWindowRotation
+		self.timingWindowRotation = (self.timingWindowRotation + 1) % 12
+
+		-- If it's same rotation sequence, re-retrieve
+		if self.yellowTimingWindow.rotation == self.redTimingWindow.rotation and self.yellowTimingWindow.duration > 0 then
+			self.redTimingWindow.rotation = self.timingWindowRotation
+			self.timingWindowRotation = (self.timingWindowRotation + 1) % 12
+		end
+	end
+
+	self.redTimingWindow.duration = math.max(duration, self.redTimingWindow.duration)
+end
+
 -----------------------------
 -- Base Moving Note object --
 -----------------------------
@@ -509,15 +563,15 @@ function normalMovingNote:draw()
 	)
 end
 
-local function judgementCheck(t, accuracy, swing)
+local function judgementCheck(t, accuracy, swing, rtiming, ytiming)
 	if swing then
 		-- Start checking from great accuracy for swing notes
 		if t > accuracy.great[1] and t < accuracy.great[2] then
 			return "perfect"
 		elseif t > accuracy.good[1] and t < accuracy.good[2] then
-			return "great"
+			return (ytiming or rtiming) and "perfect" or "great"
 		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
-			return "good"
+			return rtiming and "perfect" or "good"
 		else
 			return "good" -- swing is never "bad"
 		end
@@ -526,9 +580,9 @@ local function judgementCheck(t, accuracy, swing)
 		if t > accuracy.perfect[1] and t < accuracy.perfect[2] then
 			return "perfect"
 		elseif t > accuracy.great[1] and t < accuracy.great[2] then
-			return "great"
+			return (ytiming or rtiming) and "perfect" or "great"
 		elseif t > accuracy.good[1] and t < accuracy.good[2] then
-			return "good"
+			return rtiming and "perfect" or "good"
 		elseif t > accuracy.bad[1] and t < accuracy.bad[2] then
 			return "bad"
 		else
@@ -543,7 +597,13 @@ function normalMovingNote:tap()
 	-- only task remain for NormalMovingNote class is to
 	-- return the judgement string
 	self.delete = true
-	return judgementCheck(self.elapsedTime, self.accuracyTime, self.swing)
+	return judgementCheck(
+		self.elapsedTime,
+		self.accuracyTime,
+		self.swing,
+		self.manager.redTimingWindow.duration > 0,
+		self.manager.yellowTimingWindow.duration > 0
+	)
 end
 
 function normalMovingNote.unTap()
@@ -717,7 +777,13 @@ function longMovingNote:tap()
 	else
 		self.position = self.manager.noteSpawningPosition + self.distance * self.direction
 		self.lnHolding = true
-		return judgementCheck(self.elapsedTime, self.accuracyTime, self.swing)
+		return judgementCheck(
+			self.elapsedTime,
+			self.accuracyTime,
+			self.swing,
+			self.manager.redTimingWindow.duration > 0,
+			self.manager.yellowTimingWindow.duration > 0
+		)
 	end
 end
 
@@ -728,7 +794,13 @@ function longMovingNote:unTap()
 		if t <= self.eventTime then
 			return "miss"
 		else
-			return judgementCheck(t, self.accuracyTime, self.swing)
+			return judgementCheck(
+				t,
+				self.accuracyTime,
+				self.swing,
+				self.manager.redTimingWindow.duration > 0,
+				self.manager.yellowTimingWindow.duration > 0
+			)
 		end
 	else
 		return
@@ -983,6 +1055,10 @@ function noteManager:update(dt)
 	-- Note update is based on how notes are drawn
 	self.elapsedTime = self.elapsedTime + dt
 
+	-- Recalculate timing window position
+	self.redTimingWindow.duration = math.max(self.redTimingWindow.duration - dt, 0)
+	self.yellowTimingWindow.duration = math.max(self.yellowTimingWindow.duration - dt, 0)
+
 	for _, v in ipairs(self.notesListByDraw) do
 		if self.elapsedTime >= v.spawnTime then
 			if not(v.delete) then
@@ -1013,6 +1089,27 @@ function noteManager:update(dt)
 end
 
 function noteManager:draw()
+	-- draw timing window
+	if math.max(self.yellowTimingWindow.duration, self.redTimingWindow.duration) > 0 then
+		local xpy = math.sin(math.pi * self.yellowTimingWindow.rotation / 6) * 64
+		local ypy = math.cos(math.pi * self.yellowTimingWindow.rotation / 6) * 64
+		local xpr = math.sin(math.pi * self.redTimingWindow.rotation / 6) * 64
+		local ypr = math.cos(math.pi * self.redTimingWindow.rotation / 6) * 64
+
+		for i = 1, 9 do
+			local pos = self.lane[i]
+
+			if self.yellowTimingWindow.duration > 0 then
+				love.graphics.draw(self.timingImage, yellowTimingQuad, pos.x + xpy, pos.y + ypy, 0, 1, 1, 16, 16)
+			end
+
+			if self.redTimingWindow.duration > 0 then
+				love.graphics.draw(self.timingImage, redTimingQuad, pos.x + xpr, pos.y + ypr, 0, 1, 1, 16, 16)
+			end
+		end
+	end
+
+	-- draw notes
 	for _, v in ipairs(self.notesListByDraw) do
 		if not(self.delete) and self.elapsedTime >= v.spawnTime then
 			-- Well, just call draw method
