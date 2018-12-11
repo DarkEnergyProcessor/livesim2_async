@@ -10,6 +10,7 @@ local assetCache = require("asset_cache")
 local audioManager = require("audio_manager")
 local cache = require("cache")
 local color = require("color")
+local log = require("logging")
 local util = require("util")
 
 local note = require("game.live.note")
@@ -45,16 +46,17 @@ skill.list = {
 }
 
 skill.callbackSkill = {
-	score_up = function(liveUI, _, value)
-		return liveUI:addScore(value)
+	score_up = function(self, liveUI, _, value)
+		liveUI:addScore(value)
+		return self:scoreCallback(value)
 	end,
-	healer = function(liveUI, _, value)
+	healer = function(_, liveUI, _, value)
 		return liveUI:addStamina(value)
 	end,
-	["tw+"] = function(_, noteManager, value)
+	["tw+"] = function(_, _, noteManager, value)
 		return noteManager:setYellowTimingWindow(value)
 	end,
-	["tw++"] = function(_, noteManager, value)
+	["tw++"] = function(_, _, noteManager, value)
 		return noteManager:setRedTimingWindow(value)
 	end,
 }
@@ -66,14 +68,13 @@ skill.rarity = {
 	ur = "ef_305"
 }
 
+local cutinFlash
 local function getFlash()
-	local fl = cache.get("flash/live_cut_in.flsh")
-	if not(fl) then
-		fl = Yohane.newFlashFromFilename("flash/live_cut_in.flsh")
-		cache.set("flash/live_cut_in.flsh", fl)
+	if not(cutinFlash) then
+		cutinFlash = Yohane.newFlashFromFilename("flash/live_cut_in.flsh")
 	end
 
-	return fl:clone()
+	return cutinFlash:clone()
 end
 
 skill.unitEffectList = {}
@@ -98,6 +99,11 @@ function skill:__construct(liveUI, noteManager, seed)
 	assert(Luaoop.class.is(liveUI, liveUIBase), "bad argument #1 to 'skill' (Livesim2.LiveUI expected)")
 	assert(Luaoop.class.is(noteManager, note.manager), "bad argument #2 to 'skill' (Livesim2.NoteManager expected)")
 
+	if not(cutinFlash) then
+		getFlash()
+	end
+
+	self.liveUIOpacity = 1
 	self.rng = love.math.newRandomGenerator(seed[1], seed[2])
 	self.liveUI = liveUI
 	self.unitPosition = liveUI:getLanePosition()
@@ -106,8 +112,7 @@ function skill:__construct(liveUI, noteManager, seed)
 		"assets/image/live/skill_text.png",
 		"assets/image/live/unit_skill_icon.png"
 	}, {mipmaps = true})
-	self.flash = getFlash()
-	self.flashReady = true
+	self.flash = nil
 	self.skillUnitEffect = {}
 	self.skillCondition = {
 		notes = {},
@@ -115,6 +120,7 @@ function skill:__construct(liveUI, noteManager, seed)
 		star = {},
 		token = {},
 		time = {},
+		score = {},
 		perfect = {},
 		great = {},
 		good = {},
@@ -124,7 +130,7 @@ function skill:__construct(liveUI, noteManager, seed)
 end
 
 local validCondition = {
-	"notes", "combo", "star", "token", "time",
+	"notes", "combo", "star", "token", "time", "score",
 	"perfect", "great", "good", "bad", "miss"
 }
 
@@ -137,6 +143,7 @@ function skill:register(data, condition)
 	-- unit: unit index
 	-- image: big unit image (optional)
 	-- audio: skill activation trigger voice (optional)
+	log.debugf("skill", "register skill from storyboard, type %s index %d", data.type, data.unit)
 
 	local obj = {
 		image = assert(skill.list[data.type], "invalid skill type"),
@@ -163,8 +170,8 @@ function skill:register(data, condition)
 end
 
 function skill:_triggerSkill(v)
-	if self.flashReady then
-		self.flashReady = false
+	if not(self.flash) then
+		self.flash = getFlash()
 		self.flash:setMovie(v.rarity)
 		-- Image + Quad combination
 		self.flash:setImage("skill_text", {self.images[1], v.image[1]})
@@ -178,11 +185,11 @@ function skill:_triggerSkill(v)
 
 	local unitEffect = getSkillUnitEffect()
 	unitEffect.image = v.image[2]
-	unitEffect.time = 7
+	unitEffect.time = 0.7
 	unitEffect.index = v.index
 	self.skillUnitEffect[#self.skillUnitEffect + 1] = unitEffect
 
-	return v.callback(self.liveUI, self.noteManager, v.value)
+	return v.callback(self, self.liveUI, self.noteManager, v.value)
 end
 
 function skill:_handleSkill(v, value)
@@ -190,8 +197,9 @@ function skill:_handleSkill(v, value)
 	while v.counter >= v.needed do
 		v.counter = v.counter - v.needed
 
-		if self.rng:random() >= v.skill.chance then
-			skill:_triggerSkill(v.skill)
+		if self.rng:random() - v.skill.chance <= 0 then
+			log.debugf("skill", "triggering skill with chance %.2f", v.skill.chance)
+			self:_triggerSkill(v.skill)
 		end
 	end
 end
@@ -203,9 +211,13 @@ function skill:update(dt, paused)
 		end
 	end
 
-	if not(self.flashReady) then
+	if self.flash then
 		self.flash:update(dt * 1000)
-		self.flashReady = self.flash:isFrozen()
+
+		if self.flash:isFrozen() then
+			self.flash = nil
+			log.debugf("skill", "new flash skill ready")
+		end
 	end
 
 	local length = #self.skillUnitEffect
@@ -228,28 +240,77 @@ function skill:update(dt, paused)
 	for i = left + 1, length do
 		self.skillUnitEffect[i] = nil
 	end
+
+	self.liveUIOpacity = self.liveUI:getOpacity()
 end
 
-function skill:drawBelow()
-	if not(self.flashReady) then
+function skill:noteCallback(judgement, token, star)
+	assert(util.isValueInArray(validCondition, judgement), "invalid judgement")
+
+	for _, v in ipairs(self.skillCondition[judgement]) do
+		self:_handleSkill(v, 1)
+	end
+
+	-- combo-based
+	if judgement == "perfect" or judgement == "great" then
+		for _, v in ipairs(self.skillCondition.combo) do
+			self:_handleSkill(v, 1)
+		end
+
+		if token then
+			for _, v in ipairs(self.skillCondition.token) do
+				self:_handleSkill(v, 1)
+			end
+		end
+
+		if star then
+			for _, v in ipairs(self.skillCondition.star) do
+				self:_handleSkill(v, 1)
+			end
+		end
+	else
+		-- nullify all combo counter
+		for _, v in ipairs(self.skillCondition.combo) do
+			v.counter = 0
+		end
+	end
+end
+
+function skill:noteSpawnCallback()
+	-- note-based
+	for _, v in ipairs(self.skillCondition.notes) do
+		self:_handleSkill(v, 1)
+	end
+end
+
+function skill:scoreCallback(score)
+	-- score-based
+	for _, v in ipairs(self.skillCondition.score) do
+		self:_handleSkill(v, score)
+	end
+end
+
+function skill:drawUnder()
+	if self.flash then
+		self.flash:setOpacity(self.liveUIOpacity * 255)
 		self.flash:draw(480, 320)
 	end
 end
 
 function skill:drawUpper()
-	local liveUIOpacity = self.liveUI:getOpacity()
-
 	for i = 1, #self.skillUnitEffect do
 		local effect = self.skillUnitEffect[i]
-		local multipler = 1 - effect.time / 7
-		local scale = multipler * 3.8 + 0.2
+		local multipler = effect.time / 0.7
+		local scale = (1 - multipler) * 3.8 + 0.2
 
-		love.graphics.setColor(color.compat(255, 255, 255, multipler * liveUIOpacity))
-		love.graphics.draw(self.images[2], effect.image, 0, scale, scale, 32, 32)
+		love.graphics.setColor(color.compat(255, 255, 255, multipler * self.liveUIOpacity))
+		love.graphics.draw(self.images[2], effect.image, effect.index.x, effect.index.y, 0, scale, scale, 32, 32)
 	end
 end
 
 function skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
+	log.debugf("skill", "direct skill trigger of type %s value %.2f", type, value)
+
 	-- bypassing condition
 	return self:_triggerSkill({
 		image = assert(skill.list[type], "invalid skill type"),

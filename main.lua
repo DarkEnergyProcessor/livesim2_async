@@ -145,7 +145,7 @@ local function initializeYohane()
 	log.debug("main", "initializing Yohane")
 
 	function Yohane.Platform.ResolveImage(path)
-		return assetCache.loadImage(path..":"..path, {mipmaps = true})
+		return assetCache.loadImage(path, {mipmaps = true})
 	end
 
 	function Yohane.Platform.ResolveAudio(path)

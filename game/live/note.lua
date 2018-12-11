@@ -152,6 +152,11 @@ function noteManager:__construct(param)
 		-- judgement: judgement string (perfect, great, good, bad, miss)
 		-- releaseFlag: release note information (0 = normal note, 1 = hold note, 2 = release note)
 	end
+	-- on note spawned
+	self.spawn = param.spawn or function(object, lane)
+		-- object: note object
+		-- lane: desired idol position (1 is rightmost, 9 is leftmost)
+	end
 	-- timing offset
 	self.timingOffset = param.timingOffset or 0
 	-- lane data
@@ -522,6 +527,8 @@ function normalMovingNote:__construct(definition, param)
 	self.delete = false
 	-- oof
 	self.long = false
+	-- is ever updated
+	self.spawned = false
 	-- Current note manager
 	self.manager = param
 end
@@ -1069,6 +1076,12 @@ function noteManager:update(dt)
 					judgement = v:update(dt)
 				end
 
+				-- ever updated flag
+				if not(v.spawned) then
+					self.spawn(v, v.lanePosition)
+					v.spawned = true
+				end
+
 				if judgement then
 					-- function(object, lane, position, judgement, releaseFlag)
 					local relflg = v.long and (v.lnHolding and (v.delete and 2) or 1) or 0
@@ -1095,6 +1108,8 @@ function noteManager:draw()
 		local ypy = math.cos(math.pi * self.yellowTimingWindow.rotation / 6) * 64
 		local xpr = math.sin(math.pi * self.redTimingWindow.rotation / 6) * 64
 		local ypr = math.cos(math.pi * self.redTimingWindow.rotation / 6) * 64
+
+		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 
 		for i = 1, 9 do
 			local pos = self.lane[i]

@@ -88,7 +88,7 @@ skill:
      # trigger for every 5 miss
      miss: 5
      # trigger for every score multipler (Kotori nurse for example)
-     scoremultipler: 13500
+     score: 13500
 
 storyboard:
    # Explanation:

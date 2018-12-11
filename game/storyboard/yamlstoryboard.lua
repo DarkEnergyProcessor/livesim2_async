@@ -7,6 +7,7 @@ local yaml = require("libs.tinyyaml")
 local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 
+local audioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
 local util = require("util")
@@ -27,6 +28,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 	-- ["data"] - additional embedded data where value is FileData (optional)
 	-- ["background"] - current background
 	-- ["unit"] - unit image list, index from 1..9
+	-- ["skill"] - skill callback function
 
 	local storyData = yaml.parse(storyboardData)
 
@@ -45,6 +47,8 @@ function yamlStoryboard:__construct(storyboardData, info)
 	self.drawable = {}
 	self.drawing = {}
 	self.timer = timer.new()
+	self.emitEvent = {}
+	self.skillCallback = assert(info.skill)
 
 	-- Add FileDatas
 	if info.data then
@@ -152,6 +156,48 @@ function yamlStoryboard:__construct(storyboardData, info)
 	self.drawing[1] = self.drawable.__background
 
 	-- TODO: Load skill
+	if storyData.skill then
+		for _, v in ipairs(storyData.skill) do
+			local skillData = {
+				type = v.type,
+				chance = util.clamp(v.chance, 0, 1),
+				rarity = v.rarity:lower(),
+				value = v.value,
+				unit = v.index
+			}
+
+			if v.draw then
+				skillData.image = assert(self.drawable[v.draw], "target drawable not exist").drawable
+			end
+
+			if v.audio then
+				skillData.audio = self:loadAudio(v.audio)
+			end
+
+			-- Load condition
+			local condition = assert(v.condition, "condition does not exist")
+			local condTable = {}
+			local hasCondition = false
+
+			-- This is expensive
+			for k, v2 in pairs(condition) do
+				if k == "emit" then
+					assert(self.events[v2] == nil, "event name already occupied")
+					self.events[v2] = {
+						type = "skill",
+						data = skillData
+					}
+				else
+					hasCondition = true
+					condTable[k] = v2
+				end
+			end
+
+			if hasCondition then
+				self.skillCallback("register", skillData, condTable)
+			end
+		end
+	end
 
 	local counter = 1
 	-- helper function
@@ -215,7 +261,18 @@ local changeableValue = {
 
 function yamlStoryboard:handleEvent(ev)
 	if ev.type == "emit" then
-		-- TODO
+		local event = assert(self.events[ev.target], "event doesn't exist")
+		if event.type == "skill" then
+			self.skillCallback(
+				"trigger",
+				event.data.type,
+				event.data.value,
+				event.data.unit,
+				event.data.rarity,
+				event.data.image,
+				event.data.audio
+			)
+		end
 	else
 		local target = assert(self.drawable[ev.target], "target doesn't exist")
 
@@ -274,6 +331,19 @@ function yamlStoryboard:handleEvent(ev)
 			end
 		end
 	end
+end
+
+function yamlStoryboard:loadAudio(path)
+	if self.data[path] then
+		return audioManager.newAudioDirect(love.sound.newDecoder(self.data[path]))
+	elseif self.path then
+		if util.fileExists(self.path..path) then
+			return audioManager.newAudio(self.path..path)
+		end
+	end
+
+	error("file not found")
+	return nil
 end
 
 function yamlStoryboard:update(dt)

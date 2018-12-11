@@ -27,6 +27,7 @@ local note = require("game.live.note")
 local pause = require("game.live.pause")
 local result = require("game.live.result")
 local liveUI = require("game.live.ui")
+local skill = require("game.live.skill")
 local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 local beatmapRandomizer = require("game.live.randomizer3")
@@ -44,6 +45,8 @@ local DEPLS = gamestate.create {
 		random = {"assets/image/live/l_win_32.png", {mipmaps = true}}
 	}
 }
+
+local validJudgement = {"perfect", "great", "good", "bad", "miss"}
 
 local scoreMultipler = {
 	perfect = 1,
@@ -68,6 +71,17 @@ local staminaJudgmentDamage = {
 	bad = 1,
 	miss = 2
 }
+
+local function pickLowestJudgement(j1, j2)
+	if j1 and j2 then
+		return validJudgement[math.max(
+			assert(util.isValueInArray(validJudgement, j1)),
+			assert(util.isValueInArray(validJudgement, j2))
+		)]
+	else
+		return j1 or j2
+	end
+end
 
 local function pauseGame(self, fail)
 	if self.data.liveUI:isPauseEnabled() then
@@ -270,6 +284,9 @@ function DEPLS:load(arg)
 		autoplay = autoplay,
 		timingOffset = -setting.get("TIMING_OFFSET"), -- inverted for some reason
 		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,
+		spawn = function()
+			return self.data.skill:noteSpawnCallback()
+		end,
 		callback = function(object, lane, position, judgement, releaseFlag)
 			log.debugf(
 				"livesim2", "note cb (%s), lane: %d, position: %s, relmode: %d",
@@ -278,21 +295,30 @@ function DEPLS:load(arg)
 			-- judgement
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
+				local lowestJudgement = pickLowestJudgement(judgement, object.previousJudgement)
+
+				-- Send skill
+				self.data.skill:noteCallback(lowestJudgement, object.token, object.star)
+
 				if judgement ~= "miss" then
 					local scoreMulType = (releaseFlag == 2 and 1.25 or 1) * (object.swing and 0.5 or 1)
 					local scoreMul = scoreMulType * (object.scoreMultipler or 1)
-					self.data.liveUI:addScore(math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore))
+					local score = math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore)
+					self.data.liveUI:addScore(score)
 					self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+					self.data.skill:scoreCallback(score)
 				end
 
 				-- counter
 				self.persist.accuracyData[#self.persist.accuracyData + 1] = accuracyGraphValue[judgement]
 				self.persist.noteInfo.totalNotes = self.persist.noteInfo.totalNotes + 1
 				self.persist.noteInfo[judgement] = self.persist.noteInfo[judgement] + 1
+
 				if judgement ~= "miss" and object.token then
 					self.persist.noteInfo.token = self.persist.noteInfo.token + 1
 				end
-				if judgement == "perfect" then
+
+				if lowestJudgement == "perfect" then
 					if releaseFlag == 2 then
 						self.persist.noteInfo.perfectSimultaneous = self.persist.noteInfo.perfectSimultaneous + 1
 					elseif object.swing then
@@ -303,6 +329,10 @@ function DEPLS:load(arg)
 				end
 			elseif judgement ~= "miss" then
 				object.scoreMultipler = scoreMultipler[judgement]
+				object.previousJudgement = judgement
+			else
+				-- in this case, the note is not pressed and it miss
+				self.data.skill:noteCallback("miss", object.token, object.star)
 			end
 
 			-- play SFX
@@ -337,9 +367,13 @@ function DEPLS:load(arg)
 	end
 	self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
 
-	-- Load notes data
+	-- Beatmap loading variables
 	local isBeatmapInit = 0
-	local desiredBeatmapInit = loadStoryboard and 4 or 3
+	local desiredBeatmapInit = 3
+	if loadStoryboard then
+		desiredBeatmapInit = desiredBeatmapInit + 1
+	end
+	-- Load notes data
 	beatmapList.getNotes(arg.beatmapName, function(notes)
 		local fullScore = 0
 
@@ -619,8 +653,12 @@ function DEPLS:load(arg)
 		self.data.unitIcons[i] = image
 	end
 
+	-- Initialize skill system
+	self.data.skill = skill(self.data.liveUI, self.data.noteManager, self.persist.randomGeneratedSeed)
+
 	-- Initialize storyboard
 	if loadStoryboard and self.data.storyboardData then
+		log.debugf("livesim2", "trying to load storyboard")
 		local s, msg = storyLoader.load(
 			self.data.storyboardData.type,
 			self.data.storyboardData.storyboard,
@@ -628,7 +666,16 @@ function DEPLS:load(arg)
 				path = self.data.storyboardData.path,
 				data = self.data.storyboardData.data,
 				background = self.data.background,
-				unit = self.data.unitIcons
+				unit = self.data.unitIcons,
+				skill = function(kind, ...)
+					if kind == "trigger" then
+						local type, value, unitIndex, rarity, image, audio = ...
+						self.data.skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
+					elseif kind == "register" then
+						local skillData, condition = ...
+						self.data.skill:register(skillData, condition)
+					end
+				end,
 			}
 		)
 		if s == nil then
@@ -682,9 +729,13 @@ function DEPLS:update(dt)
 			if self.persist.liveDelayCounter <= 0 then
 				-- update storyboard
 				if self.data.storyboard then
-					self.data.storyboard:update(self.data.pauseObject:isPaused() and 0 or dt)
+					self.data.storyboard:update(dt)
 				end
 
+				-- update skill
+				self.data.skill:update(dt)
+
+				-- play song if it's not played
 				local updtDt = dt
 				if self.persist.liveDelayCounter ~= -math.huge then
 					updtDt = -self.persist.liveDelayCounter
@@ -793,6 +844,7 @@ function DEPLS:draw()
 
 		return
 	end
+
 	-- draw dim
 	local dimVal = (self.persist.liveDelay - math.max(self.persist.liveDelayCounter, 0)) / self.persist.liveDelay
 	love.graphics.push()
@@ -806,6 +858,9 @@ function DEPLS:draw()
 	end
 
 	if self.persist.liveDelayCounter <= 0 then
+		-- draw skill flash
+		self.data.skill:drawUnder()
+
 		-- draw live header
 		self.data.liveUI:drawHeader()
 		love.graphics.setColor(color.white)
@@ -813,6 +868,8 @@ function DEPLS:draw()
 			love.graphics.draw(self.data.unitIcons[i], v.x, v.y, 0, 1, 1, 64, 64)
 		end
 
+		-- draw unit skill indicator
+		self.data.skill:drawUpper()
 		-- draw notes
 		self.data.noteManager:draw()
 		-- draw live status
