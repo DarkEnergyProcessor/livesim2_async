@@ -667,6 +667,8 @@ function DEPLS:load(arg)
 				data = self.data.storyboardData.data,
 				background = self.data.background,
 				unit = self.data.unitIcons,
+				song = self.data.song,
+				seed = self.persist.randomGeneratedSeed,
 				skill = function(kind, ...)
 					if kind == "trigger" then
 						local type, value, unitIndex, rarity, image, audio = ...
@@ -797,7 +799,7 @@ end
 function DEPLS:draw()
 	-- draw background
 	love.graphics.setColor(color.white)
-	if self.data.storyboard and self.persist.coverArtDisplayDone then
+	if self.data.storyboard and self.persist.coverArtDisplayDone and self.persist.liveDelayCounter <= 0 then
 		self.data.storyboard:draw()
 	else
 		love.graphics.setBlendMode("replace", "alphamultiply")

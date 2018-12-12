@@ -197,7 +197,7 @@ function skill:_handleSkill(v, value)
 	while v.counter >= v.needed do
 		v.counter = v.counter - v.needed
 
-		if self.rng:random() - v.skill.chance <= 0 then
+		if self.rng:random() < v.skill.chance then
 			log.debugf("skill", "triggering skill with chance %.2f", v.skill.chance)
 			self:_triggerSkill(v.skill)
 		end

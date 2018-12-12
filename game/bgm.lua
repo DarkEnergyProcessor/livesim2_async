@@ -102,6 +102,14 @@ function BGMClass:isPlaying()
 	return audioManager.isPlaying(self.audio)
 end
 
+function BGMClass:getSampleRate()
+	if audioManager.renderRate > 0 then
+		return 48000
+	else
+		return self.audio.soundData:getSampleRate()
+	end
+end
+
 function BGM.newSong(decoder)
 	local sync = async.syncLily(lily.newSoundData(decoder))
 	return BGMClass(sync:getValues())

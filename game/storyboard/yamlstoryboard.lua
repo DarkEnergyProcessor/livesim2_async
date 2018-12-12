@@ -29,6 +29,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 	-- ["background"] - current background
 	-- ["unit"] - unit image list, index from 1..9
 	-- ["skill"] - skill callback function
+	-- ["seed"] - random seed in {low, high}
 
 	local storyData = yaml.parse(storyboardData)
 
@@ -381,6 +382,10 @@ function yamlStoryboard:draw()
 			love.graphics.draw(d.drawable, d.x, d.y, d.r, d.sx, d.sy, d.ox, d.oy, d.kx, d.ky)
 		end
 	end
+end
+
+function yamlStoryboard.callback()
+	-- NOOP atm
 end
 
 return yamlStoryboard

@@ -33,7 +33,7 @@ return function(code)
 	-- LOVE 11.2 and earlier produces wrong hash for
 	-- data that is 56 + 64k bytes long (k = 0, 1, 2, ...).
 	-- In that case, keep using kikito's MD5 implementation
-	if len % 64 == 56 and love._version < "11.3" then
+	if len % 64 == 56 and love._version <= "11.2" then
 		return md5implfb(code)
 	else
 		return md5impl(code)

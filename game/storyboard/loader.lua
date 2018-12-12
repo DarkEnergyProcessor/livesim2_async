@@ -4,7 +4,8 @@
 
 local storyboardLoader = {
 	loaders = {
-		yaml = require("game.storyboard.yamlstoryboard")
+		yaml = require("game.storyboard.yamlstoryboard"),
+		lua = require("game.storyboard.luastoryboard"),
 	}
 }
 

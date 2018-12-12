@@ -339,4 +339,44 @@ function ls2Loader:getCustomUnitInformation()
 	return unitData
 end
 
+local function decompress(fmt, data)
+	if love._version >= "11.0" then
+		return love.data.decompress("string", fmt, data)
+	else
+		return love.math.decompress(data, fmt)
+	end
+end
+
+function ls2Loader:getStoryboardData()
+	local internal = Luaoop.class.data(self)
+	if internal.ls2.sections.SRYL then
+		internal.file:seek(internal.ls2.sections.SRYL[1])
+		local storyData = ls2.section_processor.SRYL[1](internal.file)
+
+		-- Attempt to decompress storyboard script
+		do
+			local status, newStory = pcall(decompress, "zlib", storyData)
+			if status then
+				storyData = newStory
+			end
+		end
+
+		-- Enumerate all DATA
+		local datalist = {}
+		if internal.ls2.sections.DATA then
+			for _, v in ipairs(internal.ls2.sections.DATA) do
+				internal.file:seek(v)
+				local name, cont = ls2.section_processor.DATA[1](internal.file)
+				datalist[#datalist + 1] = love.filesystem.newFileData(cont, name)
+			end
+		end
+
+		return {
+			type = storyData:find("---", 1, true) == 1 and "yaml" or "lua",
+			storyboard = storyData,
+			data = datalist
+		}
+	end
+end
+
 return ls2Loader, "file"
