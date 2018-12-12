@@ -600,6 +600,24 @@ function sifui:getMaxCombo()
 	return self.maxCombo
 end
 
+function sifui:getScoreComboMultipler()
+	if self.currentCombo < 50 then
+		return 1
+	elseif self.currentCombo < 100 then
+		return 1.1
+	elseif self.currentCombo < 200 then
+		return 1.15
+	elseif self.currentCombo < 400 then
+		return 1.2
+	elseif self.currentCombo < 600 then
+		return 1.25
+	elseif self.currentCombo < 800 then
+		return 1.3
+	else
+		return 1.35
+	end
+end
+
 -------------
 -- Stamina --
 -------------

@@ -302,7 +302,7 @@ function DEPLS:load(arg)
 
 				if judgement ~= "miss" then
 					local scoreMulType = (releaseFlag == 2 and 1.25 or 1) * (object.swing and 0.5 or 1)
-					local scoreMul = scoreMulType * (object.scoreMultipler or 1)
+					local scoreMul = scoreMulType * (object.scoreMultipler or 1) * self.data.liveUI:getScoreComboMultipler()
 					local score = math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore)
 					self.data.liveUI:addScore(score)
 					self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
@@ -367,9 +367,20 @@ function DEPLS:load(arg)
 	end
 	self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
 
+	-- background
+	local loadBackground = setting.get("AUTO_BACKGROUND") == 1
+	-- custom unit
+	local loadCustomUnit = setting.get("CBF_UNIT_LOAD") == 1
+
 	-- Beatmap loading variables
 	local isBeatmapInit = 0
-	local desiredBeatmapInit = 3
+	local desiredBeatmapInit = 1
+	if loadCustomUnit then
+		desiredBeatmapInit = desiredBeatmapInit + 1
+	end
+	if loadBackground then
+		desiredBeatmapInit = desiredBeatmapInit + 1
+	end
 	if loadStoryboard then
 		desiredBeatmapInit = desiredBeatmapInit + 1
 	end
@@ -425,41 +436,46 @@ function DEPLS:load(arg)
 		end
 		isBeatmapInit = isBeatmapInit + 1
 	end)
-	-- need to wrap in coroutine because
-	-- there's no async access in the callback
-	beatmapList.getBackground(arg.beatmapName, coroutine.wrap(function(value)
-		log.debug("livesim2", "received background data")
-		local tval = type(value)
-		if tval == "table" then
-			local bitval
-			local m, l, r, t, b
-			-- main background
-			m = love.graphics.newImage(table.remove(value, 2))
-			bitval = math.floor(value[1] / 4)
-			-- left & right
-			if bitval % 2 > 0 then
-				l = love.graphics.newImage(table.remove(value, 2))
-				r = love.graphics.newImage(table.remove(value, 2))
+	if loadBackground then
+		-- need to wrap in coroutine because
+		-- there's no async access in the callback
+		beatmapList.getBackground(arg.beatmapName, false, coroutine.wrap(function(value)
+			log.debug("livesim2", "received background data")
+
+			local tval = type(value)
+			if tval == "table" then
+				local bitval
+				local m, l, r, t, b
+				-- main background
+				m = love.graphics.newImage(table.remove(value, 2))
+				bitval = math.floor(value[1] / 4)
+				-- left & right
+				if bitval % 2 > 0 then
+					l = love.graphics.newImage(table.remove(value, 2))
+					r = love.graphics.newImage(table.remove(value, 2))
+				end
+				bitval = math.floor(value[1] / 2)
+				-- top & bottom
+				if bitval % 2 > 0 then
+					t = love.graphics.newImage(table.remove(value, 2))
+					b = love.graphics.newImage(table.remove(value, 2))
+				end
+				-- TODO: video
+				self.data.background = backgroundLoader.compose(m, l, r, t, b)
+			elseif tval == "number" and value > 0 then
+				self.data.background = backgroundLoader.load(value)
 			end
-			bitval = math.floor(value[1] / 2)
-			-- top & bottom
-			if bitval % 2 > 0 then
-				t = love.graphics.newImage(table.remove(value, 2))
-				b = love.graphics.newImage(table.remove(value, 2))
-			end
-			-- TODO: video
-			self.data.background = backgroundLoader.compose(m, l, r, t, b)
-		elseif tval == "number" and value > 0 then
-			self.data.background = backgroundLoader.load(value)
-		end
-		isBeatmapInit = isBeatmapInit + 1
-	end))
-	-- Load unit data too
-	beatmapList.getCustomUnit(arg.beatmapName, function(unitData)
-		self.data.customUnit = unitData
-		log.debug("livesim2", "received unit data")
-		isBeatmapInit = isBeatmapInit + 1
-	end)
+			isBeatmapInit = isBeatmapInit + 1
+		end))
+	end
+	if loadCustomUnit then
+		-- Load unit data too
+		beatmapList.getCustomUnit(arg.beatmapName, function(unitData)
+			self.data.customUnit = unitData
+			log.debug("livesim2", "received unit data")
+			isBeatmapInit = isBeatmapInit + 1
+		end)
+	end
 	if loadStoryboard then
 		-- Load storyboard
 		beatmapList.getStoryboard(arg.beatmapName, function(story)
@@ -616,7 +632,7 @@ function DEPLS:load(arg)
 	for i = 1, 9 do
 		local image
 
-		if self.data.customUnit[i] then
+		if self.data.customUnit and self.data.customUnit[i] then
 			image = unitImageCache[self.data.customUnit[i]]
 			if not(image) then
 				image = love.graphics.newImage(self.data.customUnit[i], {mipmaps = true})
@@ -670,12 +686,15 @@ function DEPLS:load(arg)
 				song = self.data.song,
 				seed = self.persist.randomGeneratedSeed,
 				skill = function(kind, ...)
-					if kind == "trigger" then
-						local type, value, unitIndex, rarity, image, audio = ...
-						self.data.skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
-					elseif kind == "register" then
-						local skillData, condition = ...
-						self.data.skill:register(skillData, condition)
+					-- do not register/trigger any skill if custom unit is disabled
+					if loadCustomUnit then
+						if kind == "trigger" then
+							local type, value, unitIndex, rarity, image, audio = ...
+							self.data.skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
+						elseif kind == "register" then
+							local skillData, condition = ...
+							self.data.skill:register(skillData, condition)
+						end
 					end
 				end,
 			}

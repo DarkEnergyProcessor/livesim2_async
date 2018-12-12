@@ -9,6 +9,7 @@ require("love.filesystem")
 require("love.image")
 require("love.system")
 require("love.timer")
+require("love.video")
 
 local util = require("util")
 local log = require("logging")
@@ -264,7 +265,7 @@ local function processCommand(chan, command)
 		end
 	elseif command == "background" then
 		if beatmap.list[arg[1]] then
-			local bg = beatmap.list[arg[1]].data:getBackground()
+			local bg = beatmap.list[arg[1]].data:getBackground(arg[2])
 			log.debug("beatmap.thread", "background: "..tostring(bg))
 			sendBeatmapData("background", id, bg or 0)
 		end

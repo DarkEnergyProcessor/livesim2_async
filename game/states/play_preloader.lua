@@ -3,8 +3,11 @@
 -- See copyright notice in main.lua
 
 local lsr = require("libs.lsr")
+
 local async = require("async")
+local setting = require("setting")
 local gamestate = require("gamestate")
+
 local beatmapList = require("game.beatmap.list")
 local loadingInstance = require("loading_instance")
 
@@ -48,6 +51,11 @@ function playPreloader:load(arg)
 
 		self.persist.alreadyLoaded = true
 		self.persist.autoplayMode = arg.autoplay
+		if arg.storyboard == nil then
+			self.persist.storyboardMode = setting.get("STORYBOARD_LOAD") == 1
+		else
+			self.persist.storyboardMode = arg.storyboard
+		end
 	end
 end
 
@@ -65,6 +73,7 @@ function playPreloader:start(arg)
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData,
 		autoplay = self.persist.autoplayMode,
+		storyboard = self.persist.storyboardMode,
 		replay = self.data.replayData,
 		random = not(not(arg.random)),
 		randomseed = rnd,

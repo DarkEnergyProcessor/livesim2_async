@@ -70,6 +70,11 @@ function uibase:getMaxCombo()
 	return 255
 end
 
+function uibase:getScoreComboMultipler()
+	error("pure virtual method 'getScoreComboMultipler'", 2)
+	return 1.15
+end
+
 -------------
 -- Stamina --
 -------------

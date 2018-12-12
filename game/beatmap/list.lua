@@ -186,9 +186,9 @@ function beatmapList.getNotes(name, callback)
 end
 
 -- callback: backgrounds channel
-function beatmapList.getBackground(name, callback)
+function beatmapList.getBackground(name, video, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name})
+	beatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name, video})
 end
 
 -- callback: unit list channel

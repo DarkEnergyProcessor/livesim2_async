@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local Luaoop = require("libs.Luaoop")
+local log = require("logging")
 local love = require("love")
 local util = require("util")
 local baseLoader = require("game.beatmap.base")
@@ -164,6 +165,64 @@ function deplsLoader:getAudio()
 	else
 		return baseLoader.getAudio(self)
 	end
+end
+
+local imageExtension = {".png", ".jpg", ".jpeg", ".bmp"}
+local videoExtension = {".ogg", ".ogv"}
+
+function deplsLoader:getBackground(video)
+	local internal = Luaoop.class.data(self)
+	local bg = internal.beatmap:getBackground(video)
+	print("background", bg)
+
+	if bg == nil or bg == 0 then
+		local bgfile = util.substituteExtension(internal.path.."background", imageExtension)
+		if bgfile then
+			local mode = {1}
+			local backgrounds = {}
+			mode[#mode + 1] = love.image.newImageData(bgfile)
+
+			for i = 1, 4 do
+				bgfile = util.substituteExtension(internal.path.."background-"..i, imageExtension)
+				if bgfile then
+					backgrounds[i] = love.image.newImageData(bgfile)
+				end
+			end
+
+			if backgrounds[1] and backgrounds[2] then
+				mode[1] = mode[1] + 2
+				mode[#mode + 1] = backgrounds[1]
+				mode[#mode + 1] = backgrounds[2]
+			elseif not(backgrounds[1]) ~= not(backgrounds[2]) then
+				log.warning("noteloader.depls", "missing left or right background. Discard both!")
+			end
+			if backgrounds[3] and backgrounds[4] then
+				mode[1] = mode[1] + 4
+				mode[#mode + 1] = backgrounds[3]
+				mode[#mode + 1] = backgrounds[4]
+			elseif not(backgrounds[3]) ~= not(backgrounds[4]) then
+				log.warning("noteloader.depls", "missing top or bottom background. Discard both!")
+			end
+
+			if video then
+				bgfile = util.substituteExtension(internal.path.."video_background", videoExtension)
+				if bgfile then
+					mode[1] = mode[1] + 8
+					mode[#mode + 1] = love.video.newVideoStream(bgfile)
+				end
+			end
+
+			return mode
+		elseif util.fileExists(internal.path.."background.txt") then
+			-- love.filesystem.read returns 2 values, and it can be problem
+			-- for background ID 10 and 11, so pass "nil" as 2nd argument of tonumber
+			return tonumber(love.filesystem.read(internal.path.."background.txt"), nil)
+		end
+	else
+		return bg
+	end
+
+	return 0
 end
 
 function deplsLoader:getStoryboardData()

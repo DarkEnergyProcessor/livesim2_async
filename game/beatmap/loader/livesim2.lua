@@ -286,7 +286,7 @@ function ls2Loader:getBackground()
 		local bits = 1
 		local realBack = {0}
 		if backgrounds[0] == nil then
-			log.warning("noteloader.livesim2", "missing main background. Fallback to background ID!")
+			log.info("noteloader.livesim2", "missing main background. Fallback to background ID!")
 			return internal.ls2.background_id
 		else
 			realBack[2] = backgrounds[0]

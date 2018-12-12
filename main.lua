@@ -295,6 +295,8 @@ Options:
 * -replay <file>             Use replay file for preview. Replay file is
                              stored in replays/<beatmap_filename>/<file>.lsr
 
+* -storyboard <on/off|1/0>   Enable/disable storyboard system.
+
 * -width <width>             Set window width. Ignored if used with command
                              that operates without window. Default is 960
 
@@ -341,6 +343,7 @@ function love.load(argv, gameargv)
 	local absolutePlayBeatmapName
 	local playBeatmapName
 	local autoplayOverride
+	local storyboardOverride
 	local listingMode
 	local fullscreen = false
 	local windowWidth = 960
@@ -394,6 +397,11 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-replay" then
 				replayFile = assert(argv[i+1], "please specify replay file")
+				i = i + 1
+			elseif arg == "-storyboard" then
+				local u = assert(argv[i+1], "please specify storyboard mode"):lower()
+				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid storyboard mode")
+				storyboardOverride = u
 				i = i + 1
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
@@ -468,6 +476,11 @@ function love.load(argv, gameargv)
 			autoplayMode = autoplayOverride == "on" or autoplayOverride == "1"
 		end
 
+		local storyboardMode
+		if storyboardOverride then
+			storyboardMode = storyboardOverride == "on" or storyboardOverride == "1"
+		end
+
 		if replayFile then
 			if autoplayMode then
 				error("cannot use -replay with -autoplay")
@@ -492,6 +505,7 @@ function love.load(argv, gameargv)
 				autoplay = autoplayMode,
 				replay = replayFile,
 				random = randomizeBeatmap,
+				storyboard = storyboardMode,
 			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
@@ -501,6 +515,7 @@ function love.load(argv, gameargv)
 
 				autoplay = autoplayMode,
 				random = randomizeBeatmap,
+				storyboard = storyboardMode,
 			})
 		else
 			-- Jump to default game state
