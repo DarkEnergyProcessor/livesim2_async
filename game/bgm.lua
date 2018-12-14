@@ -2,18 +2,18 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = require("love")
+local Luaoop = require("libs.Luaoop")
+
 local async = require("async")
 local lily = require("lily")
 local audioManager = require("audio_manager")
 local util = require("util")
-local Luaoop = require("libs.Luaoop")
 
 local BGM = {}
 local BGMClass = Luaoop.class("livesim2.BGM")
 
 function BGMClass:__construct(sd)
-	self.audio = audioManager.newAudioDirect(sd)
+	self.audio = audioManager.newAudioDirect(sd, "music")
 	self.channel = util.getChannelCount(sd)
 end
 

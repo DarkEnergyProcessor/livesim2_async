@@ -6,6 +6,7 @@ local love = require("love")
 local gamestate = require("gamestate")
 local color = require("color")
 local loadingInstance = require("loading_instance")
+local volume = require("volume")
 local L = require("language")
 
 local glow = require("game.afterglow")
@@ -21,18 +22,26 @@ local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
+local function setVolumeSetting(name, value)
+	return volume.set(name, value * 0.01)
+end
+
 function volumeSetting:load()
 	glow.clear()
 
 	self.data.settingData = {
-		numberSetting(L"setting:volume:master", nil, {min = 0, max = 100, default = 80, value = 80})
-			:setPosition(61, 60),
-		numberSetting(L"setting:volume:song", nil, {min = 0, max = 100, default = 80, value = 80})
-			:setPosition(61, 146),
+		numberSetting(L"setting:volume:master", "MASTER_VOLUME", {min = 0, max = 100, default = 80})
+			:setPosition(61, 60)
+			:setChangedCallback("master", setVolumeSetting),
+		numberSetting(L"setting:volume:song", "SONG_VOLUME", {min = 0, max = 100, default = 80})
+			:setPosition(61, 146)
+			:setChangedCallback("music", setVolumeSetting),
 		numberSetting(L"setting:volume:effect", "SE_VOLUME", {min = 0, max = 100, default = 80})
-			:setPosition(61, 232),
-		numberSetting(L"setting:volume:voice", nil, {min = 0, max = 100, default = 80, value = 80})
-			:setPosition(61, 318),
+			:setPosition(61, 232)
+			:setChangedCallback("se", setVolumeSetting),
+		numberSetting(L"setting:volume:voice", "VOICE_VOLUME", {min = 0, max = 100, default = 80})
+			:setPosition(61, 318)
+			:setChangedCallback("voice", setVolumeSetting),
 	}
 
 	if self.data.back == nil then

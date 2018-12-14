@@ -116,7 +116,7 @@ function luaStoryboard:setupMainEnv()
 		if path == nil then
 			if self.v3 then
 				local f = love.graphics.newFont("fonts/Roboto-Regular.ttf", ...)
-				f:setFallbacks(love.graphics.newFont("fonts/MTLmr3m.ttf", ...))
+				f:setFallbacks(love.graphics.newFont("fonts/NotoSansCJKjp-Regular.otf", ...))
 				return f
 			else
 				return love.graphics.newFont("fonts/MTLmr3m.ttf", ...)

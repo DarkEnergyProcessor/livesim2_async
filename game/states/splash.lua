@@ -4,15 +4,16 @@
 -- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER
 
 local love = require("love")
-local gamestate = require("gamestate")
 local timer = require("libs.hump.timer")
-local loadingInstance = require("loading_instance")
+
 local color = require("color")
+local mainFont = require("font")
+local gamestate = require("gamestate")
+local loadingInstance = require("loading_instance")
 
 local splash = gamestate.create {
 	fonts = {
-		title = {"fonts/MTLmr3m.ttf", 72},
-		version = {16}
+		version = {24}
 	},
 	images = {
 		icon = {"icon1024:assets/image/icon/icon_1024x1024.png", {mipmaps = true}}
@@ -38,7 +39,7 @@ end
 
 function splash:load()
 	if not(self.data.title) then
-		local title = love.graphics.newText(self.assets.fonts.title)
+		local title = love.graphics.newText(mainFont.get(72))
 		title:add({color.black50PT, "Live Simulator: 2"}, 2, 2)
 		title:add({color.black50PT, "Live Simulator: 2"}, -2, -2)
 		title:add({color.white, "Live Simulator: 2"}, 0, 0)

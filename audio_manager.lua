@@ -15,6 +15,7 @@ local lily = require("lily")
 local cache = require("cache")
 local async = require("async")
 local util = require("util")
+local volume = require("volume")
 
 local ffi
 
@@ -80,7 +81,7 @@ function audioManager.updateRender()
 	return sound
 end
 
-function audioManager.newAudio(path)
+function audioManager.newAudio(path, kind)
 	if type(path) == "string" then
 		local sd = cache.get(path)
 		if not(sd) then
@@ -89,17 +90,19 @@ function audioManager.newAudio(path)
 			cache.set(path, sd)
 		end
 
-		return audioManager.newAudioDirect(sd)
+		return audioManager.newAudioDirect(sd, kind)
 	else
-		return audioManager.newAudioDirect(path)
+		return audioManager.newAudioDirect(path, kind)
 	end
 end
 
-function audioManager.newAudioDirect(data)
+function audioManager.newAudioDirect(data, kind)
+	--kind = kind or "master"
 	local obj = {
 		pos = 0,
 		size = 0,
-		volume = 0.8,
+		volume = volume.get(kind, 0.8),
+		volumeKind = kind,
 		playing = false,
 		looping = false,
 		soundData = nil,
@@ -149,6 +152,7 @@ function audioManager.clone(obj)
 		pos = 0,
 		size = obj.size,
 		volume = obj.volume,
+		volumeKind = obj.volumeKind,
 		playing = false,
 		looping = false,
 		soundData = obj.soundData,
@@ -221,6 +225,7 @@ function audioManager.isPlaying(obj)
 end
 
 function audioManager.setVolume(obj, vol)
+	vol = volume.get(obj.volumeKind, vol)
 	if audioManager.renderRate > 0 then
 		obj.volume = vol
 	else

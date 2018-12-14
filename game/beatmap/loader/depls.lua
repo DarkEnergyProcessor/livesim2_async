@@ -173,7 +173,6 @@ local videoExtension = {".ogg", ".ogv"}
 function deplsLoader:getBackground(video)
 	local internal = Luaoop.class.data(self)
 	local bg = internal.beatmap:getBackground(video)
-	print("background", bg)
 
 	if bg == nil or bg == 0 then
 		local bgfile = util.substituteExtension(internal.path.."background", imageExtension)

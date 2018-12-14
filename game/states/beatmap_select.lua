@@ -10,6 +10,7 @@ local setting = require("setting")
 local util = require("util")
 local L = require("language")
 
+local mainFont = require("font")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
@@ -23,11 +24,7 @@ local checkbox = require("game.ui.checkbox")
 local beatmapList = require("game.beatmap.list")
 
 local beatmapSelect = gamestate.create {
-	fonts = {
-		status = {"fonts/MTLmr3m.ttf", 22},
-		title = {"fonts/MTLmr3m.ttf", 30},
-		detail = {"fonts/MTLmr3m.ttf", 16}
-	},
+	fonts = {},
 	images = {},
 	audios = {},
 }
@@ -136,13 +133,15 @@ local function playButtonCallback(_, self)
 			beatmapName = self.persist.selectedBeatmapID,
 			random = self.data.checkButton[2]:isChecked(),
 			storyboard = self.data.checkButton[3]:isChecked(),
-			videoBackground = self.data.cbeckButton[4]:isChecked()
+			videoBackground = self.data.checkButton[4]:isChecked()
 		})
 	end
 end
 
 function beatmapSelect:load()
 	glow.clear()
+
+	self.data.statusFont, self.data.titleFont, self.data.detailFont = mainFont.get(22, 30, 16)
 
 	if self.data.back == nil then
 		self.data.back = backNavigation(L"beatmapSelect:title", leave)
@@ -181,7 +180,7 @@ function beatmapSelect:load()
 	glow.addElement(self.data.playButton, 470, 520)
 
 	if self.data.checkLabel == nil then
-		self.data.checkLabel = love.graphics.newText(self.assets.fonts.status)
+		self.data.checkLabel = love.graphics.newText(self.data.statusFont)
 		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionAutoplay", 770, 372)
 		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionRandom", 770, 408)
 		util.addTextWithShadow(self.data.checkLabel, L"beatmapSelect:optionStoryboard", 770, 444)
@@ -209,10 +208,10 @@ end
 
 function beatmapSelect:start()
 	self.persist.beatmapList = {}
-	self.persist.loadingText = love.graphics.newText(self.assets.fonts.status)
-	self.persist.beatmapInfo = love.graphics.newText(self.assets.fonts.status)
-	self.persist.beatmapDetailInfo = love.graphics.newText(self.assets.fonts.detail)
-	self.persist.titleText = love.graphics.newText(self.assets.fonts.title)
+	self.persist.loadingText = love.graphics.newText(self.data.statusFont)
+	self.persist.beatmapInfo = love.graphics.newText(self.data.statusFont)
+	self.persist.beatmapDetailInfo = love.graphics.newText(self.data.detailFont)
+	self.persist.titleText = love.graphics.newText(self.data.titleFont)
 	self.persist.active = true
 	beatmapList.push()
 	beatmapList.enumerate(function(id, name, fmt, diff)

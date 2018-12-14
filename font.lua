@@ -12,9 +12,9 @@ function font.get(...)
 	local fontsLoadQueue = {}
 
 	for i = 1, #arg do
-		isFallback[i] = not(cache.get("RobotoMainFont"..arg[i]))
-		fontsLoadQueue[i * 2 - 1] = {"RobotoMainFont"..arg[i]..":fonts/Roboto-Regular.ttf", arg[i]}
-		fontsLoadQueue[i * 2] = {"fonts/MTLmr3m.ttf", arg[i]}
+		isFallback[i] = not(cache.get("MainFont"..arg[i]))
+		fontsLoadQueue[i * 2 - 1] = {"MainFont"..arg[i]..":fonts/Roboto-Regular.ttf", arg[i]}
+		fontsLoadQueue[i * 2] = {"fonts/NotoSansCJKjp-Regular.otf", arg[i]}
 	end
 
 	local fontsData = assetCache.loadMultipleFonts(fontsLoadQueue)

@@ -157,7 +157,8 @@ local function liveClearCallback(self)
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 				summary = self.persist.summary,
 				beatmapName = self.persist.beatmapName,
-				replay = replayData
+				replay = replayData,
+				random = self.persist.beatmapRandomized
 			})
 		end
 	end)
@@ -365,7 +366,13 @@ function DEPLS:load(arg)
 	elseif arg.random then
 		self.persist.beatmapRandomized = true
 	end
-	self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
+	if self.persist.replayMode and self.persist.replayMode.randomSeed then
+		self.persist.randomGeneratedSeed = self.persist.replayMode.randomSeed
+	elseif arg.seed then
+		self.persist.randomGeneratedSeed = arg.seed
+	else
+		self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
+	end
 
 	-- background
 	local loadBackground = setting.get("AUTO_BACKGROUND") == 1
@@ -389,19 +396,7 @@ function DEPLS:load(arg)
 		local fullScore = 0
 
 		if self.persist.beatmapRandomized then
-			local seed
-			if self.persist.replayMode then
-				seed = self.persist.replayMode.randomSeed
-				if seed[1] == 0 and seed[2] == 0 then
-					seed = self.persist.randomGeneratedSeed
-				end
-			elseif arg.randomseed then
-				seed = arg.randomseed
-			else
-				seed = self.persist.randomGeneratedSeed
-			end
-
-			local newnotes = beatmapRandomizer(notes, seed[1], seed[2])
+			local newnotes = beatmapRandomizer(notes, self.persist.randomGeneratedSeed[1], self.persist.randomGeneratedSeed[2])
 			if newnotes then
 				self.persist.noteRandomized = true
 				notes = newnotes
@@ -493,8 +488,7 @@ function DEPLS:load(arg)
 	local tapSoundIndex = assert(tapSound[tonumber(setting.get("TAP_SOUND"))], "invalid tap sound")
 	for k, v in pairs(tapSoundIndex) do
 		if type(v) == "string" then
-			local audio = audioManager.newAudio(v)
-
+			local audio = audioManager.newAudio(v, "se")
 			audioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
 			self.data.tapSFX[k] = audio
 

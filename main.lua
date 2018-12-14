@@ -44,6 +44,7 @@ local language = require("language")
 local util = require("util")
 local setting = require("setting")
 local log = require("logging")
+local volume = require("volume")
 local audioManager = require("audio_manager")
 
 local beatmapList = require("game.beatmap.list")
@@ -109,6 +110,7 @@ local function initializeSetting()
 	setting.define("LIVESIM_DELAY", 1000) -- backward compatibility
 	setting.define("LIVESIM_DIM", 75)
 	setting.define("LLP_SIFT_DEFATTR", 10)
+	setting.define("MASTER_VOLUME", 80)
 	setting.define("MINIMAL_EFFECT", 0)
 	setting.define("NOTE_SPEED", 800) -- backward compatibility
 	setting.define("NOTE_STYLE", 1)
@@ -116,12 +118,14 @@ local function initializeSetting()
 	setting.define("PLAY_UI", "sif")
 	setting.define("SE_VOLUME", 80)
 	setting.define("SCORE_ADD_NOTE", 1024)
+	setting.define("SONG_VOLUME", 80)
 	setting.define("STAMINA_DISPLAY", 32)
 	setting.define("STAMINA_FUNCTIONAL", 0)
 	setting.define("STORYBOARD_LOAD", util.isMobile() and 0 or 1)
 	setting.define("TAP_SOUND", 1)
 	setting.define("TEXT_SCALING", 1)
 	setting.define("TIMING_OFFSET", 0)
+	setting.define("VOICE_VOLUME", 80)
 end
 
 local function createDirectories()
@@ -151,9 +155,7 @@ local function initializeYohane()
 	function Yohane.Platform.ResolveAudio(path)
 		local v = util.substituteExtension(path, util.getNativeAudioExtensions())
 		if v then
-			local s = audioManager.newAudio(v)
-			audioManager.setVolume(s, assert(tonumber(setting.get("SE_VOLUME"))) * 0.008)
-			return s
+			return audioManager.newAudio(v, "se")
 		end
 
 		return nil
@@ -251,6 +253,14 @@ local function initLS2()
 	}
 end
 
+local function initVolume()
+	love.audio.setVolume(1)
+	volume.set("master", setting.get("MASTER_VOLUME") * 0.01)
+	volume.define("se", setting.get("SE_VOLUME") * 0.01)
+	volume.define("music", setting.get("SONG_VOLUME") * 0.01)
+	volume.define("voice", setting.get("VOICE_VOLUME") * 0.01)
+end
+
 local usage = [[
 Usage: %s [options] [absolute beatmap path]
 
@@ -288,12 +298,15 @@ Options:
                              This argument takes precedence of passed beatmap
                              path as 1st argument.
 
-* -random [seedlow,seedhi]   Enable note randomization when possible. Affects
-                             dumped beatmap output. Seed of "0,0" means random
-                             seed will be used.
+* -random                    Enable note randomization when possible. Can be
+                             used with -dump option.
 
 * -replay <file>             Use replay file for preview. Replay file is
                              stored in replays/<beatmap_filename>/<file>.lsr
+
+* -seed <seedlo>,<seedhi>    Set random number generator seed. This allows
+                             consistent beatmap randomization and skill
+                             trigger timing.
 
 * -storyboard <on/off|1/0>   Enable/disable storyboard system.
 
@@ -330,6 +343,7 @@ function love.load(argv, gameargv)
 	initializeSetting()
 	initLS2()
 	initLSR()
+	initVolume()
 	language.init()
 	language.set(setting.get("LANGUAGE"))
 	-- Try to load command line
@@ -351,6 +365,7 @@ function love.load(argv, gameargv)
 	local dumpBeatmap = false
 	local replayFile = nil
 	local randomizeBeatmap
+	local randomSeed
 	do
 		local i = 1
 		while i <= #argv do
@@ -383,16 +398,13 @@ function love.load(argv, gameargv)
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
 				i = i + 1
 			elseif arg == "-random" then
+				randomizeBeatmap = true
+			elseif arg == "-seed" then
 				local seed = assert(argv[i+1], "please specify seed in format <low>,<hi>")
 				local slo, shi = seed:match("(%d+),(%d+)")
 				slo, shi = tonumber(slo), tonumber(shi)
 				assert(slo and shi, "please specify seed in format <low>,<hi>")
-
-				if slo == 0 and shi == 0 then
-					randomizeBeatmap = true
-				else
-					randomizeBeatmap = {slo%4294967296, shi%4294967296}
-				end
+				randomSeed = {slo%4294967296, shi%4294967296}
 
 				i = i + 1
 			elseif arg == "-replay" then
@@ -421,10 +433,10 @@ function love.load(argv, gameargv)
 		local function encodeToJSON(data)
 			if randomizeBeatmap then
 				local rndout
-				if type(randomizeBeatmap) == "boolean" then
-					rndout = beatmapRandomizer(data)
+				if randomSeed then
+					rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
 				else
-					rndout = beatmapRandomizer(data, randomizeBeatmap[1], randomizeBeatmap[2])
+					rndout = beatmapRandomizer(data)
 				end
 
 				if rndout then
@@ -505,6 +517,7 @@ function love.load(argv, gameargv)
 				autoplay = autoplayMode,
 				replay = replayFile,
 				random = randomizeBeatmap,
+				seed = randomSeed,
 				storyboard = storyboardMode,
 			})
 		elseif absolutePlayBeatmapName then
@@ -515,6 +528,7 @@ function love.load(argv, gameargv)
 
 				autoplay = autoplayMode,
 				random = randomizeBeatmap,
+				seed = randomSeed,
 				storyboard = storyboardMode,
 			})
 		else

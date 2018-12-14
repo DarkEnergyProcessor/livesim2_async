@@ -18,7 +18,7 @@ local yamlStoryboard = Luaoop.class("Livesim2.Storyboard.YAML", baseStoryboard)
 
 local function loadDefaultFont(size)
 	local roboto = love.graphics.newFont("fonts/Roboto-Regular.ttf", size)
-	roboto:setFallbacks(love.graphics.newFont("fonts/MTLmr3m.ttf", size))
+	roboto:setFallbacks(love.graphics.newFont("fonts/NotoSansCJKjp-Regular.otf", size))
 	return roboto
 end
 
@@ -110,10 +110,9 @@ function yamlStoryboard:__construct(storyboardData, info)
 				if fname == "__default" then
 					-- Use defaont
 					font = loadDefaultFont(size)
-				elseif fname == "__mtlmr3m" then
+				elseif fname == "__fallback" then
 					-- Use "inverse" default
 					font = love.graphics.newFont("fonts/MTLmr3m.ttf", size)
-					font:setFallbacks(love.graphics.newFont("fonts/Roboto-Regular.ttf", size))
 				else
 					-- Load specified font
 					font = love.graphics.newFont(self.data[fname] or self.path..fname, size)
