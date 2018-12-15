@@ -191,14 +191,17 @@ function beatmapSelect:load()
 		self.data.checkButton = {
 			checkbox(setting.get("AUTOPLAY") == 1), -- autoplay
 			checkbox(false), -- random
-			checkbox(setting.get("STORYBOARD_LOAD") == 1), -- storyboard
-			checkbox(false) -- video background
+			checkbox(setting.get("STORYBOARD") == 1), -- storyboard
+			checkbox(setting.get("VIDEOBG") == 1) -- video background
 		}
 		self.data.checkButton[1]:addEventListener("changed", function(_, _, value)
 			setting.set("AUTOPLAY", value and 1 or 0)
 		end)
 		self.data.checkButton[3]:addEventListener("changed", function(_, _, value)
-			setting.set("STORYBOARD_LOAD", value and 1 or 0)
+			setting.set("STORYBOARD", value and 1 or 0)
+		end)
+		self.data.checkButton[4]:addEventListener("changed", function(_, _, value)
+			setting.set("VIDEOBG", value and 1 or 0)
 		end)
 	end
 	for i = 1, 4 do

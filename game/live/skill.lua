@@ -62,10 +62,10 @@ skill.callbackSkill = {
 }
 
 skill.rarity = {
-	r = "ef_307",
+	r = "ef_305",
 	sr = "ef_306",
 	ssr = "ef_308",
-	ur = "ef_305"
+	ur = "ef_307"
 }
 
 local cutinFlash
@@ -95,7 +95,7 @@ local function getSkillUnitEffect()
 end
 
 -- Must be called in async
-function skill:__construct(liveUI, noteManager, seed)
+function skill:__construct(fullNavi, liveUI, noteManager, seed)
 	assert(Luaoop.class.is(liveUI, liveUIBase), "bad argument #1 to 'skill' (Livesim2.LiveUI expected)")
 	assert(Luaoop.class.is(noteManager, note.manager), "bad argument #2 to 'skill' (Livesim2.NoteManager expected)")
 
@@ -105,6 +105,7 @@ function skill:__construct(liveUI, noteManager, seed)
 
 	self.liveUIOpacity = 1
 	self.rng = love.math.newRandomGenerator(seed[1], seed[2])
+	self.fullNavi = fullNavi
 	self.liveUI = liveUI
 	self.unitPosition = liveUI:getLanePosition()
 	self.noteManager = noteManager
@@ -172,10 +173,13 @@ end
 function skill:_triggerSkill(v)
 	if not(self.flash) then
 		self.flash = getFlash()
-		self.flash:setMovie(v.rarity)
-		-- Image + Quad combination
+		if self.fullNavi then
+			self.flash:setMovie(v.rarity)
+			self.flash:setImage("skill_chara", v.navi)
+		else
+			self.flash:setMovie(skill.rarity.r)
+		end
 		self.flash:setImage("skill_text", {self.images[1], v.image[1]})
-		self.flash:setImage("skill_chara", v.navi)
 
 		if v.audio then
 			audioManager.stop(v.audio)

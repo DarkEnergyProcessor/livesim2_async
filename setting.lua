@@ -23,6 +23,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	-- Get configuration
 	local function getConfigImpl(key)
+		local livesim2 = false
 		key = key:upper()
 		assert(setting.default[key], "invalid setting name")
 
@@ -44,10 +45,16 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 				return setting.default[key]
 			end
+
+			livesim2 = true
 		end
 
 		local data = file:read()
 		file:close()
+
+		if livesim2 then
+			love.filesystem.remove(key..".txt")
+		end
 
 		return tonumber(data) or data
 	end

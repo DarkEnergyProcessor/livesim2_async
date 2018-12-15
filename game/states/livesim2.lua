@@ -88,6 +88,9 @@ local function pauseGame(self, fail)
 		if self.data.song then
 			self.data.song:pause()
 		end
+		if self.data.video then
+			self.data.video:pause()
+		end
 		self.data.pauseObject:pause(self.persist.beatmapDisplayName, fail)
 	end
 end
@@ -450,7 +453,7 @@ function DEPLS:load(arg)
 	if loadBackground then
 		-- need to wrap in coroutine because
 		-- there's no async access in the callback
-		beatmapList.getBackground(arg.beatmapName, false, coroutine.wrap(function(value)
+		beatmapList.getBackground(arg.beatmapName, arg.videoBG, coroutine.wrap(function(value)
 			log.debug("livesim2", "received background data")
 
 			local tval = type(value)
@@ -471,7 +474,14 @@ function DEPLS:load(arg)
 					t = love.graphics.newImage(table.remove(value, 2))
 					b = love.graphics.newImage(table.remove(value, 2))
 				end
-				-- TODO: video
+				bitval = math.floor(value[1] / 8)
+				if bitval % 2 > 0 then
+					local v = {}
+					v.drawable = love.graphics.newVideo(table.remove(value, 2))
+					v.w, v.h = v.drawable:getDimensions()
+					v.scale = math.max(960 / v.w, 640 / v.h)
+					self.data.video = v
+				end
 				self.data.background = backgroundLoader.compose(m, l, r, t, b)
 			elseif tval == "number" and value > 0 then
 				self.data.background = backgroundLoader.load(value)
@@ -524,9 +534,16 @@ function DEPLS:load(arg)
 			gamestate.leave(loadingInstance.getInstance())
 		end,
 		resume = function()
+			local time = self.data.noteManager:getElapsedTime()
+
 			if self.data.song then
-				self.data.song:seek(self.data.noteManager:getElapsedTime())
+				self.data.song:seek(time)
 				self.data.song:play()
+			end
+
+			if self.data.video then
+				self.data.video.drawable:seek(time)
+				self.data.video.drawable:play()
 			end
 		end,
 		restart = function()
@@ -680,7 +697,12 @@ function DEPLS:load(arg)
 	end
 
 	-- Initialize skill system
-	self.data.skill = skill(self.data.liveUI, self.data.noteManager, self.persist.randomGeneratedSeed)
+	self.data.skill = skill(
+		setting.get("SKILL_POPUP") == 1,
+		self.data.liveUI,
+		self.data.noteManager,
+		self.persist.randomGeneratedSeed
+	)
 
 	-- Initialize storyboard
 	if loadStoryboard and storyboardData then
@@ -739,8 +761,13 @@ end
 
 function DEPLS:exit()
 	timer.cancel(self.persist.debugTimer)
+
 	if self.data.song then
 		self.data.song:pause()
+	end
+
+	if self.data.video then
+		self.data.video.drawable:pause()
 	end
 end
 
@@ -774,6 +801,11 @@ function DEPLS:update(dt)
 					if self.data.song then
 						self.data.song:seek(updtDt)
 						self.data.song:play()
+					end
+
+					if self.data.video then
+						self.data.video.drawable:seek(updtDt)
+						self.data.video.drawable:play()
 					end
 				end
 				if self.persist.replayMode then
@@ -832,7 +864,18 @@ function DEPLS:draw()
 		self.data.storyboard:draw()
 	else
 		love.graphics.setBlendMode("replace", "alphamultiply")
-		love.graphics.draw(self.data.background)
+
+		if self.data.video then
+			love.graphics.draw(
+				self.data.video.drawable,
+				480, 320, 0,
+				self.data.video.scale, self.data.video.scale,
+				self.data.video.w * 0.5, self.data.video.h * 0.5
+			)
+		else
+			love.graphics.draw(self.data.background)
+		end
+
 		love.graphics.setBlendMode("alpha", "alphamultiply")
 	end
 	if self.persist.coverArtDisplayDone == false then
