@@ -63,6 +63,8 @@ Live Simulator: 2 uses Motoya L Maru font. It's licensed under Apache 2 license.
 
 Live Simulator: 2 uses Roboto font. It's licensed under Apache 2 license.
 
+Live Simulator: 2 uses Noto CJK font. It's licensed under SIL Open Font License.
+
 Live Simulator: 2 uses Venera-700 font by Joe Prince and licensed under The Lost Type.
 
 Live Simulator: 2 uses JSON library by Jeffrey Friedl. It's licensed under Creative Commons Attribution 3.0 Unported License.

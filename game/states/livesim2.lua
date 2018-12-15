@@ -126,12 +126,8 @@ local function liveClearCallback(self)
 	noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
 	noteInfo.score = self.data.liveUI:getScore()
 
-	local replayRand = nil
-	if self.persist.beatmapRandomized then
-		replayRand = self.persist.replayMode.randomSeed or self.persist.randomGeneratedSeed
-	end
 	local replayData = self.persist.replayMode or {
-		storyboardSeed = 0,
+		-- General
 		score = noteInfo.score,
 		maxCombo = noteInfo.maxCombo,
 		totalNotes = noteInfo.totalNotes,
@@ -145,11 +141,18 @@ local function liveClearCallback(self)
 		perfectNote = noteInfo.perfectNote,
 		perfectSwing = noteInfo.perfectSwing,
 		perfectSimultaneous = noteInfo.perfectSimultaneous,
+		scorePerTap = self.persist.tapScore,
+		stamina = self.persist.stamina,
+		randomSeed = self.persist.randomGeneratedSeed,
 		timestamp = self.persist.startTimestamp,
+
+		-- flags
+		beatmapRandomized = self.persist.beatmapRandomized,
+		storyboardLoaded = not(not(self.data.storyboard)),
+		customUnitLoaded = self.persist.customUnitLoaded,
+
 		accuracy = self.persist.accuracyData,
 		events = replay.getEventData(),
-		scorePerTap = self.persist.tapScore,
-		randomSeed = replayRand,
 	}
 
 	self.data.resultObject:setReplayCallback(function()
@@ -216,8 +219,6 @@ function DEPLS:load(arg)
 	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
-	local loadStoryboard = arg.storyboard
-	if loadStoryboard == nil then loadStoryboard = true end
 
 	-- autoplay
 	local autoplay
@@ -250,7 +251,7 @@ function DEPLS:load(arg)
 		self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
 	end
 	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
-	self.persist.stamina = setting.get("STAMINA_DISPLAY")
+	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or setting.get("STAMINA_DISPLAY")
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI("sif")
@@ -358,15 +359,24 @@ function DEPLS:load(arg)
 		end,
 	})
 
+	-- storyboard
+	local storyboardData
+	local loadStoryboard = true
+	if self.persist.replayMode then
+		loadStoryboard = self.persist.replayMode.storyboardLoaded
+	elseif arg.storyboard ~= nil then
+		loadStoryboard = arg.storyboard
+	end
+
 	-- Randomizer
 	self.persist.beatmapRandomized = false
 	-- too long for ternary operator
-	if self.persist.replayMode and self.persist.replayMode.randomSeed then
-		self.persist.beatmapRandomized = true
+	if self.persist.replayMode then
+		self.persist.beatmapRandomized = self.persist.replayMode.beatmapRandomized
 	elseif arg.random then
 		self.persist.beatmapRandomized = true
 	end
-	if self.persist.replayMode and self.persist.replayMode.randomSeed then
+	if self.persist.replayMode then
 		self.persist.randomGeneratedSeed = self.persist.replayMode.randomSeed
 	elseif arg.seed then
 		self.persist.randomGeneratedSeed = arg.seed
@@ -377,7 +387,13 @@ function DEPLS:load(arg)
 	-- background
 	local loadBackground = setting.get("AUTO_BACKGROUND") == 1
 	-- custom unit
-	local loadCustomUnit = setting.get("CBF_UNIT_LOAD") == 1
+	local loadCustomUnit
+	if self.persist.replayMode then
+		loadCustomUnit = self.persist.replayMode.customUnitLoaded
+	else
+		loadCustomUnit = setting.get("CBF_UNIT_LOAD") == 1
+	end
+	self.persist.customUnitLoaded = loadCustomUnit
 
 	-- Beatmap loading variables
 	local isBeatmapInit = 0
@@ -477,7 +493,7 @@ function DEPLS:load(arg)
 			-- Story can be nil
 			if story then
 				-- Parsed later
-				self.data.storyboardData = story
+				storyboardData = story
 			end
 			isBeatmapInit = isBeatmapInit + 1
 		end)
@@ -667,14 +683,14 @@ function DEPLS:load(arg)
 	self.data.skill = skill(self.data.liveUI, self.data.noteManager, self.persist.randomGeneratedSeed)
 
 	-- Initialize storyboard
-	if loadStoryboard and self.data.storyboardData then
+	if loadStoryboard and storyboardData then
 		log.debugf("livesim2", "trying to load storyboard")
 		local s, msg = storyLoader.load(
-			self.data.storyboardData.type,
-			self.data.storyboardData.storyboard,
+			storyboardData.type,
+			storyboardData.storyboard,
 			{
-				path = self.data.storyboardData.path,
-				data = self.data.storyboardData.data,
+				path = storyboardData.path,
+				data = storyboardData.data,
 				background = self.data.background,
 				unit = self.data.unitIcons,
 				song = self.data.song,

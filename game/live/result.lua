@@ -5,7 +5,9 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
+
 local assetCache = require("asset_cache")
+local mainFont = require("font")
 local color = require("color")
 local util = require("util")
 local L = require("language")
@@ -38,11 +40,7 @@ function result:__construct(beatmapName)
 		"assets/image/live/ef_313_000_w2x.png",
 	}, {mipmaps = true})
 	-- fonts
-	self.fonts = assetCache.loadMultipleFonts({
-		{"fonts/MTLmr3m.ttf", 26},
-		{"fonts/MTLmr3m.ttf", 30},
-		{"fonts/MTLmr3m.ttf", 40},
-	})
+	self.fonts = {mainFont.get(26, 30, 40)}
 	self.tokenQuad = love.graphics.newQuad(14 * 128, 15 * 128, 128, 128, 2048, 2048)
 	-- frame
 	self.frame = glow.frame(0, 0, 960, 640)
@@ -125,7 +123,7 @@ function result:update(dt)
 	self.saveReplayVanishTimer = self.saveReplayVanishTimer - dt
 	self.returnRetryTimer = self.returnRetryTimer + dt
 
-	if self.returnRetryTimer >= 2 then
+	if self.returnRetryTimer >= 1 then
 		self.returnRetryTimer = -math.huge
 		self.returnButtonCallback(self.returnButtonOpaque, true)
 	end
@@ -184,14 +182,14 @@ function result:draw()
 	love.graphics.draw(self.staticText)
 	love.graphics.draw(self.statusText)
 	love.graphics.draw(self.judgementText, 48, 0)
-	love.graphics.draw(self.beatmapNameText, 80, 396)
+	love.graphics.draw(self.beatmapNameText, 80, 390)
 	if self.saveReplayVanishTimer > 0 then
 		love.graphics.setFont(self.fonts[1])
 		love.graphics.setColor(color.black)
-		love.graphics.print(self.saveReplayStatus, 599, 393)
-		love.graphics.print(self.saveReplayStatus, 601, 395)
+		love.graphics.print(self.saveReplayStatus, 599, 389)
+		love.graphics.print(self.saveReplayStatus, 601, 391)
 		love.graphics.setColor(color.white)
-		love.graphics.print(self.saveReplayStatus, 600, 394)
+		love.graphics.print(self.saveReplayStatus, 600, 390)
 	end
 
 	-- draw buttons (gui)

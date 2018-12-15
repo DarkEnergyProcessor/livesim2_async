@@ -1,5 +1,5 @@
 Live Simulator: 2 binary replay file format. Extension: .lsr
-Version 0.5 (subject to change)
+Version 1.0
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
     qword - 8 bytes
@@ -11,7 +11,7 @@ Datatypes ("u" suffix means unsigned, except string). All are in little endian:
 Header: File header
 	dwordu - Header signature (string "ls2r")
 	byte[16] - Raw MD5 hash of the beatmap used. If not match, don't load this replay file. Hash data is beatmap format dependent!
-	dwordu - Storyboard seed
+	dwordu - Version (set to 0). Incremented for every backward-incompatible update.
 	dwordu - Score
 	dwordu - Max Combo
 	dwordu - Total notes
@@ -26,11 +26,17 @@ Header: File header
 	dwordu - Perfect swing note
 	dwordu - Perfect simultaneous note (perfect+perfect)
 	dwordu - Used Score per Tap
-	dwordu[12] - Reserved (encouraged to set to 0)
-	dwordu - Random beatmap seed low 32-bit (or 0) *
-	dwordu - Random beatmap seed high 32-bit (or 0) *
+	dwordu - Used Stamina
+	dwordu[10] - Reserved (encouraged to set to 0)
+	dwordu - Flags (see below)
+	dwordu - Random beatmap seed low 32-bit
+	dwordu - Random beatmap seed high 32-bit
 	dwordu - Timestamp in seconds since January 1st 1970
-	* if both is zero, that means the beatmap is not randomized
+
+Flags: 32 possible flags.
+	bit 0 - Is beatmap randomized?
+	bit 1 - Is storyboard used?
+	bit 2 - Is custom unit loaded for particular beatmap?
 
 Accuracy points data:
 	dwordu - amount
@@ -56,6 +62,9 @@ Events data: Union type (16 bytes long), so it's easy to be represented as struc
 	end for
 
 Changelog: Date follows dd/mm/yyyy convention
+
+15/12/2018: v1.0
+- Completed it. Added flags, seed now global both for storyboard and randomizer
 
 16/11/2018: v0.5
 - Added random seed low and hi (if both 0, that means beatmap is not random)

@@ -37,10 +37,7 @@ function playPreloader:load(arg)
 				self.data.beatmapName = name
 
 				if arg.replay then
-					self.data.replayData = lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", summary.hash)
-					if self.data.replayData == nil then
-						error("cannot load replay file")
-					end
+					self.data.replayData = assert(lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", summary.hash))
 				end
 			end)
 		end

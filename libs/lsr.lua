@@ -22,7 +22,7 @@
 --]]---------------------------------------------------------------------------
 
 local lsr = {
-	_VERSION = "0.5",
+	_VERSION = "1.0",
 	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
@@ -132,14 +132,25 @@ function lsr.loadReplay(path, beatmapHash)
 	if not(file) then return nil end
 
 	-- check
-	if lsr.file.read(file, 4) ~= "ls2r" then return nil end
+	if lsr.file.read(file, 4) ~= "ls2r" then
+		return nil, "invalid header"
+	end
 	local hash = lsr.file.read(file, 16)
-	if beatmapHash and hash ~= beatmapHash then return nil end
+	if beatmapHash and hash ~= beatmapHash then
+		return nil, "invalid beatmap"
+	end
+
+	-- version check
+	local version = string2dwordu(lsr.file.read(file, 4))
+	if version > 0 then
+		-- incompatible
+		lsr.file.close(file)
+		return nil, "incompatible version"
+	end
 
 	-- load it
 	local hand = {
 		filename = path,
-		storyboardSeed = string2dwordu(lsr.file.read(file, 4)),
 		score = string2dwordu(lsr.file.read(file, 4)),
 		maxCombo = string2dwordu(lsr.file.read(file, 4)),
 		totalNotes = string2dwordu(lsr.file.read(file, 4)),
@@ -154,14 +165,18 @@ function lsr.loadReplay(path, beatmapHash)
 		perfectSwing = string2dwordu(lsr.file.read(file, 4)),
 		perfectSimultaneous = string2dwordu(lsr.file.read(file, 4)),
 		scorePerTap = string2dwordu(lsr.file.read(file, 4)),
+		stamina = string2dwordu(lsr.file.read(file, 4))
 	}
-	lsr.file.read(file, 4*12) -- reserved
-	local rslo = string2dwordu(lsr.file.read(file, 4))
-	local rshi = string2dwordu(lsr.file.read(file, 4))
-	if rslo ~= 0 or rshi ~= 0 then
-		hand.randomSeed = {rslo, rshi}
-	end
+	lsr.file.read(file, 4*10) -- reserved
+	local flags = string2dwordu(lsr.file.read(file, 4))
+	hand.randomSeed = {
+		string2dwordu(lsr.file.read(file, 4)),
+		string2dwordu(lsr.file.read(file, 4))
+	}
 	hand.timestamp = string2dwordu(lsr.file.read(file, 4))
+	hand.beatmapRandomized = bit.band(flags, 1) > 0
+	hand.storyboardLoaded = bit.band(flags, 2) > 0
+	hand.customUnitLoaded = bit.band(flags, 4) > 0
 
 	-- accuracy points
 	local accuracyLen = string2dwordu(lsr.file.read(file, 4))
@@ -200,15 +215,26 @@ function lsr.loadReplay(path, beatmapHash)
 	return hand
 end
 
-function lsr.saveReplay(path, beatmapHash, seed, noteInfo, accuracyData, events)
+function lsr.saveReplay(path, beatmapHash, noteInfo, accuracyData, events)
 	local file = lsr.file.openWrite(path)
 	if not(file) then return false end
+
+	local flags = 0
+	if noteInfo.beatmapRandomized then
+		flags = flags + 1
+	end
+	if noteInfo.storyboardLoaded then
+		flags = flags + 2
+	end
+	if noteInfo.customUnitLoaded then
+		flags = flags + 4
+	end
 
 	-- write header
 	lsr.file.write(file,
 		"ls2r".. -- signature
 		beatmapHash.. -- beatmap hash
-		dwordu2string(seed)..
+		"\0\0\0\0".. -- version
 		dwordu2string(noteInfo.score)..
 		dwordu2string(noteInfo.maxCombo)..
 		dwordu2string(noteInfo.totalNotes)..
@@ -222,8 +248,10 @@ function lsr.saveReplay(path, beatmapHash, seed, noteInfo, accuracyData, events)
 		dwordu2string(noteInfo.perfectNote)..
 		dwordu2string(noteInfo.perfectSwing)..
 		dwordu2string(noteInfo.perfectSimultaneous)..
-		dwordu2string(noteInfo.scorePerTap),
-		string.rep("\0\0\0\0", 12).. -- reserved
+		dwordu2string(noteInfo.scorePerTap)..
+		dwordu2string(noteInfo.stamina)..
+		string.rep("\0\0\0\0", 10).. -- reserved
+		dwordu2string(flags)..
 		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[1] or 0)..
 		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[2] or 0)..
 		dwordu2string(noteInfo.timestamp or os.time())

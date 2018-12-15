@@ -31,10 +31,10 @@ init:
    text: ''
    # if draw: is "text"
    # format: <font name>[:<size=12>]
-   # pseudo-name "__default" will use Roboto with Motoya L Maru as fallback
-   # pseudo-name "__mtlmr3m" will use Motoya L Maru with Roboto as fallback
+   # pseudo-name "__default" will use Roboto
+   # pseudo-name "__fallback" will use Motoya L Maru
    font: __default
-   font: __mtlmr3m:12
+   font: __fallback:12
    font: Noto.ttf:12
    # if draw: is "image"
    image: mandatory
