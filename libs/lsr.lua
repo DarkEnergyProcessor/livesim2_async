@@ -129,7 +129,9 @@ end
 
 function lsr.loadReplay(path, beatmapHash)
 	local file = lsr.file.openRead(path)
-	if not(file) then return nil end
+	if not(file) then
+		return nil, "cannot open file"
+	end
 
 	-- check
 	if lsr.file.read(file, 4) ~= "ls2r" then

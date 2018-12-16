@@ -197,7 +197,6 @@ local function liveClearCallback(self)
 		local s = lsr.saveReplay(
 			name,
 			self.persist.summary.hash,
-			0,
 			replayData,
 			replayData.accuracy,
 			replayData.events
@@ -225,10 +224,10 @@ function DEPLS:load(arg)
 
 	-- autoplay
 	local autoplay
-	if arg.autoplay == nil then
-		autoplay = setting.get("AUTOPLAY") == 1
-	elseif arg.replay then
+	if arg.replay then
 		autoplay = false
+	elseif arg.autoplay == nil then
+		autoplay = setting.get("AUTOPLAY") == 1
 	else
 		autoplay = not(not(arg.autoplay))
 	end

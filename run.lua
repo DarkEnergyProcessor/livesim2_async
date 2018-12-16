@@ -180,11 +180,11 @@ function love.run()
 			elseif name == "mousepressed" or name == "mousereleased" or name == "mousemoved" then
 				a, b = vires.screenToLogical(a, b)
 				if name == "mousemoved" then
-					c, d = c * vires.data.scaleOverall, d * vires.data.scaleOverall
+					c, d = c / vires.data.scaleOverall, d / vires.data.scaleOverall
 				end
 			elseif name == "touchpressed" or name == "touchreleased" or name == "touchmoved" then
 				b, c = vires.screenToLogical(b, c)
-				d, e = d * vires.data.scaleOverall, e * vires.data.scaleOverall
+				d, e = d / vires.data.scaleOverall, e / vires.data.scaleOverall
 			-- print information (debug). sent from another thread
 			--elseif name == "print" then
 				--print(a)
