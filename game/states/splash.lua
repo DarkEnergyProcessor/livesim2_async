@@ -126,7 +126,7 @@ function splash:draw()
 	-- Draw icon
 	love.graphics.setColor(color.get(255, 255, 255, persist.iconOpacity))
 	love.graphics.draw(self.assets.images.icon, persist.iconPosX, 320, persist.iconRot, 128/1024, 128/1024, 512, 512)
-	love.graphics.draw(self.data.version, 5, 600)
+	love.graphics.draw(self.data.version, 5, 600, 0, 2/3, 2/3)
 	-- Draw text
 	love.graphics.setColor(color.get(255, 255, 255, persist.textOpacity))
 	love.graphics.draw(self.data.title, 285, 284)

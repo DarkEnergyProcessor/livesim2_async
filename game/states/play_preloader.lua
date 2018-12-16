@@ -49,7 +49,7 @@ function playPreloader:load(arg)
 		self.persist.alreadyLoaded = true
 		self.persist.autoplayMode = arg.autoplay
 		if arg.storyboard == nil then
-			self.persist.storyboardMode = setting.get("STORYBOARD_LOAD") == 1
+			self.persist.storyboardMode = setting.get("STORYBOARD") == 1
 		else
 			self.persist.storyboardMode = arg.storyboard
 		end

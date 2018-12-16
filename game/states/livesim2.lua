@@ -218,6 +218,7 @@ function DEPLS:load(arg)
 
 	-- sanity check
 	assert(arg.summary, "summary data missing")
+	table.foreach(arg.summary, print)
 	assert(arg.beatmapName, "beatmap name id missing")
 	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
@@ -619,7 +620,11 @@ function DEPLS:load(arg)
 
 	-- if there's no background, load default
 	if not(self.data.background) then
-		self.data.background = backgroundLoader.load(assert(tonumber(setting.get("BACKGROUND_IMAGE"))))
+		local num = self.persist.beatmapRandomized and arg.summary.randomStar or arg.summary.star
+		self.data.background = backgroundLoader.load(util.clamp(
+			loadBackground and num or assert(tonumber(setting.get("BACKGROUND_IMAGE"))),
+			1, 12
+		))
 	end
 
 	-- Try to load audio

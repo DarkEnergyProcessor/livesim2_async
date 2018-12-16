@@ -371,8 +371,12 @@ function ls2Loader:getStoryboardData()
 			end
 		end
 
+		local type = storyData:find("---", 1, true) == 1 and "yaml" or "lua"
+		if type == "yaml" then
+			storyData = storyData:gsub("\r\n", "\n")
+		end
 		return {
-			type = storyData:find("---", 1, true) == 1 and "yaml" or "lua",
+			type = type,
 			storyboard = storyData,
 			data = datalist
 		}

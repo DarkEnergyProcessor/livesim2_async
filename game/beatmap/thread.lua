@@ -139,6 +139,7 @@ local function getSummary(bv)
 	info.audio = bv.data:getAudio() or substituteAudio(bv.name, bv.type == "folder")
 	info.difficulty = bv.data:getDifficultyString()
 	info.coverArt = bv.data:getCoverArt()
+	info.star, info.randomStar = bv.data:getStarDifficultyInfo()
 	local score = bv.data:getScoreInformation()
 	if score then
 		info.scoreS, info.scoreA, info.scoreB, info.scoreC = score[4], score[3], score[2], score[1]

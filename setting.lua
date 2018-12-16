@@ -3,7 +3,10 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local util = require("util")
+
 love._version = love._version or love.getVersion()
+
 local setting = {}
 local arg = ...
 
@@ -23,7 +26,6 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	-- Get configuration
 	local function getConfigImpl(key)
-		local livesim2 = false
 		key = key:upper()
 		assert(setting.default[key], "invalid setting name")
 
@@ -45,16 +47,10 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 				return setting.default[key]
 			end
-
-			livesim2 = true
 		end
 
 		local data = file:read()
 		file:close()
-
-		if livesim2 then
-			love.filesystem.remove(key..".txt")
-		end
 
 		return tonumber(data) or data
 	end
@@ -73,14 +69,6 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 		end
 	end
 
-	local function isFileExist(path)
-		if love._version >= "11.0" then
-			return not(not(love.filesystem.getInfo(path, "file")))
-		else
-			return love.filesystem.isFile(path)
-		end
-	end
-
 	local function processCommand(command)
 		if command == "quit" then
 			commitConfigImpl()
@@ -93,12 +81,12 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			local default = channel:demand()
 			setting.default[name] = tonumber(default) or default
 
-			if isFileExist(name..".txt") then
+			if util.fileExists(name..".txt") then
 				-- old, backward compatible livesim2 config
 				setting.list[name] = getConfigImpl(name)
 				setting.modified[name] = true
-				-- TODO: delete
-			elseif not(isFileExist("config/"..name..".txt")) then
+				love.filesystem.remove(name..".txt")
+			elseif not(util.fileExists("config/"..name..".txt")) then
 				setting.list[name] = default
 				setting.modified[name] = true
 			end
@@ -107,14 +95,19 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			receiveChannel:push(setting.default[name])
 		elseif command == "get" then
 			local name = channel:demand()
-			local value = getConfigImpl(name)
+			local s, value = pcall(getConfigImpl, name)
 			log.debugf("setting", "get: %s, value: %s", name, tostring(value))
-			receiveChannel:push(value)
+			if s then
+				receiveChannel:push(value)
+			else
+				receiveChannel:push(receiveChannel)
+				receiveChannel:push(value:sub((select(2, value:find(":%d+:")) or 1)+2))
+			end
 		elseif command == "set" then
 			local name = channel:demand():upper()
 			local value = channel:demand()
 			log.debugf("setting", "set: %s, value: %s", name, tostring(value))
-			setConfigImpl(name, value)
+			pcall(setConfigImpl, name, value)
 		elseif command == "commit" then
 			commitConfigImpl()
 		end
@@ -174,7 +167,12 @@ end
 
 function setting.get(key)
 	send("get", key)
-	return setting.receiveChannel:demand()
+
+	local v = setting.receiveChannel:demand()
+	if v == setting.receiveChannel then
+		error(setting.receiveChannel:demand(), 2)
+	end
+	return v
 end
 
 function setting.set(key, value)

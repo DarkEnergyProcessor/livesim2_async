@@ -6,6 +6,8 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
 local love = require("love")
+local util = require("util")
+
 love._version = love._version or love.getVersion()
 
 -- Override love.run
@@ -19,10 +21,14 @@ DEPLS_VERSION_NUMBER = false
 
 if love._exe then
 	setmetatable(_G, {
-		__index = function(_, var) error("Unknown variable "..var, 2) end,
-		__newindex = function(_, var) error("New variable not allowed "..var, 2) end,
-		__metatable = function(_) error("Global variable protection", 2) end,
+		__index = function(_, var) error("unknown variable "..var, 2) end,
+		__newindex = function(_, var) error("new variable not allowed "..var, 2) end,
+		__metatable = function(_) error("global variable protection", 2) end,
 	})
+end
+
+if love.filesystem.isFused() and util.fileExists("OUTSIDE_ASSET") then
+	assert(love.filesystem.mount(love.filesystem.getSourceBaseDirectory(), ""), "failed to load game directory")
 end
 
 function love.conf(t)
