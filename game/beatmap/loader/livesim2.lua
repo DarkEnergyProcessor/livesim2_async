@@ -189,7 +189,7 @@ function ls2Loader:getCoverArt()
 			local val = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
 			internal.coverArt = {
 				title = val.title,
-				info = val.arr,
+				info = val.arrangement,
 				image = love.filesystem.newFileData(val.image, "")
 			}
 		end

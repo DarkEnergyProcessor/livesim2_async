@@ -218,7 +218,6 @@ function DEPLS:load(arg)
 
 	-- sanity check
 	assert(arg.summary, "summary data missing")
-	table.foreach(arg.summary, print)
 	assert(arg.beatmapName, "beatmap name id missing")
 	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
