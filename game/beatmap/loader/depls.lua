@@ -81,6 +81,20 @@ function deplsLoader:getNotesList()
 	return internal.beatmap:getNotesList()
 end
 
+function deplsLoader:getName()
+	local internal = Luaoop.class.data(self)
+	local name = internal.beatmap:getName()
+
+	if not(name) then
+		local coverArt = self:getCoverArt()
+		if coverArt then
+			name = coverArt.title
+		end
+	end
+
+	return name
+end
+
 local customUnitPossibleExt = {".png", ".tga", ".txt"}
 function deplsLoader:getCustomUnitInformation()
 	local internal = Luaoop.class.data(self)

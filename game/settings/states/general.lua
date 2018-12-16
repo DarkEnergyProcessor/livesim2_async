@@ -10,6 +10,7 @@ local L = require("language")
 
 local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
+local tapSound = require("game.tap_sound")
 local backNavigation = require("game.ui.back_navigation")
 local switchSetting = require("game.settings.switch")
 local numberSetting = require("game.settings.number")
@@ -34,6 +35,8 @@ function generalSetting:load()
 			:setPosition(61, 232),
 		numberSetting(L"setting:general:beatmapOffset", "GLOBAL_OFFSET", {min = -5000, max = 5000, default = 0})
 			:setPosition(61, 318),
+		numberSetting(L"setting:general:tapSound", "TAP_SOUND", {min = 1, max = #tapSound, default = 1})
+			:setPosition(61, 404),
 	}
 
 	if self.data.back == nil then

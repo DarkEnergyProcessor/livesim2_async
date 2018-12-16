@@ -34,6 +34,8 @@ function liveSetting:load()
 			:setPosition(61, 232),
 		numberSetting(L"setting:live:textScaling", "TEXT_SCALING", {min = 0.5, max = 1, default = 1, snap = 0.1})
 			:setPosition(61, 318),
+		switchSetting(L"setting:live:skillPopup", "SKILL_POPUP")
+			:setPosition(61, 404),
 	}
 
 	if self.data.back == nil then
