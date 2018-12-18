@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local log = {level = 2}
+local log = {}
 
 -- loglevel
 -- 0 = no log message
@@ -11,15 +11,15 @@ local log = {level = 2}
 -- 2 = warn (default)
 -- 3 = info
 -- 4 = debug
-log.level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
-if not(log.level) or (log.level < 0 or log.level > 4) then
+local level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
+if not(level) or (level < 0 or level > 4) then
 	if love.filesystem then
-		log.level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
-		if not(log.level) or (log.level < 0 or log.level > 4) then
-			log.level = 2
+		level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
+		if not(level) or (level < 0 or level > 4) then
+			level = 2
 		end
 	else
-		log.level = 2
+		level = 2
 	end
 end
 
@@ -183,7 +183,7 @@ local function initMutex()
 end
 
 function log.info(tag, text)
-	if log.level >= 3 then
+	if level >= 3 then
 		if initMutex() then
 			return log.mutex:performAtomic(infoImplMutex, tag, text)
 		else
@@ -197,8 +197,8 @@ function log.infof(tag, text, ...)
 end
 
 function log.warning(tag, text)
-	if log.level >= 2 then
-		if log.level >= 4 then
+	if level >= 2 then
+		if level >= 4 then
 			text = debug.traceback(text, 2)
 		end
 
@@ -217,8 +217,8 @@ end
 log.warnf = log.warningf
 
 function log.error(tag, text)
-	if log.level >= 1 then
-		if log.level >= 4 then
+	if level >= 1 then
+		if level >= 4 then
 			text = debug.traceback(text, 2)
 		end
 
@@ -235,7 +235,7 @@ function log.errorf(tag, text, ...)
 end
 
 function log.debug(tag, text)
-	if log.level >= 4 then
+	if level >= 4 then
 		if initMutex() then
 			return log.mutex:performAtomic(debugImplMutex, tag, text)
 		else
@@ -246,6 +246,10 @@ end
 
 function log.debugf(tag, text, ...)
 	return log.debug(tag, string.format(text, ...))
+end
+
+function log.getLevel()
+	return level
 end
 
 return log

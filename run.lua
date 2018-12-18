@@ -139,7 +139,7 @@ function love.run()
 	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
 
 	-- debug info code
-	local showDebugInfo = log.level >= 4
+	local showDebugInfo = log.getLevel() >= 4
 	local defaultText
 
 	-- Only load UI if window is present, also it must be after

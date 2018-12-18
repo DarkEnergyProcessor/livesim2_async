@@ -7,7 +7,7 @@ local postExit = {list = {}}
 
 function postExit.add(func)
 	postExit.list[#postExit.list + 1] = func
-	if log.level >= 4 then
+	if log.getLevel() >= 4 then
 		log.debug("postExit", debug.traceback(string.format("added handler %d", #postExit.list)))
 	end
 end
