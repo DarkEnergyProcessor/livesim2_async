@@ -52,10 +52,11 @@ function result:__construct(beatmapName)
 	-- return button
 	self.returnButtonCallback = nil
 	self.returnButtonOpaque = nil
+	self.returnButtonSkipHold = true
 	self.returnRetryTimer = -math.huge
-	self.returnButton = longButtonUI(L"livesim2:result:returnHoldRetry")
+	self.returnButton = longButtonUI("")
 	self.returnButton:addEventListener("mousereleased", function()
-		if self.returnRetryTimer ~= -math.huge then
+		if self.returnRetryTimer ~= -math.huge or self.returnButtonSkipHold then
 			self.returnButtonCallback(self.returnButtonOpaque, false)
 		end
 		self.returnRetryTimer = -math.huge
@@ -64,7 +65,9 @@ function result:__construct(beatmapName)
 		self.returnRetryTimer = -math.huge
 	end)
 	self.returnButton:addEventListener("mousepressed", function()
-		self.returnRetryTimer = 0
+		if not(self.returnButtonSkipHold) then
+			self.returnRetryTimer = 0
+		end
 	end)
 	self.frame:addElement(self.returnButton, 101, 556)
 	-- replay button
@@ -257,9 +260,17 @@ function result:setInformation(noteinfo, accuracyData, comboRange)
 	self.graphMesh:setTexture(self.images[2])
 end
 
-function result:setReturnCallback(cb, opaque)
+function result:setReturnCallback(cb, opaque, nohold)
 	self.returnButtonCallback = cb
 	self.returnButtonOpaque = opaque
+
+	if nohold then
+		self.returnButton:setText(L("livesim2:result:return"))
+		self.returnButtonSkipHold = true
+	else
+		self.returnButton:setText(L("livesim2:result:return").."/"..L("livesim2:result:holdRetry"))
+		self.returnButtonSkipHold = false
+	end
 end
 
 function result:setReplayCallback(cb, opaque)

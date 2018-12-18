@@ -27,7 +27,7 @@
 DEPLS_VERSION = "3.0.0-beta5"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02030000
+DEPLS_VERSION_NUMBER = 02040000
 
 local love = require("love")
 local Yohane = require("libs.Yohane")
@@ -82,19 +82,21 @@ local function registerGamestates()
 	assetCache.enableSync = false
 	postExit.add(loadingInstance.exit)
 	-- Load all gamestates.
-	gamestate.register("dummy", require("game.states.dummy"))
-	gamestate.register("splash", require("game.states.splash"))
-	gamestate.register("mainMenu", require("game.states.main_menu"))
-	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
-	gamestate.register("livesim2", require("game.states.livesim2"))
-	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
-	gamestate.register("changeUnits", require("game.states.change_units"))
-	gamestate.register("settings", require("game.states.gamesetting"))
-	gamestate.register("language", require("game.states.gamelang"))
-	gamestate.register("selectUnits", require("game.states.select_units"))
-	gamestate.register("systemInfo", require("game.states.systeminfo"))
 	gamestate.register("beatmapDownload", require("game.states.download_list"))
 	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
+	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
+	gamestate.register("changeUnits", require("game.states.change_units"))
+	gamestate.register("dummy", require("game.states.dummy"))
+	gamestate.register("language", require("game.states.gamelang"))
+	gamestate.register("livesim2", require("game.states.livesim2"))
+	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
+	gamestate.register("mainMenu", require("game.states.main_menu"))
+	gamestate.register("result", require("game.states.result_summary"))
+	gamestate.register("selectUnits", require("game.states.select_units"))
+	gamestate.register("settings", require("game.states.gamesetting"))
+	gamestate.register("splash", require("game.states.splash"))
+	gamestate.register("systemInfo", require("game.states.systeminfo"))
+	gamestate.register("viewReplay", require("game.states.view_replays"))
 end
 
 local function initializeSetting()

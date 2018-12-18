@@ -30,11 +30,13 @@ function playPreloader:load(arg)
 			beatmapList.registerAbsolute(arg[1], function(name, summary)
 				self.data.beatmapName = name
 				self.data.beatmapData = summary
+				self.persist.directLoad = true
 			end)
 		else
 			beatmapList.registerRelative(arg[1], function(name, summary)
 				self.data.beatmapData = summary
 				self.data.beatmapName = name
+				self.persist.directLoad = false
 
 				if arg.replay then
 					self.data.replayData = assert(lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", summary.hash))
@@ -65,6 +67,7 @@ function playPreloader:start(arg)
 		replay = self.data.replayData,
 		random = not(not(arg.random)),
 		seed = arg.seed,
+		direct = self.persist.directLoad
 	})
 end
 

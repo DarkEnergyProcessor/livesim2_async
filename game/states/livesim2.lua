@@ -3,17 +3,14 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local timer = require("libs.hump.timer")
+
 local color = require("color")
 local async = require("async")
 local assetCache = require("asset_cache")
 local log = require("logging")
 local setting = require("setting")
 local util = require("util")
-local L = require("language")
-
-local timer = require("libs.hump.timer")
-local lsr = require("libs.lsr")
-
 local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -25,7 +22,6 @@ local backgroundLoader = require("game.background_loader")
 local storyLoader = require("game.storyboard.loader")
 local note = require("game.live.note")
 local pause = require("game.live.pause")
-local result = require("game.live.result")
 local liveUI = require("game.live.ui")
 local skill = require("game.live.skill")
 local replay = require("game.live.replay")
@@ -84,7 +80,7 @@ local function pickLowestJudgement(j1, j2)
 end
 
 local function pauseGame(self, fail)
-	if self.data.liveUI:isPauseEnabled() then
+	if self.data.liveUI:isPauseEnabled() and not(self.data.pauseObject:isPaused()) then
 		if self.data.song then
 			self.data.song:pause()
 		end
@@ -124,7 +120,6 @@ local function isLiveClear(self)
 end
 
 local function liveClearCallback(self)
-	local accuracyData = self.persist.replayMode and self.persist.replayMode.accuracy or self.persist.accuracyData
 	local noteInfo = self.persist.noteInfo
 	noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
 	noteInfo.score = self.data.liveUI:getScore()
@@ -158,58 +153,17 @@ local function liveClearCallback(self)
 		events = replay.getEventData(),
 	}
 
-	self.data.resultObject:setReplayCallback(function()
-		if not(self.persist.autoplay) then
-			gamestate.replace(loadingInstance.getInstance(), "livesim2", {
-				summary = self.persist.summary,
-				beatmapName = self.persist.beatmapName,
-				replay = replayData,
-				random = self.persist.beatmapRandomized
-			})
-		end
-	end)
-	self.data.resultObject:setSaveReplayCallback(function()
-		if self.persist.autoplay then
-			return L"livesim2:replay:errorAutoplay"
-		end
-
-		local name
-		if not(love.filesystem.createDirectory("replays/"..self.persist.beatmapName)) then
-			return L"livesim2:replay:errorDirectory"
-		end
-
-		if self.persist.replayMode then
-			if self.persist.replayMode.filename then
-				return L"livesim2:replay:errorAlreadySaved"
-			end
-
-			name = "replays/"..self.persist.beatmapName.."/"..self.persist.replayMode.timestamp..".lsr"
-			if util.fileExists(name) then
-				return L"livesim2:replay:errorAlreadySaved"
-			end
-		end
-
-		name = "replays/"..self.persist.beatmapName.."/"..self.persist.startTimestamp..".lsr"
-		if util.fileExists(name) then
-			return L"livesim2:replay:errorAlreadySaved"
-		end
-
-		local s = lsr.saveReplay(
-			name,
-			self.persist.summary.hash,
-			replayData,
-			replayData.accuracy,
-			replayData.events
-		)
-		if s then
-			replayData.filename = name
-			return L"livesim2:replay:saved"
-		else
-			return L"livesim2:replay:errorSaveGeneric"
-		end
-	end)
-	self.data.resultObject:setInformation(replayData, accuracyData, self.persist.comboRange)
-	self.persist.showLiveResult = true
+	gamestate.replace(nil, "result", {
+		name = self.persist.beatmapName,
+		summary = self.persist.summary,
+		replay = replayData,
+		livesim2 = self.persist.arg,
+		allowRetry = not(self.persist.arg.allowRetry),
+		allowSave = not(self.persist.directLoad),
+		autoplay = self.persist.autoplay,
+		comboRange = self.persist.comboRange,
+		background = self.data.background
+	})
 end
 
 function DEPLS:load(arg)
@@ -221,6 +175,8 @@ function DEPLS:load(arg)
 	self.persist.summary = arg.summary
 	self.persist.beatmapName = arg.beatmapName
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
+	self.persist.arg = arg
+	self.persist.directLoad = arg.direct
 
 	-- autoplay
 	local autoplay
@@ -530,7 +486,12 @@ function DEPLS:load(arg)
 	-- load pause system
 	self.data.pauseObject = pause({
 		quit = function()
-			gamestate.leave(loadingInstance.getInstance())
+			if self.persist.replayMode then
+				-- assume replay data is used to fill information
+				liveClearCallback(self)
+			else
+				gamestate.leave(loadingInstance.getInstance())
+			end
 		end,
 		resume = function()
 			local time = self.data.noteManager:getElapsedTime()
@@ -548,17 +509,7 @@ function DEPLS:load(arg)
 		restart = function()
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
 		end
-	})
-
-	-- result screen
-	self.data.resultObject = result(arg.summary.name)
-	self.data.resultObject:setReturnCallback(function(opaque, restart)
-		if restart then
-			return gamestate.replace(loadingInstance.getInstance(), "livesim2", opaque)
-		else
-			return gamestate.leave(loadingInstance.getInstance())
-		end
-	end, arg)
+	}, nil, self.persist.replayMode and tostring(self.persist.replayMode.filename))
 
 	-- load keymapping
 	do
@@ -759,7 +710,6 @@ function DEPLS:start()
 		end
 	end)
 	self.persist.startTimestamp = os.time()
-	self.persist.showLiveResult = false
 end
 
 function DEPLS:exit()
@@ -775,9 +725,7 @@ function DEPLS:exit()
 end
 
 function DEPLS:update(dt)
-	if self.persist.showLiveResult then
-		return self.data.resultObject:update(dt)
-	elseif self.persist.coverArtDisplayDone then
+	if self.persist.coverArtDisplayDone then
 		self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
 
 		for i = 1, #self.data.tapSFX.accumulateTracking do
@@ -930,10 +878,6 @@ function DEPLS:draw()
 	love.graphics.rectangle("fill", 0, 0, self.persist.windowWidth, self.persist.windowHeight)
 	love.graphics.pop()
 
-	if self.persist.showLiveResult then
-		return self.data.resultObject:draw()
-	end
-
 	if self.persist.liveDelayCounter <= 0 then
 		-- draw skill flash
 		self.data.skill:drawUnder()
@@ -970,7 +914,6 @@ end
 local function livesimInputPressed(self, id, x, y)
 	-- id 0 is mouse
 	if
-		self.persist.showLiveResult or
 		self.data.pauseObject:isPaused() or
 		self.data.liveUI:checkPause(x, y)
 	then
@@ -985,7 +928,7 @@ local function livesimInputPressed(self, id, x, y)
 end
 
 local function livesimInputMoved(self, id, x, y)
-	if self.persist.showLiveResult or self.data.pauseObject:isPaused() then return end
+	if self.data.pauseObject:isPaused() then return end
 	if not(self.persist.autoplay or self.persist.replayMode) then
 		replay.recordTouchmoved(id, x, y)
 	end
@@ -995,7 +938,6 @@ local function livesimInputMoved(self, id, x, y)
 end
 
 local function livesimInputReleased(self, id, x, y)
-	if self.persist.showLiveResult then return end
 	if self.data.pauseObject:isPaused() then
 		return self.data.pauseObject:mouseReleased(x, y)
 	end
@@ -1083,5 +1025,11 @@ end)
 DEPLS:registerEvent("touchpressed", livesimInputPressed)
 DEPLS:registerEvent("touchmoved", livesimInputMoved)
 DEPLS:registerEvent("touchreleased", livesimInputReleased)
+
+DEPLS:registerEvent("focus", function(self)
+	if util.isMobile() then
+		pauseGame(self)
+	end
+end)
 
 return DEPLS

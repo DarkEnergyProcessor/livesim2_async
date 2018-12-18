@@ -21,6 +21,12 @@ function longButtonUI:new(text)
 	self.text:add({color.white, text}, 379 - 0.5 * w, 39 - 0.5 * h)
 end
 
+function longButtonUI:setText(text)
+	local f = self.text:getFont()
+	self.text:clear()
+	self.text:add({color.white, text}, 379 - 0.5 * f:getWidth(text), 39 - 0.5 * f:getHeight())
+end
+
 function longButtonUI:render(x, y)
 	imageButtonUI.render(self, x, y)
 	love.graphics.draw(self.text, x, y)

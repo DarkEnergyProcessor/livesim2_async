@@ -8,22 +8,29 @@ local Yohane = require("libs.Yohane")
 
 local color = require("color")
 local mainFont = require("font")
+local util = require("util")
 local L = require("language")
 
 local pause = Luaoop.class("livesim2.Pause")
 
 -- must be in async
 -- callbacks must be table: resume, quit, restart
-function pause:__construct(callbacks, opaque)
-	self.font = mainFont.get(36)
-	self.mainCounterFont = mainFont.get(72)
+function pause:__construct(callbacks, opaque, replay)
+	self.font, self.mainCounterFont = mainFont.get(36, 72)
 	self.timer = math.huge
 	self.paused = false
 	self.callback = callbacks
 	self.opaque = opaque
 	self.beatmapName = ""
+	self.displayText = ""
 	self.failedAnimation = Yohane.newFlashFromFilename("flash/live_gameover.flsh", "ef_312")
 	self.failedTimer = 3
+
+	if replay then
+		self.replayString = L("livesim2:pause:replay", {name = util.basename(replay)})
+	else
+		self.replayString = ""
+	end
 end
 
 function pause:update(dt)
@@ -101,9 +108,10 @@ function pause:_drawPause()
 		love.graphics.print(paused, 480-w*0.5, 128)
 	end
 
-	w = self.font:getWidth(self.beatmapName)
+	w = self.font:getWidth(self.displayText)
 	love.graphics.setFont(self.font)
-	love.graphics.print(self.beatmapName, 480, 192, 0, 1, 1, w * 0.5, 0)
+	--love.graphics.print(self.displayText, 480, 192, 0, 1, 1, w * 0.5, 0)
+	love.graphics.printf(self.displayText, 480 - w * 0.5, 192, w, "center")
 
 	for i = (self.isFailed and 2 or 1), #buttons do
 		local b = buttons[i]
@@ -146,6 +154,7 @@ function pause:pause(name, fail)
 	self.paused = true
 	self.isFailed = not(not(fail))
 	self.beatmapName = name or self.beatmapName
+	self.displayText = self.beatmapName.."\n"..self.replayString
 end
 
 function pause:isPaused()

@@ -153,6 +153,13 @@ function beatmapSelect:load()
 		self.data.background = backgroundLoader.load(1)
 	end
 
+	if self.data.playButton == nil then
+		self.data.playButton = selectButton(L"beatmapSelect:play")
+		self.data.playButton:addEventListener("mousereleased", playButtonCallback)
+		self.data.playButton:setData(self)
+	end
+	glow.addElement(self.data.playButton, 470, 520)
+
 	if self.data.openBeatmap == nil then
 		self.data.openBeatmap = selectButton(L"beatmapSelect:openDir")
 		self.data.openBeatmap:addEventListener("mousereleased", openBeatmapDirCallback)
@@ -169,15 +176,20 @@ function beatmapSelect:load()
 	end
 	glow.addElement(self.data.downloadBeatmap, 512, 8)
 
-	initializeBeatmapListUI(self)
-
-	if self.data.playButton == nil then
-		--self.persist.summary
-		self.data.playButton = selectButton(L"beatmapSelect:play")
-		self.data.playButton:addEventListener("mousereleased", playButtonCallback)
-		self.data.playButton:setData(self)
+	if self.data.viewReplay == nil then
+		self.data.viewReplay = selectButton(L"beatmapSelect:viewReplay")
+		self.data.viewReplay:addEventListener("mousereleased", function()
+			if self.persist.summary then
+				gamestate.enter(nil, "viewReplay", {
+					name = self.persist.selectedBeatmapID,
+					summary = self.persist.summary
+				})
+			end
+		end)
 	end
-	glow.addElement(self.data.playButton, 470, 520)
+	glow.addElement(self.data.viewReplay, 470, 280)
+
+	initializeBeatmapListUI(self)
 
 	if self.data.checkLabel == nil then
 		self.data.checkLabel = love.graphics.newText(self.data.statusFont)
