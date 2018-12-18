@@ -194,4 +194,26 @@ function util.isMobile()
 	return love._os == "iOS" or love._os == "Android"
 end
 
+function util.compareLOVEVersion(maj, min, rev)
+	if love._version_major > maj then
+		return 1
+	elseif love._version_major < maj then
+		return -1
+	elseif min then
+		if love._version_minor > min then
+			return 1
+		elseif love._version_minor < min then
+			return -1
+		elseif rev then
+			if love._version_revision > rev then
+				return 1
+			elseif love._version_revision < rev then
+				return -1
+			end
+		end
+	end
+	-- equal
+	return 0
+end
+
 return util

@@ -3,9 +3,9 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+
 local color = require("color")
 local gamestate = require("gamestate")
-local setting = require("setting")
 local mainFont = require("font")
 local util = require("util")
 local L = require("language")
@@ -21,6 +21,8 @@ local gameLang = gamestate.create {
 	images = {},
 }
 
+local restartButton = {"Yes", "No", enterbutton = 1, escapebutton = 2}
+
 local function updateLanguagString(text, lang)
 	text:clear()
 	util.addTextWithShadow(text, L("setting:language:current", lang), 0, 0)
@@ -28,6 +30,7 @@ end
 
 local function setLanguage(_, value)
 	L.set(value.language.code)
+	value.instance.persist.currentLanguage = value.language.code
 	return updateLanguagString(value.instance.persist.languageText, value.language)
 end
 
@@ -60,15 +63,26 @@ function gameLang:load()
 
 	if self.data.back == nil then
 		self.data.back = backNavigation(L"setting:language")
-		self.data.back:addEventListener("mousereleased", leave)
+		self.data.back:addEventListener("mousereleased", function()
+			if
+				self.persist.currentLanguage ~= self.persist.previousLanguage and
+				util.compareLOVEVersion(0, 10, 2) >= 0 and
+				love.window.showMessageBox("Restart", L"setting:language:restart", restartButton, "info") == 1
+			then
+				love.event.quit("restart")
+			end
+
+			return leave()
+		end)
 	end
 	glow.addFixedElement(self.data.back, 0, 0)
 end
 
 function gameLang:start()
-	local curlang = setting.get("LANGUAGE")
+	self.persist.previousLanguage = L.get()
+	self.persist.currentLanguage = self.persist.previousLanguage
 	for _, v in ipairs(L.enum()) do
-		if v.code == curlang then
+		if v.code == self.persist.previousLanguage then
 			return updateLanguagString(self.persist.languageText, v)
 		end
 	end

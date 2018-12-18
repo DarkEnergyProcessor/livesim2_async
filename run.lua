@@ -226,7 +226,7 @@ function love.run()
 				lily.quit()
 				setting.quit()
 				postExit.exit()
-				return 0
+				return a or 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f)

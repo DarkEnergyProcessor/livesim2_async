@@ -5,7 +5,9 @@
 local love = require("love")
 local i18n = require("libs.i18n")
 local JSON = require("libs.JSON")
+
 local log = require("logging")
+local setting = require("setting")
 local language = {list = {}}
 
 function language.init()
@@ -48,7 +50,12 @@ function language.enum()
 end
 
 function language.set(code)
+	setting.set("LANGUAGE", code)
 	return i18n.setLocale(code)
+end
+
+function language.get()
+	return i18n.getLocale()
 end
 
 function language.getString(name, params)

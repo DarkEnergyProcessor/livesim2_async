@@ -89,6 +89,7 @@
 		"setting:liveUI:short": "Live UI Setting",
 		"setting:liveUI:current": "Current Live Show Interface: %{name}",
 		"setting:language": "Language Setting",
-		"setting:language:current": "Current Language: %{name} (%{code})"
+		"setting:language:current": "Current Language: %{name} (%{code})",
+		"setting:language:restart": "In order to fully apply changes, the game must be restarted.\nDo you want to restart the game now?"
 	}
 }
