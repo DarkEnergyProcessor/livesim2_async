@@ -6,13 +6,14 @@ local love = require("love")
 
 local async = require("async")
 local color = require("color")
-local setting = require("setting")
-local util = require("util")
-local L = require("language")
-
 local mainFont = require("font")
+local setting = require("setting")
+local fileDialog = require("file_dialog")
+local util = require("util")
+local volume = require("volume")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local L = require("language")
 
 local glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
@@ -46,6 +47,17 @@ end
 local function initializeSummary(self, data)
 	-- Set
 	self.persist.summary = data
+
+	-- Audio
+	self.data.audioPlay:setText(L"beatmapSelect:playAudio")
+	if self.data.audioPreview then
+		self.data.audioPreview:stop()
+		self.data.audioPreview = nil
+	end
+	if data.audio then
+		self.data.audioPreview = love.audio.newSource(data.audio, "stream")
+		self.data.audioPreview:setVolume(volume.get("music"))
+	end
 
 	-- Title
 	self.persist.titleText:clear()
@@ -176,6 +188,20 @@ function beatmapSelect:load()
 	end
 	glow.addElement(self.data.downloadBeatmap, 512, 8)
 
+	if self.data.insertBeatmap == nil and fileDialog.isSupported() then
+		self.data.insertBeatmap = selectButton(L"beatmapSelect:insert")
+		self.data.insertBeatmap:addEventListener("mousereleased", function()
+			-- this block but oh well
+			local list = fileDialog.open(L"beatmapSelect:insert", nil, nil, true)
+			if #list > 0 then
+				self.persist.beatmapUpdate = list
+			end
+		end)
+	end
+	if self.data.insertBeatmap then
+		glow.addElement(self.data.insertBeatmap, 736, 8)
+	end
+
 	if self.data.viewReplay == nil then
 		self.data.viewReplay = selectButton(L"beatmapSelect:viewReplay")
 		self.data.viewReplay:addEventListener("mousereleased", function()
@@ -188,6 +214,22 @@ function beatmapSelect:load()
 		end)
 	end
 	glow.addElement(self.data.viewReplay, 470, 280)
+
+	if self.data.audioPlay == nil then
+		self.data.audioPlay = selectButton(L"beatmapSelect:playAudio")
+		self.data.audioPlay:addEventListener("mousereleased", function(elem)
+			if self.data.audioPreview then
+				if self.data.audioPreview:isPlaying() then
+					self.data.audioPreview:stop()
+					elem:setText(L"beatmapSelect:playAudio")
+				else
+					self.data.audioPreview:play()
+					elem:setText(L"beatmapSelect:stopAudio")
+				end
+			end
+		end)
+	end
+	glow.addElement(self.data.audioPlay, 470, 220)
 
 	initializeBeatmapListUI(self)
 
@@ -250,18 +292,34 @@ end
 
 function beatmapSelect:exit()
 	self.persist.active = false
-	beatmapList.pop()
+	if self.data.audioPreview then
+		self.data.audioPreview:stop()
+	end
+	beatmapList.pop(true)
 end
 
 function beatmapSelect:resumed()
 	self.persist.active = true
+	if self.data.audioPreview == nil and self.persist.summary then
+		self.data.audioPreview = love.audio.newSource(self.persist.summary.audio, "stream")
+		self.data.audioPreview:setVolume(volume.get("music"))
+	end
 end
 
 function beatmapSelect:paused()
 	self.persist.active = false
+	self.data.audioPlay:setText(L"beatmapSelect:playAudio")
+	if self.data.audioPreview then
+		self.data.audioPreview:stop()
+	end
 end
 
 function beatmapSelect:update(dt)
+	if self.persist.beatmapUpdate then
+		gamestate.replace(nil, "beatmapInsert", self.persist.beatmapUpdate)
+		self.persist.beatmapUpdate = nil
+	end
+
 	if self.data.beatmapFrame then
 		self.data.beatmapFrame:update(dt)
 	end
@@ -293,6 +351,11 @@ beatmapSelect:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return leave()
 	end
+end)
+
+beatmapSelect:registerEvent("filedropped", function(self, file)
+	self.persist.beatmapUpdate = self.persist.beatmapUpdate or {}
+	self.persist.beatmapUpdate[#self.persist.beatmapUpdate + 1] = file
 end)
 
 return beatmapSelect

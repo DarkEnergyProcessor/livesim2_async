@@ -15,6 +15,7 @@ end
 -- value default to 1 if not specified
 function volume.get(name, value)
 	assert(volume.list[name], "name doesn't exist")
+	value = value or 1
 	if name == "master" then
 		return volume.list.master * value
 	else

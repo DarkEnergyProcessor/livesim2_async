@@ -312,7 +312,7 @@ end
 return function(f)
 	-- f is File object, beatmap.thread guarantee that the
 	-- read position is always at position 0
-	assert(f:read(30):find("%s*{"), "invalid JSON")
+	assert(f:read(30):find("%s*[{|%[]"), "invalid JSON")
 	f:seek(0)
 
 	local data = f:read()

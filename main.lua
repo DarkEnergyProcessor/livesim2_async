@@ -76,14 +76,17 @@ end
 
 local function registerGamestates()
 	log.debug("main", "loading gamestates")
+
 	-- Loading screen singleton init (enable sync asset loading for loading screen)
 	assetCache.enableSync = true
 	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
 	assetCache.enableSync = false
 	postExit.add(loadingInstance.exit)
+
 	-- Load all gamestates.
 	gamestate.register("beatmapDownload", require("game.states.download_list"))
 	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
+	gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
 	gamestate.register("changeUnits", require("game.states.change_units"))
 	gamestate.register("dummy", require("game.states.dummy"))

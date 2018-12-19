@@ -162,7 +162,7 @@ local function sendData(chan, name, arg)
 	chan:push(arg)
 end
 
-function beatmapList.pop()
+function beatmapList.pop(wait)
 	if beatmapList.hasQuit then return end
 	assert(beatmapList.count > 0, "unable to pop")
 
@@ -170,6 +170,10 @@ function beatmapList.pop()
 	if beatmapList.count == 0 then
 		beatmapList.channel:performAtomic(sendData, "quit", {})
 		beatmapList.channel = nil
+
+		if wait then
+			beatmapList.thread:wait()
+		end
 	end
 end
 
