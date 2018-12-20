@@ -342,16 +342,22 @@ local function processCommand(chan, command)
 				local c = love.thread.newChannel()
 				c:push(storyboard.type)
 				c:push(storyboard.storyboard)
-				c:push(storyboard.path)
+				if storyboard.path then
+					c:push(true)
+					c:push(storyboard.path)
+				else
+					c:push(false)
+				end
 
 				if storyboard.data then
 					local c2 = love.thread.newChannel()
 					for i = 1, #storyboard.data do
 						c2:push(storyboard.data[i])
 					end
+					c:push(true)
 					c:push(c2)
 				else
-					c:push(nil)
+					c:push(false)
 				end
 
 				sendBeatmapData("story", id, c)

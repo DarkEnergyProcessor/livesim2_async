@@ -9,13 +9,13 @@ local log = require("logging")
 local uibase = require("game.live.uibase")
 local ui = {list = {}}
 
-function ui.newLiveUI(name)
+function ui.newLiveUI(name, autoplay, mineff)
 	-- MUST RUN IN ASYNC!
 	if not(ui.list[name]) then
 		error("live ui '"..name.."' not found", 2)
 	end
 
-	return ui.list[name]()
+	return ui.list[name](autoplay, mineff)
 end
 
 function ui.enum()

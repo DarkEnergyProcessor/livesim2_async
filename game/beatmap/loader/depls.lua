@@ -186,7 +186,16 @@ local videoExtension = {".ogg", ".ogv"}
 
 function deplsLoader:getBackground(video)
 	local internal = Luaoop.class.data(self)
-	local bg = internal.beatmap:getBackground(video)
+	local bg = internal.beatmap:getBackground() -- file loader can't load video
+	local videoObj
+
+	print("loadvideo", video)
+	if video then
+		local f = util.substituteExtension(internal.path.."video_background", videoExtension)
+		if f then
+			videoObj = love.video.newVideoStream(f)
+		end
+	end
 
 	if bg == nil or bg == 0 then
 		local bgfile = util.substituteExtension(internal.path.."background", imageExtension)
@@ -217,25 +226,33 @@ function deplsLoader:getBackground(video)
 				log.warning("noteloader.depls", "missing top or bottom background. Discard both!")
 			end
 
-			if video then
-				bgfile = util.substituteExtension(internal.path.."video_background", videoExtension)
-				if bgfile then
-					mode[1] = mode[1] + 8
-					mode[#mode + 1] = love.video.newVideoStream(bgfile)
-				end
+			if videoObj then
+				mode[1] = mode[1] + 8
+				mode[#mode + 1] = videoObj
 			end
 
 			return mode
 		elseif util.fileExists(internal.path.."background.txt") then
 			-- love.filesystem.read returns 2 values, and it can be problem
 			-- for background ID 10 and 11, so pass "nil" as 2nd argument of tonumber
-			return tonumber(love.filesystem.read(internal.path.."background.txt"), nil)
+			local n = tonumber(love.filesystem.read(internal.path.."background.txt"), nil)
+			if videoObj then
+				return {8, n, videoObj}
+			else
+				return n
+			end
 		end
+	elseif videoObj then
+		return {8, bg, videoObj}
 	else
 		return bg
 	end
 
-	return 0
+	if videoObj then
+		return {8, 0, videoObj}
+	else
+		return 0
+	end
 end
 
 function deplsLoader:getStoryboardData()

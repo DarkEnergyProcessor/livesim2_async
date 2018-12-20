@@ -212,7 +212,8 @@ function DEPLS:load(arg)
 	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or setting.get("STAMINA_DISPLAY")
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 	-- load live UI
-	self.data.liveUI = liveUI.newLiveUI("sif")
+	self.data.liveUI = liveUI.newLiveUI("sif", arg.summary.name, autoplay, setting.get("MINIMAL_EFFECT") == 1)
+	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
 	-- Lane definition
 	self.persist.lane = self.data.liveUI:getLanePosition()
 	-- Counter
@@ -271,7 +272,6 @@ function DEPLS:load(arg)
 
 				-- counter
 				self.persist.accuracyData[#self.persist.accuracyData + 1] = accuracyGraphValue[judgement]
-				self.persist.noteInfo.totalNotes = self.persist.noteInfo.totalNotes + 1
 				self.persist.noteInfo[judgement] = self.persist.noteInfo[judgement] + 1
 
 				if judgement ~= "miss" and object.token then
@@ -352,6 +352,11 @@ function DEPLS:load(arg)
 		loadCustomUnit = setting.get("CBF_UNIT_LOAD") == 1
 	end
 	self.persist.customUnitLoaded = loadCustomUnit
+	-- video
+	local loadVideo = arg.videoBG
+	if loadVideo == nil then
+		loadVideo = setting.get("VIDEOBG") == 1
+	end
 
 	-- Beatmap loading variables
 	local isBeatmapInit = 0
@@ -386,6 +391,9 @@ function DEPLS:load(arg)
 			end
 			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 		end
+
+		self.persist.noteInfo.totalNotes = #notes
+		self.data.liveUI:setTotalNotes(#notes)
 		self.data.noteManager:initialize()
 
 		-- Set score range (c,b,a,s order)
@@ -408,7 +416,7 @@ function DEPLS:load(arg)
 	if loadBackground then
 		-- need to wrap in coroutine because
 		-- there's no async access in the callback
-		beatmapList.getBackground(arg.beatmapName, arg.videoBG, coroutine.wrap(function(value)
+		beatmapList.getBackground(arg.beatmapName, loadVideo, coroutine.wrap(function(value)
 			log.debug("livesim2", "received background data")
 
 			local tval = type(value)
@@ -416,19 +424,29 @@ function DEPLS:load(arg)
 				local bitval
 				local m, l, r, t, b
 				-- main background
-				m = love.graphics.newImage(table.remove(value, 2))
-				bitval = math.floor(value[1] / 4)
-				-- left & right
+				bitval = math.floor(value[1])
 				if bitval % 2 > 0 then
-					l = love.graphics.newImage(table.remove(value, 2))
-					r = love.graphics.newImage(table.remove(value, 2))
+					m = love.graphics.newImage(table.remove(value, 2))
+					bitval = math.floor(value[1] / 4)
+					-- left & right
+					if bitval % 2 > 0 then
+						l = love.graphics.newImage(table.remove(value, 2))
+						r = love.graphics.newImage(table.remove(value, 2))
+					end
+					bitval = math.floor(value[1] / 2)
+					-- top & bottom
+					if bitval % 2 > 0 then
+						t = love.graphics.newImage(table.remove(value, 2))
+						b = love.graphics.newImage(table.remove(value, 2))
+					end
+				else
+					-- number
+					m = table.remove(value, 2)
+					if m > 0 then
+						self.data.background = backgroundLoader.load(m)
+					end
 				end
-				bitval = math.floor(value[1] / 2)
-				-- top & bottom
-				if bitval % 2 > 0 then
-					t = love.graphics.newImage(table.remove(value, 2))
-					b = love.graphics.newImage(table.remove(value, 2))
-				end
+
 				bitval = math.floor(value[1] / 8)
 				if bitval % 2 > 0 then
 					local v = {}
@@ -437,7 +455,10 @@ function DEPLS:load(arg)
 					v.scale = math.max(960 / v.w, 640 / v.h)
 					self.data.video = v
 				end
-				self.data.background = backgroundLoader.compose(m, l, r, t, b)
+
+				if not(self.data.background) and type(m) == "userdata" then
+					self.data.background = backgroundLoader.compose(m, l, r, t, b)
+				end
 			elseif tval == "number" and value > 0 then
 				self.data.background = backgroundLoader.load(value)
 			end
@@ -810,25 +831,32 @@ end
 
 function DEPLS:draw()
 	-- draw background
-	love.graphics.setColor(color.white)
-	if self.data.storyboard and self.persist.coverArtDisplayDone and self.persist.liveDelayCounter <= 0 then
-		self.data.storyboard:draw()
-	else
-		love.graphics.setBlendMode("replace", "alphamultiply")
+	local drawBackground = true
 
-		if self.data.video then
+	love.graphics.setColor(color.white)
+	if self.persist.liveDelayCounter <= 0 and self.persist.coverArtDisplayDone then
+		if self.data.storyboard then
+			self.data.storyboard:draw()
+			drawBackground = false
+		elseif self.data.video then
+			love.graphics.setBlendMode("replace", "alphamultiply")
 			love.graphics.draw(
 				self.data.video.drawable,
 				480, 320, 0,
 				self.data.video.scale, self.data.video.scale,
 				self.data.video.w * 0.5, self.data.video.h * 0.5
 			)
-		else
-			love.graphics.draw(self.data.background)
+			love.graphics.setBlendMode("alpha", "alphamultiply")
+			drawBackground = false
 		end
+	end
 
+	if drawBackground then
+		love.graphics.setBlendMode("replace", "alphamultiply")
+		love.graphics.draw(self.data.background)
 		love.graphics.setBlendMode("alpha", "alphamultiply")
 	end
+
 	if self.persist.coverArtDisplayDone == false then
 		local x = self.data.coverArtDisplay
 		local fOpacity

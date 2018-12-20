@@ -116,8 +116,15 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d)
 			if a then
 				local type = a:pop()
 				local storyboard = a:pop()
-				local path = a:pop()
-				local data = a:pop()
+				local path, data
+
+				if a:pop() then
+					path = a:pop()
+				end
+
+				if a:pop() then
+					data = a:pop()
+				end
 
 				if data then
 					local dataTable = {}

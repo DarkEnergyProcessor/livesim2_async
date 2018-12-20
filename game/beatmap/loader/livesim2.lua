@@ -269,6 +269,9 @@ function ls2Loader:getBackground()
 	-- 2. has left right background (index 3 and 4)
 	-- 4. has top bottom background (index 5 and 6)
 	-- 8. has video background, refer to File object (index 7)
+	-- If main background (bit 0) is false, then index 2 is assumed
+	-- to be number and only bit 4 is allowed to set if it really
+	-- contains video.
 	-- background refer to ImageData object
 	local internal = Luaoop.class.data(self)
 

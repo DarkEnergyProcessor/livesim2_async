@@ -5,16 +5,16 @@
 -- luacheck: no max line length
 
 local love = require("love")
+local Yohane = require("libs.Yohane")
+local Luaoop = require("libs.Luaoop")
+local timer = require("libs.hump.timer")
+local vector = require("libs.hump.vector")
+
 local assetCache = require("asset_cache")
 local cache = require("cache")
 local async = require("async")
 local color = require("color")
-
-local Yohane = require("libs.Yohane")
-local Luaoop = require("libs.Luaoop")
 local lily = require("lily")
-local timer = require("libs.hump.timer")
-local vector = require("libs.hump.vector")
 
 local uibase = require("game.live.uibase")
 
@@ -51,7 +51,7 @@ local comboQuad = {
 	combo = love.graphics.newQuad(0, 96, 123, 34, 240, 130)
 }
 
-function sifui:__construct()
+function sifui:__construct(_, mineff)
 	-- as per uibase definition, constructor can use
 	-- any asynchronous operation (async lib)
 	local fontImageDataList = lily.loadMulti({
@@ -95,7 +95,7 @@ function sifui:__construct()
 	-- variable setup
 	self.opacity = 1
 	self.textScaling = 1
-	self.minimalEffect = false
+	self.minimalEffect = mineff
 	self.noteIconTime = 0
 	self.noteIconQuad = {
 		notation = love.graphics.newQuad(0, 0, 108, 104, 256, 128),
@@ -108,29 +108,31 @@ function sifui:__construct()
 	}
 	-- combo cheer
 	self.comboCheer = true
-	self.comboCheerAnim = cache.get("live_combo_cheer")
-	if not(self.comboCheerAnim) then
-		self.comboCheerAnim = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh")
-		local img = assetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
-		-- THIS VIOLATES YOHANE API FOR PERFORMANCE OPTIMIZATIONS
-		local function flashSetImage(flash, name, image)
-			local this = getmetatable(flash)
-			local flshname = "I"..name..".png.imag"
+	if not(mineff) then
+		self.comboCheerAnim = cache.get("live_combo_cheer")
+		if not(self.comboCheerAnim) then
+			self.comboCheerAnim = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh")
+			local img = assetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
+			-- THIS VIOLATES YOHANE API FOR PERFORMANCE OPTIMIZATIONS
+			local function flashSetImage(flash, name, image)
+				local this = getmetatable(flash)
+				local flshname = "I"..name..".png.imag"
 
-			for i = 0, #this.movieData do
-				if this.movieData[i].name == flshname then
-					this.movieData[i].imageHandle = image
-					return
+				for i = 0, #this.movieData do
+					if this.movieData[i].name == flshname then
+						this.movieData[i].imageHandle = image
+						return
+					end
 				end
+				error("Invalid name "..name)
 			end
-			error("Invalid name "..name)
-		end
-		for i = 0, 9 do
-			flashSetImage(
-				self.comboCheerAnim,
-				string.format("assets/flash/ui/live/img/ef_350_%03d", i),
-				{img, love.graphics.newQuad(i * 77, 0, 77, 78, 770, 78)}
-			)
+			for i = 0, 9 do
+				flashSetImage(
+					self.comboCheerAnim,
+					string.format("assets/flash/ui/live/img/ef_350_%03d", i),
+					{img, love.graphics.newQuad(i * 77, 0, 77, 78, 770, 78)}
+				)
+			end
 		end
 	end
 	self.comboCheerAnim = self.comboCheerAnim:clone()
@@ -731,6 +733,10 @@ function sifui:addTapEffect(x, y, r, g, b, a)
 	self.tapEffectList[#self.tapEffectList + 1] = tap
 end
 
+function sifui:setTextScaling(scale)
+	self.textScaling = scale
+end
+
 function sifui:getOpacity()
 	return self.opacity
 end
@@ -742,12 +748,12 @@ function sifui:setOpacity(opacity)
 	self.comboCheerAnim:setOpacity(opacity * 255)
 end
 
-function sifui:setMinimalEffect(min)
-	self.minimalEffect = min
-end
-
 function sifui:setComboCheer(enable)
 	self.comboCheer = not(not(enable))
+end
+
+function sifui.setTotalNotes()
+	-- noop
 end
 
 function sifui:startLiveClearAnimation(fullcombo, callback, opaque)

@@ -14,7 +14,7 @@ local uibase = Luaoop.class("Livesim2.LiveUI")
 -- Base system --
 -----------------
 
-function uibase.__construct()
+function uibase.__construct(autoplay, mineff)
 	-- constructor must run in async manner!
 	error("attempt to construct abstract class 'Livesim2.LiveUI'", 2)
 end
@@ -140,12 +140,12 @@ function uibase:setOpacity(opacity)
 	error("pure virtual method 'setOpacity'", 2)
 end
 
-function uibase:setMinimalEffect(min)
-	error("pure virtual method 'setMinimalEffect'", 2)
-end
-
 function uibase:setComboCheer(enable)
 	error("pure virtual method 'setComboCheer'", 2)
+end
+
+function uibase:setTotalNotes(total)
+	error("pure virtual method 'setTotalNotes'", 2)
 end
 
 -- this will always be called multiple times, it's UI responsible to handle it
