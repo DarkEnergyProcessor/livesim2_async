@@ -1,11 +1,25 @@
 Live Simulator: 2
 =================
 
-[Live Simulator: 2](https://github.com/MikuAuahDark/livesim2) (`DEPLS2`) is a Love Live! School Idol Festival Live Show Simulator written in Lua.
+Live Simulator: 2 (`DEPLS2`) is a Love Live! School Idol Festival Live Show Simulator written in Lua.
 
-This repository contains rewritten version of Live Simulator: 2 "Time Lapse Update". For fully functional game, please look at it's [sister repository](https://github.com/MikuAuahDark/livesim2).
+It is currently LL!SIF live simulator that supports variety of different beatmap formats.
 
-**Please don't fork!** This is just temporary repository. It will be merged to [livesim2/time_lapse](https://github.com/MikuAuahDark/livesim2/tree/time_lapse) branch when it's done and this repository will be deleted afterwards!
+How to run
+==========
+
+Please see `docs/How_To_Setup.md`
+
+Supported Beatmaps
+==================
+
+* SIF beatmap, this is main beatmap format that Live Simulator: 2 uses.
+
+* Custom Beatmap Festival project folder.
+
+* MIDI, specialized MIDI file.
+
+* SIFTrain beatmap, both original one and "extended" one were supported.
 
 External Libraries
 ==================
@@ -59,7 +73,7 @@ Special Thanks
 License
 =======
 
-Live Simulator: 2 (the game) is licensed under zLib License. See `LICENSE.md` for more details.
+Live Simulator: 2 v3.0 and layer is licensed under zLib license. Previous versions is licensed under MIT license. See `LICENSE.md` for more details.
 
 Live Simulator: 2 uses Motoya L Maru font. It's licensed under Apache 2 license.
 

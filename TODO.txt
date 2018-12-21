@@ -39,5 +39,5 @@ v3.0
 - Restart button (live show)                    OK
 - Lovewing UI                                   OK
 - Delete beatmap
-- Performance Graph
-- Beatmap Recording
+- Performance Graph                             OK
+- Beatmap Recording                             OK
