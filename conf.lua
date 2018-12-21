@@ -42,6 +42,7 @@ function love.conf(t)
 	t.externalstorage = true            -- True to use external storage on Android (boolean)
 	t.gammacorrect = false              -- Enable gamma-correct rendering, when supported by the system (boolean)
 	t.window = false                    -- Defer window creation
+	t.modules.audio = false             -- Delay audio module
 	t.modules.joystick = false          -- Enable the joystick module (boolean)
 	t.modules.physics = false           -- Enable the physics module (boolean)
 end

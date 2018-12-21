@@ -134,10 +134,10 @@ function sifui:__construct(_, mineff)
 				)
 			end
 		end
+		self.comboCheerAnim = self.comboCheerAnim:clone()
+		self.comboCheerAnim:setMovie("ef_350")
+		self.comboCheerStep = 1
 	end
-	self.comboCheerAnim = self.comboCheerAnim:clone()
-	self.comboCheerAnim:setMovie("ef_350")
-	self.comboCheerStep = 1
 	-- score variable setup
 	self.currentScore = 0
 	self.currentScoreAdd = 0 -- also as dirty flag
@@ -177,7 +177,6 @@ function sifui:__construct(_, mineff)
 	self.currentJudgement = self.images[5]
 	self.judgementOpacity = 0
 	self.judgementScale = 0
-	self.judgementTimer = nil
 	do
 		local target = {judgementOpacity = 1, judgementScale = 1}
 		local target2 = {judgementOpacity = 0}
@@ -723,7 +722,6 @@ function sifui:addTapEffect(x, y, r, g, b, a)
 	tap.circle2Scale = 2.427
 	tap.circle3Opacity = 1
 	tap.circle3Scale = 2.427
-	tap.timer = self.timer:script(tap.func)
 	tap.done = false
 	self.timer:tween(0.8, tap, starEffectTweenTarget, "out-expo", tap.func)
 	self.timer:tween(0.2, tap, circle1TweenTarget, "out-expo")
@@ -858,36 +856,28 @@ function sifui:drawStatus()
 		if tap.done then break end
 		if tap.starEffectOpacity > 0 then
 			love.graphics.setColor(color.compat(
-				255 * tap.r / 255,
-				255 * tap.g / 255,
-				255 * tap.b / 255,
+				tap.r, tap.g, tap.b,
 				tap.starEffectOpacity * tap.opacity * self.opacity
 			))
 			love.graphics.draw(self.images[4], self.tapEffectQuad.star, tap.x, tap.y, 0, tap.starEffectScale, tap.starEffectScale, 50, 50)
 		end
 		if tap.circle1Opacity > 0 then
 			love.graphics.setColor(color.compat(
-				255 * tap.r / 255,
-				255 * tap.g / 255,
-				255 * tap.b / 255,
+				tap.r, tap.g, tap.b,
 				tap.circle1Opacity * tap.opacity * self.opacity
 			))
 			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle1Scale, tap.circle1Scale, 37.5, 37.5)
 		end
 		if tap.circle2Opacity > 0 then
 			love.graphics.setColor(color.compat(
-				255 * tap.r / 255,
-				255 * tap.g / 255,
-				255 * tap.b / 255,
+				tap.r, tap.g, tap.b,
 				tap.circle2Opacity * tap.opacity * self.opacity
 			))
 			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle2Scale, tap.circle2Scale, 37.5, 37.5)
 		end
 		if tap.circle3Opacity > 0 then
 			love.graphics.setColor(color.compat(
-				255 * tap.r / 255,
-				255 * tap.g / 255,
-				255 * tap.b / 255,
+				tap.r, tap.g, tap.b,
 				tap.circle3Opacity * tap.opacity * self.opacity
 			))
 			love.graphics.draw(self.images[4], self.tapEffectQuad.circle, tap.x, tap.y, 0, tap.circle3Scale, tap.circle3Scale, 37.5, 37.5)

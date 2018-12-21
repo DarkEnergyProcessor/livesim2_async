@@ -24,10 +24,10 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
 -- Version string
-DEPLS_VERSION = "3.0.0-beta5"
+DEPLS_VERSION = "3.0.0-RC1"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 02040000
+DEPLS_VERSION_NUMBER = 02050000
 
 local love = require("love")
 local Yohane = require("libs.Yohane")
@@ -61,7 +61,8 @@ local function initWindow(w, h, f)
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
 		fullscreen = love._os == "iOS" or love._os == "Android" or f,
 		fullscreentype = "desktop",
-		vsync = 1,
+		-- Use adaptive vsync (driver dependent)
+		vsync = -1,
 	})
 	love.window.setTitle("Live Simulator: 2")
 	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
@@ -284,6 +285,7 @@ Options:
 * -dumpformat <format>       Set the format of the beatmap dump for -dump
                              option.
 * -dumpformat json           Dump beatmap as JSON beatmap. This is default.
+* -dumpformat llp            Dump beatmap as LLP beatmap.
 * -dumpformat ls2            Dump beatmap as Live Simulator: 2 v2.0 binary
                              beatmap. If this is used, -dumpout must be
                              specified for Windows (unimplemented).
@@ -350,7 +352,6 @@ function love.load(argv, gameargv)
 	initializeSetting()
 	initLS2()
 	initLSR()
-	initVolume()
 	language.init()
 	language.set(setting.get("LANGUAGE"))
 	-- Try to load command line
@@ -371,6 +372,7 @@ function love.load(argv, gameargv)
 	local windowHeight = 640
 	local dumpBeatmap = false
 	local replayFile = nil
+	local dumpFormat = "json"
 	local randomizeBeatmap
 	local randomSeed
 	do
@@ -385,6 +387,9 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-dump" then
 				dumpBeatmap = true
+			elseif arg == "-dumpformat" then
+				dumpFormat = assert(argv[i+1], "please specify correct height"):lower()
+				i = i + 1
 			elseif arg == "-fullscreen" then
 				fullscreen = true
 				windowWidth, windowHeight = love.window.getDesktopDimensions()
@@ -435,33 +440,100 @@ function love.load(argv, gameargv)
 
 	if dumpBeatmap then
 		assert(playBeatmapName or absolutePlayBeatmapName, "Please specify beatmap file to dump")
+		local dumpFunc
+
 		-- TODO: Dump to LS2 beatmap
+		if dumpFormat == "json" then
+			dumpFunc = function(data)
+				if randomizeBeatmap then
+					local rndout
+					if randomSeed then
+						rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
+					else
+						rndout = beatmapRandomizer(data)
+					end
 
-		local function encodeToJSON(data)
-			if randomizeBeatmap then
-				local rndout
-				if randomSeed then
-					rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
-				else
-					rndout = beatmapRandomizer(data)
+					if rndout then
+						data = rndout
+					else
+						log.warnf("main", "cannot randomize beatmap, using original beatmap")
+					end
 				end
+				io.write(JSON:encode(data))
+				love.event.quit()
+			end
+		elseif dumpFormat == "llp" then
+			local function checkSimul(lane, timing)
+				for i = 1, 9 do
+					if lane[i] then
+						local n = lane[i]
 
-				if rndout then
-					data = rndout
-				else
-					log.warnf("main", "cannot randomize beatmap, using original beatmap")
+						for j = 1, #n do
+							if math.abs(n[j].starttime - timing) <= 0.01 then
+								return true
+							end
+						end
+					end
 				end
 			end
-			io.write(JSON:encode(data))
-			love.event.quit()
+
+			dumpFunc = function(data)
+				if randomizeBeatmap then
+					local rndout
+					if randomSeed then
+						rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
+					else
+						rndout = beatmapRandomizer(data)
+					end
+
+					if rndout then
+						data = rndout
+					else
+						log.warnf("main", "cannot randomize beatmap, using original beatmap")
+					end
+				end
+
+				local llpdata = {}
+				llpdata.lane = {}
+
+				for _, v in ipairs(data) do
+					local laneidx = 10 - v.position
+					local lane = llpdata.lane[laneidx]
+
+					if not(lane) then
+						lane = {}
+						llpdata.lane[laneidx] = lane
+					end
+
+					local long = v.effect % 10 == 3
+					-- time units is in ms for LLP
+					local note = {
+						starttime = v.timing_sec * 1000,
+						longnote = long,
+						lane = laneidx - 1,
+						hold = false,
+					}
+					note.endtime = note.starttime + (long and v.effect_value or 0) * 1000
+					note.parallel = checkSimul(llpdata.lane, note.starttime)
+
+					lane[#lane + 1] = note
+				end
+
+				io.write(JSON:encode(llpdata), "\n")
+				love.event.quit()
+			end
+		else
+			error("invalid dump format")
 		end
+
 		beatmapList.push()
 		if playBeatmapName then
-			beatmapList.enumerate()
-			beatmapList.getNotes(playBeatmapName or absolutePlayBeatmapName, encodeToJSON)
+			beatmapList.registerRelative(playBeatmapName, function(id)
+				beatmapList.getNotes(id, dumpFunc)
+			end)
 		else
 			beatmapList.registerAbsolute(absolutePlayBeatmapName, function(id)
-				beatmapList.getNotes(id, encodeToJSON)
+				beatmapList.getNotes(id, dumpFunc)
 			end)
 		end
 	elseif listingMode then
@@ -508,6 +580,10 @@ function love.load(argv, gameargv)
 			end
 		end
 
+		-- Initialize audio module
+		require("love.audio")
+		-- Initialize volume
+		initVolume()
 		-- Initialize window
 		initWindow(windowWidth, windowHeight, fullscreen)
 		-- Initialize Yohane

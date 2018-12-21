@@ -52,6 +52,8 @@ Special Thanks
 
 * MilesElectric168 - Note randomization algorithm.
 
+* CK.Tex - Simplified Chinese translation.
+
 * Some other people who suggest something and helping me which I forgot his/her name
 
 License

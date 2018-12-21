@@ -212,7 +212,11 @@ function DEPLS:load(arg)
 	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or setting.get("STAMINA_DISPLAY")
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 	-- load live UI
-	self.data.liveUI = liveUI.newLiveUI("sif", arg.summary.name, autoplay, setting.get("MINIMAL_EFFECT") == 1)
+	self.data.liveUI = liveUI.newLiveUI(
+		setting.get("PLAY_UI"),
+		autoplay,
+		setting.get("MINIMAL_EFFECT") == 1
+	)
 	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
 	-- Lane definition
 	self.persist.lane = self.data.liveUI:getLanePosition()
