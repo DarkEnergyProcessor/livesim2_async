@@ -7,9 +7,10 @@ local love = require("love")
 local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
 
+local color = require("color")
 local assetCache = require("asset_cache")
 local setting = require("setting")
-local color = require("color")
+local util = require("util")
 
 local note = {}
 
@@ -547,10 +548,10 @@ function normalMovingNote:update(dt)
 	if self.vanishType > 0 then
 		if self.vanishType == 1 then
 			-- Hidden note
-			self.opacity = math.max(math.min((self.noteSpeed * 2/3 - self.elapsedTime) * 0.0125, 1), 0)
+			self.opacity = util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) / self.noteSpeed * 5, 0, 1)
 		elseif self.vanishType == 2 then
 			-- Sudden note
-			self.opacity = math.max(math.min((self.elapsedTime - self.noteSpeed * 0.4) * 0.0125, 1), 0)
+			self.opacity = util.clamp((self.elapsedTime - self.noteSpeed * 0.4) / self.noteSpeed * 5, 0, 1)
 		end
 	end
 
@@ -698,12 +699,12 @@ function longMovingNote:update(dt)
 		local x = self.elapsedTime - self.lnSpawnTime
 		if self.vanishType == 1 then
 			-- Hidden note
-			self.opacity = math.max(math.min((self.noteSpeed * 2/3 - self.elapsedTime) * 0.0125, 1), 0)
-			self.lnOpacity = math.max(math.min((self.noteSpeed * 2/3 - x) * 0.0125, 1), 0)
+			self.opacity = util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) * 5, 0, 1)
+			self.lnOpacity = util.clamp((self.noteSpeed * 2/3 - x) * 5, 0, 1)
 		elseif self.vanishType == 2 then
 			-- Sudden note
-			self.opacity = math.max(math.min((self.elapsedTime - self.noteSpeed * 0.4) * 0.0125, 1), 0)
-			self.lnOpacity = math.max(math.min((x - self.noteSpeed * 0.4) * 0.0125, 1), 0)
+			self.opacity = util.clamp((self.elapsedTime - self.noteSpeed * 0.4) * 5, 0, 1)
+			self.lnOpacity = util.clamp((x - self.noteSpeed * 0.4) * 5, 0, 1)
 		end
 	end
 

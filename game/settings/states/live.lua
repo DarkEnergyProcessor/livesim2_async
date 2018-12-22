@@ -36,6 +36,8 @@ function liveSetting:load()
 			:setPosition(61, 318),
 		switchSetting(L"setting:live:skillPopup", "SKILL_POPUP")
 			:setPosition(61, 404),
+		numberSetting(L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 2, default = 0})
+			:setPosition(61, 490)
 	}
 
 	if self.data.back == nil then

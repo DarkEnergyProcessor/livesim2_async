@@ -366,6 +366,7 @@ function DEPLS:load(arg)
 	-- Beatmap loading variables
 	local isBeatmapInit = 0
 	local desiredBeatmapInit = 1
+	local vanishType = setting.get("VANISH_TYPE")
 	if loadCustomUnit then
 		desiredBeatmapInit = desiredBeatmapInit + 1
 	end
@@ -391,9 +392,12 @@ function DEPLS:load(arg)
 
 		for i = 1, #notes do
 			local t = notes[i]
+			t.vanish = t.vanish or vanishType
+
 			if self.data.noteManager:addNote(t) then
 				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1
 			end
+
 			fullScore = fullScore + (t.effect > 10 and 370 or 739)
 		end
 

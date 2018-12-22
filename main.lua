@@ -132,6 +132,7 @@ local function initializeSetting()
 	setting.define("TAP_SOUND", 1)
 	setting.define("TEXT_SCALING", 1)
 	setting.define("TIMING_OFFSET", 0)
+	setting.define("VANISH_TYPE", 0)
 	setting.define("VIDEOBG", 0)
 	setting.define("VOICE_VOLUME", 80)
 end
