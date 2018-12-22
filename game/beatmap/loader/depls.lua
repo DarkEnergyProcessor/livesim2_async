@@ -189,7 +189,6 @@ function deplsLoader:getBackground(video)
 	local bg = internal.beatmap:getBackground() -- file loader can't load video
 	local videoObj
 
-	print("loadvideo", video)
 	if video then
 		local f = util.substituteExtension(internal.path.."video_background", videoExtension)
 		if f then

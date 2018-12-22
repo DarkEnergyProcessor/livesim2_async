@@ -101,7 +101,7 @@ function audioManager.newAudioDirect(data, kind)
 	local obj = {
 		pos = 0,
 		size = 0,
-		volume = volume.get(kind, 0.8),
+		volume = volume.get(kind),
 		volumeKind = kind,
 		playing = false,
 		looping = false,
@@ -140,9 +140,11 @@ function audioManager.newAudioDirect(data, kind)
 		if type(data) == "userdata" and data:typeOf("SoundData") then
 			obj.soundData = data
 			obj.source = love.audio.newSource(data)
+		else
+			-- just new source
+			obj.source = love.audio.newSource(data, "static")
 		end
-		-- just new source
-		obj.source = love.audio.newSource(data, "static")
+		obj.source:setVolume(obj.volume)
 		return obj
 	end
 end

@@ -623,9 +623,16 @@ end
 -- Stamina --
 -------------
 
+function sifui:_updateStamina()
+	self.staminaText:clear()
+	self.staminaText:add(string.format("%2d", self.stamina))
+	self.staminaInterpolate = math.min(self.maxStamina, self.staminaInterpolate)
+end
+
 function sifui:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
 	self.stamina = math.min(self.maxStamina, self.stamina)
+	self:_updateStamina()
 end
 
 function sifui:getMaxStamina()
@@ -647,9 +654,8 @@ function sifui:addStamina(val)
 	end
 	self.staminaLerpVal = 0
 	self.stamina = math.max(math.min(self.stamina + val, self.maxStamina), 0)
+	self:_updateStamina()
 	self.staminaTimer = self.timer:tween(1, self, {staminaLerpVal = 1, staminaInterpolate = self.stamina})
-	self.staminaText:clear()
-	self.staminaText:add(string.format("%2d", self.stamina))
 	self.staminaAddText:clear()
 	self.staminaAddText:add((val > 0 and "+" or "-")..string.format("%2d", math.abs(val)))
 end

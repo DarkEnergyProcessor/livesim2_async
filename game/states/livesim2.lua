@@ -217,6 +217,7 @@ function DEPLS:load(arg)
 		autoplay,
 		setting.get("MINIMAL_EFFECT") == 1
 	)
+	self.data.liveUI:setMaxStamina(self.persist.stamina)
 	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
 	-- Lane definition
 	self.persist.lane = self.data.liveUI:getLanePosition()
