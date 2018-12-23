@@ -177,6 +177,7 @@ function noteManager:__construct(param)
 		self.lnRotation[i] = math.atan2(di.y, di.x) + math.pi
 		self.laneDistance[i] = dist
 		self.laneAccuracy[i] = {
+			exact = dist,
 			perfect = {
 				(dist - param.accuracy[1] + self.timingOffset) / dist,
 				(dist + param.accuracy[1] + self.timingOffset) / dist
@@ -446,6 +447,10 @@ function baseMovingNote.draw()
 	error("pure virtual method 'draw'", 2)
 end
 
+function baseMovingNote.getDistance(release)
+	error("pure virtual method 'getDistance'", 2)
+end
+
 function baseMovingNote.tap()
 	error("pure virtual method 'tap'", 2)
 	return "judgement string"
@@ -569,6 +574,10 @@ function normalMovingNote:draw()
 		self.elapsedTime / self.noteSpeed,
 		self.rotation
 	)
+end
+
+function normalMovingNote:getDistance()
+	return math.abs(self.elapsedTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
 end
 
 local function judgementCheck(t, accuracy, swing, rtiming, ytiming)
@@ -776,6 +785,14 @@ function longMovingNote:draw()
 		self.lnFlashEffect:setOpacity(self.manager.opacity * 255)
 		self.lnFlashEffect:draw()
 		love.graphics.pop()
+	end
+end
+
+function longMovingNote:getDistance(rel)
+	if rel then
+		return math.abs(self.elapsedTime - self.lnSpawnTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
+	else
+		return math.abs(self.elapsedTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
 	end
 end
 

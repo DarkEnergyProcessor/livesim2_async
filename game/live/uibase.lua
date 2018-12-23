@@ -153,6 +153,10 @@ function uibase:startLiveClearAnimation(fullcombo, donecb, opaque)
 	error("pure virtual method 'startLiveClearAnimation'", 2)
 end
 
+function uibase:setLiveClearVoice(voice)
+	error("pure virtual method 'setLiveClearVoice'", 2)
+end
+
 -------------
 -- Drawing --
 -------------

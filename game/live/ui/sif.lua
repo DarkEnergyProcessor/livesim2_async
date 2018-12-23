@@ -11,6 +11,7 @@ local timer = require("libs.hump.timer")
 local vector = require("libs.hump.vector")
 
 local assetCache = require("asset_cache")
+local audioManager = require("audio_manager")
 local cache = require("cache")
 local async = require("async")
 local color = require("color")
@@ -221,6 +222,8 @@ function sifui:__construct(_, mineff)
 	-- pause system
 	self.pauseEnabled = true
 	-- live clear
+	self.liveClearVoice = nil
+	self.liveClearVoicePlayed = false
 	self.fullComboAnim = cache.get("live_fullcombo")
 	if not(self.fullComboAnim) then
 		self.fullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh")
@@ -381,6 +384,10 @@ function sifui:update(dt, paused)
 			self.liveClearTime = self.liveClearTime - dt
 		end
 		local flash = self.liveClearTime > 5 and self.fullComboAnim or self.liveClearAnim
+		if self.liveClearVoice and not(self.liveClearVoicePlayed) and flash == self.liveClearAnim then
+			audioManager.play(self.liveClearVoice)
+			self.liveClearVoicePlayed = true
+		end
 		flash:update(dt * 1000)
 
 		if self.liveClearTime <= 0 and self.liveClearCallback then
@@ -767,6 +774,10 @@ function sifui:startLiveClearAnimation(fullcombo, callback, opaque)
 		self.liveClearCallback = callback
 		self.liveClearCallbackOpaque = opaque
 	end
+end
+
+function sifui:setLiveClearVoice(voice)
+	self.liveClearVoice = voice
 end
 
 -------------

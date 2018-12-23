@@ -181,9 +181,7 @@ function deplsLoader:getAudio()
 	end
 end
 
-local imageExtension = {".png", ".jpg", ".jpeg", ".bmp"}
 local videoExtension = {".ogg", ".ogv"}
-
 function deplsLoader:getBackground(video)
 	local internal = Luaoop.class.data(self)
 	local bg = internal.beatmap:getBackground() -- file loader can't load video
@@ -197,14 +195,14 @@ function deplsLoader:getBackground(video)
 	end
 
 	if bg == nil or bg == 0 then
-		local bgfile = util.substituteExtension(internal.path.."background", imageExtension)
+		local bgfile = util.substituteExtension(internal.path.."background", coverArtExtensions)
 		if bgfile then
 			local mode = {1}
 			local backgrounds = {}
 			mode[#mode + 1] = love.image.newImageData(bgfile)
 
 			for i = 1, 4 do
-				bgfile = util.substituteExtension(internal.path.."background-"..i, imageExtension)
+				bgfile = util.substituteExtension(internal.path.."background-"..i, coverArtExtensions)
 				if bgfile then
 					backgrounds[i] = love.image.newImageData(bgfile)
 				end
@@ -286,6 +284,25 @@ function deplsLoader:getStoryboardData()
 	end
 
 	return nil
+end
+
+function deplsLoader:getLiveClearVoice()
+	local internal = Luaoop.class.data(self)
+	local audio = internal.beatmap:getLiveClearVoice()
+
+	if not(audio) then
+		local file = util.substituteExtension(internal.path.."live_clear", util.getNativeAudioExtensions())
+		if file then
+			local s, msg = pcall(love.sound.newDecoder, file)
+			if s then
+				audio = msg
+			else
+				log.errorf("noteloader.depls", "live clear sound not supported: %s", msg)
+			end
+		end
+	end
+
+	return audio
 end
 
 return deplsLoader, "folder"

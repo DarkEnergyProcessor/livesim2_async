@@ -564,4 +564,19 @@ function cbfLoader:getCustomUnitInformation()
 	return unitData
 end
 
+function cbfLoader:getLiveClearVoice()
+	local internal = Luaoop.class.data(self)
+	local file = util.substituteExtension(internal.path.."liveShowClearSFX", util.getNativeAudioExtensions())
+	if file then
+		local s, msg = pcall(love.sound.newDecoder, file)
+		if s then
+			return msg
+		else
+			log.errorf("noteloader.depls", "live clear sound not supported: %s", msg)
+		end
+	end
+
+	return nil
+end
+
 return cbfLoader, "folder"

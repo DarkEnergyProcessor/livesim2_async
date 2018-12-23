@@ -219,6 +219,9 @@ function DEPLS:load(arg)
 	)
 	self.data.liveUI:setMaxStamina(self.persist.stamina)
 	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
+	if arg.summary.liveClear then
+		self.data.liveUI:setLiveClearVoice(audioManager.newAudioDirect(arg.summary.liveClear, "voice"))
+	end
 	-- Lane definition
 	self.persist.lane = self.data.liveUI:getLanePosition()
 	-- Counter
@@ -309,6 +312,25 @@ function DEPLS:load(arg)
 					playTapSFXSound(self.data.tapSFX, "starExplode", false)
 				end
 				self.persist.noteInfo.fullCombo = false
+			end
+
+			-- storyboard
+			if self.data.storyboard then
+				local info = {
+					long = releaseFlag > 0,
+					release = releaseFlag == 2,
+					isStar = object.star,
+					isSimultaneous = object.simul,
+					isToken = object.token,
+					isSwing = object.swing
+				}
+				self.data.storyboard:callback(
+					"note",
+					object.lanePosition,
+					judgement,
+					object:getDistance(),
+					info
+				)
 			end
 
 			-- damage
@@ -705,8 +727,10 @@ function DEPLS:load(arg)
 					-- do not register/trigger any skill if custom unit is disabled
 					if loadCustomUnit then
 						if kind == "trigger" then
-							local type, value, unitIndex, rarity, image, audio = ...
-							self.data.skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
+							if not(isLiveClear(self)) then
+								local type, value, unitIndex, rarity, image, audio = ...
+								self.data.skill:triggerDirectly(type, value, unitIndex, rarity, image, audio)
+							end
 						elseif kind == "register" then
 							local skillData, condition = ...
 							self.data.skill:register(skillData, condition)
@@ -756,6 +780,8 @@ end
 
 function DEPLS:update(dt)
 	if self.persist.coverArtDisplayDone then
+		local liveClear = isLiveClear(self)
+
 		self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
 
 		for i = 1, #self.data.tapSFX.accumulateTracking do
@@ -772,7 +798,9 @@ function DEPLS:update(dt)
 				end
 
 				-- update skill
-				self.data.skill:update(dt)
+				if not(liveClear) then
+					self.data.skill:update(dt)
+				end
 
 				-- play song if it's not played
 				local updtDt = dt
@@ -827,7 +855,7 @@ function DEPLS:update(dt)
 
 		self.data.liveUI:update(dt, self.data.pauseObject:isPaused())
 
-		if isLiveClear(self) then
+		if liveClear then
 			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, liveClearCallback, self)
 		end
 	else

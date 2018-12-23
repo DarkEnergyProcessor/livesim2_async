@@ -155,7 +155,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 	}
 	self.drawing[1] = self.drawable.__background
 
-	-- TODO: Load skill
+	-- Load skill
 	if storyData.skill then
 		for _, v in ipairs(storyData.skill) do
 			local skillData = {
@@ -171,7 +171,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 			end
 
 			if v.audio then
-				skillData.audio = self:loadAudio(v.audio)
+				skillData.audio = self:loadAudio(v.audio, "voice")
 			end
 
 			-- Load condition
@@ -333,16 +333,17 @@ function yamlStoryboard:handleEvent(ev)
 	end
 end
 
-function yamlStoryboard:loadAudio(path)
+function yamlStoryboard:loadAudio(path, kind)
+	if path == nil then return nil end
+
 	if self.data[path] then
-		return audioManager.newAudioDirect(love.sound.newDecoder(self.data[path]))
+		return audioManager.newAudioDirect(love.sound.newDecoder(self.data[path]), kind)
 	elseif self.path then
 		if util.fileExists(self.path..path) then
-			return audioManager.newAudio(self.path..path)
+			return audioManager.newAudio(self.path..path, kind)
 		end
 	end
 
-	error("file not found")
 	return nil
 end
 
