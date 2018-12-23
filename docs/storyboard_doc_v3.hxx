@@ -165,14 +165,6 @@ void *loadVideo(const char *path);
 void *loadFont(const char *path, int size = 14);
 
 /**
- * Load shader from string.
- * \param shader Shader code which must contain both vertex and pixel shader.
- * \return [LOVE Shader](https://love2d.org/wiki/Shader) object.
- * \exception exception invalid shader code.
- **/
-void *loadShader(const char *str);
-
-/**
  * Read file contents from beatmap.
  * \param path File path, relative to current beatmap.
  * \return File contents.
@@ -199,17 +191,10 @@ void setUnitOpacity(int position, double opacity);
 double[2] *getCurrentAudioSample(size_t size);
 
 /**
- * Forces note style to specified note style.
- * \param baseFrame Base frame style ID.
- * \param swing Swing note style ID.
- * \param simultaneous Simultaneous mark style ID.
- * \note Currently defined style ID are:
- * 1. Default style
- * 2. Neon style
- * 3. Matte style
- * \exception exception invalid style ID.
+ * Gets current audio sample rate.
+ * \return Audio sample rate, in Hz.
  **/
-void setNoteStyle(int baseFrame, int swing, int simultaneous);
+size_t getAudioSampleRate();
 
 /**
  * Add score by specified amount.
@@ -238,8 +223,8 @@ void setRedTimingDuration(double time);
  * \note This function doesn't accumulate the time. If the current timing
  * duration is higher than \p time, this function has no effect
  * \note Timing Window++ has precedence over Timing Window+, so if you have
- * both active at same time, Timing Window++ will take priority, which makes Good
- * become Perfect.
+ * both active at same time, Timing Window++ will take priority, which makes
+ * Good become Perfect.
  **/
 void setYellowTimingDuration(double time);
 
@@ -265,16 +250,43 @@ namespace graphics
 
 // Object creation
 void *newCanvas();
+void *newFont(const char *path, int size = 12);
+void *newShader(const char *code);
 void *newText(void *font, const char *text = nullptr);
 
 // State change
+void setBlendMode(const char *blend, const char *blendAlpha);
+void setCanvas(void *canvas);
+/**
+ * Set drawing color.
+ * \param r Red color component (0..1).
+ * \param g Green color component (0..1).
+ * \param b Blue color component (0..1).
+ * \param a Alpha color component (0..1).
+ */
 void setColor(double r, double g, double b, double a = 1.0);
 void setFont(void *font);
+void setLineWidth(double width);
 void setShader(void *shader);
-void setCanvas(void *canvas);
 
-// Real drawing
+// Drawing
+/**
+ * Clear screen to black.
+ **/
 void clear();
+/**
+ * Draw an object onto the screen.
+ * \param drawable A drawable object.
+ * \param x The position to draw the object (x-axis).
+ * \param y The position to draw the object (y-axis).
+ * \param r Orientation (radians).
+ * \param sx Scale factor (x-axis).
+ * \param sy Scale factor (y-axis).
+ * \param ox Origin offset (x-axis).
+ * \param oy Origin offset (y-axis).
+ * \param kx Shearing factor (x-axis).
+ * \param ky Shearing factor (y-axis).
+ **/
 void drawObject(
 	void *drawable,
 	double x = 0.0,
@@ -287,7 +299,55 @@ void drawObject(
 	double kx = 0.0,
 	double ky = 0.0
 )
+void drawText(
+	const char *text,
+	double x = 0.0,
+	double y = 0.0,
+	double r = 0.0,
+	double sx = 1.0,
+	double sy = 1.0,
+	double ox = 0.0,
+	double oy = 0.0,
+	double kx = 0.0,
+	double ky = 0.0
+);
 
+/**
+ * Draws pie arc.
+ * \param drawMode How to draw the arc.
+ * \param x The position of the center along x-axis.
+ * \param y The position of the center along y-axis.
+ * \param radius Radius of the arc.
+ * \param r1 The angle at which the arc begins.
+ * \param r2 The angle at which the arc terminates.
+ * \param segm The number of segments used for drawing the arc.
+ * \note The arc is drawn counter clockwise if the starting angle is
+ * numerically bigger than the final angle. The arc is drawn clockwise if the
+ * final angle is numerically bigger than the starting angle. 
+ **/
+void arc(
+	const char *drawMode,
+	double x, double y, double radius,
+	double r1, double r2,
+	int segm = 20
+);
+void ellipse(const char *drawMode, double x, double y, double rx, double ry, int segm = 20);
+void line(double *points);
+
+/**
+ * Draws a rectangle.
+ * \param drawMode How to draw the rectangle.
+ * \param x The position of top-left corner along the x-axis.
+ * \param y The position of top-left corner along the y-axis.
+ * \param w Width of the rectangle.
+ * \param h Height of the rectangle.
+ * \param rx The x-axis radius of each round corner. Cannot be greater than
+ * half the rectangle's width.
+ * \param ry The y-axis radius of each round corner. Cannot be greater than
+ * half the rectangle's height.
+ * \param segm The number of segments used for drawing the round corners.
+ **/
+void rectangle(const char *drawMode, double x, double y, double w, double h, double rx = 0.0, double ry = 0.0, int segm = 20);
 
 }
 

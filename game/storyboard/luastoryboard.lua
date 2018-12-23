@@ -8,6 +8,7 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
+local audioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
 local sandbox = require("sandbox")
@@ -49,6 +50,7 @@ function luaStoryboard:__construct(storyboardData, info)
 	self.background = info.background
 	self.units = info.unit
 	self.canvas = love.graphics.newCanvas(1136, 728)
+	self.loadedAudioV2 = setmetatable({}, {__mode = "k"})
 	self.v3 = false
 
 	-- Setup essential sandbox variables
@@ -176,11 +178,21 @@ function luaStoryboard:setupMainEnv()
 	end
 	-- IsOpenGLES function
 	function self.mainEnv.isGLES()
+		-- Side note, LOVE developers say there may be
+		-- Metal and Vulkan renderer in next version.
+		-- In that case, `love.graphics.getRendererInfo()`
+		-- won't return "OpenGL" nor "OpenGL ES".
+		-- This function only check exactly for OpenGLES
+		-- and nothing else.
 		return love.graphics.getRendererInfo() == "OpenGL ES"
 	end
 	-- IsDesktopSystem function
 	function self.mainEnv.isDesktop()
 		return not(util.isMobile())
+	end
+	-- IsRenderMode function
+	function self.mainEnv.isRendering()
+		return audioManager.renderRate > 0
 	end
 end
 
@@ -204,6 +216,24 @@ function luaStoryboard:setupV2Sandbox()
 	env.LoadImage = pcallWrap(self.mainEnv.loadImage)
 	env.LoadVideo = pcallWrap(self.mainEnv.loadVideo)
 	env.LoadFont = pcallWrap(self.mainEnv.loadFont)
+	env.LoadAudio = function(path)
+		local s, audio
+
+		if self.beatmapData[path] then
+			s, audio = pcall(audioManager.newAudioDirect, self.beatmapData[path], "voice")
+		end
+
+		if not(s) and self.beatmapPath then
+			s, audio = pcall(audioManager.newAudio, self.beatmapPath..path, "voice")
+		end
+
+		if s then
+			-- Don't expose the actual object to user
+			local opaque = {}
+			self.loadedAudioV2[opaque] = audio
+			return opaque
+		end
+	end
 	env.ReadFile = pcallWrap(self.mainEnv.readFile)
 	env.DrawObject = love.graphics.draw
 	env.DrawRectangle = love.graphics.rectangle
@@ -247,7 +277,7 @@ function luaStoryboard:setupV2Sandbox()
 	env.SetPlaySpeed = dummy
 	env.ForceNoteStyle = dummy
 	env.ForceNewNoteStyle = dummy
-	env.IsRenderingMode = falseret -- TODO
+	env.IsRenderingMode = self.mainEnv.isRendering
 	env.SkillPopup = dummy
 	env.AllowComboCheer = dummy
 	env.HSL = function(h, s, l)
@@ -255,7 +285,8 @@ function luaStoryboard:setupV2Sandbox()
 		h, s, l = h/256*6, s/255, l/255
 		local c = (1-math.abs(2*l-1))*s
 		local x = (1-math.abs(h%2-1))*c
-		local m,r,g,b = (l-.5*c), 0,0,0
+		local m = (l-.5*c)
+		local r,g,b
 		if h < 1     then r,g,b = c,x,0
 		elseif h < 2 then r,g,b = x,c,0
 		elseif h < 3 then r,g,b = 0,c,x
@@ -389,6 +420,8 @@ function luaStoryboard:setupV2Sandbox()
 
 	-- Compatibility upgrade
 	env.newStoryboard = function(version)
+		if self.v3 then return end
+
 		version = version or 0
 		assert(version == 0, "invalid storyboard version")
 
@@ -399,6 +432,87 @@ function luaStoryboard:setupV2Sandbox()
 
 	-- modules preload
 	self.sandbox:preloadModule("tween", love.filesystem.load("libs/tween.lua"))
+	self.sandbox:preloadModule("complex", love.filesystem.load("libs/complex.lua"))
+	self.sandbox:preloadModule("luafft", love.filesystem.load("libs/luafft.lua"))
+end
+
+function luaStoryboard:setupV3Sandbox()
+	-- Clear v2 vars
+	local env = self.sandbox:getEnv()
+	env.love = nil
+	env.RequireDEPLSVersion = nil
+	env.LoadImage = nil
+	env.LoadVideo = nil
+	env.LoadFont = nil
+	env.LoadAudio = nil
+	env.ReadFile = nil
+	env.DrawObject = nil
+	env.DrawRectangle = nil
+	env.DrawCircle = nil
+	env.DrawEllipse = nil
+	env.DrawArc = nil
+	env.PrintText = nil
+	env.SetColor = nil
+	env.SetFont = nil
+	env.SetCanvas = nil
+	env.SetBlendMode = nil
+	env.SetShader = nil
+	env.ClearDrawing = nil
+	env.LoadShader = nil
+	env.NewCanvas = nil
+	env.SetLiveOpacity = nil
+	env.SetBackgroundDimOpacity = nil
+	env.GetCurrentElapsedTime = nil
+	env.GetLiveSimulatorDelay = nil
+	env.SpawnSpotEffect = nil
+	env.SpawnCircleTapEffect = nil
+	env.SetUnitOpacity = nil
+	env.LoadDEPLS2Image = nil
+	env.GetCurrentAudioSample = nil
+	env.GetCurrentAudioSampleRate = nil
+	env.DisablePlaySpeedAlteration = nil
+	env.SetPlaySpeed = nil
+	env.ForceNoteStyle = nil
+	env.ForceNewNoteStyle = nil
+	env.IsRenderingMode = nil
+	env.SkillPopup = nil
+	env.AllowComboCheer = nil
+	env.IsOpenGLES = nil
+	env.MultiVideoFormatSupported = nil
+	env.GetCurrentBackgroundImage = nil
+	env.GetCurrentUnitImage = nil
+	env.AddScore = nil
+	env.SetRedTimingDuration = nil
+	env.SetYellowTimingDuration = nil
+	env.IsLiveEnded = nil
+	env.IsRandomMode = nil
+	env.GetScreenDimensions = nil
+	env.GetLiveUI = nil
+	env.IsDesktopSystem = nil
+	env.UseZeroToOneColorRange = nil
+
+	-- Put v3 vars
+	env.__background = self.background
+	for i = 1, 9 do
+		env["__unit_"..i] = self.units[i]
+	end
+	env.registerCallback = dummy -- TODO
+	env.setLiveOpacity = dummy -- TODO
+	env.loadImage = self.mainEnv.loadImage
+	env.loadVideo = self.mainEnv.loadVideo
+	env.loadFont = self.mainEnv.loadFont
+	env.readFile = self.mainEnv.readFile
+	env.setUnitOpacity = dummy -- TODO
+	env.getCurrentAudioSample = self.mainEnv.getCurrentAudioSample
+	env.getAudioSampleRate = self.mainEnv.getAudioSampleRate
+	env.addScore = dummy -- TODO
+	env.setRedTimingDuration = dummy -- TODO
+	env.setYellowTimingDuration = dummy -- TODO
+	env.isRandom = falseret -- TODO
+	env.setPostProcessingShader = dummy -- TODO
+	env.graphics = {
+		-- TODO
+	}
 end
 
 function luaStoryboard:update(dt)

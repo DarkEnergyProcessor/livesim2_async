@@ -23,7 +23,7 @@ THE SOFTWARE.
 
 ]]
 
-local complex = require "libs.complex"
+local complex = require "complex"
 local work
 local print_list
 local calculate_factors
