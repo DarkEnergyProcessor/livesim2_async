@@ -235,12 +235,8 @@ function ls2Loader:getAudio()
 
 	if internal.ls2.sections.ADIO then
 		internal.file:seek(internal.ls2.sections.ADIO[1])
-		local ext, data, ff = ls2.section_processor.ADIO[1](internal.file, internal.ls2.version_2)
+		local ext, data = ls2.section_processor.ADIO[1](internal.file, internal.ls2.version_2)
 		if ext then
-			if ff then
-				-- TODO
-				return nil
-			end
 			return love.filesystem.newFileData(data, "_."..ext)
 		end
 	end
@@ -391,21 +387,16 @@ function ls2Loader:getLiveClearVoice()
 	if internal.ls2.sections.LCLR then
 		-- Embedded audio available
 		internal.file:seek(internal.ls2.sections.LCLR[1])
-		local ext, data, ff = ls2.section_processor.LCLR[1](internal.file, internal.ls2.version_2)
+		local ext, data = ls2.section_processor.LCLR[1](internal.file, internal.ls2.version_2)
 		local fdata = love.filesystem.newFileData(data, "_."..ext)
 
-		if ff then
-			-- TODO: use LVEP
-			return nil
+		-- May not supported
+		local s, msg = pcall(util.newDecoder, fdata)
+		if s then
+			return msg
 		else
-			-- May not supported
-			local s, msg = pcall(love.sound.newDecoder, fdata)
-			if s then
-				return msg
-			else
-				log.errorf("noteloader.livesim2", "live clear sound not supported: %s", msg)
-				return nil
-			end
+			log.errorf("noteloader.livesim2", "live clear sound not supported: %s", msg)
+			return nil
 		end
 	end
 

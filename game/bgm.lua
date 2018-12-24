@@ -111,8 +111,7 @@ function BGMClass:getSampleRate()
 end
 
 function BGM.newSong(decoder)
-	local sync = async.syncLily(lily.newSoundData(decoder))
-	return BGMClass(sync:getValues())
+	return BGMClass(util.newDecoder(decoder))
 end
 
 return BGM

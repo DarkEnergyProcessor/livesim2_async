@@ -545,4 +545,8 @@ function luaStoryboard:draw()
 	love.graphics.setBlendMode("alpha", "alphamultiply")
 end
 
+function luaStoryboard.callback()
+	-- TODO
+end
+
 return luaStoryboard

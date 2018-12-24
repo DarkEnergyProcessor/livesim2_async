@@ -7,6 +7,7 @@ local lsr = require("libs.lsr")
 local async = require("async")
 local setting = require("setting")
 local gamestate = require("gamestate")
+local render = require("render")
 
 local beatmapList = require("game.beatmap.list")
 local loadingInstance = require("loading_instance")
@@ -59,6 +60,11 @@ function playPreloader:load(arg)
 end
 
 function playPreloader:start(arg)
+	local r = false
+	if arg.render then
+		render.initialize(arg.render.output, arg.render.width, arg.render.height)
+		r = true
+	end
 	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData,
@@ -67,7 +73,8 @@ function playPreloader:start(arg)
 		replay = self.data.replayData,
 		random = not(not(arg.random)),
 		seed = arg.seed,
-		direct = self.persist.directLoad
+		direct = self.persist.directLoad,
+		render = r
 	})
 end
 

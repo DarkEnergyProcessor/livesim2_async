@@ -55,7 +55,7 @@ local function initializeSummary(self, data)
 		self.data.audioPreview = nil
 	end
 	if data.audio then
-		self.data.audioPreview = love.audio.newSource(data.audio, "stream")
+		self.data.audioPreview = love.audio.newSource(util.newDecoder(data.audio), "stream")
 		self.data.audioPreview:setVolume(volume.get("music"))
 	end
 

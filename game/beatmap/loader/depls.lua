@@ -190,7 +190,7 @@ function deplsLoader:getBackground(video)
 	if video then
 		local f = util.substituteExtension(internal.path.."video_background", videoExtension)
 		if f then
-			videoObj = love.video.newVideoStream(f)
+			videoObj = util.newVideoStream(f)
 		end
 	end
 
@@ -293,7 +293,7 @@ function deplsLoader:getLiveClearVoice()
 	if not(audio) then
 		local file = util.substituteExtension(internal.path.."live_clear", util.getNativeAudioExtensions())
 		if file then
-			local s, msg = pcall(love.sound.newDecoder, file)
+			local s, msg = pcall(util.newDecoder, file)
 			if s then
 				audio = msg
 			else

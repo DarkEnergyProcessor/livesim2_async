@@ -59,17 +59,19 @@ if lib.features.libav then
 		} songInformation;
 	]]
 	local loadAudioFile = ffi.cast("bool(*)(const char *input, songInformation *info)", lib.rawptr.loadAudioFile)
-	
-	libav.startEncodingSession = ffi.cast("bool(*)(const char *, int, int, int)", lib.rawptr.startEncodingSession)
-	libav.supplyVideoEncoder = ffi.cast("bool(*)(const void *)", lib.rawptr.supplyEncoder)
-	libav.endEncodingSession = ffi.cast("void(*)()", lib.rawptr.endEncodingSession)
+	local encodingSupported = ffi.cast("bool(*)()", lib.rawptr.encodingSupported)
+
+	if encodingSupported() then
+		libav.startEncodingSession = ffi.cast("bool(*)(const char *, int, int, int)", lib.rawptr.startEncodingSession)
+		libav.supplyVideoEncoder = ffi.cast("bool(*)(const void *)", lib.rawptr.supplyEncoder)
+		libav.endEncodingSession = ffi.cast("void(*)()", lib.rawptr.endEncodingSession)
+	end
 	libav.free = ffi.cast("void(*)(void *)", lib.rawptr.av_free)
 
 	function libav.loadAudioFile(path)
 		local sInfoP = ffi.new("songInformation[1]") -- FFI-managed object
 		local sInfo = sInfoP[0]
 		if loadAudioFile(path, sInfoP) then
-			local meta = {}
 			local info = {
 				sampleRate = sInfo.sampleRate,
 				sampleCount = sInfo.sampleCount,
@@ -83,7 +85,7 @@ if lib.features.libav then
 					data = sInfo.coverArt
 				}
 			end
-			if sInfo.metadataCount > 0 then 
+			if sInfo.metadataCount > 0 then
 				for i = 1, tonumber(sInfo.metadataCount) do
 					local dict = sInfo.metadata[i-1]
 					local k = ffi.string(dict.key, dict.keySize)
@@ -94,7 +96,7 @@ if lib.features.libav then
 				end
 				libav.free(sInfo.metadata)
 			end
-			
+
 			return info
 		else
 			return nil

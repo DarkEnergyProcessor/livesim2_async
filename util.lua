@@ -4,7 +4,14 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+require("libs.ls2x")
 local color = require("color")
+local hasLVEP = not(not(package.preload.lvep))
+local lvep
+if hasLVEP then
+	lvep = require("lvep")
+end
+
 local version11 = love._version >= "11.0"
 local util = {}
 
@@ -214,6 +221,32 @@ function util.compareLOVEVersion(maj, min, rev)
 	end
 	-- equal
 	return 0
+end
+
+function util.newDecoder(path)
+	if hasLVEP then
+		local s, v = pcall(love.sound.newDecoder, path)
+		if not(s) then
+			return lvep.newDecoder(path)
+		else
+			return v
+		end
+	else
+		return love.sound.newDecoder(path)
+	end
+end
+
+function util.newVideoStream(path)
+	if hasLVEP then
+		local s, v = pcall(love.video.newStream, path)
+		if not(s) then
+			return lvep.newVideoStream(path)
+		else
+			return v
+		end
+	else
+		return love.video.newVideoStream(path)
+	end
 end
 
 return util

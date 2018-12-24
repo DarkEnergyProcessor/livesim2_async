@@ -14,6 +14,7 @@ local util = require("util")
 local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local render = require("render")
 
 local glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
@@ -120,6 +121,12 @@ local function isLiveClear(self)
 end
 
 local function liveClearCallback(self)
+	if self.persist.render then
+		render.done()
+		love.event.quit()
+		return
+	end
+
 	local noteInfo = self.persist.noteInfo
 	noteInfo.maxCombo = self.data.liveUI:getMaxCombo()
 	noteInfo.score = self.data.liveUI:getScore()
@@ -749,7 +756,7 @@ function DEPLS:load(arg)
 	log.debug("livesim2", "ready")
 end
 
-function DEPLS:start()
+function DEPLS:start(arg)
 	self.persist.debugTimer = timer.every(1, function()
 		-- note debug
 		log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
@@ -764,6 +771,7 @@ function DEPLS:start()
 		end
 	end)
 	self.persist.startTimestamp = os.time()
+	self.persist.render = arg.render
 end
 
 function DEPLS:exit()
@@ -779,6 +787,10 @@ function DEPLS:exit()
 end
 
 function DEPLS:update(dt)
+	if self.persist.render then
+		dt = render.getStep()
+	end
+
 	if self.persist.coverArtDisplayDone then
 		local liveClear = isLiveClear(self)
 
@@ -866,7 +878,7 @@ function DEPLS:update(dt)
 	end
 end
 
-function DEPLS:draw()
+local function draw(self)
 	-- draw background
 	local drawBackground = true
 
@@ -974,6 +986,16 @@ function DEPLS:draw()
 	end
 	-- draw replay touch overlay
 	return replay.drawTouchLine()
+end
+
+function DEPLS:draw()
+	if self.persist.render then
+		render.begin()
+		draw(self)
+		render.commit()
+	else
+		return draw(self)
+	end
 end
 
 local function livesimInputPressed(self, id, x, y)
