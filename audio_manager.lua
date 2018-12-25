@@ -68,21 +68,25 @@ function audioManager.updateRender()
 				obj.soundDataPointer,
 				obj.pos * 2 * obj.channelCount
 			)
-			-- mix
-			ls2x.audiomix.mixSample(
-				audioManager.tempBuffer,
-				audioManager.samplesPerFrame,
-				obj.channelCount,
-				obj.volume
-			)
+			if obj.volume > 0 then
+				-- mix
+				ls2x.audiomix.mixSample(
+					audioManager.tempBuffer,
+					audioManager.samplesPerFrame,
+					obj.channelCount,
+					obj.volume
+				)
+			end
 		else
 			-- just mix
-			ls2x.audiomix.mixSample(
-				obj.soundDataPointer + obj.pos * obj.channelCount,
-				math.min(audioManager.samplesPerFrame, obj.size - obj.pos),
-				obj.channelCount,
-				obj.volume
-			)
+			if obj.volume > 0 then
+				ls2x.audiomix.mixSample(
+					obj.soundDataPointer + obj.pos * obj.channelCount,
+					math.min(audioManager.samplesPerFrame, obj.size - obj.pos),
+					obj.channelCount,
+					obj.volume
+				)
+			end
 			obj.pos = math.min(obj.size, obj.pos + audioManager.samplesPerFrame)
 
 			if obj.pos >= obj.size then

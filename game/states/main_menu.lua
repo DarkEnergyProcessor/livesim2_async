@@ -5,8 +5,8 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local ls2x = require("libs.ls2x")
 
+local capabilities = require("capabilities")
 local color = require("color")
 local mainFont = require("font")
 local L = require("language")
@@ -88,27 +88,7 @@ local function initializeVersionText()
 	bld[#bld + 1] = ") "
 
 	-- Query capabilities
-	if os.getenv("LLA_IS_SET") then
-		-- From modified Openal-Soft
-		bld[#bld + 1] = "LLA:"
-		bld[#bld + 1] = os.getenv("LLA_BUFSIZE")
-		bld[#bld + 1] = "smp/"
-		bld[#bld + 1] = os.getenv("LLA_FREQUENCY")
-		bld[#bld + 1] = "Hz "
-	end
-
-	if jit and jit.status() then
-		bld[#bld + 1] = "JIT "
-	end
-
-	if package.preload.lvep then
-		bld[#bld + 1] = "FFXNative "
-	end
-
-	if ls2x.libav and ls2x.libav.startEncodingSession then
-		bld[#bld + 1] = "VideoRender "
-	end
-
+	bld[#bld + 1] = capabilities()
 	bld[#bld + 1] = "\n"..L("menu:renderer")..": "..table.concat({love.graphics.getRendererInfo()}, " ")
 	bld[#bld + 1] = "\n"..L("menu:writeDir")..": "
 	bld[#bld + 1] = love.filesystem.getSaveDirectory()

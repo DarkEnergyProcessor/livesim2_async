@@ -277,6 +277,7 @@ local function initVolume()
 end
 
 local usage = [[
+Live Simulator: 2 
 Usage: %s [options] [absolute beatmap path]
 
 If 1 argument is passed (beatmap file), then Live Simulator: 2 will try to
@@ -317,14 +318,27 @@ Options:
 * -random                    Enable note randomization when possible. Can be
                              used with -dump option.
 
+* -render <video> <audio>    Render beatmap to <video> and <audio>. Video
+                             will be either H.264, vp9, or mpeg4 in Matroska
+                             container and audio is in WAV format. FFmpeg
+                             libraries must be installed to use this feature!
+
+* -renderheight <height>     Set video rendering height. Defaults to window
+                             height if not specified.
+
+* -renderwidth <width>       Set video rendering width. Defaults to window
+                             width if not specified.
+
 * -replay <file>             Use replay file for preview. Replay file is
                              stored in replays/<beatmap_filename>/<file>.lsr
 
 * -seed <seedlo>,<seedhi>    Set random number generator seed. This allows
                              consistent beatmap randomization and skill
-                             trigger timing.
+                             trigger timing if same seed is used.
 
 * -storyboard <on/off|1/0>   Enable/disable storyboard system.
+
+* -version                   Show Live Simulator: 2 version and exit.
 
 * -width <width>             Set window width. Ignored if used with command
                              that operates without window. Default is 960
@@ -446,6 +460,12 @@ function love.load(argv, gameargv)
 				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid storyboard mode")
 				storyboardOverride = u
 				i = i + 1
+			elseif arg == "-version" then
+				local capabilities = require("capabilities")
+				print(string.format("Live Simulator: 2 v%s (%08d)", DEPLS_VERSION, DEPLS_VERSION_NUMBER))
+				print("Capabilities: "..capabilities())
+				love.event.quit()
+				return
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
 				i = i + 1

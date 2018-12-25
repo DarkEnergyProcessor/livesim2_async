@@ -428,6 +428,7 @@ end
 function lwui:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
 	self.stamina = math.min(self.maxStamina, self.stamina)
+	self.staminaInterpolate = self.stamina
 end
 
 function lwui:getMaxStamina()

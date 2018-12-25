@@ -66,11 +66,13 @@ function render.initialize(out, audio, width, height)
 	)
 end
 
+local temp = {stencil = true}
 function render.begin()
 	if not(render.framebuffer) then return end
 
 	love.graphics.push("all")
-	love.graphics.setCanvas(render.framebuffer)
+	temp[1] = render.framebuffer
+	love.graphics.setCanvas(temp)
 	love.graphics.clear()
 	love.graphics.origin()
 	love.graphics.translate(render.offX, render.offY)

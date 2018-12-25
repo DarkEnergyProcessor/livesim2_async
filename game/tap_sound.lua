@@ -5,7 +5,7 @@
 return {
 	-- Usual SIF tap SFX
 	{
-		volumeMultipler = 0.8,
+		volumeMultipler = 0.75,
 		perfect = "sound/tap/sif/SE_306.ogg",
 		great = "sound/tap/sif/SE_307.ogg",
 		good = "sound/tap/sif/SE_308.ogg",
@@ -23,7 +23,7 @@ return {
 	},
 	-- especially this one
 	{
-		volumeMultipler = 1.5,
+		volumeMultipler = 1,
 		perfect = "sound/tap/gbp/a/00005.wav",
 		great = "sound/tap/gbp/a/00004.wav",
 		good = "sound/tap/gbp/a/00002.wav",

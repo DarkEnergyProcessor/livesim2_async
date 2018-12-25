@@ -816,9 +816,7 @@ function DEPLS:update(dt)
 				end
 
 				-- update skill
-				if not(liveClear) then
-					self.data.skill:update(dt)
-				end
+				self.data.skill:update(dt, liveClear)
 
 				-- play song if it's not played
 				local updtDt = dt
