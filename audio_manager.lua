@@ -12,6 +12,7 @@ local love = require("love")
 local ls2x = require("libs.ls2x")
 
 local lily = require("lily")
+local log = require("logging")
 local cache = require("cache")
 local async = require("async")
 local util = require("util")
@@ -34,7 +35,7 @@ function audioManager.setRenderFramerate(rate)
 		assert(ls2x.audiomix, "audiomix feature is unavailable")
 		assert(smpPerFrame % 1 == 0, "cannot use specified framerate (48000 is not divisible by rate)")
 		assert(ls2x.audiomix.startSession(0.8, 48000, smpPerFrame), "cannot start session")
-		audioManager.tempBuffer = ffi.new("short[?]", smpPerFrame) -- for looping (emulate ringbuffer)
+		audioManager.tempBuffer = ffi.new("short[?]", smpPerFrame * 2) -- for looping (emulate ringbuffer)
 		audioManager.renderRate = rate
 		audioManager.samplesPerFrame = smpPerFrame
 	elseif rate == 0 and audioManager.renderRate > 0 then
@@ -46,7 +47,7 @@ function audioManager.setRenderFramerate(rate)
 end
 
 function audioManager.updateRender()
-	assert(audioManager.rate > 0, "not in render mode")
+	assert(audioManager.renderRate > 0, "not in render mode")
 
 	for i = #audioManager.playing, 1, -1 do
 		local obj = audioManager.playing[i]
@@ -55,15 +56,33 @@ function audioManager.updateRender()
 			-- use temporary buffer for copying
 			local remain = obj.size - obj.pos
 			-- copy almost eof buffer
-			ffi.copy(audioManager.tempBuffer, obj.soundDataPointer, remain * 4)
+			ffi.copy(
+				audioManager.tempBuffer,
+				obj.soundDataPointer + remain * obj.channelCount,
+				remain * 2 * obj.channelCount
+			)
 			obj.pos = (obj.pos + audioManager.samplesPerFrame) % obj.size
 			-- copy start buffer
-			ffi.copy(audioManager.tempBuffer + remain * 2, obj.soundDataPointer, obj.pos * 4)
+			ffi.copy(
+				audioManager.tempBuffer + remain * obj.channelCount,
+				obj.soundDataPointer,
+				obj.pos * 2 * obj.channelCount
+			)
 			-- mix
-			ls2x.audiomix.mixSample(obj.soundDataPointer + obj.pos, math.min(audioManager.samplesPerFrame, obj.size - obj.pos))
+			ls2x.audiomix.mixSample(
+				audioManager.tempBuffer,
+				audioManager.samplesPerFrame,
+				obj.channelCount,
+				obj.volume
+			)
 		else
 			-- just mix
-			ls2x.audiomix.mixSample(obj.soundDataPointer + obj.pos, math.min(audioManager.samplesPerFrame, obj.size - obj.pos))
+			ls2x.audiomix.mixSample(
+				obj.soundDataPointer + obj.pos * obj.channelCount,
+				math.min(audioManager.samplesPerFrame, obj.size - obj.pos),
+				obj.channelCount,
+				obj.volume
+			)
 			obj.pos = math.min(obj.size, obj.pos + audioManager.samplesPerFrame)
 
 			if obj.pos >= obj.size then
@@ -83,6 +102,7 @@ end
 
 function audioManager.newAudio(path, kind)
 	if type(path) == "string" then
+		log.debugf("audioManager", "loading audio %s", path)
 		local sd = cache.get(path)
 		if not(sd) then
 			local sdAsync = async.syncLily(lily.newSoundData(path))
@@ -108,6 +128,7 @@ function audioManager.newAudioDirect(data, kind)
 		soundData = nil,
 		soundDataPointer = nil,
 		originalSoundData = nil,
+		channelCount = nil,
 		source = nil,
 	}
 	if audioManager.renderRate > 0 then
@@ -117,15 +138,22 @@ function audioManager.newAudioDirect(data, kind)
 			data = sdAsync:getValues() -- automatically sync
 		end
 
+		obj.channelCount = util.getChannelCount(data)
+
 		-- check sample rate
 		if data:getSampleRate() ~= 48000 then
+			log.debugf("audioManager", "sample rate %d ~= 48000, resampling", data:getSampleRate())
+			log.debugf("audioManager", "audio duration=%.2f, channel=%d",
+				data:getSampleCount() / data:getSampleRate(),
+				obj.channelCount
+			)
 			-- new sound data for resample
 			local len = math.ceil(48000 * data:getSampleCount() / data:getSampleRate())
-			local data2 = love.sound.newSoundData(len, 48000, 16, util.getChannelCount(data))
+			local data2 = love.sound.newSoundData(len, 48000, 16, obj.channelCount)
 			ls2x.audiomix.resample(
 				ffi.cast("short*", data:getPointer()),
 				ffi.cast("short*", data2:getPointer()),
-				data:getSampleCount(), len, util.getChannelCount(data)
+				data:getSampleCount(), len, obj.channelCount
 			)
 			obj.originalSoundData = data
 			data = data2
@@ -160,6 +188,7 @@ function audioManager.clone(obj)
 		soundData = obj.soundData,
 		soundDataPointer = obj.soundDataPointer,
 		originalSoundData = obj.originalSoundData,
+		channelCount = obj.channelCount,
 		source = obj.source,
 	}
 	if x.source then x.source = x.source:clone() end

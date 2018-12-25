@@ -4,13 +4,15 @@
 
 local love = require("love")
 local log = require("logging")
+local util = require("util")
+local lily
 
-if love._version >= "11.0" then
-	local lily = require("libs.lily.v3.lily")
+if util.compareLOVEVersion(11, 0) >= 0 then
+	lily = require("libs.lily.v3.lily")
 	log.debugf("lily", "using version 3 (%s)", lily._VERSION)
-	return lily
 else
-	local lily = require("libs.lily.v2.lily")
+	lily = require("libs.lily.v2.lily")
 	log.debugf("lily", "using version 2 (%s)", lily._VERSION)
-	return lily
 end
+
+return lily

@@ -50,7 +50,13 @@ local audioManager = require("audio_manager")
 local beatmapList = require("game.beatmap.list")
 local beatmapRandomizer = require("game.live.randomizer3")
 
-local function initWindow(w, h, f)
+local function initWindow(w, h, f, v)
+	local vsync
+	if util.compareLOVEVersion(11, 0) >= 0 then
+		vsync = v and -1 or 0
+	else
+		vsync = v
+	end
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
 	love.window.setMode(w, h, {
 		resizable = true,
@@ -62,7 +68,7 @@ local function initWindow(w, h, f)
 		fullscreen = love._os == "iOS" or love._os == "Android" or f,
 		fullscreentype = "desktop",
 		-- Use adaptive vsync (driver dependent)
-		vsync = -1,
+		vsync = vsync,
 	})
 	love.window.setTitle("Live Simulator: 2")
 	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
@@ -376,6 +382,7 @@ function love.load(argv, gameargv)
 	local dumpFormat = "json"
 	local randomizeBeatmap
 	local randomSeed
+	local render
 	do
 		local i = 1
 		while i <= #argv do
@@ -412,6 +419,17 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-random" then
 				randomizeBeatmap = true
+			elseif arg == "-render" then
+				render = {}
+				render.output = assert(argv[i+1], "please specify output file")
+				render.audio = assert(argv[i+2], "please specify audio output file")
+				i = i + 2
+			elseif arg == "-renderwidth" and render then
+				render.width = assert(tonumber(argv[i+1]), "please specify correct width")
+				i = i + 1
+			elseif arg == "-renderheight" and render then
+				render.height = assert(tonumber(argv[i+1]), "please specify correct height")
+				i = i + 1
 			elseif arg == "-seed" then
 				local seed = assert(argv[i+1], "please specify seed in format <low>,<hi>")
 				local slo, shi = seed:match("(%d+),(%d+)")
@@ -581,12 +599,22 @@ function love.load(argv, gameargv)
 			end
 		end
 
+		if render then
+			assert(
+				playBeatmapName or absolutePlayBeatmapName,
+				"render requires beatmap to be specified, either absolute path or -play switch"
+			)
+			render.width = render.width or windowWidth
+			render.height = render.height or windowHeight
+			autoplayMode = true
+		end
+
 		-- Initialize audio module
 		require("love.audio")
 		-- Initialize volume
 		initVolume()
 		-- Initialize window
-		initWindow(windowWidth, windowHeight, fullscreen)
+		initWindow(windowWidth, windowHeight, fullscreen, not(render))
 		-- Initialize Yohane
 		initializeYohane()
 		-- Register all gamestates
@@ -603,6 +631,7 @@ function love.load(argv, gameargv)
 				random = randomizeBeatmap,
 				seed = randomSeed,
 				storyboard = storyboardMode,
+				render = render
 			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
@@ -614,6 +643,7 @@ function love.load(argv, gameargv)
 				random = randomizeBeatmap,
 				seed = randomSeed,
 				storyboard = storyboardMode,
+				render = render
 			})
 		else
 			-- Jump to default game state

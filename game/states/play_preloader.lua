@@ -62,7 +62,7 @@ end
 function playPreloader:start(arg)
 	local r = false
 	if arg.render then
-		render.initialize(arg.render.output, arg.render.width, arg.render.height)
+		render.initialize(arg.render.output, arg.render.audio, arg.render.width, arg.render.height)
 		r = true
 	end
 	gamestate.replace(loadingInstance.getInstance(), "livesim2", {

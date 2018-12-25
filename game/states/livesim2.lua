@@ -122,9 +122,7 @@ end
 
 local function liveClearCallback(self)
 	if self.persist.render then
-		render.done()
 		love.event.quit()
-		return
 	end
 
 	local noteInfo = self.persist.noteInfo
@@ -205,7 +203,11 @@ function DEPLS:load(arg)
 		replay.setEventData(arg.replay.events)
 	end
 	-- window dimensions
-	self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
+	if arg.render then
+		self.persist.windowWidth, self.persist.windowHeight = render.getDimensions()
+	else
+		self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
+	end
 	-- dim delay
 	self.persist.liveDelay = math.max(setting.get("LIVESIM_DELAY") * 0.001, 1)
 	self.persist.liveDelayCounter = self.persist.liveDelay
@@ -784,6 +786,10 @@ function DEPLS:exit()
 	if self.data.video then
 		self.data.video.drawable:pause()
 	end
+
+	if self.persist.render then
+		render.done()
+	end
 end
 
 function DEPLS:update(dt)
@@ -999,6 +1005,7 @@ function DEPLS:draw()
 end
 
 local function livesimInputPressed(self, id, x, y)
+	if self.persist.render then return end
 	-- id 0 is mouse
 	if
 		self.data.pauseObject:isPaused() or
@@ -1015,6 +1022,7 @@ local function livesimInputPressed(self, id, x, y)
 end
 
 local function livesimInputMoved(self, id, x, y)
+	if self.persist.render then return end
 	if self.data.pauseObject:isPaused() then return end
 	if not(self.persist.autoplay or self.persist.replayMode) then
 		replay.recordTouchmoved(id, x, y)
@@ -1047,6 +1055,7 @@ DEPLS:registerEvent("resize", function(self, w, h)
 end)
 
 DEPLS:registerEvent("keypressed", function(self, key, _, rep)
+	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
 	if
@@ -1063,6 +1072,7 @@ DEPLS:registerEvent("keypressed", function(self, key, _, rep)
 end)
 
 DEPLS:registerEvent("keyreleased", function(self, key)
+	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s", key)
 	if key == "escape" then
@@ -1090,6 +1100,7 @@ end)
 local mouseIsDown = false
 
 DEPLS:registerEvent("mousepressed", function(self, x, y, b, ist)
+	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end -- handled separately/handle left click only
 	mouseIsDown = true
@@ -1103,6 +1114,7 @@ DEPLS:registerEvent("mousemoved", function(self, x, y, _, _, ist)
 end)
 
 DEPLS:registerEvent("mousereleased", function(self, x, y, b, ist)
+	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	if ist or b > 1 then return end
 	mouseIsDown = false
