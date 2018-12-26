@@ -274,17 +274,25 @@ function beatmapSelect:start()
 	beatmapList.enumerate(function(id, name, fmt, diff)
 		if id == "" then
 			if self.persist.active then
+				-- sort
+				table.sort(self.persist.beatmapList, function(a, b)
+					return a.name < b.name
+				end)
+
+				-- initialize
 				initializeBeatmapListUI(self)
 				setStatusText(self)
 			end
 			return false
 		end
+
 		self.persist.beatmapList[#self.persist.beatmapList + 1] = {
 			name = name,
 			format = fmt,
 			difficulty = diff,
 			id = id
 		}
+		setStatusText(self, L("beatmapSelect:loading").." ("..#self.persist.beatmapList..")")
 		return true
 	end)
 	setStatusText(self, L"beatmapSelect:loading")

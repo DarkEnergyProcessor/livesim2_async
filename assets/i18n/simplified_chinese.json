@@ -78,6 +78,7 @@
 		"setting:live:noteSpeed": "下落速度",
 		"setting:live:skillPopup": "按键技能效果",
 		"setting:live:textScaling": "COMBO文字比例",
+		"setting:live:vanish": "下/上隐效果",
 		"setting:volume": "音量设置",
 		"setting:volume:effect": "音效音量",
 		"setting:volume:master": "主音乐音量",
