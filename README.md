@@ -68,6 +68,8 @@ Special Thanks
 
 * CK.Tex - Simplified Chinese translation.
 
+* Bass & Azux - Polish translation.
+
 * Some other people who suggest something and helping me which I forgot his/her name
 
 License

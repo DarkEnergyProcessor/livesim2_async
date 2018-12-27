@@ -287,7 +287,7 @@ function changeUnits:draw()
 			love.graphics.setColor(color.white75PT)
 			love.graphics.rectangle("fill", pos[1] - 64, pos[2] + 40, 128, h)
 			love.graphics.setColor(color.black75PT)
-			love.graphics.print(key, pos[1] - self.data.mainFont:getWidth(key) * 0.5, pos[2] + 40)
+			love.graphics.print(key:upper(), pos[1] - self.data.mainFont:getWidth(key) * 0.5, pos[2] + 40)
 		end
 	else
 		error("invalid mode")
