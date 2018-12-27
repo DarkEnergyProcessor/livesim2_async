@@ -65,7 +65,7 @@
 		"changeUnits:keymapText": "Naciśnij na ikonę postaci, aby zmienić klawisz.\nNie potrzebujesz tego w wersji mobilnej.",
 		"changeUnits:mode": "Obecny tryb: %{mode}",
 		"changeUnits:selectUnits": "Wybierz postacie",
-		"changeUnits:unitsMode": "Tryb postaci",
+		"changeUnits:unitsMode": "Tryb dotykowy",
 		"changeUnits:unitsText": "Naciśnij na dane kółko, aby zmienić postać.\nPamiętaj, że pewne beatmapy\n mogą nadpisać postacie pokazane tutaj",
 		"setting:general": "Ustawienia ogólne",
 		"setting:general:beatmapOffset": "Opóźnienie beatmapy (ms)",

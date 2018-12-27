@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+
 local vires = {
 	data = {
 		virtualW = 0,
@@ -21,6 +22,49 @@ function vires.init(width, height)
 	vires.data.virtualW, vires.data.virtualH = width, height
 	vires.data.screenX, vires.data.screenY = width, height
 	vires.isInit = true
+
+	-- Create background sprite batch.
+	-- Cannot use async here because it's not available.
+	local thickness = 3
+	vires.spriteBatch = love.graphics.newSpriteBatch(
+		love.graphics.newImage("assets/image/background/pattern.png"),
+		thickness * 26
+	)
+	local patternMyus = love.graphics.newQuad(0, 0, 128, 128, 256, 128)
+	local patternAqua = love.graphics.newQuad(128, 0, 128, 128, 256, 128)
+
+	for i = 0, thickness-1 do
+		-- Myus, left, Y start at 0
+		vires.spriteBatch:add(patternMyus, -i * 128, 0, 0, 1, 1, 128, 0)
+		vires.spriteBatch:add(patternMyus, -i * 128, 128, 0, 1, 1, 128, 0)
+		vires.spriteBatch:add(patternMyus, -i * 128, 256, 0, 1, 1, 128, 0)
+		vires.spriteBatch:add(patternMyus, -i * 128, 384, 0, 1, 1, 128, 0)
+		vires.spriteBatch:add(patternMyus, -i * 128, 512, 0, 1, 1, 128, 0)
+		-- Aqua, right, Y start at 0
+		vires.spriteBatch:add(patternAqua, 960 + i * 128, 0)
+		vires.spriteBatch:add(patternAqua, 960 + i * 128, 128)
+		vires.spriteBatch:add(patternAqua, 960 + i * 128, 256)
+		vires.spriteBatch:add(patternAqua, 960 + i * 128, 384)
+		vires.spriteBatch:add(patternAqua, 960 + i * 128, 512)
+		-- Myus, top, X start at -64
+		vires.spriteBatch:add(patternMyus, -64, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 64, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 192, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 320, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 448, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 576, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 704, -i * 128, 0, 1, 1, 0, 128)
+		vires.spriteBatch:add(patternMyus, 832, -i * 128, 0, 1, 1, 0, 128)
+		-- Aqua, bottom, X start at -64
+		vires.spriteBatch:add(patternMyus, -64, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 64, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 192, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 320, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 448, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 576, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 704, 640 + i * 128)
+		vires.spriteBatch:add(patternMyus, 832, 640 + i * 128)
+	end
 end
 
 function vires.update(nw, nh)
@@ -46,6 +90,7 @@ function vires.set()
 	if not(vires.isInit) then return end
 	love.graphics.translate(vires.data.offX, vires.data.offY)
 	love.graphics.scale(vires.data.scaleOverall)
+	love.graphics.draw(vires.spriteBatch)
 end
 
 function vires.unset()

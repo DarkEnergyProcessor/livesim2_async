@@ -277,7 +277,7 @@ local function initVolume()
 end
 
 local usage = [[
-Live Simulator: 2 
+Live Simulator: 2
 Usage: %s [options] [absolute beatmap path]
 
 If 1 argument is passed (beatmap file), then Live Simulator: 2 will try to

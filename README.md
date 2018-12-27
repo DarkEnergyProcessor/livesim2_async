@@ -70,6 +70,8 @@ Special Thanks
 
 * Bass & Azux - Polish translation.
 
+* Luboss - Slovak translation.
+
 * Some other people who suggest something and helping me which I forgot his/her name
 
 License
