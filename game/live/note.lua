@@ -40,8 +40,8 @@ note.quadRegion = {
 	region(12, 0), -- simultaneous mark
 	-- Neon note base frame
 	region(13, 0), -- smile (17)
-	region(14, 0), -- pure
-	region(15, 0), -- cool
+	region(15, 0), -- pure
+	region(14, 0), -- cool
 	region(3, 1), -- blue
 	region(5, 1), -- yellow
 	region(4, 1), -- orange
@@ -53,8 +53,8 @@ note.quadRegion = {
 	region(14, 2), -- simultaneous
 	-- Neon note base frame with swing
 	region(0, 1), -- smile (29)
-	region(1, 1), -- pure
-	region(2, 1), -- cool
+	region(2, 1), -- pure
+	region(1, 1), -- cool
 	region(6, 1), -- blue
 	region(8, 1), -- yellow
 	region(7, 1), -- orange
