@@ -73,7 +73,7 @@ end
 
 function deplsLoader:getHash()
 	local internal = Luaoop.class.data(self)
-	return internal.beatmap:getHash()
+	return md5(internal.beatmap:getHash()..self:getFormatName())
 end
 
 function deplsLoader:getNotesList()

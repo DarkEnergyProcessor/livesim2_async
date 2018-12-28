@@ -97,7 +97,8 @@ local function setBeatmapInfo(_, data)
 	local infodata = self.persist.trackData.live[diff]
 	setDifficulty(self, string.format("%s, %d\226\152\134", diff, infodata.star))
 	setGoalsInfo(self, infodata)
-	self.data.playButton:setData({self, infodata})
+	self.data.playButton:setData({self, infodata, false})
+	self.data.viewReplay:setData({self, infodata, true})
 end
 
 local function stringToHex(str)
@@ -370,11 +371,18 @@ local function selectPlayButton(_, data)
 	-- Okay play beatmap
 	self.persist.gamestateEntering = true
 	beatmapList.registerRelative(beatmapName, function(name, summary)
-		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
-			beatmapName = name,
-			summary = summary,
-			random = self.data.randomCheck:isChecked()
-		})
+		if data[3] then
+			gamestate.enter(nil, "viewReplay", {
+				name = name,
+				summary = summary
+			})
+		else
+			gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+				beatmapName = name,
+				summary = summary,
+				random = self.data.randomCheck:isChecked()
+			})
+		end
 	end)
 end
 
@@ -408,7 +416,7 @@ function beatmapInfoDL:load()
 	glow.addFrame(self.data.diffFrame)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(5)
+		self.data.background = backgroundLoader.load(13)
 	end
 
 	if self.data.gradient == nil then
@@ -434,10 +442,17 @@ function beatmapInfoDL:load()
 	end
 	glow.addElement(self.data.randomCheck, 24, 582)
 
+	if self.data.viewReplay == nil then
+		self.data.viewReplay = selectButton(L"beatmapSelect:viewReplay")
+		self.data.viewReplay:addEventListener("mousereleased", selectPlayButton)
+		self.data.viewReplay:setData({self, nil, true})
+	end
+	glow.addElement(self.data.viewReplay, 710, 302)
+
 	if self.data.playButton == nil then
 		self.data.playButton = selectButton(L"beatmapSelect:play")
 		self.data.playButton:addEventListener("mousereleased", selectPlayButton)
-		self.data.playButton:setData({self, nil})
+		self.data.playButton:setData({self, nil, false})
 	end
 	glow.addElement(self.data.playButton, 710, 382)
 

@@ -112,7 +112,7 @@ function beatmapDownload:load()
 	glow.addFrame(self.data.frame)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(5)
+		self.data.background = backgroundLoader.load(13)
 	end
 
 	if self.data.back == nil then

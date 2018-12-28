@@ -104,7 +104,13 @@ function ls2Loader:getHash()
 			end
 		end
 
-		return md5(table.concat(data, ","))
+		local story = ""
+		if internal.ls2.sections.SRYL then
+			internal.file:seek(internal.ls2.sections.SRYL[1])
+			story = md5(ls2.section_processor.SRYL[1](internal.file))
+		end
+
+		return md5(table.concat(data, ",")..story)
 	else
 		-- Should not happen for valid LS2 beatmap
 		log.warning("noteloader.livesim2", "Hashing full beatmap file")

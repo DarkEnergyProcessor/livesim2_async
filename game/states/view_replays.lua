@@ -68,7 +68,7 @@ function replayView:load(arg)
 	glow.clear()
 
 	if self.persist.replayText == nil then
-		self.persist.replayText = love.graphics.newText(mainFont.get(26))
+		self.persist.replayText = love.graphics.newText(mainFont.get(22))
 		util.addTextWithShadow(self.persist.replayText, L("beatmapSelect:viewReplay:desc", {beatmapName = arg.name}), 0, 0)
 	end
 

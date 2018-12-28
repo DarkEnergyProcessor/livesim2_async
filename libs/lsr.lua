@@ -22,7 +22,7 @@
 --]]---------------------------------------------------------------------------
 
 local lsr = {
-	_VERSION = "1.0",
+	_VERSION = "1.0.1",
 	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
@@ -135,10 +135,12 @@ function lsr.loadReplay(path, beatmapHash)
 
 	-- check
 	if lsr.file.read(file, 4) ~= "ls2r" then
+		lsr.file.close(file)
 		return nil, "invalid header"
 	end
 	local hash = lsr.file.read(file, 16)
 	if beatmapHash and hash ~= beatmapHash then
+		lsr.file.close(file)
 		return nil, "invalid beatmap"
 	end
 
