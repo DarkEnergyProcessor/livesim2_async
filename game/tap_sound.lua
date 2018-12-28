@@ -19,7 +19,7 @@ return {
 		great = "sound/tap/gbp/00004.wav",
 		good = "sound/tap/gbp/00002.wav",
 		bad = "sound/tap/gbp/00003.wav",
-		StarExplode = "sound/tap/sif/SE_326.ogg"
+		starExplode = "sound/tap/sif/SE_326.ogg"
 	},
 	-- especially this one
 	{

@@ -318,7 +318,7 @@ function DEPLS:load(arg)
 			end
 			if judgement ~= "perfect" and judgement ~= "great" then
 				if object.star then
-					playTapSFXSound(self.data.tapSFX, "starExplode", false)
+					playTapSFXSound(self.data.tapSFX, "starExplode", self.data.tapNoteAccumulation)
 				end
 				self.persist.noteInfo.fullCombo = false
 			end
