@@ -1049,7 +1049,9 @@ local function livesimInputReleased(self, id, x, y)
 end
 
 DEPLS:registerEvent("resize", function(self, w, h)
-	self.persist.windowWidth, self.persist.windowHeight = w, h
+	if not(self.persist.render) then
+		self.persist.windowWidth, self.persist.windowHeight = w, h
+	end
 end)
 
 DEPLS:registerEvent("keypressed", function(self, key, _, rep)

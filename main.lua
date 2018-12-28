@@ -323,6 +323,9 @@ Options:
                              container and audio is in WAV format. FFmpeg
                              libraries must be installed to use this feature!
 
+* -renderfxaa                Use Fast Approximate Anti-Aliasing for the whole
+                             rendering.
+
 * -renderheight <height>     Set video rendering height. Defaults to window
                              height if not specified.
 
@@ -438,6 +441,8 @@ function love.load(argv, gameargv)
 				render.output = assert(argv[i+1], "please specify output file")
 				render.audio = assert(argv[i+2], "please specify audio output file")
 				i = i + 2
+			elseif arg == "-renderfxaa" and render then
+				render.fxaa = true
 			elseif arg == "-renderwidth" and render then
 				render.width = assert(tonumber(argv[i+1]), "please specify correct width")
 				i = i + 1
