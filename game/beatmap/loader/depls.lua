@@ -6,8 +6,9 @@ local Luaoop = require("libs.Luaoop")
 local log = require("logging")
 local love = require("love")
 local util = require("util")
-local baseLoader = require("game.beatmap.base")
 local beatmap = require("beatmap")
+local md5 = require("game.md5")
+local baseLoader = require("game.beatmap.base")
 
 -------------------------
 -- DEPLS Beatmap Class --
