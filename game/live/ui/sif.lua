@@ -638,7 +638,7 @@ end
 
 function sifui:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
-	self.stamina = math.min(self.maxStamina, self.stamina)
+	self.stamina = self.maxStamina
 	self:_updateStamina()
 end
 

@@ -38,7 +38,7 @@ local function HSL(h, s, l, a)
 	h, s, l = h/256*6, s/255, l/255
 	local c = (1-math.abs(2*l-1))*s
 	local x = (1-math.abs(h%2-1))*c
-	local m,r,g,b = (l-.5*c), 0,0,0
+	local m,r,g,b = (l-.5*c)
 	if h < 1     then r,g,b = c,x,0
 	elseif h < 2 then r,g,b = x,c,0
 	elseif h < 3 then r,g,b = 0,c,x
@@ -139,7 +139,7 @@ local scoreGlowColor = {
 	{187, 170, 255}     -- S score
 }
 
-function lwui:__construct(autoplay, mineff)
+function lwui:__construct(autoplay)
 	self.timer = timer.new()
 	self.fonts = assetCache.loadMultipleFonts({
 		{"fonts/Venera-700.otf", 14},
@@ -353,6 +353,7 @@ function lwui:comboJudgement(judgement, addcombo)
 	elseif judgement == "miss" then
 		self.judgementText:addf({color.hexBBAAFF, "MISS"}, 960, "center", -480, h * -0.5)
 		breakCombo = true
+		addcombo = true -- regardless
 	else
 		error("invalid judgement '"..tostring(judgement).."'", 2)
 	end
@@ -427,7 +428,7 @@ end
 
 function lwui:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
-	self.stamina = math.min(self.maxStamina, self.stamina)
+	self.stamina = self.maxStamina
 	self.staminaInterpolate = self.stamina
 end
 
