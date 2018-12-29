@@ -9,6 +9,7 @@ local color = require("color")
 local setting = require("setting")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local util = require("util")
 local L = require("language")
 
 local glow = require("game.afterglow")
