@@ -308,7 +308,7 @@ end
 
 function beatmapSelect:resumed()
 	self.persist.active = true
-	if self.data.audioPreview == nil and self.persist.summary then
+	if self.data.audioPreview == nil and self.persist.summary and self.persist.summary.audio then
 		self.data.audioPreview = love.audio.newSource(self.persist.summary.audio, "stream")
 		self.data.audioPreview:setVolume(volume.get("music"))
 	end
