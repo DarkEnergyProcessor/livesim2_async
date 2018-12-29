@@ -86,7 +86,7 @@ local function pauseGame(self, fail)
 			self.data.song:pause()
 		end
 		if self.data.video then
-			self.data.video:pause()
+			self.data.video.drawable:pause()
 		end
 		self.data.pauseObject:pause(self.persist.beatmapDisplayName, fail)
 	end
