@@ -793,6 +793,8 @@ function DEPLS:exit()
 end
 
 function DEPLS:update(dt)
+	local paused = self.data.pauseObject:isPaused()
+
 	if self.persist.render then
 		dt = render.getStep()
 	end
@@ -801,6 +803,9 @@ function DEPLS:update(dt)
 		local liveClear = isLiveClear(self)
 
 		self.persist.liveDelayCounter = self.persist.liveDelayCounter - dt
+		if paused and self.persist.liveDelayCounter ~= -math.huge then
+			self.persist.liveDelayCounter = math.max(self.persist.liveDelayCounter, 0)
+		end
 
 		for i = 1, #self.data.tapSFX.accumulateTracking do
 			self.data.tapSFX.accumulateTracking[i].alreadyPlayed = false
@@ -808,7 +813,7 @@ function DEPLS:update(dt)
 
 		-- update pause object first
 		self.data.pauseObject:update(dt)
-		if not(self.data.pauseObject:isPaused()) then
+		if not(paused) then
 			if self.persist.liveDelayCounter <= 0 then
 				-- update storyboard
 				if self.data.storyboard then
@@ -869,7 +874,7 @@ function DEPLS:update(dt)
 			end
 		end
 
-		self.data.liveUI:update(dt, self.data.pauseObject:isPaused())
+		self.data.liveUI:update(dt, paused)
 
 		if liveClear then
 			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, liveClearCallback, self)
