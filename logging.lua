@@ -106,13 +106,13 @@ if love._os == "Windows" then
 				local csbi = ffi.new("logging_CSBI[1]")
 				local function pushMode(mode)
 					Kernel32.GetConsoleScreenBufferInfo(stderr, csbi)
-					local m = csbi.attributes
+					local m = csbi[0].attributes
 					Kernel32.SetConsoleTextAttribute(stderr, mode)
 					return m
 				end
 				local function popMode(mode)
 					Kernel32.SetConsoleTextAttribute(stderr, mode)
-					ffi.fill(csbi, ffi.sizeof("logging_CSBI"), 0)
+					ffi.fill(csbi[0], ffi.sizeof("logging_CSBI"), 0)
 				end
 
 				function warnImpl(tag, text)
