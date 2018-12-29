@@ -34,7 +34,7 @@ function audioManager.setRenderFramerate(rate)
 		ffi = require("ffi")
 		assert(ls2x.audiomix, "audiomix feature is unavailable")
 		assert(smpPerFrame % 1 == 0, "cannot use specified framerate (48000 is not divisible by rate)")
-		assert(ls2x.audiomix.startSession(0.8, 48000, smpPerFrame), "cannot start session")
+		assert(ls2x.audiomix.startSession(volume.get("master"), 48000, smpPerFrame), "cannot start session")
 		audioManager.tempBuffer = ffi.new("short[?]", smpPerFrame * 2) -- for looping (emulate ringbuffer)
 		audioManager.renderRate = rate
 		audioManager.samplesPerFrame = smpPerFrame
