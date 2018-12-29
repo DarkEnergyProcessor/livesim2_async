@@ -1009,7 +1009,7 @@ function noteManager:setTouch(pos, id, rel, prev)
 
 	if rel and self.touchInput[id].note then
 		local v = self.touchInput[id].note
-		if v.long then
+		if v.long and not(v.delete) then
 			local judgement = v:unTap()
 			self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
 		end
@@ -1021,27 +1021,29 @@ function noteManager:setTouch(pos, id, rel, prev)
 					if prev and v.swing or not(prev) then
 						-- process new note
 						local judgement = v:tap()
-						self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
+						if judgement then
+							self.callback(v, v.lanePosition, v.position:clone(), judgement, v.lnHolding and 1 or 0)
 
-						if self.touchInput[id] then
-							-- if prev exists, that means we're sliding
-							if self.touchInput[id].position == prev and self.touchInput[id].note then
-								-- process old note
-								local vold = self.touchInput[id].note
-								if vold and vold.long then
-									-- release long note
-									judgement = vold:unTap()
-									self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+							if self.touchInput[id] then
+								-- if prev exists, that means we're sliding
+								if self.touchInput[id].position == prev and self.touchInput[id].note then
+									-- process old note
+									local vold = self.touchInput[id].note
+									if vold and vold.long then
+										-- release long note
+										judgement = vold:unTap()
+										self.callback(v, v.lanePosition, v.position:clone(), judgement, 2)
+									end
 								end
+								-- set note
+								self.touchInput[id].position = pos
+								self.touchInput[id].note = v
+							else
+								self.touchInput[id] = {
+									position = pos,
+									note = v
+								}
 							end
-							-- set note
-							self.touchInput[id].position = pos
-							self.touchInput[id].note = v
-						else
-							self.touchInput[id] = {
-								position = pos,
-								note = v
-							}
 						end
 					end
 
