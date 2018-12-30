@@ -46,7 +46,7 @@ function gameLang:load()
 	end
 
 	if self.data.buttonFrame == nil then
-		local frame = glow.frame(101, 50, 758, 546)
+		local frame = glow.frame(101, 50, 800, 546)
 		for i, v in ipairs(L.enum()) do
 			local elem = longButtonUI(v.name)
 			elem:addEventListener("mousereleased", setLanguage)
