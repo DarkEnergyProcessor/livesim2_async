@@ -24,10 +24,10 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 
 -- Version string
-DEPLS_VERSION = "3.0.1"
+DEPLS_VERSION = "3.0.2"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03000199
+DEPLS_VERSION_NUMBER = 03000299
 
 local love = require("love")
 local Yohane = require("libs.Yohane")

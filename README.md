@@ -76,7 +76,7 @@ Special Thanks
 
 * jwun - Spanish translation.
 
-* Salior & Nick "Zorb" Cage - Russian translation.
+* Salaron & Nick "Zorb" Cage - Russian translation.
 
 * Some other people who suggest something and helping me which I forgot his/her name
 
