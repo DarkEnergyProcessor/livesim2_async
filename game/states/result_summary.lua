@@ -96,6 +96,8 @@ function resultScreen:load(arg)
 		end
 	end, nil, not(arg.allowRetry))
 	self.data.result:setInformation(arg.replay, arg.replay.accuracy, comboRange)
+
+	self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
 end
 
 function resultScreen:update(dt)
@@ -105,6 +107,11 @@ end
 function resultScreen:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
+	love.graphics.push()
+	love.graphics.origin()
+	love.graphics.setColor(color.black75PT)
+	love.graphics.rectangle("fill", 0, 0, self.persist.windowWidth, self.persist.windowHeight)
+	love.graphics.pop()
 	self.data.result:draw()
 end
 
@@ -112,6 +119,10 @@ resultScreen:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return gamestate.leave(loadingInstance.getInstance())
 	end
+end)
+
+resultScreen:registerEvent("resize", function(self, w, h)
+	self.persist.windowWidth, self.persist.windowHeight = w, h
 end)
 
 return resultScreen

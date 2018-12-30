@@ -40,7 +40,7 @@ function result:__construct(beatmapName)
 		"assets/image/live/ef_313_000_w2x.png",
 	}, {mipmaps = true})
 	-- fonts
-	self.fonts = {mainFont.get(26, 30, 40)}
+	self.fonts = {mainFont.get(20, 26, 30, 40)}
 	self.tokenQuad = love.graphics.newQuad(14 * 128, 15 * 128, 128, 128, 2048, 2048)
 	-- frame
 	self.frame = glow.frame(0, 0, 960, 640)
@@ -90,14 +90,14 @@ function result:__construct(beatmapName)
 	end)
 	self.frame:addElement(self.saveReplayButton, 600, 356)
 	-- text objects
-	self.staticText = love.graphics.newText(self.fonts[3])
+	self.staticText = love.graphics.newText(self.fonts[4])
 	util.addTextWithShadow(self.staticText, L"general:maxCombo", 600, 80)
 	util.addTextWithShadow(self.staticText, L"general:token", 648, 156)
 	util.addTextWithShadow(self.staticText, L"general:score", 600, 232)
 	self.beatmapNameText = love.graphics.newText(self.fonts[1])
 	util.addTextWithShadow(self.beatmapNameText, beatmapName, 0, 0)
-	self.statusText = love.graphics.newText(self.fonts[2])
-	self.judgementText = love.graphics.newText(self.fonts[3])
+	self.statusText = love.graphics.newText(self.fonts[3])
+	self.judgementText = love.graphics.newText(self.fonts[4])
 	-- information table
 	self.noteInfoTable = nil
 	self.displayJudgement = {
@@ -187,7 +187,7 @@ function result:draw()
 	love.graphics.draw(self.judgementText, 48, 0)
 	love.graphics.draw(self.beatmapNameText, 80, 390)
 	if self.saveReplayVanishTimer > 0 then
-		love.graphics.setFont(self.fonts[1])
+		love.graphics.setFont(self.fonts[2])
 		love.graphics.setColor(color.black)
 		love.graphics.print(self.saveReplayStatus, 599, 389)
 		love.graphics.print(self.saveReplayStatus, 601, 391)
