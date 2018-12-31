@@ -72,7 +72,7 @@ local function initWindow(w, h, f, v)
 	})
 	love.window.setTitle("Live Simulator: 2")
 	local icon
-	if love._os == "Mac OS X" then
+	if love._os == "OS X" then
 		icon = love.image.newImageData("assets/image/icon/icon_1024x1024.png")
 	else
 		icon = love.image.newImageData("assets/image/icon/icon.png")
