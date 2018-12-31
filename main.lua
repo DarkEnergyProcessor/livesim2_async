@@ -71,7 +71,13 @@ local function initWindow(w, h, f, v)
 		vsync = vsync,
 	})
 	love.window.setTitle("Live Simulator: 2")
-	love.window.setIcon(love.image.newImageData("assets/image/icon/icon.png"))
+	local icon
+	if love._os == "Mac OS X" then
+		icon = love.image.newImageData("assets/image/icon/icon_1024x1024.png")
+	else
+		icon = love.image.newImageData("assets/image/icon/icon.png")
+	end
+	love.window.setIcon(icon)
 	-- Initialize virtual resolution
 	log.debug("main", "initializing virtual resolution")
 	vires.init(960, 640)
