@@ -134,6 +134,10 @@ function selectUnits:start(arg)
 	async.runFunction(generateFrame):run(self, arg[2], unitListTemp)
 end
 
+function selectUnits:update(dt)
+	return self.data.frame:update(dt)
+end
+
 function selectUnits:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
