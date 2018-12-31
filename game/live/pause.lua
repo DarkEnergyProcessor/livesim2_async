@@ -100,7 +100,7 @@ function pause:_drawPause()
 		local fail = L"livesim2:pause:fail"
 		w = self.mainCounterFont:getWidth(fail)
 		love.graphics.setColor(color.orangeRed)
-		love.graphics.print("Failed", 480-w*0.5, 128)
+		love.graphics.print(fail, 480-w*0.5, 128)
 	else
 		local paused = L"livesim2:pause:pause"
 		w = self.mainCounterFont:getWidth(paused)
