@@ -1,7 +1,7 @@
 -- Live Simulator: 2 Replay Loader
 -- Part of Live Simulator: 2, released as standalone library
 --[[---------------------------------------------------------------------------
--- Copyright (c) 2039 Dark Energy Processor
+-- Copyright (c) 2040 Dark Energy Processor
 --
 -- This software is provided 'as-is', without any express or implied
 -- warranty. In no event will the authors be held liable for any damages
@@ -23,7 +23,7 @@
 
 local lsr = {
 	_VERSION = "1.0.1",
-	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under zLib license",
+	_LICENSE = "Copyright \169 2040 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
 lsr.file = {} -- user-replaceable

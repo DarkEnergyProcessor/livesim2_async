@@ -1,7 +1,7 @@
 -- Live Simulator: 2 binary beatmap loader
 -- Part of Live Simulator: 2 v2.x
 --[[---------------------------------------------------------------------------
--- Copyright (c) 2039 Dark Energy Processor Corporation
+-- Copyright (c) 2040 Dark Energy Processor Corporation
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to
