@@ -12,7 +12,8 @@ local colorCache = {}
 -- LOVE color division util
 local div = 1
 local haslove, love = pcall(require, "love")
-if haslove and love._version >= "11.0" then
+local loveV11 = haslove and love._version >= "11.0"
+if loveV11 then
 	div = 1/255
 end
 
@@ -95,7 +96,7 @@ end
 
 -- Like color.get, but does color range conversion
 -- based on LOVE version
-if love._version >= "11.0" then
+if loveV11 then
 	function color.compat(r, g, b, a, premul)
 		a = math.min(math.max(a or 1 + 0.0005, 0), 1)
 		if premul then
