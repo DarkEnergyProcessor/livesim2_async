@@ -7,9 +7,14 @@
 -- * <color name><percent_transparency>PT (can't be done for hex)
 
 -- Hex color cache
-local love = require("love")
 local colorCache = {}
-local div = love._version >= "11.0" and 1/255 or 1
+
+-- LOVE color division util
+local div = 1
+local haslove, love = pcall(require, "love")
+if haslove and love._version >= "11.0" then
+	div = 1/255
+end
 
 local function hexCache(hexcode)
 	local v = colorCache[hexcode]
