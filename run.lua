@@ -173,7 +173,7 @@ function love.run()
 			if name == "resize" then
 				vires.update(a, b)
 			elseif name == "displayrotated" then
-				vires.update(love.window.getModel())
+				vires.update(love.window.getMode())
 			-- low memory warning
 			elseif name == "lowmemory" then
 				collectgarbage()
