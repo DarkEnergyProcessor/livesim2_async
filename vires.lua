@@ -8,8 +8,6 @@ local vires = {
 	data = {
 		virtualW = 0,
 		virtualH = 0,
-		screenX = 0,
-		screenY = 0,
 		offX = 0,
 		offY = 0,
 		scaleOverall = 1
@@ -20,7 +18,6 @@ local vires = {
 function vires.init(width, height)
 	if vires.isInit then return end
 	vires.data.virtualW, vires.data.virtualH = width, height
-	vires.data.screenX, vires.data.screenY = width, height
 	vires.isInit = true
 
 	-- Create background sprite batch.
@@ -70,10 +67,20 @@ end
 function vires.update(nw, nh)
 	if not(vires.isInit) then return end
 
-	vires.data.screenX, vires.data.screenY = nw, nh
-	vires.data.scaleOverall = math.min(nw / vires.data.virtualW, nh / vires.data.virtualH)
-	vires.data.offX = (nw - vires.data.scaleOverall * vires.data.virtualW) / 2
-	vires.data.offY = (nh - vires.data.scaleOverall * vires.data.virtualH) / 2
+	if love._os == "iOS" then
+		-- FIXME: use nw and nh specified instead of hardcoding this
+		-- I can't figure out the math. Please send PR, thank you.
+		local sx, sy
+		sx, sy, nw, nh = love.window.getSafeArea()
+		local sw, sh = nw - sx, nh - sy
+		vires.data.scaleOverall = math.min(sw / vires.data.virtualW, sh / vires.data.virtualH)
+		vires.data.offX = (sw - vires.data.scaleOverall * vires.data.virtualW) / 2 + sx
+		vires.data.offY = (sh - vires.data.scaleOverall * vires.data.virtualH) / 2 + sy
+	else
+		vires.data.scaleOverall = math.min(nw / vires.data.virtualW, nh / vires.data.virtualH)
+		vires.data.offX = (nw - vires.data.scaleOverall * vires.data.virtualW) / 2
+		vires.data.offY = (nh - vires.data.scaleOverall * vires.data.virtualH) / 2
+	end
 end
 
 function vires.screenToLogical(x, y)

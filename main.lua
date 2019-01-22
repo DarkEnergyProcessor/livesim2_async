@@ -27,7 +27,7 @@
 DEPLS_VERSION = "3.0.3"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03000399
+DEPLS_VERSION_NUMBER = 03000400
 
 local love = require("love")
 local Yohane = require("libs.Yohane")
@@ -49,6 +49,13 @@ local audioManager = require("audio_manager")
 
 local beatmapList = require("game.beatmap.list")
 local beatmapRandomizer = require("game.live.randomizer3")
+
+if not(love.window.getSafeArea) then
+	function love.window.getSafeArea()
+		local w, h = love.window.getMode()
+		return 0, 0, w, h - 100
+	end
+end
 
 local function initWindow(w, h, f, v)
 	local vsync
