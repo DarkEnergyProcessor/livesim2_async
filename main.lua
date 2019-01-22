@@ -53,7 +53,7 @@ local beatmapRandomizer = require("game.live.randomizer3")
 if not(love.window.getSafeArea) then
 	function love.window.getSafeArea()
 		local w, h = love.window.getMode()
-		return 0, 0, w, h - 100
+		return 0, 0, w, h
 	end
 end
 
@@ -486,6 +486,12 @@ function love.load(argv, gameargv)
 				return
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
+				i = i + 1
+			elseif arg == "-NSDocumentRevisionsDebugMode" then
+				local mode = assert(argv[i+1], "missing value for NSDocumentRevisionsDebugMode"):lower()
+				if mode == "yes" then
+					log.warning("main", "-NSDocumentRevisionsDebugMode is no-op. Use LIVESIM2_LOGLEVEL environment variable instead.")
+				end
 				i = i + 1
 			elseif not(absolutePlayBeatmapName) then
 				absolutePlayBeatmapName = arg

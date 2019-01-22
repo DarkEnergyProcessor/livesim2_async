@@ -70,11 +70,11 @@ function vires.update(nw, nh)
 	if love._os == "iOS" then
 		-- FIXME: use nw and nh specified instead of hardcoding this
 		-- I can't figure out the math. Please send PR, thank you.
-		local sx, sy
-		sx, sy, nw, nh = love.window.getSafeArea()
-		local sw, sh = nw - sx, nh - sy
-		vires.data.scaleOverall = math.min(sw / vires.data.virtualW, sh / vires.data.virtualH)
-		vires.data.offX = (sw - vires.data.scaleOverall * vires.data.virtualW) / 2 + sx
+		local _, sy
+		_, sy, _, nh = love.window.getSafeArea()
+		local sh = nh - sy
+		vires.data.scaleOverall = math.min(nw / vires.data.virtualW, sh / vires.data.virtualH)
+		vires.data.offX = (nw - vires.data.scaleOverall * vires.data.virtualW) / 2
 		vires.data.offY = (sh - vires.data.scaleOverall * vires.data.virtualH) / 2 + sy
 	else
 		vires.data.scaleOverall = math.min(nw / vires.data.virtualW, nh / vires.data.virtualH)
