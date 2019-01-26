@@ -15,6 +15,7 @@ local audioManager = require("audio_manager")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local render = require("render")
+local vires = require("vires")
 
 local glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
@@ -176,7 +177,12 @@ local function safeAreaScaling(self)
 	-- regardless of t.window.width and t.window.height
 	-- specified
 	if (love._os == "iOS" or love._os == "Android") and love.window.getSafeArea then
-		self.safeScale = select(4, love.window.getSafeArea()) / love.graphics.getHeight()
+		local scale = vires.getScaling()
+		local vYOffset = scale * select(2, vires.getScaling())
+		local safeHeight = select(4, love.window.getSafeArea())
+		local windowHeight = love.graphics.getHeight()
+		local affectedSafe = math.max(math.min(windowHeight, safeHeight) - vYOffset, scale * 640)
+		self.safeScale = math.min(affectedSafe / windowHeight, 1)
 	else
 		self.safeScale = 1
 	end

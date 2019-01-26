@@ -82,6 +82,14 @@ function vires.logicalToScreen(x, y)
 	return x * vires.data.scaleOverall + vires.data.offX, y * vires.data.scaleOverall + vires.data.offY
 end
 
+function vires.getScaling()
+	return vires.data.scaleOverall
+end
+
+function vires.getOffset()
+	return vires.data.offX, vires.data.offY
+end
+
 function vires.set()
 	if not(vires.isInit) then return end
 	love.graphics.translate(vires.data.offX, vires.data.offY)
