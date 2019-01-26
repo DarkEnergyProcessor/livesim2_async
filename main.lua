@@ -50,13 +50,6 @@ local audioManager = require("audio_manager")
 local beatmapList = require("game.beatmap.list")
 local beatmapRandomizer = require("game.live.randomizer3")
 
-if not(love.window.getSafeArea) then
-	function love.window.getSafeArea()
-		local w, h = love.window.getMode()
-		return 0, 0, w, h
-	end
-end
-
 local function initWindow(w, h, f, v)
 	local vsync
 	if util.compareLOVEVersion(11, 0) >= 0 then
