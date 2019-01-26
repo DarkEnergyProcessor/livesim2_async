@@ -997,6 +997,7 @@ function noteManager:touchReleased(id)
 end
 
 function noteManager:setTouch(pos, id, rel, prev)
+	if self.autoplay then return end
 	if rel and not(self.touchInput[id]) then return end
 	if self.touchInput[id] and not(prev) and not(rel) then
 		-- are we paused somehow?
