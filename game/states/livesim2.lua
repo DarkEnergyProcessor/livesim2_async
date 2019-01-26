@@ -175,8 +175,7 @@ local function safeAreaScaling(self)
 	if love.window.getSafeArea then
 		self.safeScale = select(4, love.window.getSafeArea()) / love.graphics.getHeight()
 	else
-		local h = love.graphics.getHeight()
-		self.safeScale = (h - 100) / h
+		self.safeScale = 1
 	end
 end
 
