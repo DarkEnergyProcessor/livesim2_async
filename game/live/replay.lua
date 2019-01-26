@@ -237,12 +237,24 @@ end
 
 function replay.drawTouchLine()
 	love.graphics.push("all")
+
+	love.graphics.setLineWidth(1)
+	for i = 1, #replay.replayTouchLine do
+		local l = replay.replayTouchLine[i]
+		local col = math.sqrt(l.time) * 255
+		love.graphics.setColor(color.compat(255, col, col, l.time))
+		love.graphics.circle("fill", l.x2, l.y2, 5)
+		love.graphics.setColor(color.compat(0, 0, 0, l.time))
+		love.graphics.circle("line", l.x2, l.y2, 5)
+	end
+
 	love.graphics.setLineWidth(8)
 	for i = 1, #replay.replayTouchLine do
 		local l = replay.replayTouchLine[i]
 		love.graphics.setColor(color.compat(255, 232, 232, l.time))
 		love.graphics.line(l.x1, l.y1, l.x2, l.y2)
 	end
+
 	love.graphics.pop()
 end
 

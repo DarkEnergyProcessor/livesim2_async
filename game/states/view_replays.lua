@@ -42,6 +42,7 @@ local function initializeReplayList(self, arg)
 	self.data.buttonFrame:clear()
 	local list = {}
 
+	assert(love.filesystem.createDirectory("replays/"..arg.name), "failed to create beatmap replay directory")
 	for _, v in ipairs(love.filesystem.getDirectoryItems("replays/"..arg.name.."/")) do
 		if v:sub(-4) == ".lsr" then
 			local replay, s = lsr.loadReplay("replays/"..arg.name.."/"..v, arg.summary.hash)
