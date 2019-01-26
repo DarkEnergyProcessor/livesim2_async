@@ -172,7 +172,10 @@ local function liveClearCallback(self)
 end
 
 local function safeAreaScaling(self)
-	if love.window.getSafeArea then
+	-- iOS and Android always runs game in fullscreen
+	-- regardless of t.window.width and t.window.height
+	-- specified
+	if (love._os == "iOS" or love._os == "Android") and love.window.getSafeArea then
 		self.safeScale = select(4, love.window.getSafeArea()) / love.graphics.getHeight()
 	else
 		self.safeScale = 1
