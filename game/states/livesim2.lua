@@ -171,6 +171,30 @@ local function liveClearCallback(self)
 	})
 end
 
+local function safeAreaScaling(self)
+	if love.window.getSafeArea then
+		self.safeScale = select(4, love.window.getSafeArea()) / love.graphics.getHeight()
+	else
+		local h = love.graphics.getHeight()
+		self.safeScale = (h - 100) / h
+	end
+end
+
+local function rescalePosition(self, x, y)
+	-- the center is 480,0
+	return (x - 480) / self.safeScale + 480, y / self.safeScale
+end
+
+local function safeAreaReposition(scale)
+	if scale then
+		love.graphics.push()
+		love.graphics.translate(480 * (1 - scale), 0)
+		love.graphics.scale(scale)
+	else
+		love.graphics.pop()
+	end
+end
+
 function DEPLS:load(arg)
 	glow.clear()
 
@@ -182,6 +206,9 @@ function DEPLS:load(arg)
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
 	self.persist.arg = arg
 	self.persist.directLoad = arg.direct
+
+	-- safe area
+	safeAreaScaling(self)
 
 	-- autoplay
 	local autoplay
@@ -968,24 +995,29 @@ local function draw(self)
 		-- draw skill flash
 		self.data.skill:drawUnder()
 
+		-- enable safe area reposition
+		safeAreaReposition(self.safeScale)
 		-- draw live header
 		self.data.liveUI:drawHeader()
+		-- draw unit icons
 		love.graphics.setColor(color.white)
 		for i, v in ipairs(self.persist.lane) do
 			love.graphics.draw(self.data.unitIcons[i], v.x, v.y, 0, 1, 1, 64, 64)
 		end
-
 		-- draw unit skill indicator
 		self.data.skill:drawUpper()
 		-- draw notes
 		self.data.noteManager:draw()
 		-- draw live status
 		self.data.liveUI:drawStatus()
+		-- disable safe area reposition
+		safeAreaReposition()
 		-- draw pause overlay
 		self.data.pauseObject:draw()
 	end
 
 	-- draw replay keyboard overlay
+	safeAreaReposition(self.safeScale)
 	for i = 1, 9 do
 		love.graphics.setColor(color.red)
 		if self.persist.replayKeyOverlay[i] then
@@ -994,7 +1026,8 @@ local function draw(self)
 		end
 	end
 	-- draw replay touch overlay
-	return replay.drawTouchLine()
+	replay.drawTouchLine()
+	safeAreaReposition()
 end
 
 function DEPLS:draw()
@@ -1016,6 +1049,8 @@ local function livesimInputPressed(self, id, x, y)
 	then
 		return
 	end
+
+	x, y = rescalePosition(self, x, y)
 	if not(self.persist.autoplay or self.persist.replayMode) then
 		replay.recordTouchpressed(id, x, y)
 	end
@@ -1027,6 +1062,8 @@ end
 local function livesimInputMoved(self, id, x, y)
 	if self.persist.render then return end
 	if self.data.pauseObject:isPaused() then return end
+
+	x, y = rescalePosition(self, x, y)
 	if not(self.persist.autoplay or self.persist.replayMode) then
 		replay.recordTouchmoved(id, x, y)
 	end
@@ -1040,6 +1077,7 @@ local function livesimInputReleased(self, id, x, y)
 		return self.data.pauseObject:mouseReleased(x, y)
 	end
 
+	x, y = rescalePosition(self, x, y)
 	if not(self.persist.autoplay or self.persist.replayMode) then
 		replay.recordTouchreleased(id, x, y)
 	end
@@ -1054,6 +1092,7 @@ local function livesimInputReleased(self, id, x, y)
 end
 
 DEPLS:registerEvent("resize", function(self, w, h)
+	safeAreaScaling(self)
 	if not(self.persist.render) then
 		self.persist.windowWidth, self.persist.windowHeight = w, h
 	end
