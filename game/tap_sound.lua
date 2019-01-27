@@ -29,5 +29,14 @@ return {
 		good = "sound/tap/gbp/a/00002.wav",
 		bad = "sound/tap/gbp/a/00003.wav",
 		starExplode = "sound/tap/sif/SE_326.ogg"
+	},
+	-- and even this one
+	{
+		volumeMultipler = 0.85,
+		perfect = "sound/tap/gbp/miku/perfect.wav",
+		great = "sound/tap/gbp/miku/great.wav",
+		good = "sound/tap/gbp/miku/good.wav",
+		bad = "sound/tap/gbp/miku/game_button.wav",
+		starExplode = "sound/tap/sif/SE_326.ogg"
 	}
 }
