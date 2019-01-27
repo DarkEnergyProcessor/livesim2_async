@@ -176,16 +176,19 @@ local function safeAreaScaling(self)
 	-- iOS and Android always runs game in fullscreen
 	-- regardless of t.window.width and t.window.height
 	-- specified
+	local scale = vires.getScaling()
+	local vYOffset = scale * select(2, vires.getOffset())
+	local gameHeight = 640 * scale + vYOffset
+	local safeHeight
+
 	if (love._os == "iOS" or love._os == "Android") and love.window.getSafeArea then
-		local scale = vires.getScaling()
-		local vYOffset = scale * select(2, vires.getScaling())
-		local safeHeight = select(4, love.window.getSafeArea())
-		local windowHeight = love.graphics.getHeight()
-		local affectedSafe = math.max(math.min(windowHeight, safeHeight) - vYOffset, scale * 640)
-		self.safeScale = math.min(affectedSafe / windowHeight, 1)
+		safeHeight = select(4, love.window.getSafeArea())
 	else
-		self.safeScale = 1
+		safeHeight = gameHeight
 	end
+
+	local affectedSafe = math.min(safeHeight, gameHeight) - vYOffset
+	self.safeScale = math.min(affectedSafe / (gameHeight - vYOffset), 1)
 end
 
 local function rescalePosition(self, x, y)
