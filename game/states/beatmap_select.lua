@@ -276,7 +276,11 @@ function beatmapSelect:start()
 			if self.persist.active then
 				-- sort
 				table.sort(self.persist.beatmapList, function(a, b)
-					return a.name < b.name
+					if a.name == b.name then
+						return (a.difficulty or "") < (b.difficulty or "")
+					else
+						return a.name < b.name
+					end
 				end)
 
 				-- initialize
