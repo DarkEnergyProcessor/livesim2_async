@@ -22,7 +22,7 @@
 --]]---------------------------------------------------------------------------
 
 local lsr = {
-	_VERSION = "1.0.1",
+	_VERSION = "1.1.0",
 	_LICENSE = "Copyright \169 2040 Dark Energy Processor, licensed under zLib license",
 	_AUTHOR = "Dark Energy Processor Corporation"
 }
@@ -169,9 +169,16 @@ function lsr.loadReplay(path, beatmapHash)
 		perfectSwing = string2dwordu(lsr.file.read(file, 4)),
 		perfectSimultaneous = string2dwordu(lsr.file.read(file, 4)),
 		scorePerTap = string2dwordu(lsr.file.read(file, 4)),
-		stamina = string2dwordu(lsr.file.read(file, 4))
+		stamina = string2dwordu(lsr.file.read(file, 4)),
+		vanish = string2dwordu(lsr.file.read(file, 4))
 	}
-	lsr.file.read(file, 4*10) -- reserved
+
+	if hand.vanish > 2 then
+		lsr.file.close(file)
+		return nil, "invalid vanish value"
+	end
+
+	lsr.file.read(file, 4*9) -- reserved
 	local flags = string2dwordu(lsr.file.read(file, 4))
 	hand.randomSeed = {
 		string2dwordu(lsr.file.read(file, 4)),
@@ -254,7 +261,8 @@ function lsr.saveReplay(path, beatmapHash, noteInfo, accuracyData, events)
 		dwordu2string(noteInfo.perfectSimultaneous)..
 		dwordu2string(noteInfo.scorePerTap)..
 		dwordu2string(noteInfo.stamina)..
-		string.rep("\0\0\0\0", 10).. -- reserved
+		dwordu2string(noteInfo.vanish)..
+		string.rep("\0\0\0\0", 9).. -- reserved
 		dwordu2string(flags)..
 		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[1] or 0)..
 		dwordu2string(noteInfo.randomSeed and noteInfo.randomSeed[2] or 0)..

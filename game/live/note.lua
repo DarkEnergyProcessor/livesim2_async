@@ -214,6 +214,8 @@ function noteManager:__construct(param)
 	self.lnFlashAnimation = Yohane.newFlashFromFilename("flash/live_notes_hold_effect.flsh", "ef_326_effect")
 	-- opacity
 	self.opacity = 1
+	-- note vanish type
+	self.vanish = param.vanish or 0
 	-- autoplay flag
 	self.autoplay = not(not(param.autoplay))
 	-- timing window image
@@ -447,7 +449,7 @@ function baseMovingNote.draw()
 	error("pure virtual method 'draw'", 2)
 end
 
-function baseMovingNote.getDistance(release)
+function baseMovingNote.getDistance()
 	error("pure virtual method 'getDistance'", 2)
 end
 
@@ -526,7 +528,7 @@ function normalMovingNote:__construct(definition, param)
 	-- swing rotation
 	self.rotation = false -- set later
 	-- vanish type (1 = hidden, 2 = sudden)
-	self.vanishType = definition.vanish or 0
+	self.vanishType = definition.vanish or param.vanish or 0
 	-- opacity
 	self.opacity = 1
 	-- remove?

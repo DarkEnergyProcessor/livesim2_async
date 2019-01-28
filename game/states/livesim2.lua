@@ -147,6 +147,7 @@ local function liveClearCallback(self)
 		perfectSimultaneous = noteInfo.perfectSimultaneous,
 		scorePerTap = self.persist.tapScore,
 		stamina = self.persist.stamina,
+		vanish = self.persist.vanishType,
 		randomSeed = self.persist.randomGeneratedSeed,
 		timestamp = self.persist.startTimestamp,
 
@@ -240,16 +241,28 @@ function DEPLS:load(arg)
 		self.persist.replayMode = arg.replay
 		replay.setEventData(arg.replay.events)
 	end
+
+	-- note vanish type
+	local vanishType
+	if arg.replay then
+		vanishType = self.persist.replayMode.vanish
+	else
+		vanishType = assert(tonumber(setting.get("VANISH_TYPE")), "invalid vanish setting")
+	end
+	self.persist.vanishType = vanishType
+
 	-- window dimensions
 	if arg.render then
 		self.persist.windowWidth, self.persist.windowHeight = render.getDimensions()
 	else
 		self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
 	end
+
 	-- dim delay
 	self.persist.liveDelay = math.max(setting.get("LIVESIM_DELAY") * 0.001, 1)
 	self.persist.liveDelayCounter = self.persist.liveDelay
 	self.persist.dimValue = util.clamp(setting.get("LIVESIM_DIM") * 0.01, 0, 1)
+
 	-- score and stamina
 	self.persist.tapScore = arg.replay and self.persist.replayMode.scorePerTap or 0
 	if self.persist.tapScore == 0 then
@@ -258,6 +271,7 @@ function DEPLS:load(arg)
 	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
 	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or setting.get("STAMINA_DISPLAY")
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
+
 	-- load live UI
 	self.data.liveUI = liveUI.newLiveUI(
 		setting.get("PLAY_UI"),
@@ -269,8 +283,10 @@ function DEPLS:load(arg)
 	if arg.summary.liveClear then
 		self.data.liveUI:setLiveClearVoice(audioManager.newAudioDirect(arg.summary.liveClear, "voice"))
 	end
+
 	-- Lane definition
 	self.persist.lane = self.data.liveUI:getLanePosition()
+
 	-- Counter
 	self.persist.noteInfo = {
 		totalNotes = 0,
@@ -290,6 +306,7 @@ function DEPLS:load(arg)
 	}
 	self.persist.accuracyData = {}
 	self.persist.comboRange = {0, 0, 0, 0}
+
 	-- Create new note manager
 	self.data.noteManager = note.newNoteManager({
 		image = self.assets.images.note,
@@ -300,6 +317,7 @@ function DEPLS:load(arg)
 		autoplay = autoplay,
 		timingOffset = -setting.get("TIMING_OFFSET"), -- inverted for some reason
 		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,
+		vanish = vanishType,
 		spawn = function()
 			return self.data.skill:noteSpawnCallback()
 		end,
@@ -435,7 +453,6 @@ function DEPLS:load(arg)
 	-- Beatmap loading variables
 	local isBeatmapInit = 0
 	local desiredBeatmapInit = 1
-	local vanishType = setting.get("VANISH_TYPE")
 	if loadCustomUnit then
 		desiredBeatmapInit = desiredBeatmapInit + 1
 	end
@@ -461,7 +478,6 @@ function DEPLS:load(arg)
 
 		for i = 1, #notes do
 			local t = notes[i]
-			t.vanish = t.vanish or vanishType
 
 			if self.data.noteManager:addNote(t) then
 				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1

@@ -32,7 +32,7 @@ return {
 	},
 	-- and even this one
 	{
-		volumeMultipler = 0.85,
+		volumeMultipler = 1,
 		perfect = "sound/tap/gbp/miku/perfect.wav",
 		great = "sound/tap/gbp/miku/great.wav",
 		good = "sound/tap/gbp/miku/good.wav",

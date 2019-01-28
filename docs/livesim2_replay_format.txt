@@ -1,5 +1,5 @@
 Live Simulator: 2 binary replay file format. Extension: .lsr
-Version 1.0
+Version 1.1
 
 Datatypes ("u" suffix means unsigned, except string). All are in little endian:
     qword - 8 bytes
@@ -27,13 +27,14 @@ Header: File header
 	dwordu - Perfect simultaneous note (perfect+perfect)
 	dwordu - Used Score per Tap
 	dwordu - Used Stamina
-	dwordu[10] - Reserved (encouraged to set to 0)
+	dwordu - Note vanish type (0 = normal, 1 = hidden, 2 = sudden, others are invalid)
+	dwordu[9] - Reserved (encouraged to set to 0)
 	dwordu - Flags (see below)
 	dwordu - Random beatmap seed low 32-bit
 	dwordu - Random beatmap seed high 32-bit
 	dwordu - Timestamp in seconds since January 1st 1970
 
-Flags: 32 possible flags.
+Flags: 32 possible flags, unlisted bits are reserved.
 	bit 0 - Is beatmap randomized?
 	bit 1 - Is storyboard used?
 	bit 2 - Is custom unit loaded for particular beatmap?
