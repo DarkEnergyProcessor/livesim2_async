@@ -302,6 +302,8 @@ function DEPLS:load(arg)
 		maxCombo = 0,
 		tokenAmount = 0,
 		score = 0,
+		realtimeOffset = 0,
+		tappedNotes = 0,
 		fullCombo = true -- by default
 	}
 	self.persist.accuracyData = {}
@@ -326,6 +328,8 @@ function DEPLS:load(arg)
 				"livesim2", "note cb (%s), lane: %d, position: %s, relmode: %d",
 				judgement, lane, tostring(position), releaseFlag
 			)
+			local release = releaseFlag == 2
+
 			-- judgement
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
@@ -335,7 +339,7 @@ function DEPLS:load(arg)
 				self.data.skill:noteCallback(lowestJudgement, object.token, object.star)
 
 				if judgement ~= "miss" then
-					local scoreMulType = (releaseFlag == 2 and 1.25 or 1) * (object.swing and 0.5 or 1)
+					local scoreMulType = (release and 1.25 or 1) * (object.swing and 0.5 or 1)
 					local scoreMul = scoreMulType * (object.scoreMultipler or 1) * self.data.liveUI:getScoreComboMultipler()
 					local score = math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore)
 					self.data.liveUI:addScore(score)
@@ -352,7 +356,7 @@ function DEPLS:load(arg)
 				end
 
 				if lowestJudgement == "perfect" then
-					if releaseFlag == 2 then
+					if release then
 						self.persist.noteInfo.perfectSimultaneous = self.persist.noteInfo.perfectSimultaneous + 1
 					elseif object.swing then
 						self.persist.noteInfo.perfectSwing = self.persist.noteInfo.perfectSwing + 1
@@ -370,6 +374,14 @@ function DEPLS:load(arg)
 
 			-- play SFX
 			if judgement ~= "miss" then
+				local a, b = object:getDistance(release)
+				if b then a = a * -1 end
+
+				-- Calculate time offset average
+				self.persist.noteInfo.tappedNotes = self.persist.noteInfo.tappedNotes + 1
+				local c = (a - self.persist.noteInfo.realtimeOffset) / self.persist.noteInfo.tappedNotes
+				self.persist.noteInfo.realtimeOffset = self.persist.noteInfo.realtimeOffset + c
+
 				playTapSFXSound(self.data.tapSFX, judgement, self.data.tapNoteAccumulation)
 			end
 			if judgement ~= "perfect" and judgement ~= "great" then
@@ -393,7 +405,7 @@ function DEPLS:load(arg)
 					"note",
 					object.lanePosition,
 					judgement,
-					object:getDistance(),
+					object:getDistance(release),
 					info
 				)
 			end
@@ -1054,6 +1066,7 @@ local function draw(self)
 	end
 	-- draw replay touch overlay
 	replay.drawTouchLine()
+	love.graphics.print(self.persist.noteInfo.realtimeOffset, 0, 620)
 	safeAreaReposition()
 end
 

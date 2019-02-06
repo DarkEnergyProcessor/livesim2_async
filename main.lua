@@ -27,7 +27,7 @@
 DEPLS_VERSION = "3.0.4"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03000499
+DEPLS_VERSION_NUMBER = 03000500
 
 local love = require("love")
 local Yohane = require("libs.Yohane")

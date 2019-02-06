@@ -579,7 +579,8 @@ function normalMovingNote:draw()
 end
 
 function normalMovingNote:getDistance()
-	return math.abs(self.elapsedTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
+	local n = self.elapsedTime - self.noteSpeed
+	return math.abs(n) / self.noteSpeed * self.accuracy.exact, n < 0
 end
 
 local function judgementCheck(t, accuracy, swing, rtiming, ytiming)
@@ -792,9 +793,11 @@ end
 
 function longMovingNote:getDistance(rel)
 	if rel then
-		return math.abs(self.elapsedTime - self.lnSpawnTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
+		local n = self.elapsedTime - self.lnSpawnTime - self.noteSpeed
+		return math.abs(n) / self.noteSpeed * self.accuracy.exact, n < 0
 	else
-		return math.abs(self.elapsedTime - self.noteSpeed) / self.noteSpeed * self.accuracy.exact
+		local n = self.elapsedTime - self.noteSpeed
+		return math.abs(n) / self.noteSpeed * self.accuracy.exact, n < 0
 	end
 end
 
