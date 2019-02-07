@@ -251,13 +251,6 @@ function DEPLS:load(arg)
 	end
 	self.persist.vanishType = vanishType
 
-	-- window dimensions
-	if arg.render then
-		self.persist.windowWidth, self.persist.windowHeight = render.getDimensions()
-	else
-		self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
-	end
-
 	-- dim delay
 	self.persist.liveDelay = math.max(setting.get("LIVESIM_DELAY") * 0.001, 1)
 	self.persist.liveDelayCounter = self.persist.liveDelay
@@ -840,6 +833,13 @@ function DEPLS:start(arg)
 	end)
 	self.persist.startTimestamp = os.time()
 	self.persist.render = arg.render
+
+	-- window dimensions
+	if arg.render then
+		self.persist.windowWidth, self.persist.windowHeight = render.getDimensions()
+	else
+		self.persist.windowWidth, self.persist.windowHeight = love.graphics.getDimensions()
+	end
 end
 
 function DEPLS:exit()
