@@ -37,6 +37,8 @@ function generalSetting:load()
 			:setPosition(61, 318),
 		numberSetting(L"setting:general:tapSound", "TAP_SOUND", {min = 1, max = #tapSound, default = 1})
 			:setPosition(61, 404),
+		switchSetting(L"setting:general:improvedSync", "IMPROVED_SYNC")
+			:setPosition(61, 490)
 	}
 
 	if self.data.back == nil then

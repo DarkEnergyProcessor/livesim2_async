@@ -124,6 +124,7 @@ local function initializeSetting()
 	setting.define("GLOBAL_OFFSET", 0)
 	setting.define("IDOL_IMAGE", " \t \t \t \t \t \t \t \t ")
 	setting.define("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
+	setting.define("IMPROVED_SYNC", 0)
 	setting.define("LANGUAGE", "en")
 	setting.define("LIVESIM_DELAY", 1000) -- backward compatibility
 	setting.define("LIVESIM_DIM", 75)

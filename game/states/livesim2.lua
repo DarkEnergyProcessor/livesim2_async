@@ -836,6 +836,8 @@ function DEPLS:start(arg)
 	end
 	self.persist.startTimestamp = os.time()
 	self.persist.render = arg.render
+	self.persist.averageNoteDelta = assert(tonumber(setting.get("IMPROVED_SYNC"))) == 1
+	self.persist.audioNoteTimer = 0
 
 	-- window dimensions
 	if arg.render then
@@ -910,6 +912,13 @@ function DEPLS:update(dt)
 						self.data.video.drawable:play()
 					end
 				end
+
+				if not(self.persist.render) and self.persist.averageNoteDelta and self.data.song and self.data.song:isPlaying() then
+					local sourceT = self.data.song:tell()
+					updtDt = (updtDt + sourceT - self.persist.audioNoteTimer) * 0.5
+					self.persist.audioNoteTimer = sourceT
+				end
+
 				if self.persist.replayMode then
 					-- replay update rate is 5ms
 					local timeUpdt = updtDt
