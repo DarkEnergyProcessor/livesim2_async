@@ -8,7 +8,6 @@ local Yohane = require("libs.Yohane")
 
 local assetCache = require("asset_cache")
 local audioManager = require("audio_manager")
-local cache = require("cache")
 local color = require("color")
 local log = require("logging")
 local util = require("util")
@@ -182,6 +181,7 @@ function skill:_triggerSkill(v)
 		self.flash:setImage("skill_text", {self.images[1], v.image[1]})
 
 		if v.audio then
+			log.debugf("skill", "play skill audio %s", tostring(v.audio))
 			audioManager.stop(v.audio)
 			audioManager.play(v.audio)
 		end

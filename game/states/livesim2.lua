@@ -814,23 +814,26 @@ function DEPLS:load(arg)
 		end
 	end
 
+	async.wait()
 	log.debug("livesim2", "ready")
 end
 
 function DEPLS:start(arg)
-	self.persist.debugTimer = timer.every(1, function()
-		-- note debug
-		log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
-		-- song debug
-		if self.data.song then
-			local audiotime = self.data.song:tell() * 1000
-			local notetime = self.data.noteManager.elapsedTime * 1000
-			log.debugf(
-				"livesim2", "audiotime: %.2fms, notetime: %.2fms, diff: %.2fms",
-				audiotime, notetime, math.abs(audiotime - notetime)
-			)
-		end
-	end)
+	if log.getLevel() >= 4 then
+		self.persist.debugTimer = timer.every(1, function()
+			-- note debug
+			log.debug("livesim2", "note remaining "..#self.data.noteManager.notesList)
+			-- song debug
+			if self.data.song then
+				local audiotime = self.data.song:tell() * 1000
+				local notetime = self.data.noteManager.elapsedTime * 1000
+				log.debugf(
+					"livesim2", "audiotime: %.2fms, notetime: %.2fms, diff: %.2fms",
+					audiotime, notetime, math.abs(audiotime - notetime)
+				)
+			end
+		end)
+	end
 	self.persist.startTimestamp = os.time()
 	self.persist.render = arg.render
 
@@ -843,7 +846,10 @@ function DEPLS:start(arg)
 end
 
 function DEPLS:exit()
-	timer.cancel(self.persist.debugTimer)
+	if self.persist.debugTimer then
+		timer.cancel(self.persist.debugTimer)
+		self.persist.debugTimer = nil
+	end
 
 	if self.data.song then
 		self.data.song:pause()
