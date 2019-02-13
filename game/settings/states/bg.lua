@@ -6,6 +6,7 @@ local love = require("love")
 local async = require("async")
 local gamestate = require("gamestate")
 local color = require("color")
+local setting = require("setting")
 local loadingInstance = require("loading_instance")
 local L = require("language")
 
@@ -31,6 +32,10 @@ local function startChangeBackground(obj, v)
 	return async.runFunction(changeBackgroundAsync):run(obj, v)
 end
 
+local function setBackgroundDim(obj, v)
+	obj.persist.backgroundDim = v / 100
+end
+
 function bgSetting:load()
 	glow.clear()
 
@@ -41,6 +46,9 @@ function bgSetting:load()
 		numberSetting(L"setting:background:image", "BACKGROUND_IMAGE", {min = 1, max = 15})
 			:setChangedCallback(self, startChangeBackground)
 			:setPosition(61, 554),
+		numberSetting(L"setting:background:dim", "LIVESIM_DIM", {min = 0, max = 100})
+			:setChangedCallback(self, setBackgroundDim)
+			:setPosition(61, 468)
 	}
 
 	if self.data.back == nil then
@@ -51,6 +59,7 @@ function bgSetting:load()
 end
 
 function bgSetting:start()
+	self.persist.backgroundDim = setting.get("LIVESIM_DIM") / 100
 	if self.persist.background == nil then
 		async.runFunction(changeBackgroundAsync):run(self, self.data.settingData[2]:getValue())
 	end
@@ -63,15 +72,22 @@ function bgSetting:update(dt)
 end
 
 function bgSetting:draw()
-	love.graphics.setColor(color.white)
 	if self.persist.background then
 		love.graphics.draw(self.persist.background)
 	end
 
+	love.graphics.push()
+	love.graphics.origin()
+	love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
+	love.graphics.rectangle("fill", 0, 0, love.graphics.getDimensions())
+	love.graphics.pop()
+
+	love.graphics.setColor(color.white)
 	for i = 1, #self.data.settingData do
 		self.data.settingData[i]:draw()
 	end
 
+	love.graphics.setColor(color.white)
 	return glow.draw()
 end
 
