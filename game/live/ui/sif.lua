@@ -368,7 +368,7 @@ function sifui:update(dt, paused)
 	if self.staminaImage then
 		local x = self.staminaImage % 3
 		local y = math.floor(self.staminaImage / 3)
-		self.staminaQuad:setViewport(x * 271, y * 29 + 432, 36 + 235 * staminaPercentage, 29)
+		self.staminaQuad:setViewport(x * 271, y * 30 + 432, 36 + 235 * staminaPercentage, 29)
 	end
 	self.staminaFlashTime = (self.staminaFlashTime + dt) % 1
 
@@ -639,6 +639,7 @@ end
 function sifui:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
 	self.stamina = self.maxStamina
+	self.staminaInterpolate = self.stamina
 	self:_updateStamina()
 end
 

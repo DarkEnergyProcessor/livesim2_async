@@ -23,7 +23,7 @@ function lyrics:__construct(srt)
 
 	for i = 1, #srt do
 		local sub = srt[i]
-		local t = {sub.start - 0.3, sub.stop - 0.3, nil, nil}
+		local t = {sub.start - 0.1, sub.stop - 0.1, nil, nil}
 
 		local text1 = love.graphics.newText(font1)
 		t[3] = text1
