@@ -142,6 +142,7 @@ local function getSummary(bv)
 	info.coverArt = bv.data:getCoverArt()
 	info.star, info.randomStar = bv.data:getStarDifficultyInfo()
 	info.liveClear = bv.data:getLiveClearVoice()
+	info.lyrics = bv.data:getLyrics()
 	local score = bv.data:getScoreInformation()
 	if score then
 		info.scoreS, info.scoreA, info.scoreB, info.scoreC = score[4], score[3], score[2], score[1]

@@ -208,6 +208,11 @@ function beatmapList.getCustomUnit(name, callback)
 	beatmapList.channel:performAtomic(sendData, "unitinfo", {registerRequestID(callback), name})
 end
 
+function beatmapList.getStoryboard(name, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
+end
+
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
@@ -216,11 +221,6 @@ end
 function beatmapList.enumerateLoaders(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "loaders", {registerRequestID(callback)})
-end
-
-function beatmapList.getStoryboard(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
 end
 
 -- callback: id (may print unprintable char), summary

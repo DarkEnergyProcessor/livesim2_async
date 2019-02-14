@@ -306,4 +306,20 @@ function deplsLoader:getLiveClearVoice()
 	return audio
 end
 
+function deplsLoader:getLyrics()
+	local internal = Luaoop.class.data(self)
+	local lyrics = internal.beatmap:getLyrics()
+
+	if not(lyrics) then
+		if util.fileExists(internal.path.."lyrics.srt") then
+			lyrics = love.filesystem.newFileData(internal.path.."lyrics.srt")
+		elseif util.fileExists(internal.path.."lyrics.srt.gz") then
+			local temp = love.filesystem.newFileData(internal.path.."lyrics.srt")
+			lyrics = util.decompressToData(temp, "gzip")
+		end
+	end
+
+	return lyrics
+end
+
 return deplsLoader, "folder"

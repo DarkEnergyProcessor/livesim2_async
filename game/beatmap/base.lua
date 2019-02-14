@@ -85,5 +85,6 @@ base.getStamina = zeroret
 base.getNoteStyle = zeroret          -- TODO
 base.getLiveClearVoice = nilret      -- same as above
 base.getStarDifficultyInfo = zeroret -- star, random_star (2 values, or 1 if random not avail.)
+base.getLyrics = nilret
 
 return base

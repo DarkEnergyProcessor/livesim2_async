@@ -409,4 +409,23 @@ function ls2Loader:getLiveClearVoice()
 	return nil
 end
 
+function ls2Loader:getLyrics()
+	local internal = Luaoop.class.data(self)
+
+	if internal.ls2.sections.DATA then
+		for _, v in ipairs(internal.ls2.sections.DATA) do
+			internal.file:seek(v)
+			local name, cont = ls2.section_processor.DATA[1](internal.file)
+
+			if name == "lyrics.srt" then
+				return love.filesystem.newFileData(cont, "lyrics.srt")
+			elseif name == "lyrics.srt.gz" then
+				return util.decompressToData(cont, "gzip")
+			end
+		end
+	end
+
+	return nil
+end
+
 return ls2Loader, "file"

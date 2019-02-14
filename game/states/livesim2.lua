@@ -21,8 +21,10 @@ local glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
+local srtParse = require("game.srt")
 local storyLoader = require("game.storyboard.loader")
 local note = require("game.live.note")
+local lyrics = require("game.live.lyrics")
 local pause = require("game.live.pause")
 local liveUI = require("game.live.ui")
 local skill = require("game.live.skill")
@@ -814,6 +816,12 @@ function DEPLS:load(arg)
 		end
 	end
 
+	if arg.summary.lyrics then
+		log.debug("livesim2", "loading song lyrics data")
+		local str = arg.summary.lyrics:getString():gsub("\r\n", "\n")
+		self.data.lyrics = lyrics(srtParse(str:gmatch("([^\n]*)\n?")))
+	end
+
 	async.wait()
 	log.debug("livesim2", "ready")
 end
@@ -834,6 +842,7 @@ function DEPLS:start(arg)
 			end
 		end)
 	end
+
 	self.persist.startTimestamp = os.time()
 	self.persist.render = arg.render
 	self.persist.averageNoteDelta = assert(tonumber(setting.get("IMPROVED_SYNC"))) == 1
@@ -892,6 +901,11 @@ function DEPLS:update(dt)
 				-- update storyboard
 				if self.data.storyboard then
 					self.data.storyboard:update(dt)
+				end
+
+				-- update lyrics
+				if self.data.lyrics then
+					self.data.lyrics:update(dt)
 				end
 
 				-- update skill
@@ -1064,6 +1078,10 @@ local function draw(self)
 		self.data.noteManager:draw()
 		-- draw live status
 		self.data.liveUI:drawStatus()
+		-- draw lyrics
+		if self.data.lyrics then
+			self.data.lyrics:draw()
+		end
 		-- disable safe area reposition
 		safeAreaReposition()
 		-- draw pause overlay

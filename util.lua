@@ -12,8 +12,31 @@ if hasLVEP then
 	lvep = require("lvep")
 end
 
-local version11 = love._version >= "11.0"
 local util = {}
+
+function util.compareLOVEVersion(maj, min, rev)
+	if love._version_major > maj then
+		return 1
+	elseif love._version_major < maj then
+		return -1
+	elseif min then
+		if love._version_minor > min then
+			return 1
+		elseif love._version_minor < min then
+			return -1
+		elseif rev then
+			if love._version_revision > rev then
+				return 1
+			elseif love._version_revision < rev then
+				return -1
+			end
+		end
+	end
+	-- equal
+	return 0
+end
+
+local version11 = util.compareLOVEVersion(11, 0) >= 0
 
 function util.basename(file)
 	if not(file) then return end
@@ -201,28 +224,6 @@ function util.isMobile()
 	return love._os == "iOS" or love._os == "Android"
 end
 
-function util.compareLOVEVersion(maj, min, rev)
-	if love._version_major > maj then
-		return 1
-	elseif love._version_major < maj then
-		return -1
-	elseif min then
-		if love._version_minor > min then
-			return 1
-		elseif love._version_minor < min then
-			return -1
-		elseif rev then
-			if love._version_revision > rev then
-				return 1
-			elseif love._version_revision < rev then
-				return -1
-			end
-		end
-	end
-	-- equal
-	return 0
-end
-
 function util.newDecoder(path)
 	if hasLVEP then
 		local s, v = pcall(love.sound.newDecoder, path)
@@ -246,6 +247,14 @@ function util.newVideoStream(path)
 		end
 	else
 		return love.video.newVideoStream(path)
+	end
+end
+
+function util.decompressToData(data, algo)
+	if version11 then
+		return love.data.decompress("data", algo, data)
+	else
+		return love.filesystem.newFileData(love.math.decompress(data, algo), "")
 	end
 end
 
