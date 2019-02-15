@@ -544,6 +544,7 @@ function DEPLS:load(arg)
 					v.drawable = love.graphics.newVideo(table.remove(value, 2))
 					v.w, v.h = v.drawable:getDimensions()
 					v.scale = math.max(960 / v.w, 640 / v.h)
+					v.play = false
 					self.data.video = v
 				end
 
@@ -616,7 +617,11 @@ function DEPLS:load(arg)
 			if self.data.video then
 				self.data.video.drawable:seek(time)
 				log.debugf("livesim2", "seek video to %.3f", time)
-				self.data.video.drawable:play()
+				if self.persist.render then
+					self.data.video.play = true
+				else
+					self.data.video.drawable:play()
+				end
 				log.debug("livesim2", "play video")
 			end
 		end,
@@ -917,7 +922,11 @@ function DEPLS:update(dt)
 					if self.data.video then
 						self.data.video.drawable:seek(updtDt)
 						log.debugf("livesim2", "seek video to %.3f", updtDt)
-						self.data.video.drawable:play()
+						if self.persist.render then
+							self.data.video.play = true
+						else
+							self.data.video.drawable:play()
+						end
 						log.debug("livesim2", "play video")
 					end
 				end
@@ -957,9 +966,14 @@ function DEPLS:update(dt)
 				else
 					replay.update(updtDt)
 				end
+
 				while updtDt > 0 do
 					self.data.noteManager:update(math.min(updtDt, 0.02))
 					updtDt = updtDt - 0.02
+				end
+
+				if self.persist.render and self.data.video.play then
+					self.data.video.drawable:seek(self.data.noteManager:getElapsedTime())
 				end
 			end
 		end
