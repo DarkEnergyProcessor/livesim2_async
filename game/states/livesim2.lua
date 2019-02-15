@@ -615,7 +615,9 @@ function DEPLS:load(arg)
 
 			if self.data.video then
 				self.data.video.drawable:seek(time)
+				log.debugf("livesim2", "seek video to %.3f", time)
 				self.data.video.drawable:play()
+				log.debug("livesim2", "play video")
 			end
 		end,
 		restart = function()
@@ -683,7 +685,7 @@ function DEPLS:load(arg)
 	if not(self.data.background) then
 		local num = self.persist.beatmapRandomized and arg.summary.randomStar or arg.summary.star
 		self.data.background = backgroundLoader.load(util.clamp(
-			loadBackground and num or assert(tonumber(setting.get("BACKGROUND_IMAGE"))),
+			(loadBackground and num > 0) and num or assert(tonumber(setting.get("BACKGROUND_IMAGE"))),
 			1, 12
 		))
 	end
@@ -858,6 +860,7 @@ function DEPLS:exit()
 
 	if self.data.video then
 		self.data.video.drawable:pause()
+		log.debug("livesim2", "stop video")
 	end
 
 	if self.persist.render then
@@ -913,13 +916,15 @@ function DEPLS:update(dt)
 
 					if self.data.video then
 						self.data.video.drawable:seek(updtDt)
+						log.debugf("livesim2", "seek video to %.3f", updtDt)
 						self.data.video.drawable:play()
+						log.debug("livesim2", "play video")
 					end
 				end
 
 				if not(self.persist.render) and self.persist.averageNoteDelta and self.data.song and self.data.song:isPlaying() then
 					local sourceT = self.data.song:tell()
-					updtDt = (updtDt + sourceT - self.persist.audioNoteTimer) * 0.5
+					updtDt = sourceT - self.persist.audioNoteTimer
 					self.persist.audioNoteTimer = sourceT
 				end
 
