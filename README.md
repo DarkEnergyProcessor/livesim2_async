@@ -62,7 +62,7 @@ This live simulator also uses many assets from Love Live! School Idol Festival g
 Special Thanks
 ==============
 
-* [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images.
+* [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images and Japanese translation.
 
 * MilesElectric168 - Note randomization algorithm.
 
