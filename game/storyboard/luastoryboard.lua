@@ -21,6 +21,21 @@ local function dummy() end
 local function zeroret() return 0 end
 local function falseret() return false end
 
+-- LOVE 0.10.0 and LOVE 11.0 has some parameter incompatibilities
+-- to tell it not to load audio.
+local loadVideoOnly, canvas3rdArg
+if util.compareLOVEVersion(11, 0) >= 0 then
+	loadVideoOnly = function(path)
+		return love.graphics.newVideo(path, {audio = false})
+	end
+	canvas3rdArg = {format = "normal", dpiscale = 1}
+else
+	loadVideoOnly = function(path)
+		return love.graphics.newVideo(path, false)
+	end
+	canvas3rdArg = nil
+end
+
 function luaStoryboard:__construct(storyboardData, info)
 	-- info parameter contains:
 	-- ["path"] - beatmap path (optional)
@@ -29,6 +44,7 @@ function luaStoryboard:__construct(storyboardData, info)
 	-- ["unit"] - unit image list, index from 1..9
 	-- ["skill"] - skill callback function
 	-- ["seed"] - random seed in {low, high}
+	-- ["ui"] - current live ui as string
 
 	self.beatmapData = {}
 	self.beatmapPath = info.path
@@ -37,9 +53,11 @@ function luaStoryboard:__construct(storyboardData, info)
 	end
 
 	-- Add FileDatas
-	for i = 1, #info.data do
-		self.beatmapData[i] = info.data[i]
-		self.beatmapData[info.data[i]:getFilename()] = info.data[i]
+	if info.data then
+		for i = 1, #info.data do
+			self.beatmapData[i] = info.data[i]
+			self.beatmapData[info.data[i]:getFilename()] = info.data[i]
+		end
 	end
 
 	-- variable setup
@@ -49,8 +67,9 @@ function luaStoryboard:__construct(storyboardData, info)
 	self.audio = info.song
 	self.background = info.background
 	self.units = info.unit
-	self.canvas = love.graphics.newCanvas(1136, 728)
+	self.canvas = love.graphics.newCanvas(1136, 728, canvas3rdArg)
 	self.loadedAudioV2 = setmetatable({}, {__mode = "k"})
+	self.liveUI = info.ui
 	self.v3 = false
 
 	-- Setup essential sandbox variables
@@ -63,7 +82,7 @@ function luaStoryboard:__construct(storyboardData, info)
 		error(msg)
 	end
 
-	self.sandbox:run(status)
+	assert(self.sandbox:run(status))
 
 	if self.v3 then
 		-- TODO
@@ -72,19 +91,6 @@ function luaStoryboard:__construct(storyboardData, info)
 		if env.Initialize then
 			env.Initialize()
 		end
-	end
-end
-
--- LOVE 0.10.0 and LOVE 11.0 has some parameter incompatibilities
--- to tell it not to load audio.
-local loadVideoOnly
-if love._version >= "11.0" then
-	loadVideoOnly = function(path)
-		return love.graphics.newVideo(path, {audio = false})
-	end
-else
-	loadVideoOnly = function(path)
-		return love.graphics.newVideo(path, false)
 	end
 end
 
@@ -314,7 +320,7 @@ function luaStoryboard:setupV2Sandbox()
 		return 960, 640
 	end
 	env.GetLiveUI = function()
-		return "sif" -- TODO
+		return self.liveUI
 	end
 	env.IsDesktopSystem = self.mainEnv.isDesktop
 	env.UseZeroToOneColorRange = function()
@@ -515,6 +521,14 @@ function luaStoryboard:setupV3Sandbox()
 	}
 end
 
+local xpcallWrapData = {
+	dt = 0,
+	dest = nil
+}
+xpcallWrapData.func = function()
+	return xpcallWrapData.dest(xpcallWrapData.dt)
+end
+
 function luaStoryboard:update(dt)
 	if self.v3 then
 		-- TODO
@@ -524,7 +538,9 @@ function luaStoryboard:update(dt)
 		love.graphics.origin()
 		love.graphics.setCanvas(self.canvas)
 		love.graphics.translate(88, 43)
-		local status, msg = pcall(env.Update, dt * 1000)
+		xpcallWrapData.dest = env.Update
+		xpcallWrapData.dt = dt * 1000
+		local status, msg = xpcall(xpcallWrapData.func, debug.traceback)
 		-- Rebalance push/pop
 		for _ = 1, self.pushPopCount do
 			love.graphics.pop()

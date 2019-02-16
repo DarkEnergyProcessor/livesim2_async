@@ -13,8 +13,13 @@ local BGM = {}
 local BGMClass = Luaoop.class("livesim2.BGM")
 
 function BGMClass:__construct(sd)
+	if not(sd:typeOf("SoundData")) then
+		sd = love.sound.newSoundData(sd)
+	end
+
 	self.audio = audioManager.newAudioDirect(sd, "music")
 	self.channel = util.getChannelCount(sd)
+	self.soundData = sd
 end
 
 function BGMClass:play()
@@ -30,32 +35,29 @@ function BGMClass:rewind()
 	return audioManager.play(self.audio)
 end
 
--- interleaved samples (lr, lr, lr)
-local tempSmp = {}
-local tempSmpCount = 0
-
 function BGMClass._getSampleSafe(sd, pos)
 	local s, v = pcall(sd.getSample, sd, pos)
 	return s and v or 0
 end
 
-function BGMClass:_populateSample(sd, pos, amount)
+function BGMClass:_populateSample(output, sd, pos, amount)
 	if self.channel == 1 then
 		-- mono
 		for i = 1, amount do
-			local smp = BGMClass._getSampleSafe(sd, pos)
-			tempSmp[i * 2 + 1], tempSmp[i * 2 + 2] = smp, smp
+			local smp = BGMClass._getSampleSafe(sd, pos + i - 1)
+			output[i * 2 - 1], output[i * 2 - 0] = smp, smp
 		end
 	else
 		-- stereo
 		for i = 1, amount do
-			tempSmp[i * 2 + 1] = BGMClass._getSampleSafe(sd, pos * 2)
-			tempSmp[i * 2 + 2] = BGMClass._getSampleSafe(sd, pos * 2 + 1)
+			local x = pos + i - 1
+			output[i * 2 - 1] = BGMClass._getSampleSafe(sd, x * 2)
+			output[i * 2 - 0] = BGMClass._getSampleSafe(sd, x * 2 + 1)
 		end
 	end
 end
 
-function BGMClass:_getSamplesRender(amount)
+function BGMClass:_getSamplesRender(output, amount)
 	-- Use original sound data
 	local sd, pos
 	if self.audio.originalSoundData then
@@ -67,23 +69,19 @@ function BGMClass:_getSamplesRender(amount)
 		pos = self.audio.pos
 	end
 
-	return self:_populateSample(sd, pos, amount)
+	return self:_populateSample(output, sd, pos, amount)
 end
 
+-- interleaved samples: {l, r, l, r, l, r, ...}
 function BGMClass:getSamples(amount)
+	local output = {}
 	if audioManager.renderRate > 0 then
-		self:_getSamplesRender(amount)
+		self:_getSamplesRender(output, amount)
 	else
-		self:_populateSample(self.audio.soundData, self.audio.source:tell("samples"), amount)
+		self:_populateSample(output, self.soundData, self.audio.source:tell("samples"), amount)
 	end
 
-	-- cleanup rest
-	for i = (amount*2)+1, tempSmpCount*2 do
-		tempSmp[i] = nil
-	end
-	tempSmpCount = amount
-
-	return tempSmp
+	return output
 end
 
 function BGMClass:seek(timepos)
@@ -106,7 +104,7 @@ function BGMClass:getSampleRate()
 	if audioManager.renderRate > 0 then
 		return 48000
 	else
-		return self.audio.soundData:getSampleRate()
+		return self.soundData:getSampleRate()
 	end
 end
 

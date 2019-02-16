@@ -268,11 +268,8 @@ function DEPLS:load(arg)
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 
 	-- load live UI
-	self.data.liveUI = liveUI.newLiveUI(
-		setting.get("PLAY_UI"),
-		autoplay,
-		setting.get("MINIMAL_EFFECT") == 1
-	)
+	local currentLiveUI = setting.get("PLAY_UI")
+	self.data.liveUI = liveUI.newLiveUI(currentLiveUI, autoplay, setting.get("MINIMAL_EFFECT") == 1)
 	self.data.liveUI:setMaxStamina(self.persist.stamina)
 	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
 	if arg.summary.liveClear then
@@ -790,6 +787,7 @@ function DEPLS:load(arg)
 				unit = self.data.unitIcons,
 				song = self.data.song,
 				seed = self.persist.randomGeneratedSeed,
+				ui = currentLiveUI,
 				skill = function(kind, ...)
 					-- do not register/trigger any skill if custom unit is disabled
 					if loadCustomUnit then
@@ -897,7 +895,7 @@ function DEPLS:update(dt)
 		if not(paused) then
 			if self.persist.liveDelayCounter <= 0 then
 				-- update storyboard
-				if self.data.storyboard then
+				if self.data.storyboard and not(liveClear) then
 					self.data.storyboard:update(dt)
 				end
 
@@ -981,7 +979,7 @@ function DEPLS:update(dt)
 		self.data.liveUI:update(dt, paused)
 
 		if liveClear then
-			if self.data.video.play then
+			if self.data.video and self.data.video.play then
 				self.data.video.play = false
 			end
 			self.data.liveUI:startLiveClearAnimation(self.persist.noteInfo.fullCombo, liveClearCallback, self)

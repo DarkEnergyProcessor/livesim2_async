@@ -50,7 +50,7 @@ local audioManager = require("audio_manager")
 local beatmapList = require("game.beatmap.list")
 local beatmapRandomizer = require("game.live.randomizer3")
 
-local function initWindow(w, h, f, v)
+local function initWindow(w, h, f, v, m)
 	local vsync
 	if util.compareLOVEVersion(11, 0) >= 0 then
 		vsync = v and -1 or 0
@@ -63,6 +63,7 @@ local function initWindow(w, h, f, v)
 		minwidth = 320,
 		minheight = 240,
 		highdpi = true,
+		msaa = m,
 		-- RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
 		fullscreen = love._os == "iOS" or love._os == "Android" or f,
@@ -115,39 +116,45 @@ local function registerGamestates()
 	gamestate.register("viewReplay", require("game.states.view_replays"))
 end
 
+local settingsList = {
+	AUTOPLAY = 0,
+	AUTO_BACKGROUND = 1,
+	BACKGROUND_IMAGE = 10,
+	CBF_UNIT_LOAD = 1,
+	GLOBAL_OFFSET = 0,
+	IDOL_IMAGE = " \t \t \t \t \t \t \t \t ",
+	IDOL_KEYS = "a\ts\td\tf\tspace\tj\tk\tl\t;",
+	IMPROVED_SYNC = 0,
+	LANGUAGE = "en",
+	LIVESIM_DELAY = 1000,
+	LIVESIM_DIM = 75,
+	LLP_SIFT_DEFATTR = 10,
+	MASTER_VOLUME = 80,
+	MINIMAL_EFFECT = 0,
+	NOTE_SPEED = 800,
+	NOTE_STYLE = 1,
+	NS_ACCUMULATION = 0,
+	PLAY_UI = "sif",
+	SE_VOLUME = 80,
+	SCORE_ADD_NOTE = 1024,
+	SKILL_POPUP = 1,
+	SONG_VOLUME = 80,
+	STAMINA_DISPLAY = 32,
+	STAMINA_FUNCTIONAL = 0,
+	STORYBOARD = util.isMobile() and 0 or 1,
+	TAP_SOUND = 1,
+	TEXT_SCALING = 1,
+	TIMING_OFFSET = 0,
+	VANISH_TYPE = 0,
+	VIDEOBG = 0,
+	VOICE_VOLUME = 80
+}
+
 local function initializeSetting()
 	log.debug("main", "initializing settings")
-	setting.define("AUTOPLAY", 0)
-	setting.define("AUTO_BACKGROUND", 1)
-	setting.define("BACKGROUND_IMAGE", 10)
-	setting.define("CBF_UNIT_LOAD", 1)
-	setting.define("GLOBAL_OFFSET", 0)
-	setting.define("IDOL_IMAGE", " \t \t \t \t \t \t \t \t ")
-	setting.define("IDOL_KEYS", "a\ts\td\tf\tspace\tj\tk\tl\t;")
-	setting.define("IMPROVED_SYNC", 0)
-	setting.define("LANGUAGE", "en")
-	setting.define("LIVESIM_DELAY", 1000) -- backward compatibility
-	setting.define("LIVESIM_DIM", 75)
-	setting.define("LLP_SIFT_DEFATTR", 10)
-	setting.define("MASTER_VOLUME", 80)
-	setting.define("MINIMAL_EFFECT", 0)
-	setting.define("NOTE_SPEED", 800) -- backward compatibility
-	setting.define("NOTE_STYLE", 1)
-	setting.define("NS_ACCUMULATION", 0)
-	setting.define("PLAY_UI", "sif")
-	setting.define("SE_VOLUME", 80)
-	setting.define("SCORE_ADD_NOTE", 1024)
-	setting.define("SKILL_POPUP", 1)
-	setting.define("SONG_VOLUME", 80)
-	setting.define("STAMINA_DISPLAY", 32)
-	setting.define("STAMINA_FUNCTIONAL", 0)
-	setting.define("STORYBOARD", util.isMobile() and 0 or 1)
-	setting.define("TAP_SOUND", 1)
-	setting.define("TEXT_SCALING", 1)
-	setting.define("TIMING_OFFSET", 0)
-	setting.define("VANISH_TYPE", 0)
-	setting.define("VIDEOBG", 0)
-	setting.define("VOICE_VOLUME", 80)
+	for k, v in pairs(settingsList) do
+		setting.define(k, v)
+	end
 end
 
 local function createDirectories()
@@ -307,16 +314,21 @@ Options:
 
 * -fullscreen                Start Live Simulator: 2 fullscreen.
 
+* -height <height>           Set window height. Ignored if used with command
+                             that operates without window. Default is 640
+
+* -help                      Show this message then exit.
+
 * -license                   Show the license text then exit.
 
 * -list <which>              Lists various things then exit. 'which' can be:
   -list beatmaps             Lists available beatmaps.
   -list loaders              Lists availabe beatmap loaders.
+  -list settings             Lists current settings.
 
-* -help                      Show this message then exit.
-
-* -height <height>           Set window height. Ignored if used with command
-                             that operates without window. Default is 640
+* -msaa <num>                Set Multi-Sample Anti-Aliasing steps. <num> must
+                             be power of 2, rounded down to nearest POT
+                             otherwise. May not supported on older systems.
 
 * -play <beatmap>            Play specified beatmap name in beatmap directory.
                              This argument takes precedence of passed beatmap
@@ -404,6 +416,7 @@ function love.load(argv, gameargv)
 	local dumpBeatmap = false
 	local replayFile = nil
 	local dumpFormat = "json"
+	local desiredMSAA = 0
 	local randomizeBeatmap
 	local randomSeed
 	local render
@@ -430,14 +443,32 @@ function love.load(argv, gameargv)
 				return love.event.quit()
 			elseif arg == "-list" then
 				local which = assert(argv[i+1], "which to list?"):lower()
-				assert(which == "beatmaps" or which == "loaders", "invalid which or unimplemented yet")
+				assert(
+					which == "beatmaps" or
+					which == "loaders" or
+					which == "settings",
+					"invalid which or unimplemented yet"
+				)
 				listingMode = which
 			elseif arg == "-height" then
 				windowHeight = assert(tonumber(argv[i+1]), "please specify correct height")
 				i = i + 1
 			elseif arg == "-help" then
-				print(string.format(usage, love.arg.getLow(gameargv) or "livesim3.exe"))
+				print(string.format(usage, love.arg.getLow(gameargv) or "livesim2.exe"))
 				return love.event.quit()
+			elseif arg == "-msaa" then
+				local msaa = math.floor(assert(tonumber(argv[i+1]), "please specify correct MSAA"))
+				assert(msaa >= 0, "MSAA cannot be negative")
+
+				if msaa > 0 then
+					local roundmsaa = 2^math.floor(math.log(msaa)/math.log(2))
+					if roundmsaa ~= msaa then
+						log.warnf("main", "MSAA is not power of 2 (previous %d, used %d instead)", msaa, roundmsaa)
+						msaa = roundmsaa
+					end
+
+					desiredMSAA = msaa
+				end
 			elseif arg == "-play" then
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
 				i = i + 1
@@ -617,6 +648,11 @@ function love.load(argv, gameargv)
 				print(type..": "..name)
 				return true
 			end)
+		elseif listingMode == "settings" then
+			for k, _ in pairs(settingsList) do
+				print(k.."="..setting.get(k))
+			end
+			love.event.quit()
 		end
 	else
 		local autoplayMode
@@ -652,7 +688,7 @@ function love.load(argv, gameargv)
 		-- Initialize volume
 		initVolume()
 		-- Initialize window
-		initWindow(windowWidth, windowHeight, fullscreen, not(render))
+		initWindow(windowWidth, windowHeight, fullscreen, not(render), desiredMSAA)
 		-- Initialize Yohane
 		initializeYohane()
 		-- Register all gamestates

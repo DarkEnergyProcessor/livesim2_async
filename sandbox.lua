@@ -143,6 +143,7 @@ end
 
 function sandbox:preloadModule(name, func)
 	local internal = Luaoop.class.data(self)
+	setfenv(func, internal.env)
 	internal.requirePreload[name] = func
 end
 
