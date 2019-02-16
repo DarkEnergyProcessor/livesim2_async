@@ -970,7 +970,7 @@ function DEPLS:update(dt)
 					updtDt = updtDt - 0.02
 				end
 
-				if self.persist.render and self.data.video.play then
+				if self.persist.render and self.data.video and self.data.video.play then
 					self.data.video.drawable:seek(self.data.noteManager:getElapsedTime())
 				end
 			end

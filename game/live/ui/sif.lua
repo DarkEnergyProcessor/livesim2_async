@@ -791,7 +791,7 @@ end
 
 function sifui:drawHeader()
 	-- draw combo cheer
-	if not(self.minimalEffect) and self.comboCheer then
+	if not(self.minimalEffect) and self.comboCheer and self.currentCombo >= 100 then
 		self.comboCheerAnim:draw()
 	end
 	-- draw live header

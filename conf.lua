@@ -10,6 +10,9 @@ local util = require("util")
 
 love._version = love._version or love.getVersion()
 
+-- Set identity and give game directory a priority
+love.filesystem.setIdentity("DEPLS", true)
+
 -- Override love.run
 love.filesystem.load("run.lua")()
 -- Override love.errhand
@@ -32,10 +35,8 @@ if love.filesystem.isFused() and util.fileExists("OUTSIDE_ASSET") then
 end
 
 function love.conf(t)
-	-- Set identity and give game directory a priority
-	love.filesystem.setIdentity("DEPLS", true)
-
-	t.version = love._version >= "0.10.0" and love._version or "0.10.0"
+	t.version = util.compareLOVEVersion(0, 10, 0) >= 0 and love._version or "0.10.0"
+	t.identity = "DEPLS"
 	t.appendidentity = true             -- Search files in source directory before save directory (boolean)
 	t.console = false                   -- Attach a console (boolean, Windows only)
 	t.accelerometerjoystick = false     -- Enable accelerometer on iOS and Android as a Joystick (boolean)
