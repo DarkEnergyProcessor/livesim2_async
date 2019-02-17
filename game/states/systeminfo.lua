@@ -129,7 +129,6 @@ local function buildTextString()
 	sb[#sb + 1] = osVersionString
 	sb[#sb + 1] = "R/W Directory: "..love.filesystem.getSaveDirectory()
 	sb[#sb + 1] = ""
-	sb[#sb + 1] = "Renderer: "..table.concat({love.graphics.getRendererInfo()}, " ")
 
 	-- LOVE Information
 	do
@@ -162,8 +161,19 @@ local function buildTextString()
 		end
 
 		local dpiScale = love.graphics.getDPIScale and love.graphics.getDPIScale() or 1
+		local orientation = love.window.getDisplayOrientation and love.window.getDisplayOrientation()
 		local w, h = love.graphics.getDimensions()
-		sb[#sb + 1] = string.format("Window: %dx%d (DPI Scale %d)", w, h, dpiScale)
+		sb[#sb + 1] = string.format("Graphics Dimensions: %dx%d (DPI Scale %d)", w, h, dpiScale)
+		sb[#sb + 1] = string.format("Window Dimensions: %dx%d", love.window.getMode())..
+					  string.format(" Orientation: %s", orientation or "unknown")
+		if love.window.getSafeArea then
+			local a, b, c, d = love.window.getSafeArea()
+			sb[#sb + 1] = string.format("Safe Area: %dx%d+%d+%d", c, d, a, b)
+		else
+			sb[#sb + 1] = string.format("Safe Area: %dx%d+0+0", w, h)
+		end
+		sb[#sb + 1] = ""
+		sb[#sb + 1] = "Renderer: "..table.concat({love.graphics.getRendererInfo()}, " ")
 		sb[#sb + 1] = "Image Formats: "..table.concat(fmts, " ")
 		sb[#sb + 1] = "Canvas Formats: "..table.concat(fbos, " ")
 		sb[#sb + 1] = "System Limits: "..table.concat(syslim, " ")
