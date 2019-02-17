@@ -332,6 +332,7 @@ function luaStoryboard:setupV2Sandbox()
 			end
 		end
 	end
+	env.SetPostProcessingShader = dummy -- TODO
 
 	-- RNG patching
 	env.math.random = function(...)
@@ -496,6 +497,7 @@ function luaStoryboard:setupV3Sandbox()
 	env.GetLiveUI = nil
 	env.IsDesktopSystem = nil
 	env.UseZeroToOneColorRange = nil
+	env.SetPostProcessingShader = nil
 
 	-- Put v3 vars
 	env.__background = self.background
