@@ -72,7 +72,7 @@ Special Thanks
 
 * Luboss - Slovak translation.
 
-* RayFirefist - Italian translation.
+* RayFirefist - macOS app, iOS maintainer, Italian translation.
 
 * jwun - Spanish translation.
 
@@ -83,7 +83,7 @@ Special Thanks
 License
 =======
 
-Live Simulator: 2 v3.0 and layer is licensed under zLib license. Previous versions is licensed under MIT license. See `LICENSE.md` for more details.
+Live Simulator: 2 v3.0 and later is licensed under zLib license. Version 2.1.2 and earlier is licensed under MIT license. See `LICENSE.md` for more details.
 
 Live Simulator: 2 uses Motoya L Maru font. It's licensed under Apache 2 license.
 
