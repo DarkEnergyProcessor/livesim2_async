@@ -38,5 +38,30 @@ return {
 		good = "sound/tap/gbp/miku/good.wav",
 		bad = "sound/tap/gbp/miku/game_button.wav",
 		starExplode = "sound/tap/sif/SE_326.ogg"
-	}
+	},
+	-- New SIF tap sound
+	{
+		volumeMultipler = 0.8,
+		perfect = "sound/tap/sif/live_se_02_4.mp3",
+		great = "sound/tap/sif/live_se_02_3.mp3",
+		good = "sound/tap/sif/live_se_02_2.mp3",
+		bad = "sound/tap/sif/live_se_02_1.mp3",
+		starExplode = "sound/tap/sif/SE_326.ogg"
+	},
+	{
+		volumeMultipler = 0.8,
+		perfect = "sound/tap/sif/live_se_03_4.mp3",
+		great = "sound/tap/sif/live_se_03_3.mp3",
+		good = "sound/tap/sif/live_se_03_2.mp3",
+		bad = "sound/tap/sif/live_se_03_1.mp3",
+		starExplode = "sound/tap/sif/SE_326.ogg"
+	},
+	{
+		volumeMultipler = 0.8,
+		perfect = "sound/tap/sif/live_se_04_4.mp3",
+		great = "sound/tap/sif/live_se_04_3.mp3",
+		good = "sound/tap/sif/live_se_04_2.mp3",
+		bad = "sound/tap/sif/live_se_04_1.mp3",
+		starExplode = "sound/tap/sif/SE_326.ogg"
+	},
 }
