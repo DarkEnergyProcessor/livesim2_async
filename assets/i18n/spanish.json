@@ -70,7 +70,7 @@
 		"setting:general": "General",
 		"setting:general:beatmapOffset": "Comp. en beatmap (ms)",
 		"setting:general:defaultNote": "Atributo por defecto de las notas",
-		"setting:general:improvedSync": "Mejorar sincronización de notas",
+		"setting:general:improvedSync": "Mejorar la sinc. de nota",
 		"setting:general:nsAccumulation": "Acumulación de efectos de sonido",
 		"setting:general:tapSound": "Efecto de toque de nota",
 		"setting:general:timingOffset": "Compensación de Sonido",
