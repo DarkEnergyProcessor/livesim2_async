@@ -8,7 +8,7 @@ local love = require("love")
 local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
-local vector = require("libs.hump.vector")
+local vector = require("libs.nvec")
 
 local assetCache = require("asset_cache")
 local audioManager = require("audio_manager")
