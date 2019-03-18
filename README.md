@@ -95,9 +95,9 @@ Live Simulator: 2 uses Venera-700 font by Joe Prince and licensed under The Lost
 
 Live Simulator: 2 uses JSON library by Jeffrey Friedl. It's licensed under Creative Commons Attribution 3.0 Unported License.
 
-Live Simulator: 2 uses some hump libraries (`timer` and `vector`). Please see https://github.com/vrld/hump for more information
+Live Simulator: 2 uses `hump.timer`. Please see https://github.com/vrld/hump for more information
 
-Live Simulator: 2 uses Lily v2.x branch. It's licensed under [zLib](https://github.com/MikuAuahDark/lily/blob/master/LICENSE.md) license.
+Live Simulator: 2 uses Lily. It's licensed under [zLib](https://github.com/MikuAuahDark/lily/blob/master/LICENSE.md) license.
 
 Live Simulator: 2 uses i18n library. It's licensed under [MIT](https://github.com/kikito/i18n.lua/blob/master/LICENSE)
 

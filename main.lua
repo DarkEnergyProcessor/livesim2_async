@@ -74,9 +74,9 @@ local function initWindow(w, h, f, v, m)
 	love.window.setTitle("Live Simulator: 2")
 	local icon
 	if love._os == "OS X" then
-		icon = love.image.newImageData("assets/image/icon/icon_1024x1024.png")
+		icon = love.image.newImageData("assets/image/icon/new_icon_1024x1024_macos.png")
 	else
-		icon = love.image.newImageData("assets/image/icon/icon.png")
+		icon = love.image.newImageData("assets/image/icon/new_icon_32x32_windows.png")
 	end
 	love.window.setIcon(icon)
 	-- Initialize virtual resolution
@@ -111,7 +111,7 @@ local function registerGamestates()
 	gamestate.register("result", require("game.states.result_summary"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("settings", require("game.states.gamesetting"))
-	gamestate.register("splash", require("game.states.splash"))
+	gamestate.register("splash", require("game.states.splash_v31"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
 	gamestate.register("viewReplay", require("game.states.view_replays"))
 end
