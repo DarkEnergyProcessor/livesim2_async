@@ -13,18 +13,18 @@ local loadingInstance = require("loading_instance")
 
 local splash = gamestate.create {
 	fonts = {
-		version = {14}
+		version = {11}
 	},
 	images = {
-		icon1 = {"assets/image/icon/new_icon_1024x1024_1.png", {mipmaps = true}},
-		icon2 = {"assets/image/icon/new_icon_1024x1024_2.png", {mipmaps = true}},
-		icon3 = {"assets/image/icon/new_icon_1024x1024_3.png", {mipmaps = true}}
+		icon1 = {"new_icon1:assets/image/icon/new_icon_1024x1024_1.png", {mipmaps = true}},
+		icon2 = {"new_icon2:assets/image/icon/new_icon_1024x1024_2.png", {mipmaps = true}},
+		icon3 = {"new_icon3:assets/image/icon/new_icon_1024x1024_3.png", {mipmaps = true}}
 	},
 	audios = {},
 }
 
 local function done()
-	--gamestate.replace(loadingInstance.getInstance(), "mainMenu")
+	gamestate.replace(loadingInstance.getInstance(), "mainMenu")
 end
 
 local function skip(self)
@@ -89,7 +89,7 @@ function splash:start()
 		-- Also rotate it to 0 degree
 		itimer:tween(0.1, persist, {icon3Rotation = 0}, "out-cubic")
 		persist.icon3Draw = true
-		wait(0.2)
+		wait(0.1)
 
 		-- Show dots
 		itimer:tween(0.07, persist, {dot1Scale = 1}, "out-back")
@@ -101,17 +101,19 @@ function splash:start()
 		itimer:tween(0.07, persist, {dot4Scale = 1}, "out-back")
 		wait(0.07)
 		persist.skippable = false
-		wait(0.1)
+		wait(0.05)
 
 		-- Clear
-		itimer:tween(0.3, persist, {overallOpacity = 0, overallScale = 4}, "out-cubic")
-		wait(0.3)
+		itimer:tween(0.05, persist, {overallScale = 0.8}, "out-sine")
+		wait(0.05)
+		itimer:tween(0.2, persist, {overallScale = 4, overallOpacity = 0}, "out-cubic")
+		wait(0.2)
 		return done()
 	end)
 end
 
 function splash:update(dt)
-	return self.data.timer:update(dt * 0.25)
+	return self.data.timer:update(dt * 0.265)
 end
 
 function splash:draw()

@@ -93,7 +93,7 @@ local function registerGamestates()
 
 	-- Loading screen singleton init (enable sync asset loading for loading screen)
 	assetCache.enableSync = true
-	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
+	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading_v31")))
 	assetCache.enableSync = false
 	postExit.add(loadingInstance.exit)
 
