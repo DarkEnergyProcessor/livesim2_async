@@ -4,6 +4,7 @@
 
 -- luacheck: globals DEPLS_VERSION
 -- luacheck: globals DEPLS_VERSION_NUMBER
+-- luacheck: globals DEPLS_VERSION_CODENAME
 
 local love = require("love")
 local util = require("util")
@@ -21,6 +22,7 @@ love.filesystem.load("errorhandler.lua")()
 -- Set in main.lua later
 DEPLS_VERSION = false
 DEPLS_VERSION_NUMBER = false
+DEPLS_VERSION_CODENAME = false
 
 if love._exe then
 	setmetatable(_G, {

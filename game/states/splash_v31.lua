@@ -63,7 +63,7 @@ function splash:start()
 	persist.icon2Scale = 0
 	persist.icon3Scale = 0.73
 	persist.icon3Draw = false
-	persist.icon3Rotation = math.pi/3
+	persist.icon3Rot = math.pi/3
 	persist.dot1Scale = 0
 	persist.dot2Scale = 0
 	persist.dot3Scale = 0
@@ -87,7 +87,7 @@ function splash:start()
 		-- Show two quarter line arc
 		itimer:tween(0.1, persist, {icon3Scale = 1}, "out-cubic")
 		-- Also rotate it to 0 degree
-		itimer:tween(0.1, persist, {icon3Rotation = 0}, "out-cubic")
+		itimer:tween(0.1, persist, {icon3Rot = 0}, "out-cubic")
 		persist.icon3Draw = true
 		wait(0.1)
 
@@ -181,7 +181,7 @@ function splash:draw()
 	love.graphics.setColor(color.compat(255, 255, 255, persist.overallOpacity))
 	if persist.icon3Draw then
 		-- Draw third quarter line arc (or whatever it names)
-		love.graphics.draw(self.assets.images.icon3, 0, 0, persist.icon3Rotation, persist.icon3Scale, persist.icon3Scale, 512, 512)
+		love.graphics.draw(self.assets.images.icon3, 0, 0, persist.icon3Rot, persist.icon3Scale, persist.icon3Scale, 512, 512)
 	end
 	if persist.icon2Scale > 0 then
 		-- Draw second think line circle

@@ -22,12 +22,15 @@
 
 -- luacheck: globals DEPLS_VERSION
 -- luacheck: globals DEPLS_VERSION_NUMBER
+-- luacheck: globals DEPLS_VERSION_CODENAME
 
 -- Version string
 DEPLS_VERSION = "3.0.5"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
 DEPLS_VERSION_NUMBER = 03009700
+-- Version codename
+DEPLS_VERSION_CODENAME = "Time Lapse"
 
 local love = require("love")
 local Yohane = require("libs.Yohane")
@@ -505,7 +508,10 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-version" then
 				local capabilities = require("capabilities")
-				print(string.format("Live Simulator: 2 v%s (%08d)", DEPLS_VERSION, DEPLS_VERSION_NUMBER))
+				print(string.format(
+					"Live Simulator: 2 v%s (%08d) \"%s\"",
+					DEPLS_VERSION, DEPLS_VERSION_NUMBER, DEPLS_VERSION_CODENAME
+				))
 				print("Capabilities: "..capabilities())
 				love.event.quit()
 				return
