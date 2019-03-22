@@ -14,7 +14,7 @@ function font.get(...)
 	for i = 1, #arg do
 		isFallback[i] = not(cache.get("MainFont"..arg[i]))
 		fontsLoadQueue[i * 2 - 1] = {"MainFont"..arg[i]..":fonts/Roboto-Regular.ttf", arg[i]}
-		fontsLoadQueue[i * 2] = {"fonts/NotoSansCJKjp-Regular.otf", arg[i]}
+		fontsLoadQueue[i * 2] = {"fonts/NotoSansCJKjp-Regular.woff", arg[i]}
 	end
 
 	local fontsData = assetCache.loadMultipleFonts(fontsLoadQueue)

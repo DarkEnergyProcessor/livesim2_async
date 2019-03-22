@@ -151,8 +151,8 @@ local mipmaps = {mipmaps = true}
 local mainMenu = gamestate.create {
 	fonts = {
 		title = {"fonts/Roboto-Regular.ttf", 46},
-		versionSem = {"fonts/NotoSansCJKjp-Regular.otf", 23},
-		versionCodename = {"fonts/NotoSansCJKjp-Regular.otf", 16}
+		versionSem = {"fonts/NotoSansCJKjp-Regular.woff", 23},
+		versionCodename = {"fonts/NotoSansCJKjp-Regular.woff", 16}
 	},
 	images = {
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
