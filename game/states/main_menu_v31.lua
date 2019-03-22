@@ -8,6 +8,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
+local mainFont = require("font")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local util = require("util")
@@ -25,8 +26,8 @@ local playButton = Luaoop.class("Livesim2.MainMenu.PlayButton", glow.element)
 function playButton:new(state)
 	local text = L"menu:play"
 	self.image = state.assets.images.play
-	self.playText = love.graphics.newText(state.assets.fonts.playText)
-	self.playText:add(text, -state.assets.fonts.playText:getWidth(text) * 0.5, 0)
+	self.playText = love.graphics.newText(state.data.playFont)
+	self.playText:add(text, -state.data.playFont:getWidth(text) * 0.5, 0)
 	self.width, self.height = 404, 512
 	self.isPressed = false
 
@@ -67,8 +68,8 @@ local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", gl
 function changeUnitsButton:new(state)
 	local text = L"menu:changeUnits"
 	self.image = state.assets.images.changeUnits
-	self.text = love.graphics.newText(state.assets.fonts.menuButton)
-	self.text:add(text, -state.assets.fonts.menuButton:getWidth(text), 0)
+	self.text = love.graphics.newText(state.data.menuFont)
+	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 
@@ -102,8 +103,8 @@ local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.ele
 function settingsButton:new(state)
 	local text = L"menu:settings"
 	self.image = state.assets.images.settingsDualGear
-	self.text = love.graphics.newText(state.assets.fonts.menuButton)
-	self.text:add(text, -state.assets.fonts.menuButton:getWidth(text), 0)
+	self.text = love.graphics.newText(state.data.menuFont)
+	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 
@@ -150,8 +151,6 @@ local mipmaps = {mipmaps = true}
 local mainMenu = gamestate.create {
 	fonts = {
 		title = {"fonts/Roboto-Regular.ttf", 46},
-		playText = {"fonts/Roboto-Regular.ttf", 92},
-		menuButton = {"fonts/Roboto-Regular.ttf", 41},
 		versionSem = {"fonts/NotoSansCJKjp-Regular.otf", 23},
 		versionCodename = {"fonts/NotoSansCJKjp-Regular.otf", 16}
 	},
@@ -164,6 +163,14 @@ local mainMenu = gamestate.create {
 
 function mainMenu:load()
 	glow.clear()
+
+	if not(self.data.playFont) then
+		self.data.playFont = mainFont.get(92)
+	end
+
+	if not(self.data.menuFont) then
+		self.data.menuFont = mainFont.get(41)
+	end
 
 	if not(self.data.titleText) then
 		self.data.titleText = love.graphics.newText(self.assets.fonts.title, {
