@@ -17,6 +17,7 @@ local L = require("language")
 local backgroundLoader = require("game.background_loader")
 -- UI stuff
 local glow = require("game.afterglow")
+local ripple = require("game.ui.ripple")
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
 -- because they're not reusable
@@ -30,21 +31,33 @@ function playButton:new(state)
 	self.playText:add(text, -state.data.playFont:getWidth(text) * 0.5, 0)
 	self.width, self.height = 404, 512
 	self.isPressed = false
+	self.x, self.y = 0, 0
+	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.stencilFunc = function()
+		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	end
 
 	self:addEventListener("mousepressed", playButton._pressed)
 	self:addEventListener("mousereleased", playButton._released)
 	self:addEventListener("mousecanceled", playButton._released)
 end
 
-function playButton:_pressed(_)
+function playButton:update(dt)
+	self.ripple:update(dt)
+end
+
+function playButton:_pressed(_, x, y)
 	self.isPressed = true
+	self.ripple:pressed(x, y)
 end
 
 function playButton:_released(_)
 	self.isPressed = false
+	self.ripple:released()
 end
 
 function playButton:render(x, y)
+	self.x, self.y = x, y
 	love.graphics.setColor(color.hex55CAFD)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
@@ -58,8 +71,12 @@ function playButton:render(x, y)
 	love.graphics.setColor(color.hexFFFFFF8A)
 	love.graphics.draw(self.image, x + 252, y + 364, 0, 1.1, 1.1)
 
-	if self.isPressed then
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
+	if self.ripple:isActive() then
+		-- Setup stencil buffer
+		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+		love.graphics.setStencilTest("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		love.graphics.setStencilTest()
 	end
 end
 
@@ -72,29 +89,45 @@ function changeUnitsButton:new(state)
 	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
 	self.width, self.height = 404, 156
 	self.isPressed = false
+	self.x, self.y = 0, 0
+	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.stencilFunc = function()
+		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	end
 
 	self:addEventListener("mousepressed", changeUnitsButton._pressed)
 	self:addEventListener("mousereleased", changeUnitsButton._released)
 	self:addEventListener("mousecanceled", changeUnitsButton._released)
 end
 
-function changeUnitsButton:_pressed(_)
+function changeUnitsButton:update(dt)
+	self.ripple:update(dt)
+end
+
+function changeUnitsButton:_pressed(_, x, y)
 	self.isPressed = true
+	self.ripple:pressed(x, y)
 end
 
 function changeUnitsButton:_released(_)
 	self.isPressed = false
+	self.ripple:released()
 end
 
 function changeUnitsButton:render(x, y)
+	self.x, self.y = x, y
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 11, y + 22, 0, 0.16, 0.16)
 
-	if self.isPressed then
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
+	if self.ripple:isActive() then
+		-- Setup stencil buffer
+		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+		love.graphics.setStencilTest("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		love.graphics.setStencilTest()
 	end
 end
 
@@ -107,29 +140,45 @@ function settingsButton:new(state)
 	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
 	self.width, self.height = 404, 156
 	self.isPressed = false
+	self.x, self.y = 0, 0
+	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.stencilFunc = function()
+		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	end
 
 	self:addEventListener("mousepressed", settingsButton._pressed)
 	self:addEventListener("mousereleased", settingsButton._released)
 	self:addEventListener("mousecanceled", settingsButton._released)
 end
 
-function settingsButton:_pressed(_)
+function settingsButton:update(dt)
+	self.ripple:update(dt)
+end
+
+function settingsButton:_pressed(_, x, y)
 	self.isPressed = true
+	self.ripple:pressed(x, y)
 end
 
 function settingsButton:_released(_)
 	self.isPressed = false
+	self.ripple:released()
 end
 
 function settingsButton:render(x, y)
+	self.x, self.y = x, y
 	love.graphics.setColor(color.hexFF6854)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.16, 0.16)
 
-	if self.isPressed then
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
+	if self.ripple:isActive() then
+		-- Setup stencil buffer
+		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+		love.graphics.setStencilTest("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		love.graphics.setStencilTest()
 	end
 end
 
