@@ -176,7 +176,7 @@ function util.lerp(a, b, t)
 end
 
 function util.distance(x1, y1, x2, y2, squared)
-	local value = (x2-x1)^2+(y2-y1)^2
+	local value = (x2 - x1)^2 + (y2 - y1)^2
 	if squared then
 		return value
 	else
@@ -259,7 +259,7 @@ function util.decompressToData(data, algo)
 end
 
 do
-	local COLOR_MUL = util.compareLOVEVersion(11, 0) and 1 or 255
+	local COLOR_MUL = util.compareLOVEVersion(11, 0) >= 0 and 1 or 255
 
 	function util.gradient(dir, ...)
 		-- Check for direction
@@ -298,6 +298,16 @@ do
 
 		-- Resulting Mesh has 1x1 image size
 		return love.graphics.newMesh(meshData, "strip", "static")
+	end
+end
+
+if util.compareLOVEVersion(11, 0) >= 0 then
+	function util.newCanvas(w, h, f)
+		return love.graphics.newCanvas(w, h, {dpiscale = 1, format = f or "normal"})
+	end
+else
+	function util.newCanvas(w, h, f)
+		return love.graphics.newCanvas(w, h, f or "normal")
 	end
 end
 

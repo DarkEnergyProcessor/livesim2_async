@@ -69,7 +69,9 @@ function element:triggerEvent(eventname, ...)
 
 	if internal.events[eventname] then
 		for _, v in ipairs(internal.events[eventname]) do
-			v(self, Luaoop.class.data(self).opaque, ...)
+			if v(self, Luaoop.class.data(self).opaque, ...) then
+				return
+			end
 		end
 	end
 end

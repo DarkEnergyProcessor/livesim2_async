@@ -2,6 +2,11 @@
 	"name": "English",
 	"code": "en",
 	"strings": {
+		"dialog:yes": "Yes",
+		"dialog:no": "No",
+		"dialog:quit:title": "Quit Live Simulator: 2",
+		"dialog:quit:confirm": "Are you sure want to quit?",
+		"dialog:language:restart": "In order to fully apply changes, the game must be restarted.\nDo you want to restart the game now?",
 		"general:combo": "Combo",
 		"general:maxCombo": "Max Combo",
 		"general:score": "Score",
@@ -102,7 +107,6 @@
 		"setting:liveUI:short": "Live UI Setting",
 		"setting:liveUI:current": "Current Live Show Interface: %{name}",
 		"setting:language": "Language Setting",
-		"setting:language:current": "Current Language: %{name} (%{code})",
-		"setting:language:restart": "In order to fully apply changes, the game must be restarted.\nDo you want to restart the game now?"
+		"setting:language:current": "Current Language: %{name} (%{code})"
 	}
 }
