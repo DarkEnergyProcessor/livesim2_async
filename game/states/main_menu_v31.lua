@@ -250,13 +250,7 @@ function mainMenu:load()
 
 	if not(self.data.changeUnitsButton) then
 		self.data.changeUnitsButton = changeUnitsButton(self)
-		self.data.changeUnitsButton:addEventListener("mousereleased", function()
-			if love.keyboard.isDown("lshift", "rshift") then
-				return gamestate.enter(loadingInstance.getInstance(), "changeUnitsV31")
-			else
-				return gamestate.enter(loadingInstance.getInstance(), "changeUnits")
-			end
-		end)
+		self.data.changeUnitsButton:addEventListener("mousereleased", makeEnterGamestateFunction("changeUnits"))
 	end
 	glow.addElement(self.data.changeUnitsButton, 497, 29)
 
