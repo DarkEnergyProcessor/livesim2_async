@@ -41,122 +41,122 @@ File information start: Sections are parsed in order
 
 Header: File header
     qword - String with sequence "livesim3", this render it unreadable by older LS2 parser
-	dword - Format version (-2147483648 as of writing and increment)
-	dword - String with sequence "\x1A\x0A\x0D\x0A"
+    dword - Format version (-2147483648 as of writing and increment)
+    dword - String with sequence "\x1A\x0A\x0D\x0A"
 
 Metadata: Beatmap metadata
-	dword - NBT total size in bytes
-	TAG_Compound("metadata"): Beatmap metadata
-	{
-		TAG_String("title"): Song name (REQUIRED)
-		TAG_String("artist"): Song artist (OPTIONAL)
-		TAG_String("source"): Song source either anime name, album name, etc. (OPTIONAL)
-		TAG_List("composers"): List of composers in TAG_Compound (OPTIONAL).
-		{
-			- For every composers:
-			TAG_Compound(None):
-			{
-				TAG_String("role"): Composer role (REQUIRED)
-				TAG_String("name"): Composer name (REQUIRED)
-			}
-		}
-		TAG_String("audio"): Audio file name (OPTIONAL)
-		TAG_String("artwork"): Song artwork file name (OPTIONAL)
-		TAG_List("tags"): List of TAG_Strings of tags (OPTIONAL). If no tags are present
-		                  this field is RECOMMENDED to be absent instead.
-	}
-	byte[16] - Raw MD5 hash of the NBT data above
+    dword - NBT total size in bytes
+    TAG_Compound("metadata"): Beatmap metadata
+    {
+        TAG_String("title"): Song name (REQUIRED)
+        TAG_String("artist"): Song artist (OPTIONAL)
+        TAG_String("source"): Song source either anime name, album name, etc. (OPTIONAL)
+        TAG_List("composers"): List of composers in TAG_Compound (OPTIONAL).
+        {
+            - For every composers:
+            TAG_Compound(None):
+            {
+                TAG_String("role"): Composer role (REQUIRED)
+                TAG_String("name"): Composer name (REQUIRED)
+            }
+        }
+        TAG_String("audio"): Audio file name (OPTIONAL)
+        TAG_String("artwork"): Song artwork file name (OPTIONAL)
+        TAG_List("tags"): List of TAG_Strings of tags (OPTIONAL). If no tags are present
+                          this field is RECOMMENDED to be absent instead.
+    }
+    byte[16] - Raw MD5 hash of the NBT data above
 
 Beatmap: Beatmap data header
-	byte - Beatmap NBT data compression type. Allowed values are:
-	       - 0 = Uncompressed.
-		   - 1 = GZip
-		   - 2 = zLib
-		   - 3 = LZ4
-		   - 4 = Zstandard
-		   - 5 = Brotli
-	dword - Beatmap NBT data compressed size
-	dword - Beatmap NBT data uncompressed size
+    byte - Beatmap NBT data compression type. Allowed values are:
+           - 0 = Uncompressed.
+           - 1 = GZip
+           - 2 = zLib
+           - 3 = LZ4
+           - 4 = Zstandard
+           - 5 = Brotli
+    dword - Beatmap NBT data compressed size
+    dword - Beatmap NBT data uncompressed size
 
 Beatmap: Beatmap data, may be compressed
-	byte - Amount of beatmap
-	- For every "Amount of beatmap"
-	{
-		dword - NBT data size
-		TAG_List("beatmap"): Beatmap data
-		{
-			- For every difficulty of beatmap:
-			TAG_Compound(None):
-			{
-				TAG_Byte("star"): Beatmap star difficulty level (REQUIRED)
-				TAG_Byte("starRandom"): Beatmap star difficulty when beatmap randomized (REQUIRED).
-				                        MAY have same value as "star" field above.
-				TAG_String("difficultyName"): Beatmap difficulty name (OPTIONAL)
-				TAG_String("background"): Beatmap background file name (OPTIONAL)
-				                          - String starting with ":" followed by number denotes
-										    predefined background number
-										  - Otherwise, it's treated as file name and the image
-										    will be looked up in data section.
-				TAG_String("backgroundRandom"): Beatmap background file name when beatmap randomized
-				                                with specification same as above. MAY have same value
-												as "background" field above.
-				                                (REQUIRED if "background" also exist)
-				TAG_List("customUnitList"): Custom unit image list (OPTIONAL)
-				{
-					- For every element
-					TAG_Compound(None): Custom unit definition
-					{
-						TAG_BYTE("position"): Unit position where 1 is rightmost and 9 is leftmost (REQUIRED)
-						TAG_String("filename"): Custom unit image filename
-					}
-				}
-				TAG_List("map"): Beatmap hit points data (REQUIRED)
-				{
-					- For every map
-					TAG_Compound(None)
-					{
-						TAG_Double("time"): Note timing in seconds (REQUIED)
-						TAG_Int("attribute"): Note attribute (REQUIRED)
-											  Bit pattern: 0rrrrrrr rrgggggg gggbbbbb bbbbcccc
-						                      If "c" bits is 15, then it's custom colored note:
-											- bit 22-30 - R color (9 bits, unsigned representation)
-											- bit 13-21 - G color (9 bits, unsigned representation)
-											- bit 4-12  - B color (9 bits, unsigned representation)
-											  Otherwise, "c" determines the predefined note color.
-						TAG_Byte("position"): Note lane position, valid values range are 1..9 (REQUIRED)
-						TAG_Byte("flags"): Note flags (REQUIRED). Bit pattern: 0000wstt
-						                   - "t" value:
-											 - 0 = Normal
-											 - 1 = Token note
-											 - 2 = Star note
-											 - 3 = Long note
-										   - "s" flag: Swing note?
-										   - "w" flag: Simultaneous note?
-						TAG_Int("noteGroup"): Swing note group (REQUIRED if "s" flag is set)
-						TAG_Double("length"): Long note duration (REQUIRED if "t" = 3)
-					}
-				}
-				TAG_Compound("editorData"): Beatmap editor-related information (OPTIONAL)
-				{
-					TAG_String("software"): Beatmap editing software
-					- TODO this section
-				}
-			}
-		}
-		byte[16] - Raw MD5 hash of NBT data above
-	}
+    byte - Amount of beatmap
+    - For every "Amount of beatmap"
+    {
+        dword - NBT data size
+        TAG_List("beatmap"): Beatmap data
+        {
+            - For every difficulty of beatmap:
+            TAG_Compound(None):
+            {
+                TAG_Byte("star"): Beatmap star difficulty level (REQUIRED)
+                TAG_Byte("starRandom"): Beatmap star difficulty when beatmap randomized (REQUIRED).
+                                        MAY have same value as "star" field above.
+                TAG_String("difficultyName"): Beatmap difficulty name (OPTIONAL)
+                TAG_String("background"): Beatmap background file name (OPTIONAL)
+                                          - String starting with ":" followed by number denotes
+                                            predefined background number
+                                          - Otherwise, it's treated as file name and the image
+                                            will be looked up in data section.
+                TAG_String("backgroundRandom"): Beatmap background file name when beatmap randomized
+                                                with specification same as above. MAY have same value
+                                                as "background" field above.
+                                                (REQUIRED if "background" also exist)
+                TAG_List("customUnitList"): Custom unit image list (OPTIONAL)
+                {
+                    - For every element
+                    TAG_Compound(None): Custom unit definition
+                    {
+                        TAG_BYTE("position"): Unit position where 1 is rightmost and 9 is leftmost (REQUIRED)
+                        TAG_String("filename"): Custom unit image filename
+                    }
+                }
+                TAG_List("map"): Beatmap hit points data (REQUIRED)
+                {
+                    - For every map
+                    TAG_Compound(None)
+                    {
+                        TAG_Double("time"): Note timing in seconds (REQUIED)
+                        TAG_Int("attribute"): Note attribute (REQUIRED)
+                                              Bit pattern: 0rrrrrrr rrgggggg gggbbbbb bbbbcccc
+                                              If "c" bits is 15, then it's custom colored note:
+                                            - bit 22-30 - R color (9 bits, unsigned representation)
+                                            - bit 13-21 - G color (9 bits, unsigned representation)
+                                            - bit 4-12  - B color (9 bits, unsigned representation)
+                                              Otherwise, "c" determines the predefined note color.
+                        TAG_Byte("position"): Note lane position, valid values range are 1..9 (REQUIRED)
+                        TAG_Byte("flags"): Note flags (REQUIRED). Bit pattern: 0000wstt
+                                           - "t" value:
+                                             - 0 = Normal
+                                             - 1 = Token note
+                                             - 2 = Star note
+                                             - 3 = Long note
+                                           - "s" flag: Swing note?
+                                           - "w" flag: Simultaneous note?
+                        TAG_Int("noteGroup"): Swing note group (REQUIRED if "s" flag is set)
+                        TAG_Double("length"): Long note duration (REQUIRED if "t" = 3)
+                    }
+                }
+                TAG_Compound("editorData"): Beatmap editor-related information (OPTIONAL)
+                {
+                    TAG_String("software"): Beatmap editing software
+                    - TODO this section
+                }
+            }
+        }
+        byte[16] - Raw MD5 hash of NBT data above
+    }
 
 Data: Additional beatmap data such as audio and images goes here
-	dword - Additional beatmap data NBT size (can be 0)
-	TAG_List("additionalData"): Beatmap additional data
-	{
-		- For every additional data
-		TAG_Compound(None): Additional data information
-		{
-			TAG_String("filename"): Data file name (REQUIRED)
-			TAG_Int("offset"): Data file offset inside the beatmap file, 16-byte aligned (REQUIRED)
-		}
-	}
+    dword - Additional beatmap data NBT size (can be 0)
+    TAG_List("additionalData"): Beatmap additional data
+    {
+        - For every additional data
+        TAG_Compound(None): Additional data information
+        {
+            TAG_String("filename"): Data file name (REQUIRED)
+            TAG_Int("offset"): Data file offset inside the beatmap file, 16-byte aligned (REQUIRED)
+        }
+    }
 
 Implementation notes:
 There are some notes for people who want to implement this beatmap format. Note that the usage
@@ -176,9 +176,9 @@ of "parser" and "implementation" in here are identical.
       in "Format version" number and reject parsing in that case.
    c. MUST be able to detect unexpected end-of-line conversion by using the "Header" data
       above. If unexpected end-of-line is detected:
-	  1) Parser can do proper end-of-line conversion back to retain the original data
-	     intact and keep parsing.
-	  2) Parser can reject the file and show error to user.
+      1) Parser can do proper end-of-line conversion back to retain the original data
+         intact and keep parsing.
+      2) Parser can reject the file and show error to user.
    d. MUST correctly read big endian integers regardless of the host/device/system endianess.
    e. MUST NOT assume the order of TAG_Compound. The order of elements in TAG_Compound is undefined.
    f. MUST read TAG_List in order they are defined.
@@ -196,11 +196,11 @@ of "parser" and "implementation" in here are identical.
 4. Beatmap data header
    a. MUST support at least support these compression modes:
       1) Uncompressed (value 0)
-	  2) GZip (value 1)
-	  3) zLib (value 2)
-	  For "Uncompressed", the "Beatmap NBT data compressed size" and the
-	  "Beatmap NBT data compressed size" MUST be equal. Otherwise, parser
-	  MUST reject the file.
+      2) GZip (value 1)
+      3) zLib (value 2)
+      For "Uncompressed", the "Beatmap NBT data compressed size" and the
+      "Beatmap NBT data compressed size" MUST be equal. Otherwise, parser
+      MUST reject the file.
    b. MAY support other compression, including LZ4, Zstandard, and Brotli.
    c. MUST reject parsing if the compression format is unsupported.
 
@@ -210,12 +210,12 @@ of "parser" and "implementation" in here are identical.
       field is outside of defined range.
    c. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
       are notes that have one of these conditions:
-	  1) The "time" field is negative, infinity, or NaN.
-	  2) Having "position" field outside of the range.
-	  3) Missing "noteGroup" field but "s" flag is set.
-	  4) The "noteGroup" field is 0 or less.
-	  5) Missing "length" field but "t" flag value is 3.
-	  6) The "length" field is negative, infinity, or NaN.
+      1) The "time" field is negative, infinity, or NaN.
+      2) Having "position" field outside of the range.
+      3) Missing "noteGroup" field but "s" flag is set.
+      4) The "noteGroup" field is 0 or less.
+      5) Missing "length" field but "t" flag value is 3.
+      6) The "length" field is negative, infinity, or NaN.
    d. MAY use "w" flag to aid simultaneous note identification, but implementation SHALL NOT assume
       it's set correctly.
 
