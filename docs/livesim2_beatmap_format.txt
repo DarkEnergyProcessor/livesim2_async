@@ -1,6 +1,10 @@
 Live Simulator: 2 binary beatmap file format. Extension: .ls2
 Version 2.0
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! OBSOLETE, PREFER LS2OVR BEATMAP !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 The beatmap format consist of multiple sections, where each
 section has FourCC and possibly with size depends on the FourCC itself.
 The section can appear in any order. Like, storyboard section can appear
