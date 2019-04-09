@@ -110,7 +110,7 @@ Beatmap: Beatmap data, may be compressed
                         TAG_String("filename"): Custom unit image filename
                     }
                 }
-				TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
+                TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
                 TAG_List("map"): Beatmap hit points data (REQUIRED)
                 {
                     - For every map
@@ -186,7 +186,7 @@ A. Decoder
    f. MUST read TAG_List in order they are defined.
    g. MUST expect any "OPTIONAL" field above is absent, but parser is RECOMMENDED to handle the case
       such field exist. If the field is "OPTIONAL" and it contain unmeaningful value, parser MAY treat
-	  the field as omitted.
+      the field as omitted.
    h. MUST reject parsing if any field that are marked as "REQUIRED" is missing.
    i. MAY support non-seeking access, where access must be done serially.
 
