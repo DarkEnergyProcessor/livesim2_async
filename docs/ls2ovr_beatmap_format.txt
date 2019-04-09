@@ -110,6 +110,7 @@ Beatmap: Beatmap data, may be compressed
                         TAG_String("filename"): Custom unit image filename
                     }
                 }
+				TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
                 TAG_List("map"): Beatmap hit points data (REQUIRED)
                 {
                     - For every map
@@ -162,14 +163,15 @@ Implementation notes:
 There are some notes for people who want to implement this beatmap format. Note that the usage
 of "parser" and "implementation" in here are identical.
 
+A. Decoder
 1. NBT parser
    a. MUST comply with version 19133 of NBT as described in the beginning of this document.
    b. MUST properly translate "\xCO\x80" to "\x00" for TAG_String.
    c. MUST expect either TAG_Compound or TAG_List as root tag. If the NBT library used can't satisfy
-      this, parser is allowed to workaround this problem.
+      this, parser is allowed to workaround the problem in the NBT library.
    d. MUST properly handle empty TAG_List.
 
-2. File format parser:
+2. File format parser
    a. MUST check for header at the beginning of the file as specified in "Header" above, and
       parser must reject the file if the header doesn't match.
    b. MUST detect transmission system that doesn't support 8-bit data by checking bit 31
@@ -183,43 +185,70 @@ of "parser" and "implementation" in here are identical.
    e. MUST NOT assume the order of TAG_Compound. The order of elements in TAG_Compound is undefined.
    f. MUST read TAG_List in order they are defined.
    g. MUST expect any "OPTIONAL" field above is absent, but parser is RECOMMENDED to handle the case
-      such field exist.
+      such field exist. If the field is "OPTIONAL" and it contain unmeaningful value, parser MAY treat
+	  the field as omitted.
    h. MUST reject parsing if any field that are marked as "REQUIRED" is missing.
    i. MAY support non-seeking access, where access must be done serially.
 
-3. Metadata assumption:
-   a. MAY use fallback names for "audio" field, which is left to implementation.
+3. Metadata assumption
+   a. MAY use fallback names for "audio" field if it's absent, which is left to implementation.
    b. MUST NOT assume "tags" field to have values in it even if the TAG_List exist.
    c. MUST verify the authenticity of the whole NBT data using MD5 algorithm by
       hashing the whole NBT data and reject parsing if the MD5 hash doesn't match.
 
 4. Beatmap data header
-   a. MUST support at least support these compression modes:
+   a. MUST support at least these compression modes:
       1) Uncompressed (value 0)
       2) GZip (value 1)
       3) zLib (value 2)
       For "Uncompressed", the "Beatmap NBT data compressed size" and the
       "Beatmap NBT data compressed size" MUST be equal. Otherwise, parser
       MUST reject the file.
-   b. MAY support other compression, including LZ4, Zstandard, and Brotli.
+   b. MAY support other compression modes/formats, such as LZ4, Zstandard, and Brotli.
    c. MUST reject parsing if the compression format is unsupported.
 
 5. Each beatmap data
-   a. MAY use fallback names if "difficultyName" is absent.
+   a. MAY use fallback difficulty names if "difficultyName" is absent.
    b. MAY reject custom unit parsing for current problematic data or as whole if "position"
       field is outside of defined range.
    c. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
       are notes that have one of these conditions:
-      1) The "time" field is negative, infinity, or NaN.
+      1) The "time" field is negative, +/-infinity, or NaN.
       2) Having "position" field outside of the range.
-      3) Missing "noteGroup" field but "s" flag is set.
+      3) Missing "noteGroup" field but "s" bit in "flags" is set.
       4) The "noteGroup" field is 0 or less.
-      5) Missing "length" field but "t" flag value is 3.
-      6) The "length" field is negative, infinity, or NaN.
-   d. MAY use "w" flag to aid simultaneous note identification, but implementation SHALL NOT assume
-      it's set correctly.
+      5) Missing "length" field but "t" value in "flags" is 3.
+      6) The "length" field is negative, +/-infinity, or NaN.
+   d. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
+      Otherwise, implementation MUST identify simultaneous note by enumerating list of notes.
+   e. MUST verify the authenticity of the whole NBT data using MD5 algorithm by
+      hashing the whole NBT data and reject parsing if the MD5 hash doesn't match.
 
 6. Additional data
    a. MUST assume the data is 16-byte aligned. Parser should ignore specific file if it's not
       aligned in 16-byte boundary.
    b. MAY load specific files in the beatmap for application purpose.
+   c. MUST at least accept file with size of 1MB.
+   d. STRONGLY RECOMMENDED to be able to handle big files.
+
+B. Encoder
+1. NBT parser
+   a. MUST comply with version 19133 of NBT as described in the beginning of this document.
+   b. MUST properly translate "\x00" to "\xCO\x80" for TAG_String.
+   c. MUST allow creation of root tag with type TAG_Compound or TAG_List. If the NBT library used
+      can't satisfy this, parser is allowed to workaround the problem in the NBT library.
+   d. MUST properly handle empty TAG_List.
+
+2. File format encoding
+   a. MUST provide values that are marked as "REQUIRED"
+   b. MUST encode values using the defined datatype/NBT tag.
+   c. MAY provide values that are marked as "OPTIONAL", however subpoint "b" above still apply.
+   d. STRONGLY RECOMMENDED to omit field that are marked as "OPTIONAL" if no value can be provided.
+
+Changelog:
+v0.2: 09-04-2019
+- Added "simultaneousMarked" in beatmap data.
+- Added encoding implementation notes.
+
+v0.1: 06-04-2019
+- Initial draft release.
