@@ -1,5 +1,5 @@
 Live Simulator: 2 "Over the Rainbow" beatmap specification
-Version 0.1
+Version 0.3
 Preferred file extension: .ls2ovr .ls3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -110,6 +110,8 @@ Beatmap: Beatmap data, may be compressed
                         TAG_String("filename"): Custom unit image filename
                     }
                 }
+                TAG_Int_Array("scoreInfo"): 4 ints of score level, in C, B, A, and S score order (OPTIONAL)
+                TAG_Int_Array("comboInfo"): 4 ints of combo level, in C, B, A, and S combo order (OPTIONAL)
                 TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
                 TAG_List("map"): Beatmap hit points data (REQUIRED)
                 {
@@ -133,8 +135,8 @@ Beatmap: Beatmap data, may be compressed
                                              - 3 = Long note
                                            - "s" flag: Swing note?
                                            - "w" flag: Simultaneous note?
-                        TAG_Int("noteGroup"): Swing note group (REQUIRED if "s" flag is set)
-                        TAG_Double("length"): Long note duration (REQUIRED if "t" = 3)
+                        TAG_Int("noteGroup"): Swing note group (REQUIRED if "s" flag is set, absent otherwise)
+                        TAG_Double("length"): Long note duration (REQUIRED if "t" = 3, absent otherwise)
                     }
                 }
                 TAG_Compound("editorData"): Beatmap editor-related information (OPTIONAL)
@@ -155,7 +157,9 @@ Data: Additional beatmap data such as audio and images goes here
         TAG_Compound(None): Additional data information
         {
             TAG_String("filename"): Data file name (REQUIRED)
-            TAG_Int("offset"): Data file offset inside the beatmap file, 16-byte aligned (REQUIRED)
+            TAG_Int("offset"): Data file position inside the beatmap file relative to beginning
+			                   if the file, 16-byte aligned (REQUIRED)
+			TAG_Int("size"): Data file size (REQUIRED)
         }
     }
 
@@ -208,10 +212,15 @@ A. Decoder
    c. MUST reject parsing if the compression format is unsupported.
 
 5. Each beatmap data
-   a. MAY use fallback difficulty names if "difficultyName" is absent.
+   a. MUST use fallback difficulty name if "difficultyName" is absent. It's RECOMMENDED to
+      use UTF-8 string "<star>\xE2\x98\x86" as fallback.
    b. MAY reject custom unit parsing for current problematic data or as whole if "position"
       field is outside of defined range.
-   c. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
+   c. MUST reject the "scoreInfo" and "comboInfo" data if the elements is less than 4 or if
+      one of the value is 0 or negative.
+   d. MUST ignore additional elements in "scoreInfo" and "comboInfo" if the elements is more
+      than 4
+   e. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
       are notes that have one of these conditions:
       1) The "time" field is negative, +/-infinity, or NaN.
       2) Having "position" field outside of the range.
@@ -219,10 +228,10 @@ A. Decoder
       4) The "noteGroup" field is 0 or less.
       5) Missing "length" field but "t" value in "flags" is 3.
       6) The "length" field is negative, +/-infinity, or NaN.
-   d. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
+   f. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
       Otherwise, implementation MUST identify simultaneous note by enumerating list of notes.
-   e. MUST verify the authenticity of the whole NBT data using MD5 algorithm by
-      hashing the whole NBT data and reject parsing if the MD5 hash doesn't match.
+   e. MUST verify the authenticity of the beatmap NBT data using MD5 algorithm by hashing the
+      whole NBT data and reject the current beatmap data if the MD5 hash doesn't match.
 
 6. Additional data
    a. MUST assume the data is 16-byte aligned. Parser should ignore specific file if it's not
@@ -245,7 +254,15 @@ B. Encoder
    c. MAY provide values that are marked as "OPTIONAL", however subpoint "b" above still apply.
    d. STRONGLY RECOMMENDED to omit field that are marked as "OPTIONAL" if no value can be provided.
 
+3. Beatmap encoding
+   a. MUST support writing uncompressed, gzip, and zLib compressed beatmap data.
+
 Changelog:
+v0.3: 12-04-2019
+- Added "scoreInfo" and "comboInfo" in beatmap data.
+- Added "size" for each additional data.
+- Changed implementation requirements for "difficultyName".
+
 v0.2: 09-04-2019
 - Added "simultaneousMarked" in beatmap data.
 - Added encoding implementation notes.

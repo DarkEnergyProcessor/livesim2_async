@@ -17,9 +17,14 @@ return function(f)
 
 	f:seek(0)
 	local header = f:read(4)
-	if header == "MThd" or (header == "live" and f:read(4) == "sim2") then
-		-- MIDI or LS2
+	if header == "MThd" then
 		return true
+	elseif header == "live" then
+		local header2 = f:read(4)
+		if header2 == "sim2" or header == "sim3"then
+			-- MIDI or LS2/OVR
+			return true
+		end
 	end
 
 	return false

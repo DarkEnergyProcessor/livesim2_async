@@ -258,6 +258,14 @@ function util.decompressToData(data, algo)
 	end
 end
 
+function util.decompressToString(data, algo)
+	if version11 then
+		return love.data.decompress("string", algo, data)
+	else
+		return love.math.decompress(data, algo)
+	end
+end
+
 do
 	local COLOR_MUL = util.compareLOVEVersion(11, 0) >= 0 and 1 or 255
 

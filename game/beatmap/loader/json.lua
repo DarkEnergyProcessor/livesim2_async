@@ -328,13 +328,16 @@ return function(f)
 		bm.song_name
 	then
 		-- SIFTrain
-		return siftLoader(bm, f, hash)
-
+		local x = siftLoader(bm, f, hash)
+		f:close()
+		return x
 	elseif bm.lane and bm.audiofile then
 		-- LLP
+		f:close()
 		return llpLoader(bm, hash)
 	else
 		-- SIF
+		f:close()
 		return sifLoader(bm, hash)
 	end
 end, "file"
