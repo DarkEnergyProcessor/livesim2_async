@@ -1,5 +1,5 @@
 Live Simulator: 2 "Over the Rainbow" beatmap specification
-Version 0.3
+Version 0.4
 Preferred file extension: .ls2ovr .ls3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -112,6 +112,7 @@ Beatmap: Beatmap data, may be compressed
                 }
                 TAG_Int_Array("scoreInfo"): 4 ints of score level, in C, B, A, and S score order (OPTIONAL)
                 TAG_Int_Array("comboInfo"): 4 ints of combo level, in C, B, A, and S combo order (OPTIONAL)
+                TAG_Int("baseScorePerTap"): Base score/tap (OPTIONAL)
                 TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
                 TAG_List("map"): Beatmap hit points data (REQUIRED)
                 {
@@ -158,8 +159,8 @@ Data: Additional beatmap data such as audio and images goes here
         {
             TAG_String("filename"): Data file name (REQUIRED)
             TAG_Int("offset"): Data file position inside the beatmap file relative to beginning
-			                   if the file, 16-byte aligned (REQUIRED)
-			TAG_Int("size"): Data file size (REQUIRED)
+                               if the file, 16-byte aligned (REQUIRED)
+            TAG_Int("size"): Data file size (REQUIRED)
         }
     }
 
@@ -222,12 +223,13 @@ A. Decoder
       than 4
    e. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
       are notes that have one of these conditions:
-      1) The "time" field is negative, +/-infinity, or NaN.
-      2) Having "position" field outside of the range.
-      3) Missing "noteGroup" field but "s" bit in "flags" is set.
-      4) The "noteGroup" field is 0 or less.
-      5) Missing "length" field but "t" value in "flags" is 3.
-      6) The "length" field is negative, +/-infinity, or NaN.
+      1) Missing 1 or more required fields
+      2) The "time" field is negative, +/-infinity, or NaN.
+      3) Having "position" field outside of the range.
+      4) Missing "noteGroup" field but "s" bit in "flags" is set.
+      5) The "noteGroup" field is 0 or less.
+      6) Missing "length" field but "t" value in "flags" is 3.
+      7) The "length" field is negative, +/-infinity, or NaN.
    f. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
       Otherwise, implementation MUST identify simultaneous note by enumerating list of notes.
    e. MUST verify the authenticity of the beatmap NBT data using MD5 algorithm by hashing the
@@ -258,6 +260,9 @@ B. Encoder
    a. MUST support writing uncompressed, gzip, and zLib compressed beatmap data.
 
 Changelog:
+v0.4: 14-04-2019
+- Added "baseScorePerTap" in beatmap data.
+
 v0.3: 12-04-2019
 - Added "scoreInfo" and "comboInfo" in beatmap data.
 - Added "size" for each additional data.
