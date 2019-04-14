@@ -101,6 +101,19 @@ Beatmap: Beatmap data, may be compressed
                                                 with specification same as above. MAY have same value
                                                 as "background" field above.
                                                 (REQUIRED if "background" also exist)
+                TAG_Compound("backgroundList"): Beatmap background list (OPTIONAL)
+                {
+                    TAG_String("main"): Main background filename (REQUIRED)
+                    - For "left" and "right" field below, both must exist or not at all.
+                    - If only one of it exist, then it must be discarded.
+                    TAG_String("left"): Left background filename (OPTIONAL)
+                    TAG_String("right"): Right background filename (OPTIONAL)
+                    - For "top" and "bottom" field below, both must exist or not at all.
+                    - If only one of it exist, then it must be discarded.
+                    TAG_String("top"): Top background filename (OPTIONAL)
+                    TAG_String("buttom"): Bottom background filename (OPTIONAL)
+                }
+                TAG_Compound("randomBackgroundList"): Beatmap background list for random (OPTIONAL)
                 TAG_List("customUnitList"): Custom unit image list (OPTIONAL)
                 {
                     - For every element
@@ -113,6 +126,7 @@ Beatmap: Beatmap data, may be compressed
                 TAG_Int_Array("scoreInfo"): 4 ints of score level, in C, B, A, and S score order (OPTIONAL)
                 TAG_Int_Array("comboInfo"): 4 ints of combo level, in C, B, A, and S combo order (OPTIONAL)
                 TAG_Int("baseScorePerTap"): Base score/tap (OPTIONAL)
+                TAG_Short("stamina"): Initial and max stamina (OPTIONAL)
                 TAG_Byte("simultaneousMarked"): Is simultaneous note marked correctly (0/1)? (REQUIRED)
                 TAG_List("map"): Beatmap hit points data (REQUIRED)
                 {
@@ -219,9 +233,13 @@ A. Decoder
       field is outside of defined range.
    c. MUST reject the "scoreInfo" and "comboInfo" data if the elements is less than 4 or if
       one of the value is 0 or negative.
-   d. MUST ignore additional elements in "scoreInfo" and "comboInfo" if the elements is more
+   d. MUST prioritize the usage of "backgroundList" (and "backgroundRandom") if such element
+      exist. If in any case there's problem loading the "backgroundList", either because
+      missing "main" field (but not left/right or top/bottom field), then parser MUST
+      fallback to "background" field.
+   e. MUST ignore additional elements in "scoreInfo" and "comboInfo" if the elements is more
       than 4
-   e. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
+   f. MUST ignore particular problematic note and OPTIONALly writes to log. Problematic note
       are notes that have one of these conditions:
       1) Missing 1 or more required fields
       2) The "time" field is negative, +/-infinity, or NaN.
@@ -230,9 +248,9 @@ A. Decoder
       5) The "noteGroup" field is 0 or less.
       6) Missing "length" field but "t" value in "flags" is 3.
       7) The "length" field is negative, +/-infinity, or NaN.
-   f. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
+   g. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
       Otherwise, implementation MUST identify simultaneous note by enumerating list of notes.
-   e. MUST verify the authenticity of the beatmap NBT data using MD5 algorithm by hashing the
+   h. MUST verify the authenticity of the beatmap NBT data using MD5 algorithm by hashing the
       whole NBT data and reject the current beatmap data if the MD5 hash doesn't match.
 
 6. Additional data
@@ -262,6 +280,8 @@ B. Encoder
 Changelog:
 v0.4: 14-04-2019
 - Added "baseScorePerTap" in beatmap data.
+- Added "backgroundList" and "randomBackgroundList" in beatmap data.
+- Added "stamina" in beatmap data.
 
 v0.3: 12-04-2019
 - Added "scoreInfo" and "comboInfo" in beatmap data.
