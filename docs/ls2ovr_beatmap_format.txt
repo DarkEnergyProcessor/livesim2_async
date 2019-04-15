@@ -153,8 +153,8 @@ Beatmap: Beatmap data, may be compressed
             }
             TAG_Compound("editorData"): Beatmap editor-related information (OPTIONAL)
             {
-                TAG_String("software"): Beatmap editing software
-                - TODO this section
+                TAG_String("software"): Beatmap editing software (REQUIRED)
+                TAG_Compound("data"): Additional beatmap editor-related data (OPTIONAL)
             }
         }
         byte[16] - Raw MD5 hash of NBT data above
@@ -276,6 +276,7 @@ B. Encoder
 Changelog:
 v0.5: 15-04-2019
 - Removed unnecessary TAG_List in beatmap data.
+- Simplify beatmap editor-related data.
 
 v0.4: 14-04-2019
 - Added "baseScorePerTap" in beatmap data.
