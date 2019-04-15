@@ -100,19 +100,35 @@ local function enumerateBeatmap(id)
 
 	for i = 1, #list do
 		local file = list[i]
-		local beatmapObject, type = beatmap.findSuitable("beatmap/"..file)
+		local beatmapObject, beatmapType = beatmap.findSuitable("beatmap/"..file)
 
 		if beatmapObject then
-			local value = {name = file, data = beatmapObject, type = type}
-			local fmt, fmtInt = beatmapObject:getFormatName()
-			beatmap.list[#beatmap.list + 1] = value
-			beatmap.list[file] = value
-			sendBeatmapData("enum", id,
-				file,
-				beatmapObject:getName() or file,
-				{fmtInt, fmt},
-				beatmapObject:getDifficultyString()
-			)
+			if getmetatable(beatmapObject) == nil then
+				for j, v in ipairs(beatmapObject) do
+					local beatmapID = string.format("%s:%d", file, j)
+					local value = {name = beatmapID, data = v, type = beatmapType}
+					local fmt, fmtInt = v:getFormatName()
+					beatmap.list[#beatmap.list + 1] = value
+					beatmap.list[beatmapID] = value
+					sendBeatmapData("enum", id,
+						beatmapID,
+						v:getName() or beatmapID,
+						{fmtInt, fmt},
+						v:getDifficultyString()
+					)
+				end
+			else
+				local value = {name = file, data = beatmapObject, type = beatmapType}
+				local fmt, fmtInt = beatmapObject:getFormatName()
+				beatmap.list[#beatmap.list + 1] = value
+				beatmap.list[file] = value
+				sendBeatmapData("enum", id,
+					file,
+					beatmapObject:getName() or file,
+					{fmtInt, fmt},
+					beatmapObject:getDifficultyString()
+				)
+			end
 		end
 
 		if commandChannel:peek() == "quit" then

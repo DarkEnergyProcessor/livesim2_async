@@ -77,8 +77,7 @@ function ls2ovrLoader.getFormatName()
 end
 
 function ls2ovrLoader:getHash()
-	local hashList = Luaoop.class.data(self).hash
-	return md5(table.concat(hashList))
+	return md5(Luaoop.class.data(self).hash)
 end
 
 function ls2ovrLoader:getNotesList()
@@ -502,12 +501,7 @@ return function(file)
 
 		for i = 1, #beatmapList do
 			local v = beatmapList[i]
-			local beatmap = ls2ovrLoader(metadata, v.data, metadataMD5..v.hash, additionalData)
-
-			ret[i] = {
-				name = beatmap:getDifficultyString(),
-				beatmap = beatmap
-			}
+			ret[i] = ls2ovrLoader(metadata, v.data, metadataMD5..v.hash, additionalData)
 		end
 
 		return ret
