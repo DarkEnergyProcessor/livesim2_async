@@ -1,5 +1,5 @@
 Live Simulator: 2 "Over the Rainbow" beatmap specification
-Version 0.5
+Version 0.6
 Preferred file extension: .ls2ovr .ls3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -174,6 +174,9 @@ Data: Additional beatmap data such as audio and images goes here
         }
     }
 
+EOF: End of file marker
+	qword - End-of-file marker (string "overrnbw")
+
 Implementation notes:
 There are some notes for people who want to implement this beatmap format. Note that the usage
 of "parser" and "implementation" in here are identical.
@@ -204,6 +207,7 @@ A. Decoder
       the field as omitted.
    h. MUST reject parsing if any field that are marked as "REQUIRED" is missing.
    i. MAY support non-seeking access, where access must be done serially.
+   j. MUST reject parsing if the EOF marker is not found.
 
 3. Metadata assumption
    a. MAY use fallback names for "audio" field if it's absent, which is left to implementation.
@@ -227,8 +231,10 @@ A. Decoder
       use UTF-8 string "<star>\xE2\x98\x86" as fallback.
    b. MAY reject custom unit parsing for current problematic data or as whole if "position"
       field is outside of defined range.
-   c. MUST reject the "scoreInfo" and "comboInfo" data if the elements is less than 4 or if
-      one of the value is 0 or negative.
+   c. MUST reject the "scoreInfo" and "comboInfo" data if one of these condition is met:
+      * The array length is less than 4
+      * One of the value is 0 or negative
+      * The next value is less than previous value
    d. MUST prioritize the usage of "backgroundList" (and "backgroundRandom") if such element
       exist. If in any case there's problem loading the "backgroundList", either because
       missing "main" field (but not left/right or top/bottom field), then parser MUST
@@ -274,6 +280,9 @@ B. Encoder
    a. MUST support writing uncompressed, gzip, and zLib compressed beatmap data.
 
 Changelog:
+v0.6: 16-04-2019
+- Added end-of-file check
+
 v0.5: 15-04-2019
 - Removed unnecessary TAG_List in beatmap data.
 - Simplify beatmap editor-related data.

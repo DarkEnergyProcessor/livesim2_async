@@ -479,6 +479,9 @@ return function(file)
 	local additionalDataInfo = nbt.decode(file:read(additionalDataSize), "plain")
 	local additionalData = {}
 
+	-- Check EOF
+	assert(file:read(8) == "overrnbw", "EOF marker not found")
+
 	for _, v in ipairs(additionalDataInfo) do
 		if v.offset > 0 then
 			if v.offset % 16 == 0 then
