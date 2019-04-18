@@ -302,9 +302,10 @@ end
 
 function ls2ovrLoader:getBackground()
 	local internal = Luaoop.class.data(self)
+	local bgtype = type(internal.beatmapData.background)
 
-	if internal.beatmapData.backgroundList then
-		local bglist = internal.beatmapData.backgroundList
+	if bgtype == "table" then
+		local bglist = internal.beatmapData.background
 		-- {mode, ...}
 		-- where mode are bitwise:
 		-- 1. main background only (index 2)
@@ -374,9 +375,7 @@ function ls2ovrLoader:getBackground()
 				return mode
 			end
 		end
-	end
-
-	if internal.beatmapData.background then
+	elseif bgtype == "string" then
 		local bg = internal.beatmapData.background
 		if bg:sub(1, 1) == ":" then
 			return tonumber(bg:sub(2)) or 0

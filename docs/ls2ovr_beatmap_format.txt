@@ -1,5 +1,5 @@
 Live Simulator: 2 "Over the Rainbow" beatmap specification
-Version 0.6
+Version 0.7
 Preferred file extension: .ls2ovr .ls3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -18,9 +18,6 @@ version 19133 as described in official Minecraft wiki
   in Lua 5.1 when parsing 64-bit integers.
 * NBT data is mainly stored uncompressed unless noted.
 * It never uses empty root tag like Minecraft mostly do
-* TAG_Compound data can be any order.
-* String in TAG_String is stored using modified UTF-8 where null byte
-  is encoded as "\xC0\x80" instead of "\x00".
 * NBT data structure is specified as output of PyNBT's `debug-nbt`
   tool (example output can be found here https://wiki.vg/NBT).
 
@@ -94,11 +91,7 @@ Beatmap: Beatmap data, may be compressed
                                         predefined background number
                                       - Otherwise, it's treated as file name and the image
                                         will be looked up in data section.
-            TAG_String("backgroundRandom"): Beatmap background file name when beatmap randomized
-                                            with specification same as above. MAY have same value
-                                            as "background" field above.
-                                            (REQUIRED if "background" also exist)
-            TAG_Compound("backgroundList"): Beatmap background list (OPTIONAL)
+            TAG_Compound("background"): Beatmap background list (OPTIONAL)
             {
                 TAG_String("main"): Main background filename (REQUIRED)
                 - For "left" and "right" field below, both must exist or not at all.
@@ -110,7 +103,14 @@ Beatmap: Beatmap data, may be compressed
                 TAG_String("top"): Top background filename (OPTIONAL)
                 TAG_String("buttom"): Bottom background filename (OPTIONAL)
             }
-            TAG_Compound("randomBackgroundList"): Beatmap background list for random (OPTIONAL)
+            TAG_String("backgroundRandom"): Beatmap background file name when beatmap randomized
+                                            with specification same as above for TAG_String. MAY have
+                                            same value as "background" field above.
+                                            (REQUIRED if "background" exist, OPTIONAL otherwise)
+            TAG_Compound("backgroundRandom"): Beatmap background list when beatmap randomized with
+                                              specification same as above for TAG_Compound. MAY have
+                                              exactly same value as "background" field above.
+                                              (REQUIRED if "background" exist, OPTIONAL otherwise)
             TAG_List("customUnitList"): Custom unit image list (OPTIONAL)
             {
                 - For every element
@@ -175,7 +175,7 @@ Data: Additional beatmap data such as audio and images goes here
     }
 
 EOF: End of file marker
-	qword - End-of-file marker (string "overrnbw")
+    qword - End-of-file marker (string "overrnbw")
 
 Implementation notes:
 There are some notes for people who want to implement this beatmap format. Note that the usage
@@ -252,6 +252,9 @@ A. Decoder
       7) The "length" field is negative, +/-infinity, or NaN.
    g. MAY use "w" flag to mark note as simultaneous only if "simultaneousMarked" is set to 1.
       Otherwise, implementation MUST identify simultaneous note by enumerating list of notes.
+   h. MUST detect correct type for "background" which may either be TAG_String or TAG_Compound.
+   i. MUST reject current beatmap data if "background" exist (and valid) and "backgroundRandom"
+      is missing or invalid.
    h. MUST verify the authenticity of the beatmap NBT data using MD5 algorithm by hashing the
       whole NBT data and reject the current beatmap data if the MD5 hash doesn't match.
 
@@ -280,6 +283,10 @@ B. Encoder
    a. MUST support writing uncompressed, gzip, and zLib compressed beatmap data.
 
 Changelog:
+v0.7: 18-04-2019
+- Merged "backgroundList" to "background" and "randomBackgroundList" to "backgroundRandom", so
+  both field can be either be TAG_Compound or TAG_String.
+
 v0.6: 16-04-2019
 - Added end-of-file check
 

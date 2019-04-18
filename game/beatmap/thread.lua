@@ -4,6 +4,15 @@
 
 local love = require("love")
 love._version = love._version or love.getVersion()
+
+-- LOVE 0.10.2 backward compatibility
+-- Thread has JIT enabled by default. Disable if needed.
+-- Needs to be done very early before requiring other modules.
+if jit and (love._os == "Android" or love._os == "iOS") then
+	jit.off()
+	jit.flush()
+end
+
 require("love.event")
 require("love.filesystem")
 require("love.image")
@@ -25,12 +34,6 @@ local beatmap = {
 	list = {},
 }
 package.loaded.beatmap = beatmap
-
--- LOVE 0.10.2 backward compatibility
--- Thread has JIT enabled by default. Disable if needed.
-if jit and (love._os == "Android" or love._os == "iOS") then
-	jit.off()
-end
 
 local function createRandomString()
 	local t = {}

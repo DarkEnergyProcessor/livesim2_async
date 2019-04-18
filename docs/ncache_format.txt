@@ -1,6 +1,12 @@
 Live Simulator: 2 note cache file format
 Filename: noteloader_<encoded_name>_cache.ncache
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!           This only used for Live Simulator: 2 v1.x            !!
+!! v2.x and later version loads beatmap by detecting its contents !!
+!!              DO NOT USE, THIS FORMAT IS OBSOLETE               !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 The contents of the file is a plaintext
 To encode name, all forward or backslash in the beatmap path name is replaced with
 underscore.
