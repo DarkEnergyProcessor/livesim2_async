@@ -50,6 +50,8 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [lua-tinyyaml](https://github.com/peposso/lua-tinyyaml)
 
+* [utf8_validator.lua](https://github.com/kikito/utf8_validator.lua)
+
 Live Simulator: 2 uses these external libraries if available:
 
 * [FFmpeg 3.x](http://ffmpeg.org/)
@@ -97,11 +99,13 @@ Live Simulator: 2 uses `hump.timer`. Please see https://github.com/vrld/hump for
 
 Live Simulator: 2 uses Lily. It's licensed under [zLib](https://github.com/MikuAuahDark/lily/blob/master/LICENSE.md) license.
 
-Live Simulator: 2 uses i18n library. It's licensed under [MIT](https://github.com/kikito/i18n.lua/blob/master/LICENSE)
+Live Simulator: 2 uses i18n library. It's licensed under [MIT](https://github.com/kikito/i18n.lua/blob/master/LICENSE).
 
-Live Simulator: 2 uses md5.lua library. It's licensed under [MIT](https://github.com/kikito/md5.lua/blob/master/MIT-LICENSE.txt)
+Live Simulator: 2 uses utf8_validator.lua. It's licensed under [MIT](https://github.com/kikito/utf8_validator.lua/blob/master/MIT-LICENSE.txt).
 
-Live Simulator: 2 uses lua-tinyyaml. It's licensed under [MIT](https://github.com/peposso/lua-tinyyaml/blob/master/LICENSE)
+Live Simulator: 2 uses md5.lua library. It's licensed under [MIT](https://github.com/kikito/md5.lua/blob/master/MIT-LICENSE.txt).
+
+Live Simulator: 2 uses lua-tinyyaml. It's licensed under [MIT](https://github.com/peposso/lua-tinyyaml/blob/master/LICENSE).
 
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 

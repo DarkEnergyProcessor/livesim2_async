@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local Luaoop = require("libs.Luaoop")
+local utf8V = require("libs.utf8_validator")
 local love = require("love")
 local bit = require("bit")
 local util = require("util")
@@ -460,8 +461,8 @@ function cbfLoader:getCoverArt()
 end
 
 function cbfLoader:getDifficultyString()
-	local internal = Luaoop.class.data(self)
-	return internal.config.DIFFICULTY_TEMPLATE
+	local diff = Luaoop.class.data(self).config.DIFFICULTY_TEMPLATE
+	return utf8V(diff) and diff or nil
 end
 
 function cbfLoader:getAudioPathList()

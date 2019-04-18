@@ -12,6 +12,7 @@ require("love.system")
 require("love.timer")
 require("love.video")
 
+local utf8V = require("libs.utf8_validator")
 local util = require("util")
 local log = require("logging")
 
@@ -150,7 +151,13 @@ end
 
 local function getSummary(bv)
 	local info = {}
-	info.name = bv.data:getName() or bv.name
+
+	local beatmapName = bv.data:getName()
+	if beatmapName then
+		beatmapName = utf8V(beatmapName) and beatmapName or bv.name
+	end
+
+	info.name = beatmapName or bv.name
 	info.format, info.formatInternal = bv.data:getFormatName()
 	info.hash = bv.data:getHash()
 	info.audio = bv.data:getAudio() or substituteAudio(bv.name, bv.type == "folder")
