@@ -9,6 +9,7 @@ local color = require("color")
 local async = require("async")
 local assetCache = require("asset_cache")
 local log = require("logging")
+local mainFont = require("font")
 local setting = require("setting")
 local util = require("util")
 local audioManager = require("audio_manager")
@@ -33,11 +34,7 @@ local BGM = require("game.bgm")
 local beatmapRandomizer = require("game.live.randomizer3")
 
 local DEPLS = gamestate.create {
-	fonts = {
-		main = {"fonts/MTLmr3m.ttf", 12},
-		titleArt = {"fonts/MTLmr3m.ttf", 40},
-		infoArt = {"fonts/MTLmr3m.ttf", 16},
-	},
+	fonts = {},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
 		longNoteTrail = {"assets/image/ef_326_000.png"},
@@ -220,6 +217,8 @@ function DEPLS:load(arg)
 	self.persist.beatmapDisplayName = assert(arg.summary.name)
 	self.persist.arg = arg
 	self.persist.directLoad = arg.direct
+
+	self.data.infoArtFont, self.data.titleArtFont = mainFont.get(16, 40)
 
 	-- safe area
 	safeAreaScaling(self)
@@ -653,8 +652,8 @@ function DEPLS:load(arg)
 			image = love.graphics.newImage(x.image, {mipmaps = true}),
 			scaleX = 0,
 			scaleY = 0,
-			title = love.graphics.newText(self.assets.fonts.titleArt),
-			info = love.graphics.newText(self.assets.fonts.infoArt),
+			title = love.graphics.newText(self.data.titleArtFont),
+			info = love.graphics.newText(self.data.infoArtFont),
 			script = nil,
 			time = 0
 		}
@@ -662,13 +661,13 @@ function DEPLS:load(arg)
 		y.scaleX = 400/y.image:getWidth()
 		y.scaleY = 400/y.image:getHeight()
 
-		w = self.assets.fonts.titleArt:getWidth(x.title)
+		w = self.data.titleArtFont:getWidth(x.title)
 		y.title:add({color.black, x.title}, -w*0.5-2, 507)
 		y.title:add({color.black, x.title}, -w*0.5+2, 509)
 		y.title:add({color.white, x.title}, -w*0.5, 508)
 
 		if x.info and #x.info > 0 then
-			w = self.assets.fonts.infoArt:getWidth(x.info)
+			w = self.data.infoArtFont:getWidth(x.info)
 			y.info:add({color.black, x.info}, -w*0.5-1, 553)
 			y.info:add({color.black, x.info}, -w*0.5+1, 555)
 			y.info:add({color.white, x.info}, -w*0.5, 554)
