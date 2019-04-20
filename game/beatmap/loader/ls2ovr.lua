@@ -131,7 +131,7 @@ function ls2ovrLoader:getNotesList()
 					-- Star note. Swing and star note can't co-exist together
 					-- so ignore swing note
 					effect = 4
-				elseif mode == 2 then
+				elseif mode == 3 then
 					-- Long note.
 					effect = effect + 3
 					effectValue = v.length
