@@ -18,7 +18,7 @@ local yamlStoryboard = Luaoop.class("Livesim2.Storyboard.YAML", baseStoryboard)
 
 local function loadDefaultFont(size)
 	local roboto = love.graphics.newFont("fonts/Roboto-Regular.ttf", size)
-	roboto:setFallbacks(love.graphics.newFont("fonts/NotoSansCJKjp-Regular.otf", size))
+	roboto:setFallbacks(love.graphics.newFont("fonts/NotoSansCJKjp-Regular.woff", size))
 	return roboto
 end
 

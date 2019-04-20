@@ -23,7 +23,7 @@
 assert(_VERSION >= "Lua 5.1", "At least Lua 5.1 is required for this library")
 
 local nbt = {
-	_VERSION = "1.0",
+	_VERSION = "1.0.1",
 	_DESCRIPTION = "Named Binary Tag library for Lua",
 	_URL = "https://github.com/MikuAuahDark/lua-nbt",
 	_LICENSE = "zLib"
@@ -1160,7 +1160,7 @@ local function deserializeNBTFull(reader, typeID, readName, createTag)
 		local len = decodeInt(reader:read(4))
 		local ret = {}
 
-		for i = 1, #len do
+		for i = 1, len do
 			ret[i] = deserializeNBTFull(reader, TAG_INT)
 		end
 
@@ -1169,7 +1169,7 @@ local function deserializeNBTFull(reader, typeID, readName, createTag)
 		local len = decodeInt(reader:read(4))
 		local ret = {}
 
-		for i = 1, #len do
+		for i = 1, len do
 			ret[i] = deserializeNBTFull(reader, TAG_LONG)
 		end
 
@@ -1207,9 +1207,11 @@ function nbt.decode(input, preservemode)
 
 	if preservetag then
 		result = TagClass.new(typeID, result, name)
+		return result
+	else
+		return result, name
 	end
 
-	return result
 end
 
 return nbt

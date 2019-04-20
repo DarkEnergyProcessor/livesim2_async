@@ -240,28 +240,30 @@ function ls2ovrLoader:_getScoreOrComboInformation(type)
 	local internal = Luaoop.class.data(self)
 
 	if internal.beatmapData[type] and #internal.beatmapData[type] >= 4 then
+		local info = internal.beatmapData[type]
 		local list = {}
 
 		for i = 1, 4 do
-			local v = internal.beatmapData[type]
+			local v = info[i]
 
-			if v > 0 then
+			if v >= 0 then
 				if i >= 2 then
-					if v > list[i - 1] then
-						list[i] = v
-					else
+					if v <= list[i - 1] then
 						-- Last value is bigger. Discard everything
 						return nil
 					end
-				else
-					list[i] = v
 				end
 			else
-				-- Invalid value passed. Discard everything
 				return nil
 			end
+
+			list[i] = v
 		end
+
+		return list
 	end
+
+	return nil
 end
 
 function ls2ovrLoader:getScoreInformation()
@@ -272,18 +274,23 @@ function ls2ovrLoader:getComboInformation()
 	return self:_getScoreOrComboInformation("comboInfo")
 end
 
+local ymlCombinations = {".yml", ".yaml"}
+
 function ls2ovrLoader:getStoryboardData()
 	local internal = Luaoop.class.data(self)
 	local storyData, storyType
 
-	if internal.fileDatabase["storyboard.yml.gz"] then
-		-- gzip compressed storyboard data
-		storyData = util.decompressToString(internal.fileDatabase["storyboard.yml.gz"], "gzip")
-		storyType = "yaml"
-	elseif internal.fileDatabase["storyboard.yml"] then
-		-- uncompressed storyboard data
-		storyData = internal.fileDatabase["storyboard.yml.gz"]:getString()
-		storyType = "yaml"
+	for _, yaml in ipairs(ymlCombinations) do
+		local f1, f2 = "storyboard"..yaml, "storyboard"..yaml..".gz"
+		if internal.fileDatabase[f2] then
+			-- gzip compressed storyboard data
+			storyData = util.decompressToString(internal.fileDatabase[f2], "gzip")
+			storyType = "yaml"
+		elseif internal.fileDatabase[f1] then
+			-- uncompressed storyboard data
+			storyData = internal.fileDatabase[f1]:getString()
+			storyType = "yaml"
+		end
 	end
 	-- TODO: support more storyboard formats by Lovewing?
 
@@ -482,7 +489,7 @@ return function(file)
 	assert(file:read(8) == "overrnbw", "EOF marker not found")
 
 	for _, v in ipairs(additionalDataInfo) do
-		if v.offset > 0 then
+		if v.size > 0 then
 			if v.offset % 16 == 0 then
 				file:seek(v.offset)
 				local x = love.filesystem.newFileData(file:read(v.size), v.filename)
@@ -493,6 +500,7 @@ return function(file)
 			end
 		else
 			log.errorf("noteloader.LS2OVR", "file '%s' has invalid size", v.filename)
+			break
 		end
 	end
 
