@@ -463,7 +463,7 @@ return function(file)
 		local beatmapData = beatmapStr:sub(1, currentBeatmapSize)
 		beatmapStr = beatmapStr:sub(currentBeatmapSize + 1)
 		local hash = beatmapStr:sub(1, 16)
-		if md5(beatmapStr) == hash then
+		if md5(beatmapData) == hash then
 			-- insert to beatmap list
 			beatmapList[#beatmapList + 1] = {
 				data = nbt.decode(beatmapData, "plain"),
@@ -485,14 +485,14 @@ return function(file)
 		if v.offset > 0 then
 			if v.offset % 16 == 0 then
 				file:seek(v.offset)
-				local x = love.filesystem.newFileData(file:read(v.size), v.name)
-				additionalData[v.name] = x
+				local x = love.filesystem.newFileData(file:read(v.size), v.filename)
+				additionalData[v.filename] = x
 				additionalData[#additionalData + 1] = x
 			else
-				log.errorf("noteloader.LS2OVR", "file '%s' is not aligned in 16-byte boundary", v.name)
+				log.errorf("noteloader.LS2OVR", "file '%s' is not aligned in 16-byte boundary", v.filename)
 			end
 		else
-			log.errorf("noteloader.LS2OVR", "file '%s' has invalid size", v.name)
+			log.errorf("noteloader.LS2OVR", "file '%s' has invalid size", v.filename)
 		end
 	end
 
