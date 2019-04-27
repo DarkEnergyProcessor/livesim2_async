@@ -21,6 +21,7 @@ love.filesystem.load("errorhandler.lua")()
 -- Set in main.lua later
 DEPLS_VERSION = false
 DEPLS_VERSION_NUMBER = false
+DEPLS_VERSION_CODENAME = false
 
 if love._exe then
 	setmetatable(_G, {
