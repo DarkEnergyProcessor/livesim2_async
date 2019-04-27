@@ -15,6 +15,26 @@ local backgroundLoader = require("game.background_loader")
 local glow = require("game.afterglow")
 local backNavigation = require("game.ui.back_navigation")
 
+local androidCodenames = setmetatable({
+	-- LOVE only supports Android 4.0 and later
+	-- https://source.android.com/setup/start/build-numbers
+	[14] = "Ice Cream Sandwich",
+	[15] = "Ice Cream Sandwich",
+	[16] = "Jelly Bean",
+	[17] = "Jelly Bean",
+	[18] = "Jelly Bean",
+	[19] = "KitKat",
+	[20] = "KitKat", -- https://developer.android.com/studio/releases/platforms#4.4
+	[21] = "Lollipop",
+	[22] = "Lollipop",
+	[23] = "Marshmallow",
+	[24] = "Nougat",
+	[25] = "Nougat",
+	[26] = "Oreo",
+	[27] = "Oreo",
+	[28] = "Pie"
+}, {__index = function() return "Unknown" end})
+
 local sysInfo = gamestate.create {
 	images = {},
 	fonts = {}
@@ -53,11 +73,18 @@ do
 			-- List of hardcoded Windows version strings :P
 			if ver.dwMajorVersion == 10 then
 				local relidf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ReleaseId")
+				local buildf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v UBR")
 				local release = tonumber(relidf:read("*a"):match("ReleaseId%s+REG_SZ%s+(%d+)"))
+				local ubr = tonumber(buildf:read("*a"):match("0x%x+"))
+				buildf:close()
 				relidf:close()
 
 				if release then
-					osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
+					if ubr then
+						osVersionString = string.format("OS: Windows 10 %d (%s.%d)", release, build, ubr)
+					else
+						osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
+					end
 				else
 					osVersionString = string.format("OS: Windows 10 (%s)", build)
 				end
@@ -89,11 +116,14 @@ do
 		end
 	elseif sos == "Android" then
 		-- Get Android API level
-		local out = io.popen("getprop ro.build.version.sdk", "r")
-		local sdk = tonumber(out:read("*l"))
+		local sdkf = io.popen("getprop ro.build.version.sdk", "r")
+		local relf = io.popen("getprop ro.build.version.release", "r")
+		local sdk = tonumber(sdkf:read("*l"))
+		local rel = relf:read("*l")
+		sdkf:close()
+		relf:close()
 
-		out:close()
-		osVersionString = "OS: Android (API Level "..sdk..")"
+		osVersionString = string.format("OS: Android %s/%s (API Level %d)", rel, androidCodenames[sdk], sdk)
 	else
 		osVersionString = "OS: "..sos
 	end
