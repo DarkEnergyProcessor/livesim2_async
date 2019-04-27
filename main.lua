@@ -25,7 +25,7 @@
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
 -- Version string
-DEPLS_VERSION = "3.0.5"
+DEPLS_VERSION = "3.0.6"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
 DEPLS_VERSION_NUMBER = 03009700
@@ -305,15 +305,11 @@ Options:
 
 * -dump                      Dump beatmap data to stdout instead of playing
                              the game. It will output SIF-compatible JSON
-                             beatmap format.
+                             beatmap format by default.
 
 * -dumpformat <format>       Set the format of the beatmap dump for -dump
                              option.
 * -dumpformat json           Dump beatmap as JSON beatmap. This is default.
-* -dumpformat llp            Dump beatmap as LLP beatmap.
-* -dumpformat ls2            Dump beatmap as Live Simulator: 2 v2.0 binary
-                             beatmap. If this is used, -dumpout must be
-                             specified for Windows (unimplemented).
 
 * -fullscreen                Start Live Simulator: 2 fullscreen.
 
@@ -345,8 +341,8 @@ Options:
                              container and audio is in WAV format. FFmpeg
                              libraries must be installed to use this feature!
 
-* -renderfxaa                Use Fast Approximate Anti-Aliasing for the whole
-                             rendering.
+* -renderfxaa                Apply Fast Approximate Anti-Aliasing to the whole
+                             screen while rendering to video file.
 
 * -renderheight <height>     Set video rendering height. Defaults to window
                              height if not specified.
@@ -509,8 +505,10 @@ function love.load(argv, gameargv)
 			elseif arg == "-version" then
 				local capabilities = require("capabilities")
 				print(string.format(
-					"Live Simulator: 2 v%s (%08d) \"%s\"",
-					DEPLS_VERSION, DEPLS_VERSION_NUMBER, DEPLS_VERSION_CODENAME
+					"Live Simulator: 2 v%s \"%s\" (%08d)",
+					DEPLS_VERSION,
+					DEPLS_VERSION_CODENAME,
+					DEPLS_VERSION_NUMBER
 				))
 				print("Capabilities: "..capabilities())
 				love.event.quit()

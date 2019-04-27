@@ -2,8 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
--- luacheck: read_globals DEPLS_VERSION
--- luacheck: read_globals DEPLS_VERSION_NUMBER
+-- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER DEPLS_VERSION_CODENAME
 
 local love = require("love")
 local color = require("color")
@@ -102,6 +101,7 @@ do
 				end
 			elseif ver.dwMajorVersion == 5 then
 				if ver.dwMinorVersion == 2 then
+					-- Probably not
 					osVersionString = string.format("OS: Windows XP Professional 64-bit (%s)", build)
 				elseif ver.dwMinorVersion == 1 then
 					osVersionString = string.format("OS: Windows XP (%s)", build)
@@ -134,7 +134,8 @@ local function buildTextString()
 	local sb = {
 		"Before reporting bug, please screenshot this window",
 		"",
-		string.format("Live Simulator: 2 v%s -- %08d", DEPLS_VERSION, DEPLS_VERSION_NUMBER),
+		string.format("Live Simulator: 2 v%s \"%s\" %08d", DEPLS_VERSION, DEPLS_VERSION_CODENAME, DEPLS_VERSION_NUMBER),
+		string.format("LOVE %d.%d.%d \"%s\"", love.getVersion())
 	}
 
 	do
@@ -237,9 +238,9 @@ function sysInfo:load()
 		for i = 0, 360, 45 do
 			local mag = i % 90 == 0 and 1 or math.sqrt(2)
 			local x, y = mag * math.cos(math.rad(i)), mag * math.sin(math.rad(i))
-			self.data.text:addf({color.black, textString}, 950, "left", 2 + x, 60 + y)
+			self.data.text:addf({color.black, textString}, 956, "left", 2 + x, 50 + y)
 		end
-		self.data.text:addf({color.white, textString}, 950, "left", 2, 60)
+		self.data.text:addf({color.white, textString}, 956, "left", 2, 50)
 	end
 	glow.addFixedElement(self.data.back, 0, 0)
 end

@@ -1,7 +1,7 @@
 -- Main Menu
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
--- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER
+-- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER DEPLS_VERSION_CODENAME
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
@@ -81,7 +81,9 @@ local function initializeVersionText()
 
 	bld[#bld + 1] = "Live Simulator: 2 v"
 	bld[#bld + 1] = DEPLS_VERSION
-	bld[#bld + 1] = " ("
+	bld[#bld + 1] = " \""
+	bld[#bld + 1] = DEPLS_VERSION_CODENAME
+	bld[#bld + 1] = "\" ("
 	bld[#bld + 1] = string.format("%08d", DEPLS_VERSION_NUMBER)
 	bld[#bld + 1] = ") ("
 	bld[#bld + 1] = jit and jit.version or _VERSION
