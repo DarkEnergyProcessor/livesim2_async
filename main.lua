@@ -28,7 +28,7 @@
 DEPLS_VERSION = "3.0.6"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03009700
+DEPLS_VERSION_NUMBER = 03009800
 -- Version codename
 DEPLS_VERSION_CODENAME = "Time Lapse"
 
@@ -96,7 +96,7 @@ local function registerGamestates()
 
 	-- Loading screen singleton init (enable sync asset loading for loading screen)
 	assetCache.enableSync = true
-	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading_v31")))
+	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
 	assetCache.enableSync = false
 	postExit.add(loadingInstance.exit)
 
@@ -105,7 +105,7 @@ local function registerGamestates()
 	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
 	gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
-	gamestate.register("changeUnits", require("game.states.change_units_v31"))
+	gamestate.register("changeUnits", require("game.states.change_units"))
 	gamestate.register("dummy", require("game.states.dummy"))
 	gamestate.register("language", require("game.states.gamelang"))
 	gamestate.register("livesim2", require("game.states.livesim2"))
@@ -114,7 +114,7 @@ local function registerGamestates()
 	gamestate.register("result", require("game.states.result_summary"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("settings", require("game.states.gamesetting"))
-	gamestate.register("splash", require("game.states.splash_v31"))
+	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
 	gamestate.register("viewReplay", require("game.states.view_replays"))
 end
