@@ -35,7 +35,6 @@ local changeUnits = gamestate.create {
 		unit = {"assets/image/ui/over_the_rainbow/perm_identity_24px.png", mipmap}
 	},
 	fonts = {},
-	audios = {}
 }
 
 local idolPosition = {
