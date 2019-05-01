@@ -18,6 +18,7 @@ local backgroundLoader = require("game.background_loader")
 -- UI stuff
 local glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
+
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
 -- because they're not reusable
@@ -61,7 +62,7 @@ function playButton:render(x, y)
 	love.graphics.setColor(color.hex55CAFD)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.playText, x + 218, y + 212)
+	util.drawText(self.playText, x + 218, y + 212)
 	love.graphics.rectangle("fill", x + 6, y, 34, self.height)
 	love.graphics.rectangle("fill", x + 50, y, 34, self.height)
 	love.graphics.circle("fill", x + 146, y + 114, 35)
@@ -119,7 +120,7 @@ function changeUnitsButton:render(x, y)
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.text, x + 395, y + 100)
+	util.drawText(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 11, y + 22, 0, 0.16, 0.16)
 
 	if self.ripple:isActive() then
@@ -170,7 +171,7 @@ function settingsButton:render(x, y)
 	love.graphics.setColor(color.hexFF6854)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.text, x + 395, y + 100)
+	util.drawText(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.16, 0.16)
 
 	if self.ripple:isActive() then
@@ -277,9 +278,9 @@ function mainMenu:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	love.graphics.draw(self.data.grayGradient, -90, 576, 0, 1140, 64, 0, 0)
-	love.graphics.draw(self.data.titleText, 38, 584)
-	love.graphics.draw(self.data.verSemText, 921, 578)
-	love.graphics.draw(self.data.verCodeText, 923, 604)
+	util.drawText(self.data.titleText, 38, 584)
+	util.drawText(self.data.verSemText, 921, 578)
+	util.drawText(self.data.verCodeText, 923, 604)
 	return glow.draw()
 end
 

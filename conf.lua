@@ -7,6 +7,11 @@
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
 local love = require("love")
+local errhand = love.errorhandler or love.errhand
+function love.errorhandler(msg)
+	print((debug.traceback("Error: " .. tostring(msg), 2):gsub("\n[^\n]+$", "")))
+end
+
 local util = require("util")
 
 love._version = love._version or love.getVersion()
@@ -48,4 +53,6 @@ function love.conf(t)
 	t.modules.audio = false             -- Delay audio module
 	t.modules.joystick = false          -- Enable the joystick module (boolean)
 	t.modules.physics = false           -- Enable the physics module (boolean)
+
+	love.errorhandler = errhand
 end

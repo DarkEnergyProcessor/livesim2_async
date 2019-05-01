@@ -319,4 +319,28 @@ else
 	end
 end
 
+-- Draw text without unintended "black" border
+util.drawText = setmetatable({workaroundShader = nil}, {
+	__call = function(self, text, ...)
+		local shader = love.graphics.getShader()
+		love.graphics.setShader(self.workaroundShader)
+		love.graphics.draw(text, ...)
+		love.graphics.setShader(shader)
+	end,
+	__index = function(self, var)
+		if var == "workaroundShader" then
+			local x = love.graphics.newShader([[
+				vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
+				{
+					return color * vec4(1.0, 1.0, 1.0, Texel(tex, tc).a);
+				}
+			]])
+			rawset(self, "workaroundShader", x)
+			return x
+		end
+
+		return rawget(self, var)
+	end
+})
+
 return util

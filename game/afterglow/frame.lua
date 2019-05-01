@@ -4,6 +4,7 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local color = require("color")
 local util = require("util")
 local slider = require("game.afterglow.slider")
 
@@ -25,6 +26,9 @@ function frame:__construct(x, y, w, h)
 	self.x, self.y = assert(x), assert(y)
 	self.offsetX, self.offsetY = 0, 0
 	self.sliderH, self.sliderV = nil, nil
+	self.sliderLeft = false
+	self.sliderColor = color.hexFF4FAE
+	self.sliderHandleColor = color.white
 
 	internal.mouseBuffer = {
 		pressed = false,
@@ -300,11 +304,11 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 	elseif name == "wheelmoved" then
 		local handled = false
 		if a ~= 0 and self.sliderH then
-			self.sliderH.element:setValue(self.sliderH.element:getValue() - a * 10)
+			self.sliderH.element:setValue(self.sliderH.element:getValue() - a * 30)
 			handled = true
 		end
 		if b ~= 0 and self.sliderV then
-			self.sliderV.element:setValue(self.sliderV.element:getValue() - b * 10)
+			self.sliderV.element:setValue(self.sliderV.element:getValue() - b * 30)
 			handled = true
 		end
 
@@ -350,7 +354,7 @@ function frame:update(dt)
 		maxY = math.max(v.y + h, maxY)
 	end
 
-	local sliderOffCompX = self.sliderV and 30 or 0
+	local sliderOffCompX = self.sliderLeft and 0 or (self.sliderV and 30 or 0)
 	local sliderOffCompY = self.sliderH and 30 or 0
 	-- if it's beyond the viewport size
 	if maxX > self.width - sliderOffCompX then
@@ -361,6 +365,8 @@ function frame:update(dt)
 				y = self.height - 30,
 				fixed = true
 			}
+			self.sliderH.element:setSliderColor(self.sliderColor)
+			self.sliderH.element:setHandleColor(self.sliderHandleColor)
 		else
 			self.sliderH.element:setMaxValue(maxX - self.width)
 		end
@@ -375,10 +381,12 @@ function frame:update(dt)
 		if not(self.sliderV) then
 			self.sliderV = {
 				element = slider("vertical", self.height - 30, maxY - self.height + sliderOffCompY),
-				x = self.width - 30,
+				x = self.sliderLeft and 0 or (self.width - 30),
 				y = 0,
 				fixed = true
 			}
+			self.sliderV.element:setSliderColor(self.sliderColor)
+			self.sliderV.element:setHandleColor(self.sliderHandleColor)
 		else
 			self.sliderV.element:setMaxValue(maxY - self.height)
 		end
@@ -445,6 +453,40 @@ function frame:draw()
 	for _, v in ipairs(internal.fixedElementList) do
 		-- Render regardless
 		v.element:render(self.x + v.x, self.y + v.y)
+	end
+end
+
+function frame:setVerticalSliderPosition(pos)
+	if pos == "left" then
+		self.sliderLeft = true
+	elseif pos == "right" then
+		self.sliderLeft = false
+	else
+		error("bad argument #1 in 'setVerticalSliderPosition' (invalid position)")
+	end
+end
+
+function frame:setSliderColor(col)
+	self.sliderColor = col
+
+	if self.sliderH then
+		self.sliderH.element:setSliderColor(col)
+	end
+
+	if self.sliderV then
+		self.sliderV.element:setSliderColor(col)
+	end
+end
+
+function frame:setSliderHandleColor(col)
+	self.sliderHandleColor = col
+
+	if self.sliderH then
+		self.sliderH.element:setHandleColor(col)
+	end
+
+	if self.sliderV then
+		self.sliderV.element:setHandleColor(col)
 	end
 end
 
