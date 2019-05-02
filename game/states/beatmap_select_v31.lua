@@ -323,6 +323,7 @@ function beatmapSelect:start()
 					if has then
 						local image = love.graphics.newImage(img, mipmaps)
 						local w, h = image:getDimensions()
+						util.releaseObject(img)
 						v.coverArtImage = image
 						v.info = info
 
@@ -335,6 +336,7 @@ function beatmapSelect:start()
 							love.graphics.setBlendMode("alpha", "premultiplied")
 							love.graphics.draw(image, 0, 0, 0, 128 / w, 128 / h)
 							love.graphics.pop()
+							util.releaseObject(image)
 						else
 							imageCover = image
 						end

@@ -28,23 +28,6 @@ local function readDword(f)
 	return a * 16777216 + b * 65536 + c * 256 + d
 end
 
-local function readWord(f)
-	local a, b
-	if type(f) == "string" then
-		a, b = f:byte(1, 2)
-	else
-		a, b = (f:read(2) or ""):byte(1, 2)
-	end
-
-	assert(a and b, "unexpected eof")
-
-	if a >= 128 then
-		a, b = a - 255, b - 256
-	end
-
-	return a * 256 + b
-end
-
 local function readByte(f)
 	local a = (type(f) == "string" and f or (f:read(1) or "")):byte()
 	if not(a) then
@@ -62,13 +45,32 @@ end
 
 local ls2ovrLoader = Luaoop.class("beatmap.LS2OVRBase", baseLoader)
 
-function ls2ovrLoader:__construct(metadata, beatmapData, hashList, additionalFile)
+function ls2ovrLoader:__construct(metadata, beatmapData, hashList, file, additionalFile)
 	local internal = Luaoop.class.data(self)
 
 	internal.metadata = metadata
 	internal.hash = hashList
-	internal.fileDatabase = additionalFile
+	internal.fileDatabase = setmetatable({}, {
+		__index = function(a, var)
+			if type(var) == "string" then
+				for _, v in ipairs(additionalFile) do
+					if v.filename == var and v.size > 0 and v.offset % 16 == 0 then
+						file:seek(v.offset)
+						local x = love.filesystem.newFileData(file:read(v.size), v.filename)
+						rawset(a, var, x)
+						return x
+					end
+				end
+			else
+				return rawget(a, var)
+			end
+
+			return nil
+		end,
+	})
+	internal.additionalData = additionalFile
 	internal.beatmapData = beatmapData
+	internal.file = file
 	-- TODO: field check
 end
 
@@ -300,10 +302,15 @@ function ls2ovrLoader:getStoryboardData()
 		storyData = storyData:gsub("\r\n", "\n")
 	end
 
+	local fileDatabase = {}
+	for _, v in ipairs(internal.additionalData) do
+		fileDatabase[v.filename] = internal.fileDatabase[v.filename]
+	end
+
 	return {
 		type = storyType,
 		storyboard = storyData,
-		data = internal.fileDatabase
+		data = fileDatabase
 	}
 end
 
@@ -488,30 +495,14 @@ return function(file)
 	-- Check EOF
 	assert(file:read(8) == "overrnbw", "EOF marker not found")
 
-	for _, v in ipairs(additionalDataInfo) do
-		if v.size > 0 then
-			if v.offset % 16 == 0 then
-				file:seek(v.offset)
-				local x = love.filesystem.newFileData(file:read(v.size), v.filename)
-				additionalData[v.filename] = x
-				additionalData[#additionalData + 1] = x
-			else
-				log.errorf("noteloader.LS2OVR", "file '%s' is not aligned in 16-byte boundary", v.filename)
-			end
-		else
-			log.errorf("noteloader.LS2OVR", "file '%s' has invalid size", v.filename)
-			break
-		end
-	end
-
 	if #beatmapList == 1 then
-		return ls2ovrLoader(metadata, beatmapList[1].data, metadataMD5..beatmapList[1].hash, additionalData)
+		return ls2ovrLoader(metadata, beatmapList[1].data, metadataMD5..beatmapList[1].hash, file, additionalDataInfo)
 	else
 		local ret = {}
 
 		for i = 1, #beatmapList do
 			local v = beatmapList[i]
-			ret[i] = ls2ovrLoader(metadata, v.data, metadataMD5..v.hash, additionalData)
+			ret[i] = ls2ovrLoader(metadata, v.data, metadataMD5..v.hash, file, additionalDataInfo)
 		end
 
 		return ret

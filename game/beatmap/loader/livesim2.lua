@@ -189,20 +189,17 @@ end
 function ls2Loader:getCoverArt()
 	local internal = Luaoop.class.data(self)
 
-	if not(internal.coverArtLoaded) then
-		if internal.ls2.sections.COVR then
-			internal.file:seek(internal.ls2.sections.COVR[1])
-			local val = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
-			internal.coverArt = {
-				title = val.title,
-				info = val.arrangement,
-				image = love.filesystem.newFileData(val.image, "")
-			}
-		end
-		internal.coverArtLoaded = true
+	if internal.ls2.sections.COVR then
+		internal.file:seek(internal.ls2.sections.COVR[1])
+		local val = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
+		return {
+			title = val.title,
+			info = val.arrangement,
+			image = love.filesystem.newFileData(val.image, internal.file:getFilename()..".coverArt.png")
+		}
 	end
 
-	return internal.coverArt
+	return nil
 end
 
 function ls2Loader:getScoreInformation()
