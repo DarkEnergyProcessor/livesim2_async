@@ -100,22 +100,28 @@ function yamlStoryboard:__construct(storyboardData, info)
 			if not(v.image) then
 				error("init #"..i.." image is mandatory")
 			end
-			drawobj.drawable = love.graphics.newImage(self.data[v.image] or self.path..v.image, {mipmaps = true})
+
+			if self.path then
+				drawobj.drawable = love.graphics.newImage(self.data[v.image] or self.path..v.image, {mipmaps = true})
+			else
+				drawobj.drawable = love.graphics.newImage(self.data[v.image], {mipmaps = true})
+			end
 		elseif v.draw == "text" then
 			local font
 			if v.font then
 				local fname, size = v.font:match("([^:]+):?(%d*)")
 				size = (#size == 0 or not(size)) and 12 or assert(tonumber(size), "invalid size")
 
-				if fname == "__default" then
-					-- Use defaont
+				if fname == "__default" or fname == "__fallback" then
+					-- Use default
 					font = loadDefaultFont(size)
-				elseif fname == "__fallback" then
-					-- Use "inverse" default
-					font = love.graphics.newFont("fonts/MTLmr3m.ttf", size)
 				else
 					-- Load specified font
-					font = love.graphics.newFont(self.data[fname] or self.path..fname, size)
+					if self.path then
+						font = love.graphics.newFont(self.data[fname] or self.path..fname, size)
+					else
+						font = love.graphics.newFont(self.data[fname], size)
+					end
 				end
 			else
 				-- Use default

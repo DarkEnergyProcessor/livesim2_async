@@ -51,6 +51,7 @@ function ls2ovrLoader:__construct(metadata, beatmapData, hashList, file, additio
 	internal.metadata = metadata
 	internal.hash = hashList
 	internal.fileDatabase = setmetatable({}, {
+		__mode = "v",
 		__index = function(a, var)
 			if type(var) == "string" then
 				for _, v in ipairs(additionalFile) do
@@ -303,8 +304,8 @@ function ls2ovrLoader:getStoryboardData()
 	end
 
 	local fileDatabase = {}
-	for _, v in ipairs(internal.additionalData) do
-		fileDatabase[v.filename] = internal.fileDatabase[v.filename]
+	for i, v in ipairs(internal.additionalData) do
+		fileDatabase[i] = internal.fileDatabase[v.filename]
 	end
 
 	return {
@@ -490,7 +491,6 @@ return function(file)
 
 	local additionalDataSize = readDword(file)
 	local additionalDataInfo = nbt.decode(file:read(additionalDataSize), "plain")
-	local additionalData = {}
 
 	-- Check EOF
 	assert(file:read(8) == "overrnbw", "EOF marker not found")

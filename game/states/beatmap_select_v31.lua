@@ -21,28 +21,12 @@ local ripple = require("game.ui.ripple")
 local ciButton = require("game.ui.circle_icon_button")
 
 local mipmaps = {mipmaps = true}
-local beatmapSelect = gamestate.create {
-	images = {
-		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
-		downloadCircle = {"assets/image/ui/over_the_rainbow/download_beatmap.png", mipmaps},
-		dropDown = {"assets/image/ui/over_the_rainbow/expand.png", mipmaps},
-		fastForward = {"assets/image/ui/over_the_rainbow/fast_forward.png", mipmaps},
-		movie = {"assets/image/ui/over_the_rainbow/movie.png", mipmaps},
-		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
-		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
-		shuffle = {"assets/image/ui/over_the_rainbow/shuffle.png", mipmaps},
-		star = {"assets/image/ui/over_the_rainbow/star.png", mipmaps},
-		video = {"assets/image/ui/over_the_rainbow/video.png", mipmaps},
-	},
-	fonts = {
-		formatFont = {"fonts/Roboto-Regular.ttf", 15}
-	},
-}
 
 -- One shot usage, no need to have it in different file
 -- 451x94
 local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.BeatmapSelectButton", glow.element)
 local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButton", glow.element)
+local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", glow.element)
 
 do
 	local coverShader
@@ -175,6 +159,65 @@ do
 			love.graphics.setStencilTest()
 		end
 	end
+
+	function playButton:new(font, pb)
+		local text = L"beatmapSelect:play"
+		self.text = love.graphics.newText(font)
+		self.text:add(text, 0, 0, 0, 15/16)
+		self.image = pb
+
+		self.height = 40
+		self.width = math.ceil(pb:getWidth() * 0.24 + font:getWidth(text) * 15/16 + 40)
+		print(self.width)
+		self.x, self.y = 0, 0
+		self.ripple = ripple(math.sqrt(self.width * self.width + 1600))
+		self.selected = false
+		self.stencilFunc = function()
+			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height, 20, 20)
+		end
+		self.isPressed = false
+		self:addEventListener("mousepressed", playButton._pressed)
+		self:addEventListener("mousereleased", commonReleased)
+		self:addEventListener("mousecanceled", commonReleased)
+	end
+
+	function playButton:_pressed(_, x, y)
+		if
+			-- Square
+			(x >= 20 and y >= 0 and x < self.width - 20 and y < 40) or
+			-- Circle left
+			util.distance(x, y, 20, 20) <= 20 or
+			-- Circle right
+			util.distance(x, y, self.width - 20, 20) <= 20
+		then
+			self.isPressed = true
+			self.ripple:pressed(x, y)
+			return false
+		else
+			return true
+		end
+	end
+
+	function playButton:update(dt)
+		self.ripple:update(dt)
+	end
+
+	function playButton:render(x, y)
+		self.x, self.y = x, y
+		love.graphics.setColor(color.hexFFDF35)
+		love.graphics.rectangle("fill", x, y, self.width, self.height, 20, 20)
+		love.graphics.rectangle("line", x, y, self.width, self.height, 20, 20)
+		love.graphics.setColor(color.white)
+		love.graphics.draw(self.image, x + 12, y + 7, 0, 0.32)
+		util.drawText(self.text, x + 37, y + 12)
+
+		if self.ripple:isActive() then
+			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+			love.graphics.setStencilTest("equal", 1)
+			self.ripple:draw(255, 255, 255, x, y)
+			love.graphics.setStencilTest()
+		end
+	end
 end
 
 local function leave()
@@ -198,20 +241,41 @@ local function createOptionToggleSetting(settingName, image, imageS, imageY, fon
 	return x
 end
 
+local function startPlayBeatmap(_, self)
+	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
+		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
+
+		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+			summary = self.persist.beatmapSummary,
+			beatmapName = target.id,
+			random = self.data.randomToggle.checked,
+			storyboard = self.data.storyToggle.checked,
+			videoBackground = self.data.videoToggle.checked
+		})
+	end
+end
+
+local beatmapSelect = gamestate.create {
+	images = {
+		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
+		downloadCircle = {"assets/image/ui/over_the_rainbow/download_beatmap.png", mipmaps},
+		dropDown = {"assets/image/ui/over_the_rainbow/expand.png", mipmaps},
+		fastForward = {"assets/image/ui/over_the_rainbow/fast_forward.png", mipmaps},
+		movie = {"assets/image/ui/over_the_rainbow/movie.png", mipmaps},
+		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
+		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
+		shuffle = {"assets/image/ui/over_the_rainbow/shuffle.png", mipmaps},
+		star = {"assets/image/ui/over_the_rainbow/star.png", mipmaps},
+		video = {"assets/image/ui/over_the_rainbow/video.png", mipmaps},
+	},
+	fonts = {
+		formatFont = {"fonts/Roboto-Regular.ttf", 15}
+	},
+}
+
 function beatmapSelect:load()
 	glow.clear()
 
-	--[[
-	do
-		local a, b, c, d, e = mainFont.get(23, 24, 16, 44, 9)
-		self.data.statusFont = a
-		self.data.titleFont = b
-		self.data.optionDetailFont = c
-		self.data.beatmapTitleFont = d
-		self.data.infoFont = e
-		self.data.mainFont = d
-	end
-	]]
 	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
 
 	if self.data.shadowGradient == nil then
@@ -282,12 +346,24 @@ function beatmapSelect:load()
 		)
 	end
 	glow.addFixedElement(self.data.videoToggle, 840, 248)
+
+	if self.data.playButton == nil then
+		self.data.playButton = playButton(self.data.mainFont2, self.assets.images.play)
+		self.data.playButton:addEventListener("mousereleased", startPlayBeatmap)
+		self.data.playButton:setData(self)
+	end
+	do
+		local width = self.data.playButton.width
+		-- Place in between "Random" and "Storyboard" text
+		glow.addFixedElement(self.data.playButton, 720 - width * 0.5, 336)
+	end
 end
 
 function beatmapSelect:start()
 	self.persist.beatmapFrame = glow.frame(0, 152, 480, 488)
 	self.persist.beatmaps = {sorted = false}
 	self.persist.selectedBeatmap = nil
+	self.persist.beatmapSummary = nil
 	self.persist.active = true
 	self.persist.beatmapFrame:setVerticalSliderPosition("left")
 	self.persist.beatmapFrame:setSliderColor(color.hex434242)
@@ -295,11 +371,29 @@ function beatmapSelect:start()
 	self.persist.statusText = love.graphics.newText(self.data.mainFont)
 	self.persist.statusTextBlink = math.huge
 
+	local function summaryGet(d)
+		self.persist.beatmapSummary = d
+
+		if d.coverArt and d.coverArt.image then
+			self.persist.beatmapCoverArt = love.graphics.newImage(d.coverArt.image, mipmaps)
+		end
+	end
+
 	local function beatmapSelected(_, data)
+		if self.persist.selectedBeatmap ~= nil and self.persist.beatmapSummary == nil then
+			-- Not fully loading
+			return
+		end
+
+		local target = data[1][data[2]]
 		for i, v in ipairs(data[1]) do
 			v.element.selected = i == data[2]
 		end
 
+		beatmapList.getSummary(target.id, summaryGet)
+
+		self.persist.beatmapCoverArt = nil
+		self.persist.beatmapSummary = nil
 		self.persist.selectedBeatmap = data[2]
 	end
 
@@ -414,20 +508,21 @@ function beatmapSelect:draw()
 	love.graphics.draw(self.persist.statusText)
 	love.graphics.setColor(color.white)
 
-	if self.persist.selectedBeatmap then
+	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
 		local v = self.persist.beatmaps[self.persist.selectedBeatmap]
+		local summary = self.persist.beatmapSummary
 		love.graphics.setFont(self.data.mainFont)
-		love.graphics.printf(v.name, 500, 98, 280, "left", 0, 24/44)
+		love.graphics.printf(v.name, 500, 98, 280 / (24/44), "left", 0, 24/44)
 
-		if v.summary.coverArt and v.summary.coverArt.info then
+		if summary.coverArt and summary.coverArt.info then
 			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(v.info, 500, 176, 280, "left", 0, 9/16)
+			love.graphics.printf(v.info, 500, 176, 280 / (9/16), "left", 0, 9/16)
 		end
 
-		if v.coverArtImage then
-			local w, h = v.coverArtImage:getDimensions()
+		if self.persist.beatmapCoverArt then
+			local w, h = self.persist.beatmapCoverArt:getDimensions()
 			love.graphics.setShader(self.data.coverMaskShader)
-			love.graphics.draw(v.coverArtImage, 786, 94, 0, 140 / w, 140 / h)
+			love.graphics.draw(self.persist.beatmapCoverArt, 786, 94, 0, 140 / w, 140 / h)
 		else
 			love.graphics.setColor(color.hexC4C4C4)
 			love.graphics.rectangle("fill", 786, 94, 140, 140, 15, 15)
