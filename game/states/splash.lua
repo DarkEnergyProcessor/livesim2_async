@@ -12,9 +12,7 @@ local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
 local splash = gamestate.create {
-	fonts = {
-		version = {11}
-	},
+	fonts = {},
 	images = {
 		icon1 = {"new_icon1:assets/image/icon/new_icon_1024x1024_1.png", {mipmaps = true}},
 		icon2 = {"new_icon2:assets/image/icon/new_icon_1024x1024_2.png", {mipmaps = true}},
@@ -43,7 +41,7 @@ function splash:load()
 	-- Create version text
 	if not(self.data.version) then
 		self.data.version = love.graphics.newText(
-			self.assets.fonts.version,
+			love.graphics.newFont(11),
 			string.format("v%s (%08d)\nPowered by LÖVE Framework (LÖVE %s)",
 				DEPLS_VERSION, DEPLS_VERSION_NUMBER, love._version
 			)
@@ -181,15 +179,15 @@ function splash:draw()
 	love.graphics.setColor(color.compat(255, 255, 255, persist.overallOpacity))
 	if persist.icon3Draw then
 		-- Draw third quarter line arc (or whatever it names)
-		love.graphics.draw(self.assets.images.icon3, 0, 0, persist.icon3Rot, persist.icon3Scale, persist.icon3Scale, 512, 512)
+		love.graphics.draw(self.assets.images.icon3, 0, 0, persist.icon3Rot, persist.icon3Scale, persist.icon3Scale, 464, 464)
 	end
 	if persist.icon2Scale > 0 then
 		-- Draw second think line circle
-		love.graphics.draw(self.assets.images.icon2, 0, 0, 0, persist.icon2Scale, persist.icon2Scale, 512, 512)
+		love.graphics.draw(self.assets.images.icon2, 0, 0, 0, persist.icon2Scale, persist.icon2Scale, 344, 344)
 	end
 	if persist.icon1Scale > 0 then
 		-- Draw core circle
-		love.graphics.draw(self.assets.images.icon1, 0, 0, 0, persist.icon1Scale, persist.icon1Scale, 512, 512)
+		love.graphics.draw(self.assets.images.icon1, 0, 0, 0, persist.icon1Scale, persist.icon1Scale, 96, 96)
 	end
 
 	love.graphics.pop()

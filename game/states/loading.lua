@@ -66,9 +66,9 @@ function loading:start()
 	self.data.font = mainFont.get(24)
 	self.data.text = love.graphics.newText(self.data.font)
 	self.data.icon = {
-		assetCache.loadImage("new_icon1:assets/image/icon/new_icon_1024x1024_1.png", temp),
-		assetCache.loadImage("new_icon2:assets/image/icon/new_icon_1024x1024_2.png", temp),
-		assetCache.loadImage("new_icon3:assets/image/icon/new_icon_1024x1024_3.png", temp)
+		assetCache.loadImage("new_icon1:assets/image/icon/new_icon_1024x1024_trim_1.png", temp),
+		assetCache.loadImage("new_icon2:assets/image/icon/new_icon_1024x1024_trim_2.png", temp),
+		assetCache.loadImage("new_icon3:assets/image/icon/new_icon_1024x1024_trim_3.png", temp)
 	}
 	-- peak at 0.25
 	self.persist.time = {0.25, 0, 0.75, 0.5}
@@ -99,9 +99,9 @@ function loading:draw()
 	love.graphics.translate(480, 320)
 	love.graphics.scale(0.5)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.icon[3], 0, 0, 0, 1, 1, 512, 512)
-	love.graphics.draw(self.data.icon[2], 0, 0, 0, 1, 1, 512, 512)
-	love.graphics.draw(self.data.icon[1], 0, 0, 0, 1, 1, 512, 512)
+	love.graphics.draw(self.data.icon[3], 0, 0, 0, 1, 1, 464, 464)
+	love.graphics.draw(self.data.icon[2], 0, 0, 0, 1, 1, 344, 344)
+	love.graphics.draw(self.data.icon[1], 0, 0, 0, 1, 1, 96, 96)
 	local scale = getScale(self.persist.time[1] * 4)
 	if scale > 0 then
 		local c, s = math.cos(math.pi * 4/10), math.sin(math.pi * 4/10)
