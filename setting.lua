@@ -116,6 +116,7 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	while true do
 		collectgarbage()
+		collectgarbage()
 		local command = channel:demand()
 		if processCommand(command) == "quit" then
 			-- Clean up channel
@@ -123,6 +124,8 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			-- Done thread
 			return
 		end
+		collectgarbage()
+		collectgarbage()
 	end
 else
 	-- Get named channel

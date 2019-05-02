@@ -70,7 +70,7 @@ function playButton:render(x, y)
 	love.graphics.circle("line", x + 146, y + 114, 35)
 	love.graphics.circle("line", x + 216, y + 54, 35)
 	love.graphics.setColor(color.hexFFFFFF8A)
-	love.graphics.draw(self.image, x + 252, y + 364, 0, 1.1, 1.1)
+	love.graphics.draw(self.image, x + 252, y + 364, 0, 2.2, 2.2)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
@@ -86,8 +86,8 @@ local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", gl
 function changeUnitsButton:new(state)
 	local text = L"menu:changeUnits"
 	self.image = state.assets.images.changeUnits
-	self.text = love.graphics.newText(state.data.menuFont)
-	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
+	self.text = love.graphics.newText(state.assets.fonts.title)
+	self.text:add(text, -state.assets.fonts.title:getWidth(text) * 41/46, 0, 0, 41/46)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
@@ -121,7 +121,7 @@ function changeUnitsButton:render(x, y)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
 	util.drawText(self.text, x + 395, y + 100)
-	love.graphics.draw(self.image, x + 11, y + 22, 0, 0.16, 0.16)
+	love.graphics.draw(self.image, x + 11, y + 22, 0, 0.32, 0.32)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
@@ -137,8 +137,8 @@ local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.ele
 function settingsButton:new(state)
 	local text = L"menu:settings"
 	self.image = state.assets.images.settingsDualGear
-	self.text = love.graphics.newText(state.data.menuFont)
-	self.text:add(text, -state.data.menuFont:getWidth(text), 0)
+	self.text = love.graphics.newText(state.assets.fonts.title)
+	self.text:add(text, -state.assets.fonts.title:getWidth(text) * 41/46, 0, 0, 41/46)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
@@ -172,7 +172,7 @@ function settingsButton:render(x, y)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
 	util.drawText(self.text, x + 395, y + 100)
-	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.16, 0.16)
+	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.32, 0.32)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
@@ -201,8 +201,7 @@ local mipmaps = {mipmaps = true}
 local mainMenu = gamestate.create {
 	fonts = {
 		title = {"fonts/Roboto-Regular.ttf", 46},
-		versionSem = {"fonts/NotoSansCJKjp-Regular.woff", 23},
-		versionCodename = {"fonts/NotoSansCJKjp-Regular.woff", 16}
+		versionSem = {"fonts/NotoSansCJKjp-Regular.woff", 23}
 	},
 	images = {
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
@@ -216,10 +215,6 @@ function mainMenu:load()
 
 	if not(self.data.playFont) then
 		self.data.playFont = mainFont.get(92)
-	end
-
-	if not(self.data.menuFont) then
-		self.data.menuFont = mainFont.get(41)
 	end
 
 	if not(self.data.titleText) then
@@ -239,7 +234,11 @@ function mainMenu:load()
 
 	if not(self.data.verCodeText) then
 		local text = love.graphics.newText(self.assets.fonts.versionSem)
-		text:add(DEPLS_VERSION_CODENAME, -self.assets.fonts.versionSem:getWidth(DEPLS_VERSION_CODENAME), 0)
+		text:add(
+			DEPLS_VERSION_CODENAME,
+			-self.assets.fonts.versionSem:getWidth(DEPLS_VERSION_CODENAME) * 16/23,
+			0, 0, 16/23
+		)
 		self.data.verCodeText = text
 	end
 

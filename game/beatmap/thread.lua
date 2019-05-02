@@ -394,6 +394,16 @@ local function processCommand(chan, command)
 				sendBeatmapData("story", id, nil)
 			end
 		end
+	elseif command == "cover" then
+		if beatmap.list[arg[1]] then
+			local cover = beatmap.list[arg[1]].data:getCoverArt()
+
+			if cover and cover.image then
+				sendBeatmapData("cover", id, true, cover.image, cover.info)
+			else
+				sendBeatmapData("cover", id, false)
+			end
+		end
 	elseif command == "quit" then
 		return "quit"
 	end
@@ -402,6 +412,9 @@ end
 
 while true do
 	collectgarbage()
+	collectgarbage()
 	local command = commandChannel:demand()
 	if command == "quit" or processCommand(commandChannel, command) == "quit" then return end
+	collectgarbage()
+	collectgarbage()
 end

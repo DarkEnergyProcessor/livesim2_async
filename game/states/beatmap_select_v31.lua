@@ -60,7 +60,8 @@ do
 	function beatmapSelectButton:new(state, name, format, coverImage)
 		coverShader = coverShader or state.data.coverMaskShader
 
-		self.name = love.graphics.newText(state.data.titleFont, name)
+		self.name = love.graphics.newText(state.data.mainFont)
+		self.name:add(name, 0, 0, 0, 24/44)
 		self.format = love.graphics.newText(state.assets.fonts.formatFont, format)
 		self:setCoverImage(coverImage)
 
@@ -185,7 +186,7 @@ local function setStatusText(self, text, blink)
 	if not(text) or #text == 0 then return end
 
 	local x = self.persist.beatmapText:getWidth() + 54
-	self.persist.statusText:add(text, x, 106)
+	self.persist.statusText:add(text, x, 106, 0, 23/44)
 	self.persist.statusTextBlink = blink and 0 or math.huge
 end
 
@@ -200,6 +201,7 @@ end
 function beatmapSelect:load()
 	glow.clear()
 
+	--[[
 	do
 		local a, b, c, d, e = mainFont.get(23, 24, 16, 44, 9)
 		self.data.statusFont = a
@@ -207,7 +209,10 @@ function beatmapSelect:load()
 		self.data.optionDetailFont = c
 		self.data.beatmapTitleFont = d
 		self.data.infoFont = e
+		self.data.mainFont = d
 	end
+	]]
+	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
 
 	if self.data.shadowGradient == nil then
 		self.data.shadowGradient = util.gradient("vertical", color.black75PT, color.transparent)
@@ -226,14 +231,14 @@ function beatmapSelect:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.24, color.hexFF4FAE)
+		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, color.hexFF4FAE)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	glow.addFixedElement(self.data.back, 32, 4)
 
 	if self.data.downloadBeatmap == nil then
-		self.data.downloadBeatmap = ciButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.32, color.hexFF4FAE)
+		self.data.downloadBeatmap = ciButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.64, color.hexFF4FAE)
 		self.data.downloadBeatmap:addEventListener("mousereleased", function()
 			gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
 		end)
@@ -245,8 +250,8 @@ function beatmapSelect:load()
 	if self.data.autoplayToggle == nil then
 		self.data.autoplayToggle = createOptionToggleSetting(
 			"AUTOPLAY",
-			self.assets.images.fastForward, 0.16, 44,
-			self.data.optionDetailFont, L"beatmapSelect:optionAutoplay", 60
+			self.assets.images.fastForward, 0.32, 44,
+			self.data.mainFont2, L"beatmapSelect:optionAutoplay", 60
 		)
 	end
 	glow.addFixedElement(self.data.autoplayToggle, 480, 248)
@@ -254,8 +259,8 @@ function beatmapSelect:load()
 	if self.data.randomToggle == nil then
 		self.data.randomToggle = optionToggleButton(
 			false,
-			self.assets.images.fastForward, 0.16, 44,
-			self.data.optionDetailFont, L"beatmapSelect:optionRandom", 60
+			self.assets.images.shuffle, 0.32, 44,
+			self.data.mainFont2, L"beatmapSelect:optionRandom", 60
 		)
 	end
 	glow.addFixedElement(self.data.randomToggle, 600, 248)
@@ -263,8 +268,8 @@ function beatmapSelect:load()
 	if self.data.storyToggle == nil then
 		self.data.storyToggle = createOptionToggleSetting(
 			"STORYBOARD",
-			self.assets.images.video, 0.16, 44,
-			self.data.optionDetailFont, L"beatmapSelect:optionStoryboard", 60
+			self.assets.images.video, 0.32, 44,
+			self.data.mainFont2, L"beatmapSelect:optionStoryboard", 60
 		)
 	end
 	glow.addFixedElement(self.data.storyToggle, 720, 248)
@@ -272,8 +277,8 @@ function beatmapSelect:load()
 	if self.data.videoToggle == nil then
 		self.data.videoToggle = createOptionToggleSetting(
 			"VIDEOBG",
-			self.assets.images.movie, 0.16, 44,
-			self.data.optionDetailFont, L"beatmapSelect:optionVideo", 60
+			self.assets.images.movie, 0.32, 44,
+			self.data.mainFont2, L"beatmapSelect:optionVideo", 60
 		)
 	end
 	glow.addFixedElement(self.data.videoToggle, 840, 248)
@@ -286,8 +291,8 @@ function beatmapSelect:start()
 	self.persist.active = true
 	self.persist.beatmapFrame:setVerticalSliderPosition("left")
 	self.persist.beatmapFrame:setSliderColor(color.hex434242)
-	self.persist.beatmapText = love.graphics.newText(self.data.beatmapTitleFont, L"beatmapSelect:beatmaps")
-	self.persist.statusText = love.graphics.newText(self.data.statusFont)
+	self.persist.beatmapText = love.graphics.newText(self.data.mainFont, L"beatmapSelect:beatmaps")
+	self.persist.statusText = love.graphics.newText(self.data.mainFont)
 	self.persist.statusTextBlink = math.huge
 
 	local function beatmapSelected(_, data)
@@ -312,29 +317,29 @@ function beatmapSelect:start()
 			end)
 
 			for i, v in ipairs(self.persist.beatmaps) do
-				beatmapList.getSummary(v.id, function(data)
+				beatmapList.getCoverArt(v.id, function(has, img, info)
 					local imageCover = nil
 
-					if data.coverArt then
-						local image = love.graphics.newImage(data.coverArt.image, mipmaps)
+					if has then
+						local image = love.graphics.newImage(img, mipmaps)
 						local w, h = image:getDimensions()
 						v.coverArtImage = image
+						v.info = info
 
-						if w > 256 or h > 256 then
-							imageCover = util.newCanvas(256, 256)
+						if w > 128 or h > 128 then
+							imageCover = util.newCanvas(128, 128, nil, true)
 							love.graphics.push("all")
 							love.graphics.reset()
 							love.graphics.setCanvas(imageCover)
 							love.graphics.setColor(color.white)
 							love.graphics.setBlendMode("alpha", "premultiplied")
-							love.graphics.draw(image, 0, 0, 0, 256 / w, 256 / h)
+							love.graphics.draw(image, 0, 0, 0, 128 / w, 128 / h)
 							love.graphics.pop()
 						else
 							imageCover = image
 						end
 					end
 
-					v.summary = data
 					v.element:setCoverImage(imageCover)
 					v.element:addEventListener("mousereleased", beatmapSelected)
 				end)
@@ -409,12 +414,12 @@ function beatmapSelect:draw()
 
 	if self.persist.selectedBeatmap then
 		local v = self.persist.beatmaps[self.persist.selectedBeatmap]
-		love.graphics.setFont(self.data.titleFont)
-		love.graphics.printf(v.name, 500, 98, 280)
+		love.graphics.setFont(self.data.mainFont)
+		love.graphics.printf(v.name, 500, 98, 280, "left", 0, 24/44)
 
 		if v.summary.coverArt and v.summary.coverArt.info then
-			love.graphics.setFont(self.data.infoFont)
-			love.graphics.printf(v.summary.coverArt.info, 500, 176, 280)
+			love.graphics.setFont(self.data.mainFont2)
+			love.graphics.printf(v.info, 500, 176, 280, "left", 0, 9/16)
 		end
 
 		if v.coverArtImage then

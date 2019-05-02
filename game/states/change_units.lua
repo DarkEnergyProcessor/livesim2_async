@@ -176,7 +176,7 @@ local function updateCurrentMode(text, button, img, mode)
 
 	text:clear()
 	text:add(mode)
-	button:setImage(img, 0.24)
+	button:setImage(img, 0.48)
 end
 
 local function setMode(_, self)
@@ -366,7 +366,7 @@ function changeUnits:load()
 	glow.addFixedElement(self.data.modeButton, 700, 4)
 
 	if self.data.saveButton == nil then
-		self.data.saveButton = ciButton(color.hexFF4FAE, 45, self.assets.images.save, 0.16)
+		self.data.saveButton = ciButton(color.hexFF4FAE, 45, self.assets.images.save, 0.32)
 		self.data.saveButton:setShadow(32, math.pi, 6)
 		self.data.saveButton:addEventListener("mousereleased", applySetting)
 		self.data.saveButton:setData(self)
@@ -374,7 +374,7 @@ function changeUnits:load()
 	glow.addFixedElement(self.data.saveButton, 731, 524)
 
 	if self.data.revertButton == nil then
-		self.data.revertButton = ciButton(color.hexFF6854, 45, self.assets.images.revert, 0.16)
+		self.data.revertButton = ciButton(color.hexFF6854, 45, self.assets.images.revert, 0.32)
 		self.data.revertButton:setShadow(32, math.pi, 6)
 		self.data.revertButton:addEventListener("mousereleased", revertSetting)
 		self.data.revertButton:setData(self)
@@ -465,7 +465,7 @@ function changeUnits:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hexFF4FAE, 36, self.assets.images.navigateBack, 0.24)
+		self.data.back = ciButton(color.hexFF4FAE, 36, self.assets.images.navigateBack, 0.48)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", tryLeave)
 	end

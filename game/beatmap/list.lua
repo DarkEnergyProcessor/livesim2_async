@@ -213,6 +213,11 @@ function beatmapList.getStoryboard(name, callback)
 	beatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
 end
 
+function beatmapList.getCoverArt(name, callback)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "cover", {registerRequestID(callback), name})
+end
+
 function beatmapList.enumerate(callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
