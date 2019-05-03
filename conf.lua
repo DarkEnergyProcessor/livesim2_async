@@ -6,6 +6,7 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
+if jit then jit.off() jit.flush() end
 local love = require("love")
 local errhand = love.errorhandler or love.errhand
 function love.errorhandler(msg)

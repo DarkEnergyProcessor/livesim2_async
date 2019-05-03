@@ -73,4 +73,8 @@ function glow.draw()
 	return defaultFrame:draw()
 end
 
+function glow.getDefaultFrame()
+	return defaultFrame
+end
+
 return glow

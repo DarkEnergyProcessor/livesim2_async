@@ -178,6 +178,7 @@ function love.run()
 			elseif name == "lowmemory" then
 				collectgarbage()
 				collectgarbage()
+				if jit then jit.flush() end
 			-- modify position with virtual resolution
 			elseif name == "mousepressed" or name == "mousereleased" or name == "mousemoved" then
 				a, b = vires.screenToLogical(a, b)
@@ -201,9 +202,10 @@ function love.run()
 					-- force GC
 					collectgarbage()
 					collectgarbage()
+					if jit then jit.flush() end
 					log.info("run", "collectgarbage issued")
 					log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
-				elseif a == "f10" or (b == "volumeup" and love.keyboard.isScancodeDown("volumedown")) then
+				elseif a == "f10" then
 					-- debug info
 					showDebugInfo = not(showDebugInfo)
 				elseif a == "f12" then

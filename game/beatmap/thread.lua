@@ -118,7 +118,8 @@ local function enumerateBeatmap(id)
 						beatmapID,
 						v:getName() or beatmapID,
 						{fmtInt, fmt},
-						v:getDifficultyString()
+						v:getDifficultyString(),
+						file
 					)
 				end
 			else
@@ -378,7 +379,6 @@ local function processCommand(chan, command)
 					c:push(false)
 				end
 
-				print(storyboard.data)
 				if storyboard.data then
 					local c2 = love.thread.newChannel()
 					for i = 1, #storyboard.data do

@@ -16,54 +16,10 @@ local baseLoader = require("game.beatmap.base")
 
 local deplsLoader = Luaoop.class("beatmap.DEPLS", baseLoader)
 
-function deplsLoader:__construct(path)
+function deplsLoader:__construct(path, beatmap)
 	local internal = Luaoop.class.data(self)
 	internal.path = path
-
-	-- get list of files named "beatmap"
-	local possibleBeatmapCandidate = {}
-	for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
-		if util.removeExtension(file) == "beatmap" then
-			possibleBeatmapCandidate[#possibleBeatmapCandidate + 1] = path..file
-		end
-	end
-
-	if #possibleBeatmapCandidate == 0 then
-		error("cannot find beatmap file candidate")
-	end
-
-	-- make sure beatmap.json has highest priority, then ls2
-	for i = 1, #possibleBeatmapCandidate do
-		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
-			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
-			break
-		end
-	end
-	for i = 1, #possibleBeatmapCandidate do
-		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
-			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
-			break
-		end
-	end
-
-	-- test all file candidates
-	for i = 1, #possibleBeatmapCandidate do
-		local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
-		if file then
-			for j = 1, #beatmap.fileLoader do
-				file:seek(0)
-				local s, v = pcall(beatmap.fileLoader[j], file)
-
-				if s then
-					assert(Luaoop.class.is(v, baseLoader), "invalid beatmap object returned")
-					internal.beatmap = v
-					return
-				end
-			end
-		end
-	end
-
-	error("cannot find beatmap file candidate")
+	internal.beatmap = beatmap
 end
 
 function deplsLoader:getFormatName()
@@ -322,4 +278,59 @@ function deplsLoader:getLyrics()
 	return lyrics
 end
 
-return deplsLoader, "folder"
+return function(path)
+	-- get list of files named "beatmap"
+	local possibleBeatmapCandidate = {}
+	for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
+		if util.removeExtension(file) == "beatmap" then
+			possibleBeatmapCandidate[#possibleBeatmapCandidate + 1] = path..file
+		end
+	end
+
+	if #possibleBeatmapCandidate == 0 then
+		error("cannot find beatmap file candidate")
+	end
+
+	-- make sure beatmap.json has highest priority, then ls2
+	for i = 1, #possibleBeatmapCandidate do
+		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
+			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
+			break
+		end
+	end
+
+	for i = 1, #possibleBeatmapCandidate do
+		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
+			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
+			break
+		end
+	end
+
+	-- test all file candidates
+	for i = 1, #possibleBeatmapCandidate do
+		local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
+		if file then
+			for j = 1, #beatmap.fileLoader do
+				file:seek(0)
+				local s, v = pcall(beatmap.fileLoader[j], file)
+
+				if s then
+					if getmetatable(v) == nil then
+						-- multi-beatmap
+						local ret = {}
+						for k = 1, #v do
+							ret[k] = deplsLoader(path, v[k])
+						end
+
+						return ret
+					else
+						-- single beatmap
+						return deplsLoader(path, v)
+					end
+				end
+			end
+		end
+	end
+
+	error("cannot find beatmap file candidate")
+end, "folder"

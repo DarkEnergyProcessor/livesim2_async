@@ -27,6 +27,8 @@ local mipmaps = {mipmaps = true}
 local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.BeatmapSelectButton", glow.element)
 local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButton", glow.element)
 local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", glow.element)
+local diffDropdown = Luaoop.class("Livesim2.BeatmapSelect.DifficultyDropdown", glow.element)
+local diffText = Luaoop.class("Livesim2.BeatmapSelect.DifficultySelect", glow.element)
 
 do
 	local coverShader
@@ -168,7 +170,6 @@ do
 
 		self.height = 40
 		self.width = math.ceil(pb:getWidth() * 0.24 + font:getWidth(text) * 15/16 + 40)
-		print(self.width)
 		self.x, self.y = 0, 0
 		self.ripple = ripple(math.sqrt(self.width * self.width + 1600))
 		self.selected = false
@@ -218,6 +219,129 @@ do
 			love.graphics.setStencilTest()
 		end
 	end
+
+	local cb = require("libs.cubic_bezier")
+	local dropdownInterpolation = cb(0.4, 0, 0.2, 1):getFunction()
+
+	-- This one is not meant to be "glow.addElement" directly.
+	-- font = mainFont2
+	function diffDropdown:new(font)
+		self.optionText = love.graphics.newText(font)
+		self.optionUpdated = true
+		self.timer = 0
+		self.width, self.height = 150, 0
+		self.realHeight = 26
+		self.items = {}
+		self.destFrame = nil
+		self.x, self.y = 0, 0
+
+		self:addEventListener("mousepressed", diffDropdown._pressed)
+		self:addEventListener("mousemoved", diffDropdown._moved)
+		self:addEventListener("mousereleased", diffDropdown._released)
+		self:addEventListener("mousecanceled", diffDropdown.hide)
+	end
+
+	function diffDropdown:_pressed(_, x, y)
+		self.x, self.y = x, y
+	end
+
+	function diffDropdown:_moved(_, x, y)
+		self.x, self.y = x, y
+	end
+
+	function diffDropdown:_released()
+		local clickedIndex = math.floor(self.y / 26) + 1
+		if self.items[clickedIndex] then
+			self:triggerEvent("selected", self.items[clickedIndex], clickedIndex)
+		end
+
+		self:hide()
+	end
+
+	function diffDropdown:_updateList()
+		if not(self.optionUpdated) then
+			self.optionText:clear()
+			self.itemCount = #self.items
+			self.realHeight = self.itemCount * 26
+
+			for i, v in ipairs(self.items) do
+				self.optionText:add(tostring(v), 18, (i - 1) * 26 + 4)
+			end
+
+			self.optionUpdated = true
+		end
+	end
+
+	function diffDropdown:setItems(items)
+		self.items = {}
+		for i = 1, #items do
+			self.items[i] = items[i]
+		end
+
+		self.optionUpdated = false
+	end
+
+	function diffDropdown:show(frame, x, y)
+		if #self.items == 0 then
+			error("attempt to show empty dropdown")
+		end
+
+		if self.destFrame then return end
+
+		self.timer = 0
+		self.destFrame = frame
+		self:_updateList()
+		frame:addElement(self, x, y)
+	end
+
+	function diffDropdown:hide()
+		self.timer = 0
+		self.destFrame:removeElement(self)
+		self.destFrame = nil
+	end
+
+	function diffDropdown:update(dt)
+		self.timer = math.min(self.timer + dt * 5, 1)
+		self:_updateList()
+		self.height = dropdownInterpolation(self.timer) * self.realHeight
+	end
+
+	function diffDropdown:render(x, y)
+		local maxloop = math.ceil(self.height / #self.items)
+
+		love.graphics.setColor(color.hex434242)
+		love.graphics.rectangle("fill", x, y, self.width, self.height)
+		love.graphics.setColor(color.white75PT)
+		for i = 1, maxloop do
+			love.graphics.rectangle("line", x, y + (i - 1) * 26, 150, 26)
+		end
+		love.graphics.setColor(color.white)
+		util.drawText(self.optionText)
+	end
+
+	function diffText:new(font, img)
+		self.text = love.graphics.newText(font)
+		self.image = img -- "dropDown" image
+		self.showImage = false
+		self.width, self.height = 150, 26
+	end
+
+	function diffText:setText(text, showlist)
+		self.text:clear()
+		self.text:add(tostring(text))
+		self.showImage = not(not(showlist))
+	end
+
+	function diffText:render(x, y)
+		love.graphics.setColor(color.hexC31C76)
+		love.graphics.rectangle("fill", x, y, 150, 26, 13, 13)
+		love.graphics.rectangle("line", x, y, 150, 26, 13, 13)
+		love.graphics.setColor(color.white)
+		util.drawText(self.text, x + 18, y + 4)
+		if self.showImage then
+			love.graphics.draw(self.image, x + 120, y + 2, 0, 0.32)
+		end
+	end
 end
 
 local function leave()
@@ -253,6 +377,18 @@ local function startPlayBeatmap(_, self)
 			videoBackground = self.data.videoToggle.checked
 		})
 	end
+end
+
+local function resizeImage(img, w, h)
+	local canvas = util.newCanvas(w, h, nil, true)
+	love.graphics.push("all")
+	love.graphics.reset()
+	love.graphics.setCanvas(canvas)
+	love.graphics.setColor(color.white)
+	love.graphics.setBlendMode("alpha", "premultiplied")
+	love.graphics.draw(img, 0, 0, 0, 128 / w, 128 / h)
+	love.graphics.pop()
+	return canvas
 end
 
 local beatmapSelect = gamestate.create {
@@ -357,6 +493,23 @@ function beatmapSelect:load()
 		-- Place in between "Random" and "Storyboard" text
 		glow.addFixedElement(self.data.playButton, 720 - width * 0.5, 336)
 	end
+
+	if self.data.difficultyButton == nil then
+		local b = diffText(self.data.mainFont2, self.assets.images.dropDown)
+
+		if self.persist.selectedBeatmap then
+			local selectedBeatmap = self.persist.beatmaps[self.persist.selectedBeatmap]
+
+			if selectedBeatmap.group then
+				b:setText(selectedBeatmap.difficulty[selectedBeatmap.selected], true)
+			else
+				b:setText(selectedBeatmap.difficulty, false)
+			end
+		end
+
+		self.data.difficultyButton = b
+	end
+	glow.addFixedElement(self.data.difficultyButton, 508, 206)
 end
 
 function beatmapSelect:start()
@@ -379,28 +532,122 @@ function beatmapSelect:start()
 		end
 	end
 
-	local function beatmapSelected(_, data)
+	local function beatmapSelected(_, index)
 		if self.persist.selectedBeatmap ~= nil and self.persist.beatmapSummary == nil then
 			-- Not fully loading
 			return
 		end
 
-		local target = data[1][data[2]]
-		for i, v in ipairs(data[1]) do
-			v.element.selected = i == data[2]
+		local target = self.persist.beatmaps[index]
+		for i, v in ipairs(self.persist.beatmaps) do
+			v.element.selected = i == index
 		end
 
-		beatmapList.getSummary(target.id, summaryGet)
+		if target.group then
+			beatmapList.getSummary(target.beatmaps[target.selected], summaryGet)
+			self.data.difficultyButton:setText(target.difficulty[target.selected], true)
+		else
+			beatmapList.getSummary(target.id, summaryGet)
+			self.data.difficultyButton:setText(target.difficulty, false)
+		end
 
 		self.persist.beatmapCoverArt = nil
 		self.persist.beatmapSummary = nil
-		self.persist.selectedBeatmap = data[2]
+		self.persist.selectedBeatmap = index
 	end
+
+	local unprocessedBeatmaps = {}
 
 	beatmapList.push()
 	-- TODO: Categorize beatmaps based on their difficulty
-	beatmapList.enumerate(function(id, name, fmt, diff)
+	beatmapList.enumerate(function(id, name, fmt, diff, _, group)
 		if id == "" then
+			for i, v in ipairs(unprocessedBeatmaps) do
+				if v.group then
+					-- look for existing
+					local targetGroup
+
+					for _, w in ipairs(self.persist.beatmaps) do
+						if w.name == v.group then
+							targetGroup = w
+							break
+						end
+					end
+
+					-- create new group
+					if not(targetGroup) then
+						targetGroup = {
+							name = v.group,
+							format = v.format,
+							beatmaps = {},
+							difficulty = {},
+							group = true,
+							selected = 1,
+							element = beatmapSelectButton(self, v.name, v.format)
+						}
+
+						beatmapList.getCoverArt(v.id, function(has, img, info)
+							local imageCover = nil
+
+							if has then
+								local image = love.graphics.newImage(img, mipmaps)
+								local w, h = image:getDimensions()
+								util.releaseObject(img)
+								v.coverArtImage = image
+								v.info = info
+
+								if w > 128 or h > 128 then
+									imageCover = resizeImage(image, 128, 128)
+									util.releaseObject(image)
+								else
+									imageCover = image
+								end
+							end
+
+							targetGroup.element:setCoverImage(imageCover)
+							targetGroup.element:addEventListener("mousereleased", beatmapSelected)
+						end)
+
+						self.persist.beatmaps[#self.persist.beatmaps + 1] = targetGroup
+					end
+
+					targetGroup.beatmaps[#targetGroup.beatmaps + 1] = v
+					targetGroup.difficulty[#targetGroup.difficulty + 1] = v.difficulty
+				else
+					v.element = beatmapSelectButton(self, v.name, v.format)
+					self.persist.beatmaps[#self.persist.beatmaps + 1] = v
+
+					beatmapList.getCoverArt(v.id, function(has, img, info)
+						local imageCover = nil
+
+						if has then
+							local image = love.graphics.newImage(img, mipmaps)
+							local w, h = image:getDimensions()
+							util.releaseObject(img)
+							v.coverArtImage = image
+							v.info = info
+
+							if w > 128 or h > 128 then
+								imageCover = util.newCanvas(128, 128, nil, true)
+								love.graphics.push("all")
+								love.graphics.reset()
+								love.graphics.setCanvas(imageCover)
+								love.graphics.setColor(color.white)
+								love.graphics.setBlendMode("alpha", "premultiplied")
+								love.graphics.draw(image, 0, 0, 0, 128 / w, 128 / h)
+								love.graphics.pop()
+								util.releaseObject(image)
+							else
+								imageCover = image
+							end
+						end
+
+						v.element:setCoverImage(imageCover)
+						v.element:addEventListener("mousereleased", beatmapSelected)
+					end)
+				end
+			end
+
 			-- sort
 			table.sort(self.persist.beatmaps, function(a, b)
 				if a.name == b.name then
@@ -411,36 +658,7 @@ function beatmapSelect:start()
 			end)
 
 			for i, v in ipairs(self.persist.beatmaps) do
-				beatmapList.getCoverArt(v.id, function(has, img, info)
-					local imageCover = nil
-
-					if has then
-						local image = love.graphics.newImage(img, mipmaps)
-						local w, h = image:getDimensions()
-						util.releaseObject(img)
-						v.coverArtImage = image
-						v.info = info
-
-						if w > 128 or h > 128 then
-							imageCover = util.newCanvas(128, 128, nil, true)
-							love.graphics.push("all")
-							love.graphics.reset()
-							love.graphics.setCanvas(imageCover)
-							love.graphics.setColor(color.white)
-							love.graphics.setBlendMode("alpha", "premultiplied")
-							love.graphics.draw(image, 0, 0, 0, 128 / w, 128 / h)
-							love.graphics.pop()
-							util.releaseObject(image)
-						else
-							imageCover = image
-						end
-					end
-
-					v.element:setCoverImage(imageCover)
-					v.element:addEventListener("mousereleased", beatmapSelected)
-				end)
-
-				v.element:setData({self.persist.beatmaps, i})
+				v.element:setData(i)
 				self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
 			end
 
@@ -453,12 +671,12 @@ function beatmapSelect:start()
 			return false
 		end
 
-		self.persist.beatmaps[#self.persist.beatmaps + 1] = {
+		unprocessedBeatmaps[#unprocessedBeatmaps + 1] = {
 			id = id,
 			name = name,
 			format = fmt,
 			difficulty = diff,
-			element = beatmapSelectButton(self, name, fmt)
+			group = group
 		}
 		return true
 	end)
@@ -509,7 +727,7 @@ function beatmapSelect:draw()
 	love.graphics.setColor(color.white)
 
 	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
-		local v = self.persist.beatmaps[self.persist.selectedBeatmap]
+		local v = assert(self.persist.beatmaps[self.persist.selectedBeatmap])
 		local summary = self.persist.beatmapSummary
 		love.graphics.setFont(self.data.mainFont)
 		love.graphics.printf(v.name, 500, 98, 280 / (24/44), "left", 0, 24/44)
