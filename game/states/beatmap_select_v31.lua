@@ -4,12 +4,13 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
+local lsr = require("libs.lsr")
 
-local async = require("async")
 local color = require("color")
 local mainFont = require("font")
 local setting = require("setting")
 local fileDialog = require("file_dialog")
+local log = require("logging")
 local util = require("util")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
@@ -29,6 +30,7 @@ local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButt
 local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", glow.element)
 local diffDropdown = Luaoop.class("Livesim2.BeatmapSelect.DifficultyDropdown", glow.element)
 local diffText = Luaoop.class("Livesim2.BeatmapSelect.DifficultySelect", glow.element)
+local replayButton = Luaoop.class("Livesim2.BeatmapSelect.ReplayButton", glow.element)
 
 do
 	local coverShader
@@ -342,6 +344,53 @@ do
 			love.graphics.draw(self.image, x + 120, y + 2, 0, 0.32)
 		end
 	end
+
+	function replayButton:new(state, replay)
+		local time = os.date("*t", replay.timestamp)
+		self.name = love.graphics.newText(state.data.mainFont2)
+		self.score = love.graphics.newText(state.data.mainFont2)
+		self.name:add(L("general:dateFormat", {
+			month = state.data.monthNames[time.month],
+			day = time.day,
+			year = time.year
+		})..string.format(" %02d:%02d:%02d", time.hour, time.min, time.sec))
+		self.score:addf(tostring(replay.score), 440, "right")
+
+		self.width, self.height = 450, 72
+		self.x, self.y = 0, 0
+		self.ripple = ripple(455.7236004422)
+		self.stencilFunc = function()
+			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+		end
+		self.isPressed = false
+		self:addEventListener("mousepressed", commonPressed)
+		self:addEventListener("mousereleased", commonReleased)
+		self:addEventListener("mousecanceled", commonReleased)
+	end
+
+	function replayButton:update(dt)
+		self.ripple:update(dt)
+	end
+
+	function replayButton:render(x, y)
+		local shader = love.graphics.getShader()
+		self.x, self.y = x, y
+
+		love.graphics.rectangle("fill", x, y, self.width, self.height)
+		love.graphics.setShader(util.drawText.workaroundShader)
+		love.graphics.setColor(color.black)
+		love.graphics.draw(self.name, x + 16, y + 28)
+		love.graphics.setColor(color.hexFF4FAE)
+		love.graphics.draw(self.score, x, y + 28)
+		love.graphics.setShader(shader)
+
+		if self.ripple:isActive() then
+			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+			love.graphics.setStencilTest("equal", 1)
+			self.ripple:draw(255, 79, 174, x, y)
+			love.graphics.setStencilTest()
+		end
+	end
 end
 
 local function leave()
@@ -391,6 +440,29 @@ local function resizeImage(img, w, h)
 	return canvas
 end
 
+local function enumerateReplays(id, hash)
+	id = id:gsub(":", "__") -- multiple beatmap support
+	local dest = {}
+
+	if not(love.filesystem.createDirectory("replays/"..id)) then
+		log.errorf("beatmapSelect", "failed to create directory 'replays/%s'", id)
+	else
+		for _, v in ipairs(love.filesystem.getDirectoryItems("replays/"..id.."/")) do
+			if v:sub(-4) == ".lsr" then
+				local replay, s = lsr.loadReplay("replays/"..id.."/"..v, hash)
+				if replay then
+					dest[#dest + 1] = replay
+				else
+					log.errorf("beatmapSelect", "failed to load replay %s: %s", v, s)
+				end
+			end
+		end
+	end
+
+	table.sort(dest, function(a, b) return a.timestamp > b.timestamp end)
+	return dest
+end
+
 local beatmapSelect = gamestate.create {
 	images = {
 		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
@@ -428,6 +500,20 @@ function beatmapSelect:load()
 			}
 		]])
 		self.data.coverMaskShader:send("mask", self.assets.images.coverMask)
+	end
+
+	if self.data.replaysText == nil then
+		self.data.replaysText = love.graphics.newText(self.data.mainFont2, L"beatmapSelect:replays")
+	end
+
+	if self.data.monthNames == nil then
+		local t = {}
+
+		for w in L("general:months"):gmatch("%S+") do
+			t[#t + 1] = w
+		end
+
+		self.data.monthNames = t
 	end
 
 	if self.data.back == nil then
@@ -514,21 +600,82 @@ end
 
 function beatmapSelect:start()
 	self.persist.beatmapFrame = glow.frame(0, 152, 480, 488)
+	self.persist.replaysFrame = glow.frame(480, 398, 480, 242)
 	self.persist.beatmaps = {sorted = false}
 	self.persist.selectedBeatmap = nil
 	self.persist.beatmapSummary = nil
+	self.persist.beatmapNameHeight = 0
 	self.persist.active = true
-	self.persist.beatmapFrame:setVerticalSliderPosition("left")
-	self.persist.beatmapFrame:setSliderColor(color.hex434242)
 	self.persist.beatmapText = love.graphics.newText(self.data.mainFont, L"beatmapSelect:beatmaps")
 	self.persist.statusText = love.graphics.newText(self.data.mainFont)
 	self.persist.statusTextBlink = math.huge
 
+	self.persist.beatmapFrame:setSliderColor(color.hex434242)
+	self.persist.beatmapFrame:setVerticalSliderPosition("left")
+	self.persist.replaysFrame:setSliderColor(color.white)
+	self.persist.replaysFrame:setSliderHandleColor(color.hexFF4FAE)
+
 	local function summaryGet(d)
+		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
 		self.persist.beatmapSummary = d
 
 		if d.coverArt and d.coverArt.image then
 			self.persist.beatmapCoverArt = love.graphics.newImage(d.coverArt.image, mipmaps)
+		end
+
+		local beatmapTarget = target
+
+		if target.group then
+			beatmapTarget = target.beatmaps[target.selected]
+		end
+
+		if beatmapTarget.replays == nil then
+			beatmapTarget.replays = enumerateReplays(beatmapTarget.id, d.hash)
+		end
+
+		-- love.graphics.printf(v.name, 500, 98, 280 / (24/44), "left", 0, 24/44)
+		-- self.data.mainFont
+		self.persist.beatmapNameHeight =
+			#select(2, self.data.mainFont:getWrap(beatmapTarget.name, 280 / (24/44))) *
+			self.data.mainFont:getHeight() * (24/44)
+
+		self.persist.replaysFrame:clear()
+		if #beatmapTarget.replays > 0 then
+			local function replayCallback(_, replay)
+				local comboRange = nil
+				local summary = self.persist.beatmapSummary
+				local targetBeatmap = self.persist.beatmaps[self.persist.selectedBeatmap]
+
+				if targetBeatmap.group then
+					targetBeatmap = targetBeatmap.beatmaps[targetBeatmap.selected]
+				end
+
+				if self.persist.beatmapSummary.comboS then
+					comboRange = {
+						summary.comboC,
+						summary.comboB,
+						summary.comboA,
+						summary.comboS
+					}
+				end
+
+				gamestate.enter(loadingInstance.getInstance(), "result", {
+					name = targetBeatmap.id,
+					summary = summary,
+					replay = replay,
+					allowRetry = false,
+					allowSave = false,
+					autoplay = false,
+					comboRange = comboRange
+				})
+			end
+
+			for i, v in ipairs(beatmapTarget.replays) do
+				local elem = replayButton(self, v)
+				elem:addEventListener("mousereleased", replayCallback)
+				elem:setData(v)
+				self.persist.replaysFrame:addElement(elem, 0, (i - 1) * 72)
+			end
 		end
 	end
 
@@ -544,7 +691,7 @@ function beatmapSelect:start()
 		end
 
 		if target.group then
-			beatmapList.getSummary(target.beatmaps[target.selected], summaryGet)
+			beatmapList.getSummary(target.beatmaps[target.selected].id, summaryGet)
 			self.data.difficultyButton:setText(target.difficulty[target.selected], true)
 		else
 			beatmapList.getSummary(target.id, summaryGet)
@@ -562,7 +709,7 @@ function beatmapSelect:start()
 	-- TODO: Categorize beatmaps based on their difficulty
 	beatmapList.enumerate(function(id, name, fmt, diff, _, group)
 		if id == "" then
-			for i, v in ipairs(unprocessedBeatmaps) do
+			for _, v in ipairs(unprocessedBeatmaps) do
 				if v.group then
 					-- look for existing
 					local targetGroup
@@ -682,6 +829,7 @@ function beatmapSelect:start()
 	end)
 
 	glow.addFrame(self.persist.beatmapFrame)
+	glow.addFrame(self.persist.replaysFrame)
 	setStatusText(self, L"beatmapSelect:loading", true)
 end
 
@@ -695,6 +843,8 @@ function beatmapSelect:resumed()
 	if self.persist.beatmaps.sorted then
 		setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 	end
+
+	glow.addFrame(self.persist.replaysFrame)
 	glow.addFrame(self.persist.beatmapFrame)
 end
 
@@ -704,6 +854,7 @@ end
 
 function beatmapSelect:update(dt)
 	self.persist.beatmapFrame:update(dt)
+	self.persist.replaysFrame:update(dt)
 
 	if self.persist.statusTextBlink ~= math.huge then
 		self.persist.statusTextBlink = (self.persist.statusTextBlink + dt) % 2
@@ -719,11 +870,14 @@ function beatmapSelect:draw()
 	local shader = love.graphics.getShader()
 	love.graphics.setShader(util.drawText.workaroundShader)
 	love.graphics.setColor(color.white)
+	love.graphics.rectangle("fill", 480, 346, 480, 294)
 	love.graphics.draw(self.persist.beatmapText, 30, 93)
 	if self.persist.statusTextBlink ~= math.huge then
 		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
 	end
 	love.graphics.draw(self.persist.statusText)
+	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.draw(self.data.replaysText, 500, 374)
 	love.graphics.setColor(color.white)
 
 	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
@@ -734,7 +888,7 @@ function beatmapSelect:draw()
 
 		if summary.coverArt and summary.coverArt.info then
 			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(v.info, 500, 176, 280 / (9/16), "left", 0, 9/16)
+			love.graphics.printf(v.info, 500, 98 + self.persist.beatmapNameHeight, 280 / (9/16), "left", 0, 9/16)
 		end
 
 		if self.persist.beatmapCoverArt then
@@ -755,13 +909,13 @@ function beatmapSelect:draw()
 	end
 
 	love.graphics.setShader(shader)
-	love.graphics.rectangle("fill", 480, 346, 480, 294)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
 	love.graphics.setColor(color.hex333131)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 
 	glow.draw()
 	self.persist.beatmapFrame:draw()
+	self.persist.replaysFrame:draw()
 end
 
 return beatmapSelect
