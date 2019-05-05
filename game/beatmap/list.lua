@@ -58,7 +58,7 @@ local function channelToTable(a)
 	return data
 end
 
-function love.handlers.beatmapresponse(name, id, a, b, c, d)
+function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 	if beatmapList.callback[id] then
 		if name == "error" then
 			beatmapList.callback[id] = nil
@@ -77,7 +77,7 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d)
 			if a == "" then
 				beatmapList.callback[id] = nil
 			end
-			if not(cb(a, b, c[2], d, c[1])) then
+			if not(cb(a, b, c[2], d, c[1], e)) then
 				beatmapList.callback[id] = nil
 			end
 		elseif name == "notes" then

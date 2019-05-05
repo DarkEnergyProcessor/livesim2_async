@@ -189,6 +189,8 @@ local function loadDirectly(path)
 		id = createRandomString()
 	until beatmap.list[id] == nil
 
+	local newPath, beatmapIndex = path:match("(.+):(%d+)$")
+	newPath = newPath or path
 	local f, msg = util.newFileWrapper(path, "rb")
 	if not(f) then return nil, msg end
 
@@ -198,12 +200,29 @@ local function loadDirectly(path)
 		local status, value = pcall(beatmap.fileLoader[i], f)
 
 		if status then
-			local bv = {
-				noEnum = true,
-				name = path,
-				type = "file",
-				data = value
-			}
+			local bv
+
+			if getmetatable(value) == nil then
+				beatmapIndex = tonumber(beatmapIndex)
+				if beatmapIndex and value[beatmapIndex] then
+					bv = {
+						noEnum = true,
+						name = path,
+						type = "file",
+						data = value[beatmapIndex]
+					}
+				else
+					return nil, "beatmap index missing or not exist"
+				end
+			else
+				bv = {
+					noEnum = true,
+					name = newPath,
+					type = "file",
+					data = value[beatmapIndex]
+				}
+			end
+
 			beatmap.list[id] = bv
 			return id, getSummary(bv)
 		else
@@ -338,10 +357,24 @@ local function processCommand(chan, command)
 
 			sendBeatmapData("load", id, arg[1], c)
 		else
-			local beatmapObject, type = beatmap.findSuitable("beatmap/"..arg[1])
+			local path, beatmapIndex = arg[1]:match("(.+):(%d+)$")
+			print(path, beatmapIndex)
+			path = path or arg[1]
+			local beatmapObject, type = beatmap.findSuitable("beatmap/"..path)
 
 			if beatmapObject then
-				local value = {name = arg[1], data = beatmapObject, type = type}
+				local value
+				if getmetatable(beatmapObject) == nil then
+					beatmapIndex = tonumber(beatmapIndex)
+					if beatmapIndex and beatmapObject[beatmapIndex] then
+						value = {name = arg[1], data = beatmapObject[beatmapIndex], type = type}
+					else
+						sendBeatmapData("error", id, "missing beatmap index or not exist")
+					end
+				else
+					value = {name = arg[1], data = beatmapObject, type = type}
+				end
+
 				beatmap.list[#beatmap.list + 1] = value
 				beatmap.list[arg[1]] = value
 

@@ -478,6 +478,7 @@ return function(file)
 		local beatmapData = beatmapStr:sub(1, currentBeatmapSize)
 		beatmapStr = beatmapStr:sub(currentBeatmapSize + 1)
 		local hash = beatmapStr:sub(1, 16)
+		beatmapStr = beatmapStr:sub(17)
 		if md5(beatmapData) == hash then
 			-- insert to beatmap list
 			beatmapList[#beatmapList + 1] = {

@@ -168,7 +168,7 @@ function love.run()
 		async.loop(dt)
 		-- Process events.
 		love.event.pump()
-		for name, a,b,c,d,e,f in love.event.poll() do
+		for name, a, b, c, d, e, f, g, h, i, j in love.event.poll() do
 			-- update virtual resolution for resize
 			if name == "resize" then
 				vires.update(a, b)
@@ -233,9 +233,9 @@ function love.run()
 				return a or 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
-				love.handlers[name](a, b, c, d, e, f)
-			elseif not(glow) or not(glow.handleEvents(name, a, b, c, d, e, f)) then
-				gamestate.internal.handleEvents(name, a, b, c, d, e, f)
+				love.handlers[name](a, b, c, d, e, f, g, h, i, j)
+			elseif not(glow) or not(glow.handleEvents(name, a, b, c, d, e, f, g, h, i, j)) then
+				gamestate.internal.handleEvents(name, a, b, c, d, e, f, g, h, i, j)
 			end
 		end
 

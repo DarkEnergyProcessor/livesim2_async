@@ -254,7 +254,7 @@ do
 	function diffDropdown:_released()
 		local clickedIndex = math.floor(self.y / 26) + 1
 		if self.items[clickedIndex] then
-			self:triggerEvent("selected", self.items[clickedIndex], clickedIndex)
+			self:triggerEvent("itemselected", clickedIndex, self.items[clickedIndex])
 		end
 
 		self:hide()
@@ -263,8 +263,7 @@ do
 	function diffDropdown:_updateList()
 		if not(self.optionUpdated) then
 			self.optionText:clear()
-			self.itemCount = #self.items
-			self.realHeight = self.itemCount * 26
+			self.realHeight = #self.items * 26
 
 			for i, v in ipairs(self.items) do
 				self.optionText:add(tostring(v), 18, (i - 1) * 26 + 4)
@@ -296,10 +295,19 @@ do
 		frame:addElement(self, x, y)
 	end
 
+	function diffDropdown:isShown()
+		return not(not(self.destFrame))
+	end
+
 	function diffDropdown:hide()
+		local frame = self.destFrame
 		self.timer = 0
-		self.destFrame:removeElement(self)
-		self.destFrame = nil
+
+		if frame then
+			-- Prevent stack overflow
+			self.destFrame = nil
+			frame:removeElement(self)
+		end
 	end
 
 	function diffDropdown:update(dt)
@@ -309,7 +317,7 @@ do
 	end
 
 	function diffDropdown:render(x, y)
-		local maxloop = math.ceil(self.height / #self.items)
+		local maxloop = math.ceil(self.height / 26)
 
 		love.graphics.setColor(color.hex434242)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
@@ -318,7 +326,7 @@ do
 			love.graphics.rectangle("line", x, y + (i - 1) * 26, 150, 26)
 		end
 		love.graphics.setColor(color.white)
-		util.drawText(self.optionText)
+		util.drawText(self.optionText, x, y)
 	end
 
 	function diffText:new(font, img)
@@ -418,6 +426,10 @@ local function startPlayBeatmap(_, self)
 	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
 		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
 
+		if target.group then
+			target = target.beatmaps[target.selected]
+		end
+
 		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
 			summary = self.persist.beatmapSummary,
 			beatmapName = target.id,
@@ -430,12 +442,13 @@ end
 
 local function resizeImage(img, w, h)
 	local canvas = util.newCanvas(w, h, nil, true)
+	local iw, ih = img:getDimensions()
 	love.graphics.push("all")
 	love.graphics.reset()
 	love.graphics.setCanvas(canvas)
 	love.graphics.setColor(color.white)
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(img, 0, 0, 0, 128 / w, 128 / h)
+	love.graphics.draw(img, 0, 0, 0, w / iw, h / ih)
 	love.graphics.pop()
 	return canvas
 end
@@ -582,6 +595,19 @@ function beatmapSelect:load()
 
 	if self.data.difficultyButton == nil then
 		local b = diffText(self.data.mainFont2, self.assets.images.dropDown)
+		b:addEventListener("mousereleased", function()
+			local target = self.persist.beatmaps[self.persist.selectedBeatmap]
+
+			if target.group then
+				if self.data.difficultyDropdown:isShown() then
+					self.data.difficultyDropdown:hide()
+				else
+					self.data.difficultyDropdown:setData(target)
+					self.data.difficultyDropdown:setItems(target.difficulty)
+					self.data.difficultyDropdown:show(self.persist.dropdownFrame, 508, 232)
+				end
+			end
+		end)
 
 		if self.persist.selectedBeatmap then
 			local selectedBeatmap = self.persist.beatmaps[self.persist.selectedBeatmap]
@@ -596,11 +622,22 @@ function beatmapSelect:load()
 		self.data.difficultyButton = b
 	end
 	glow.addFixedElement(self.data.difficultyButton, 508, 206)
+
+	if self.data.difficultyDropdown == nil then
+		self.data.difficultyDropdown = diffDropdown(self.data.mainFont2)
+		self.data.difficultyDropdown:addEventListener("itemselected", function(_, target, index, name)
+			target.selected = index
+			self.data.difficultyButton:setText(name, true)
+
+			beatmapList.getSummary(target.beatmaps[index].id, self.persist.summaryGet)
+		end)
+	end
 end
 
 function beatmapSelect:start()
 	self.persist.beatmapFrame = glow.frame(0, 152, 480, 488)
 	self.persist.replaysFrame = glow.frame(480, 398, 480, 242)
+	self.persist.dropdownFrame = glow.frame(0, 0, 960, 640)
 	self.persist.beatmaps = {sorted = false}
 	self.persist.selectedBeatmap = nil
 	self.persist.beatmapSummary = nil
@@ -615,7 +652,7 @@ function beatmapSelect:start()
 	self.persist.replaysFrame:setSliderColor(color.white)
 	self.persist.replaysFrame:setSliderHandleColor(color.hexFF4FAE)
 
-	local function summaryGet(d)
+	self.persist.summaryGet = function(d)
 		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
 		self.persist.beatmapSummary = d
 
@@ -633,8 +670,6 @@ function beatmapSelect:start()
 			beatmapTarget.replays = enumerateReplays(beatmapTarget.id, d.hash)
 		end
 
-		-- love.graphics.printf(v.name, 500, 98, 280 / (24/44), "left", 0, 24/44)
-		-- self.data.mainFont
 		self.persist.beatmapNameHeight =
 			#select(2, self.data.mainFont:getWrap(beatmapTarget.name, 280 / (24/44))) *
 			self.data.mainFont:getHeight() * (24/44)
@@ -685,16 +720,18 @@ function beatmapSelect:start()
 			return
 		end
 
+		self.data.difficultyDropdown:hide()
+
 		local target = self.persist.beatmaps[index]
 		for i, v in ipairs(self.persist.beatmaps) do
 			v.element.selected = i == index
 		end
 
 		if target.group then
-			beatmapList.getSummary(target.beatmaps[target.selected].id, summaryGet)
+			beatmapList.getSummary(target.beatmaps[target.selected].id, self.persist.summaryGet)
 			self.data.difficultyButton:setText(target.difficulty[target.selected], true)
 		else
-			beatmapList.getSummary(target.id, summaryGet)
+			beatmapList.getSummary(target.id, self.persist.summaryGet)
 			self.data.difficultyButton:setText(target.difficulty, false)
 		end
 
@@ -715,7 +752,7 @@ function beatmapSelect:start()
 					local targetGroup
 
 					for _, w in ipairs(self.persist.beatmaps) do
-						if w.name == v.group then
+						if w.group == v.group then
 							targetGroup = w
 							break
 						end
@@ -724,11 +761,11 @@ function beatmapSelect:start()
 					-- create new group
 					if not(targetGroup) then
 						targetGroup = {
-							name = v.group,
+							name = v.name,
 							format = v.format,
 							beatmaps = {},
 							difficulty = {},
-							group = true,
+							group = v.group,
 							selected = 1,
 							element = beatmapSelectButton(self, v.name, v.format)
 						}
@@ -740,8 +777,8 @@ function beatmapSelect:start()
 								local image = love.graphics.newImage(img, mipmaps)
 								local w, h = image:getDimensions()
 								util.releaseObject(img)
-								v.coverArtImage = image
-								v.info = info
+								targetGroup.coverArtImage = image
+								targetGroup.info = info
 
 								if w > 128 or h > 128 then
 									imageCover = resizeImage(image, 128, 128)
@@ -775,14 +812,7 @@ function beatmapSelect:start()
 							v.info = info
 
 							if w > 128 or h > 128 then
-								imageCover = util.newCanvas(128, 128, nil, true)
-								love.graphics.push("all")
-								love.graphics.reset()
-								love.graphics.setCanvas(imageCover)
-								love.graphics.setColor(color.white)
-								love.graphics.setBlendMode("alpha", "premultiplied")
-								love.graphics.draw(image, 0, 0, 0, 128 / w, 128 / h)
-								love.graphics.pop()
+								imageCover = resizeImage(image, 128, 128)
 								util.releaseObject(image)
 							else
 								imageCover = image
@@ -797,11 +827,7 @@ function beatmapSelect:start()
 
 			-- sort
 			table.sort(self.persist.beatmaps, function(a, b)
-				if a.name == b.name then
-					return (a.difficulty or "") < (b.difficulty or "")
-				else
-					return a.name < b.name
-				end
+				return a.name < b.name
 			end)
 
 			for i, v in ipairs(self.persist.beatmaps) do
@@ -830,6 +856,7 @@ function beatmapSelect:start()
 
 	glow.addFrame(self.persist.beatmapFrame)
 	glow.addFrame(self.persist.replaysFrame)
+	glow.addFrame(self.persist.dropdownFrame)
 	setStatusText(self, L"beatmapSelect:loading", true)
 end
 
@@ -846,6 +873,7 @@ function beatmapSelect:resumed()
 
 	glow.addFrame(self.persist.replaysFrame)
 	glow.addFrame(self.persist.beatmapFrame)
+	glow.addFrame(self.persist.dropdownFrame)
 end
 
 function beatmapSelect:paused()
@@ -855,6 +883,7 @@ end
 function beatmapSelect:update(dt)
 	self.persist.beatmapFrame:update(dt)
 	self.persist.replaysFrame:update(dt)
+	self.persist.dropdownFrame:update(dt)
 
 	if self.persist.statusTextBlink ~= math.huge then
 		self.persist.statusTextBlink = (self.persist.statusTextBlink + dt) % 2
@@ -916,6 +945,11 @@ function beatmapSelect:draw()
 	glow.draw()
 	self.persist.beatmapFrame:draw()
 	self.persist.replaysFrame:draw()
+	self.persist.dropdownFrame:draw()
 end
+
+beatmapSelect:registerEvent("mousereleased", function(self)
+	self.data.difficultyDropdown:hide()
+end)
 
 return beatmapSelect

@@ -362,9 +362,10 @@ Options:
 
 * -version                   Show Live Simulator: 2 version and exit.
 
+* -vsync <on/off|1/0>        Enable or disable vsync. Defaults to enabled.
+
 * -width <width>             Set window width. Ignored if used with command
                              that operates without window. Default is 960
-
 ]]
 
 local license = [[
@@ -411,6 +412,7 @@ function love.load(argv, gameargv)
 	local storyboardOverride
 	local listingMode
 	local fullscreen = false
+	local useVsync = true
 	local windowWidth = 960
 	local windowHeight = 640
 	local dumpBeatmap = false
@@ -514,6 +516,10 @@ function love.load(argv, gameargv)
 				print("Capabilities: "..capabilities())
 				love.event.quit()
 				return
+			elseif arg == "-vsync" then
+				local u = assert(argv[i+1], "please specify storyboard mode"):lower()
+				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid storyboard mode")
+				useVsync = u == "on" or u == "1"
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
 				i = i + 1
@@ -693,7 +699,7 @@ function love.load(argv, gameargv)
 		-- Initialize volume
 		initVolume()
 		-- Initialize window
-		initWindow(windowWidth, windowHeight, fullscreen, not(render), desiredMSAA)
+		initWindow(windowWidth, windowHeight, fullscreen, not(render) and useVsync, desiredMSAA)
 		-- Initialize Yohane
 		initializeYohane()
 		-- Register all gamestates
