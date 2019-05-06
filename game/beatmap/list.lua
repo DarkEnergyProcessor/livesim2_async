@@ -59,11 +59,11 @@ local function channelToTable(a)
 end
 
 function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
-	if beatmapList.callback[id] then
-		if name == "error" then
-			beatmapList.callback[id] = nil
-			error(a)
-		elseif name == "loaders" then
+	if name == "error" then
+		beatmapList.callback[id] = nil
+		error(a)
+	elseif beatmapList.callback[id] then
+		if name == "loaders" then
 			local cb = beatmapList.callback[id]
 			if a == "" then
 				beatmapList.callback[id] = nil
@@ -237,6 +237,16 @@ end
 function beatmapList.registerRelative(path, callback)
 	assert(beatmapList.count > 0, "beatmap list not initialized")
 	beatmapList.channel:performAtomic(sendData, "loadrel", {registerRequestID(callback), path})
+end
+
+-- For grouped beatmap, all difficulty will be deleted!
+function beatmapList.deleteBeatmap(name)
+	assert(beatmapList.count > 0, "beatmap list not initialized")
+	beatmapList.channel:performAtomic(sendData, "rm", {registerRequestID(), name})
+end
+
+function beatmapList.isActive()
+	return beatmapList.count > 0
 end
 
 postExit.add(function()

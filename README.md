@@ -13,7 +13,11 @@ Please see `docs/How_To_Setup.md`
 Supported Beatmaps
 ==================
 
-* SIF beatmap, this is main beatmap format that Live Simulator: 2 uses.
+* Live Simulator: 2 binary beatmap (*Live Simulator: 2 v1.x/2.0 beatmap*).
+
+* Live Simulator: 2 "Over the Rainbow" NBT beatmap (*Live Simulator: 2 v4.0 beatmap*).
+
+* SIF beatmap. All beatmaps will be converted to this format internally.
 
 * Custom Beatmap Festival project folder.
 
@@ -25,8 +29,6 @@ External Libraries
 ==================
 
 Live Simulator: 2 uses these external libraries to run:
-
-* LS2, Live Simulator: 2 binary beatmap parser and generator.
 
 * [Luaoop](https://github.com/ImagicTheCat/Luaoop)
 
@@ -40,8 +42,6 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [hump.timer](https://github.com/vrld/hump)
 
-* [hump.vector](https://github.com/vrld/hump)
-
 * [LS2X](https://github.com/MikuAuahDark/ls2x)
 
 * [i18n](https://github.com/kikito/i18n.lua)
@@ -51,6 +51,8 @@ Live Simulator: 2 uses these external libraries to run:
 * [lua-tinyyaml](https://github.com/peposso/lua-tinyyaml)
 
 * [utf8_validator.lua](https://github.com/kikito/utf8_validator.lua)
+
+* [lua-nbt](https://github.com/MikuAuahDark/lua-nbt)
 
 Live Simulator: 2 uses these external libraries if available:
 
@@ -67,6 +69,8 @@ Special Thanks
 * [@yuyu0127_](https://twitter.com/yuyu0127_) - Note circle images and Japanese translation.
 
 * MilesElectric168 - Note randomization algorithm.
+
+* [sr229](https://github.com/sr229) - v4.0 UI redesign.
 
 * CK.Tex - Simplified Chinese translation.
 
@@ -85,7 +89,8 @@ Special Thanks
 License
 =======
 
-Live Simulator: 2 v3.0 and later is licensed under zLib license. Version 2.1.2 and earlier is licensed under MIT license. See `LICENSE.md` for more details.
+Live Simulator: 2 v3.0 and later is licensed under zLib license. Version 2.1.2 and earlier is licensed under MIT license. Both license means
+that Live Simulator: 2 is provided free of charge. See `LICENSE.md` for more details.
 
 Live Simulator: 2 uses Roboto font. It's licensed under Apache 2 license.
 

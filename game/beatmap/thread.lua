@@ -110,7 +110,12 @@ local function enumerateBeatmap(id)
 			if getmetatable(beatmapObject) == nil then
 				for j, v in ipairs(beatmapObject) do
 					local beatmapID = string.format("%s:%d", file, j)
-					local value = {name = beatmapID, data = v, type = beatmapType}
+					local value = {
+						name = beatmapID,
+						data = v,
+						type = beatmapType,
+						group = file
+					}
 					local fmt, fmtInt = v:getFormatName()
 					beatmap.list[#beatmap.list + 1] = value
 					beatmap.list[beatmapID] = value
@@ -209,7 +214,8 @@ local function loadDirectly(path)
 						noEnum = true,
 						name = path,
 						type = "file",
-						data = value[beatmapIndex]
+						data = value[beatmapIndex],
+						group = newPath
 					}
 				else
 					return nil, "beatmap index missing or not exist"
@@ -232,6 +238,25 @@ local function loadDirectly(path)
 
 	f:close()
 	return nil, "unsupported beatmap format"
+end
+
+local function unlink(path, id)
+	local res = love.filesystem.remove(path)
+	print(path, res)
+	if not(res) then
+		sendBeatmapData("error", id, "cannot delete '"..path.."'")
+		error("")
+	end
+end
+
+local function recursiveDelete(item, id)
+	if love.filesystem.getInfo(item, "directory") then
+		for _, child in ipairs(love.filesystem.getDirectoryItems(item)) do
+			recursiveDelete(item.."/"..child, id)
+		end
+	end
+
+	unlink(item, id)
 end
 
 local loaderMeta = {
@@ -358,7 +383,6 @@ local function processCommand(chan, command)
 			sendBeatmapData("load", id, arg[1], c)
 		else
 			local path, beatmapIndex = arg[1]:match("(.+):(%d+)$")
-			print(path, beatmapIndex)
 			path = path or arg[1]
 			local beatmapObject, type = beatmap.findSuitable("beatmap/"..path)
 
@@ -367,12 +391,21 @@ local function processCommand(chan, command)
 				if getmetatable(beatmapObject) == nil then
 					beatmapIndex = tonumber(beatmapIndex)
 					if beatmapIndex and beatmapObject[beatmapIndex] then
-						value = {name = arg[1], data = beatmapObject[beatmapIndex], type = type}
+						value = {
+							name = arg[1],
+							data = beatmapObject[beatmapIndex],
+							type = type,
+							group = path
+						}
 					else
 						sendBeatmapData("error", id, "missing beatmap index or not exist")
 					end
 				else
-					value = {name = arg[1], data = beatmapObject, type = type}
+					value = {
+						name = arg[1],
+						data = beatmapObject,
+						type = type
+					}
 				end
 
 				beatmap.list[#beatmap.list + 1] = value
@@ -438,6 +471,25 @@ local function processCommand(chan, command)
 				sendBeatmapData("cover", id, false)
 			end
 		end
+	elseif command == "rm" then
+		local path = arg[1]:match("(.+):%d+$") or arg[1]
+
+		for i = #beatmap.list, 1, -1 do
+			local v = beatmap.list[i]
+			if v.group == path or v.name == path then
+				print("remove", v.name, v.group)
+				table.remove(beatmap.list, i)
+				beatmap.list[v.name] = nil
+			end
+			v = nil
+		end
+
+		-- Force GC
+		collectgarbage()
+		collectgarbage()
+		-- Delete
+		print("delete", path)
+		recursiveDelete("beatmap/"..path, id)
 	elseif command == "quit" then
 		return "quit"
 	end

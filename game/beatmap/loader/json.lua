@@ -312,10 +312,17 @@ end
 return function(f)
 	-- f is File object, beatmap.thread guarantee that the
 	-- read position is always at position 0
-	assert(f:read(30):find("%s*[{|%[]"), "invalid JSON")
-	f:seek(0)
+	local firstdata = f:read(30)
+	local hasBOM = false
+	-- Skip UTF-8 BOM uh
+	if firstdata:find("\239\187\191", 1, true) then
+		firstdata = firstdata:sub(4)
+		hasBOM = true
+	end
 
-	local data = f:read()
+	assert(firstdata:find("%s*[{|%[]"), "invalid JSON")
+
+	local data = firstdata..f:read()
 	local s, bm = pcall(JSON.decode, JSON, data)
 	assert(s, "failed to decode JSON")
 	local hash = md5(data)

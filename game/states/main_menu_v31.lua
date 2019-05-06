@@ -1,4 +1,4 @@
--- Main Menu (v3.1)
+-- Main Menu
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 

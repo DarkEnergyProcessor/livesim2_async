@@ -1,4 +1,4 @@
--- Change Units (v3.1)
+-- Change Units
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
