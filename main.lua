@@ -396,7 +396,7 @@ function love.load(argv, gameargv)
 	initLS2()
 	initLSR()
 	language.init()
-	language.set(setting.get("LANGUAGE"))
+	--language.set(setting.get("LANGUAGE"))
 	-- Try to load command line
 	if (love._os == "Android" or love._os == "iOS") and util.fileExists("commandline.txt") then
 		argv = {}
