@@ -38,6 +38,11 @@ v3.0
 - Unit creation                                 OK
 - Restart button (live show)                    OK
 - Lovewing UI                                   OK
-- Delete beatmap
 - Performance Graph                             OK
 - Beatmap Recording                             OK
+
+v4.0
+- Delete beatmap                                OK
+- Beatmap editor
+- Unit editor
+- github.com/MikuAuahDark/livesim2/issues/14    5/9
