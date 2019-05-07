@@ -22,8 +22,10 @@ local ripple = require("game.ui.ripple")
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
 -- because they're not reusable
-
+local invisibleButton = Luaoop.class("Livesim2.InvisibleButtonUI", glow.element)
 local playButton = Luaoop.class("Livesim2.MainMenu.PlayButton", glow.element)
+local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", glow.element)
+local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.element)
 
 function playButton:new(state)
 	local text = L"menu:play"
@@ -81,8 +83,6 @@ function playButton:render(x, y)
 	end
 end
 
-local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", glow.element)
-
 function changeUnitsButton:new(state)
 	local text = L"menu:changeUnits"
 	self.image = state.assets.images.changeUnits
@@ -132,8 +132,6 @@ function changeUnitsButton:render(x, y)
 	end
 end
 
-local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.element)
-
 function settingsButton:new(state)
 	local text = L"menu:settings"
 	self.image = state.assets.images.settingsDualGear
@@ -182,6 +180,12 @@ function settingsButton:render(x, y)
 		love.graphics.setStencilTest()
 	end
 end
+
+function invisibleButton:new(w, h)
+	self.width, self.height = w, h
+end
+
+function invisibleButton.render() end
 
 -- End UI stuff
 
@@ -267,6 +271,10 @@ function mainMenu:load()
 	if not(self.data.grayGradient) then
 		self.data.grayGradient = util.gradient("vertical", color.transparent, color.hex6A6767F0)
 	end
+
+	local invbtn = invisibleButton(240, 80)
+	invbtn:addEventListener("mousereleased", makeEnterGamestateFunction("systemInfo", true))
+	glow.addFixedElement(invbtn, 720, 560)
 end
 
 -- Title text "{ffa73d}Live {ffffff}Simulator: {ff4fae}2" is in 38x584 (text "title")

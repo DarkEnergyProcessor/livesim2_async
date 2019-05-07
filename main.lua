@@ -25,12 +25,12 @@
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
 -- Version string
-DEPLS_VERSION = "3.0.6"
+DEPLS_VERSION = "4.0.0-beta1"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03009800
+DEPLS_VERSION_NUMBER = 03010000
 -- Version codename
-DEPLS_VERSION_CODENAME = "Time Lapse"
+DEPLS_VERSION_CODENAME = "Over the Rainbow"
 
 local love = require("love")
 local Yohane = require("libs.Yohane")
@@ -111,12 +111,11 @@ local function registerGamestates()
 	gamestate.register("livesim2", require("game.states.livesim2"))
 	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
 	gamestate.register("mainMenu", require("game.states.main_menu_v31"))
-	gamestate.register("result", require("game.states.result_v31"))
+	gamestate.register("result", require("game.states.result_summary"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("settings", require("game.states.gamesetting"))
 	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
-	gamestate.register("viewReplay", require("game.states.view_replays"))
 end
 
 local settingsList = {
