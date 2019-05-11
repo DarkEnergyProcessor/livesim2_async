@@ -573,7 +573,7 @@ function beatmapSelect:load()
 	end
 
 	if self.data.deleteBeatmap == nil then
-		self.data.deleteBeatmap = ciButton(color.hexFFFFFF, 18, self.assets.images.delete, 0.24, color.hexFF4FAE)
+		self.data.deleteBeatmap = ciButton(color.hexFFFFFF, 18, self.assets.images.delete, 0.32, color.hexFF4FAE)
 		self.data.deleteBeatmap:addEventListener("mousereleased", function()
 			if not(self.persist.selectedBeatmap) then
 				return
@@ -758,7 +758,7 @@ function beatmapSelect:start()
 		end
 
 		self.persist.beatmapNameHeight =
-			#select(2, self.data.mainFont:getWrap(beatmapTarget.name, 280 / (24/44))) *
+			#select(2, self.data.mainFont:getWrap(beatmapTarget.name, 300 / (24/44))) *
 			self.data.mainFont:getHeight() * (24/44)
 
 		self.persist.replaysFrame:clear()
@@ -995,12 +995,12 @@ function beatmapSelect:draw()
 	love.graphics.setColor(color.hex434242)
 	love.graphics.rectangle("fill", -88, -43, 1136, 726)
 	love.graphics.setColor(color.hexFF4FAE)
-	love.graphics.rectangle("fill", 480, 10, 480, 336)
+	love.graphics.rectangle("fill", 480, 10, 480, 673)
 
 	local shader = love.graphics.getShader()
 	love.graphics.setShader(util.drawText.workaroundShader)
 	love.graphics.setColor(color.white)
-	love.graphics.rectangle("fill", 480, 346, 480, 294)
+	love.graphics.rectangle("fill", 484, 346, 472, 294)
 	love.graphics.draw(self.persist.beatmapText, 30, 93)
 	if self.persist.statusTextBlink ~= math.huge then
 		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
@@ -1014,27 +1014,27 @@ function beatmapSelect:draw()
 		local v = assert(self.persist.beatmaps[self.persist.selectedBeatmap])
 		local summary = self.persist.beatmapSummary
 		love.graphics.setFont(self.data.mainFont)
-		love.graphics.printf(v.name, 500, 98, 280 / (24/44), "left", 0, 24/44)
+		love.graphics.printf(v.name, 500, 98, 300 / (24/44), "left", 0, 24/44)
 
 		if summary.coverArt and summary.coverArt.info then
 			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(v.info, 500, 98 + self.persist.beatmapNameHeight, 280 / (9/16), "left", 0, 9/16)
+			love.graphics.printf(v.info, 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
 		end
 
 		if self.persist.beatmapCoverArt then
 			local w, h = self.persist.beatmapCoverArt:getDimensions()
 			love.graphics.setShader(self.data.coverMaskShader)
-			love.graphics.draw(self.persist.beatmapCoverArt, 786, 94, 0, 140 / w, 140 / h)
+			love.graphics.draw(self.persist.beatmapCoverArt, 806, 94, 0, 140 / w, 140 / h)
 		else
 			love.graphics.setColor(color.hexC4C4C4)
-			love.graphics.rectangle("fill", 786, 94, 140, 140, 15, 15)
-			love.graphics.rectangle("line", 786, 94, 140, 140, 15, 15)
+			love.graphics.rectangle("fill", 806, 94, 140, 140, 15, 15)
+			love.graphics.rectangle("line", 806, 94, 140, 140, 15, 15)
 			love.graphics.setColor(color.white)
 		end
 	else
 		love.graphics.setColor(color.hexC4C4C4)
-		love.graphics.rectangle("fill", 786, 94, 140, 140, 15, 15)
-		love.graphics.rectangle("line", 786, 94, 140, 140, 15, 15)
+		love.graphics.rectangle("fill", 806, 94, 140, 140, 15, 15)
+		love.graphics.rectangle("line", 806, 94, 140, 140, 15, 15)
 		love.graphics.setColor(color.white)
 	end
 
