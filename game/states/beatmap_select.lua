@@ -800,6 +800,7 @@ function beatmapSelect:start()
 			end
 		end
 
+		glow.removeElement(self.data.deleteBeatmap)
 		glow.addElement(self.data.deleteBeatmap, 742, 198)
 	end
 
