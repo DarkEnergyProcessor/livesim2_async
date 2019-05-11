@@ -330,13 +330,45 @@ util.drawText = setmetatable({workaroundShader = nil}, {
 	end,
 	__index = function(self, var)
 		if var == "workaroundShader" then
-			local x = love.graphics.newShader([[
-				vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
-				{
-					return color * vec4(1.0, 1.0, 1.0, Texel(tex, tc).a);
-				}
-			]])
+			local x = love.graphics.newShader("assets/shader/text_workaround.fs")
 			rawset(self, "workaroundShader", x)
+			return x
+		end
+
+		return rawget(self, var)
+	end
+})
+
+-- Blur drawing
+util.drawBlur = setmetatable({shader = nil}, {
+	__call = function(self, w, h, s, func, ...)
+		local canvas1 = love.graphics.newCanvas(w, h)
+		local canvas2 = love.graphics.newCanvas(w, h)
+
+		love.graphics.push("all")
+		love.graphics.reset()
+		love.graphics.setCanvas(canvas1)
+		love.graphics.clear(color.black0PT)
+		func(...)
+		love.graphics.setCanvas(canvas2)
+		love.graphics.setBlendMode("alpha", "premultiplied")
+		love.graphics.clear(color.black0PT)
+		love.graphics.setShader(self.shader)
+		self.shader:send("resolution", {w, h})
+		self.shader:send("dir", {s, 0})
+		love.graphics.draw(canvas1)
+		love.graphics.setCanvas(canvas1)
+		love.graphics.clear(color.black0PT)
+		self.shader:send("dir", {0, s})
+		love.graphics.draw(canvas2)
+		love.graphics.pop()
+		util.releaseObject(canvas2)
+		return canvas1
+	end,
+	__index = function(self, var)
+		if var == "shader" then
+			local x = love.graphics.newShader("assets/shader/blur9.fs")
+			rawset(self, "shader", x)
 			return x
 		end
 
