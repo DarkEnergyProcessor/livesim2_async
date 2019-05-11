@@ -128,6 +128,7 @@ do
 		end
 		self.isPressed = false
 		self.checked = not(not(checked))
+		self.blurIcon = util.drawBlur(120, 98, 2, optionToggleButton._renderIcon, self, color.white, 0, 0)
 		self:addEventListener("mousepressed", commonPressed)
 		self:addEventListener("mousereleased", optionToggleButton._released)
 		self:addEventListener("mousecanceled", commonReleased)
@@ -139,6 +140,17 @@ do
 		self:triggerEvent("changed", self.checked)
 	end
 
+	function optionToggleButton:_renderIcon(col, x, y)
+		if col then love.graphics.setColor(col) end
+
+		love.graphics.draw(
+			self.image, x + 60, y + self.imageY, 0,
+			self.imageS, self.imageS,
+			self.imageW * 0.5, self.imageH * 0.5
+		)
+		util.drawText(self.description, x + 60, y + self.descriptionY)
+	end
+
 	function optionToggleButton:update(dt)
 		self.ripple:update(dt)
 	end
@@ -148,13 +160,16 @@ do
 
 		love.graphics.setColor(color.hexEF46A1)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setColor(self.checked and color.white or color.black)
-		love.graphics.draw(
-			self.image, x + 60, y + self.imageY, 0,
-			self.imageS, self.imageS,
-			self.imageW * 0.5, self.imageH * 0.5
-		)
-		util.drawText(self.description, x + 60, y + self.descriptionY)
+
+		if self.checked then
+			love.graphics.setColor(color.white)
+			love.graphics.setBlendMode("alpha", "premultiplied")
+			love.graphics.draw(self.blurIcon, x, y)
+			love.graphics.setBlendMode("alpha", "alphamultiply")
+			self:_renderIcon(nil, x, y)
+		else
+			self:_renderIcon(color.black, x, y)
+		end
 
 		if self.ripple:isActive() then
 			love.graphics.stencil(self.stencilFunc, "replace", 1, false)

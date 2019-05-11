@@ -409,7 +409,7 @@ function changeUnits:load()
 
 	-- Nice effect but I usually used this sparingly
 	if self.data.blurFramebuffer == nil then
-		self.data.blurFramebuffer = util.drawBlur(480, 320, 1, function()
+		self.data.blurFramebuffer = util.drawBlur(480, 320, 1.5, function()
 			love.graphics.setColor(color.white)
 			love.graphics.draw(self.data.background, 0, 0, 0, 0.5, 0.5)
 		end)

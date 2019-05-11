@@ -350,17 +350,23 @@ util.drawBlur = setmetatable({shader = nil}, {
 		love.graphics.setCanvas(canvas1)
 		love.graphics.clear(color.black0PT)
 		func(...)
-		love.graphics.setCanvas(canvas2)
 		love.graphics.setBlendMode("alpha", "premultiplied")
-		love.graphics.clear(color.black0PT)
 		love.graphics.setShader(self.shader)
 		self.shader:send("resolution", {w, h})
-		self.shader:send("dir", {s, 0})
-		love.graphics.draw(canvas1)
-		love.graphics.setCanvas(canvas1)
-		love.graphics.clear(color.black0PT)
-		self.shader:send("dir", {0, s})
-		love.graphics.draw(canvas2)
+
+		while s > 0 do
+			local ms = math.min(s, 1)
+			love.graphics.setCanvas(canvas2)
+			love.graphics.clear(color.black0PT)
+			self.shader:send("dir", {ms, 0})
+			love.graphics.draw(canvas1)
+			love.graphics.setCanvas(canvas1)
+			love.graphics.clear(color.black0PT)
+			self.shader:send("dir", {0, ms})
+			love.graphics.draw(canvas2)
+			s = s - 1
+		end
+
 		love.graphics.pop()
 		util.releaseObject(canvas2)
 		return canvas1
