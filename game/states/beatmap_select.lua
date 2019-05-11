@@ -603,6 +603,7 @@ function beatmapSelect:load()
 				local firstID = target.group and target.beatmaps[1].id or target.id
 				local index = self.persist.selectedBeatmap
 				table.remove(self.persist.beatmaps, self.persist.selectedBeatmap)
+				self.persist.beatmapFrame:removeElement(target.element)
 				target = nil
 				self.persist.beatmapSummary = nil
 				self.persist.beatmapNameHeight = 0
