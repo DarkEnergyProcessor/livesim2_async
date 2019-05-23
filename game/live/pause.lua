@@ -182,4 +182,12 @@ function pause:mouseReleased(x, y)
 	end
 end
 
+function pause:fastResume()
+	if self.paused then
+		self.callback.resume(self.opaque)
+		self.timer = math.huge
+		self.paused = false
+	end
+end
+
 return pause

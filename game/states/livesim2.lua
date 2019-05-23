@@ -1183,6 +1183,7 @@ DEPLS:registerEvent("keypressed", function(self, key, _, rep)
 	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
+
 	if
 		not(rep) and
 		not(self.persist.replayMode) and
@@ -1200,9 +1201,12 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
 	log.debugf("livesim2", "keypressed, key: %s", key)
+
+	local isPaused = self.data.pauseObject:isPaused()
+
 	if key == "escape" then
 		if love._os == "Android" then
-			if self.persist.liveDelayCounter <= 0 and not(self.data.pauseObject:isPaused()) then
+			if self.persist.liveDelayCounter <= 0 and not(isPaused) then
 				return pauseGame(self)
 			elseif isLiveClear(self) then
 				return gamestate.leave(loadingInstance.getInstance())
@@ -1210,11 +1214,15 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 		else
 			return gamestate.leave(loadingInstance.getInstance())
 		end
-	elseif key == "pause" and self.persist.liveDelayCounter <= 0 then
-		return pauseGame(self)
+	elseif key == "pause" then
+		if isPaused then
+			return self.data.pauseObject:fastResume()
+		elseif self.persist.liveDelayCounter <= 0 then
+			return pauseGame(self)
+		end
 	end
 
-	if not(self.persist.replayMode) and not(self.data.pauseObject:isPaused()) and self.persist.keymap[key] then
+	if not(self.persist.replayMode) and not(isPaused) and self.persist.keymap[key] then
 		if not(self.persist.autoplay) then
 			replay.recordKeyreleased(self.persist.keymap[key])
 		end

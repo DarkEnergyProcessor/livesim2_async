@@ -80,7 +80,7 @@ Special Thanks
 
 * RayFirefist - macOS app, iOS maintainer, Italian translation.
 
-* jwun - Spanish translation.
+* jwun & [TheNozomi](https://github.com/TheNozomi) - Spanish translation.
 
 * Salaron & Nick "Zorb" Cage - Russian translation.
 
@@ -89,8 +89,7 @@ Special Thanks
 License
 =======
 
-Live Simulator: 2 v3.0 and later is licensed under zLib license. Version 2.1.2 and earlier is licensed under MIT license. Both license means
-that Live Simulator: 2 is provided free of charge. See `LICENSE.md` for more details.
+Live Simulator: 2 v3.0 and later is licensed under zLib license. Version 2.1.2 and earlier is licensed under MIT license. Both license means that Live Simulator: 2 is provided free of charge. See `LICENSE.md` for more details.
 
 Live Simulator: 2 uses Roboto font. It's licensed under Apache 2 license.
 
