@@ -321,23 +321,31 @@ else
 end
 
 -- Draw text without unintended "black" border
-util.drawText = setmetatable({workaroundShader = nil}, {
-	__call = function(self, text, ...)
-		local shader = love.graphics.getShader()
-		love.graphics.setShader(self.workaroundShader)
-		love.graphics.draw(text, ...)
-		love.graphics.setShader(shader)
-	end,
-	__index = function(self, var)
-		if var == "workaroundShader" then
-			local x = love.graphics.newShader("assets/shader/text_workaround.fs")
-			rawset(self, "workaroundShader", x)
-			return x
-		end
+if util.compareLOVEVersion(11, 3) >= 0 then
+	-- https://bitbucket.org/rude/love/commits/f704dd9
+	-- As of that commit, workaround shader to prevent black
+	-- fridges is no longer necessary. For compatibility of
+	-- previous LOVE versions, this function does nothing.
+	util.drawText = setmetatable({}, {__call = function() end})
+else
+	util.drawText = setmetatable({workaroundShader = nil}, {
+		__call = function(self, text, ...)
+			local shader = love.graphics.getShader()
+			love.graphics.setShader(self.workaroundShader)
+			love.graphics.draw(text, ...)
+			love.graphics.setShader(shader)
+		end,
+		__index = function(self, var)
+			if var == "workaroundShader" then
+				local x = love.graphics.newShader("assets/shader/text_workaround.fs")
+				rawset(self, "workaroundShader", x)
+				return x
+			end
 
-		return rawget(self, var)
-	end
-})
+			return rawget(self, var)
+		end
+	})
+end
 
 -- Blur drawing
 util.drawBlur = setmetatable({shader = nil}, {
