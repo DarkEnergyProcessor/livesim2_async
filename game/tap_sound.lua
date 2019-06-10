@@ -64,4 +64,13 @@ return {
 		bad = "sound/tap/sif/live_se_04_1.mp3",
 		starExplode = "sound/tap/sif/SE_326.ogg"
 	},
+	-- Welcome to osu!
+	{
+		volumeMultipler = 0.9,
+		perfect = "sound/tap/osu/perfect.wav",
+		great = "sound/tap/osu/great.wav",
+		good = "sound/tap/osu/good.wav",
+		bad = "sound/tap/osu/bad.wav",
+		starExplode = "sound/tap/osu/star.wav"
+	},
 }

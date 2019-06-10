@@ -115,4 +115,6 @@ Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 
 Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3 (or GNU LGPL, depending on used binaries).
 
+Live Simulator: 2 uses some assets from osu!lazer which is licensed under [CC-BY-NC 4.0](https://github.com/ppy/osu-resources/blob/master/LICENCE.md).
+
 Please see respective files (or links) for license of those libraries.
