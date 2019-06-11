@@ -9,6 +9,7 @@ local util = require("util")
 local beatmap = require("beatmap")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
+hasLVEP = not(not(package.preload.lvep))
 
 -------------------------
 -- DEPLS Beatmap Class --
@@ -138,7 +139,13 @@ function deplsLoader:getAudio()
 	end
 end
 
-local videoExtension = {".ogg", ".ogv"}
+local videoExtension
+if hasLVEP then
+	videoExtension = {".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"}
+else
+	videoExtension = {".ogg", ".ogv"}
+end
+
 function deplsLoader:getBackground(video)
 	local internal = Luaoop.class.data(self)
 	local bg = internal.beatmap:getBackground() -- file loader can't load video
