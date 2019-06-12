@@ -269,6 +269,18 @@ function deplsLoader:getLiveClearVoice()
 	return audio
 end
 
+function deplsLoader:getDifficultyString()
+	return Luaoop.class.data(self).beatmap:getDifficultyString()
+end
+
+function deplsLoader:getScorePerTap()
+	return Luaoop.class.data(self).beatmap:getScorePerTap()
+end
+
+function deplsLoader:getStamina()
+	return Luaoop.class.data(self).beatmap:getStamina()
+end
+
 function deplsLoader:getLyrics()
 	local internal = Luaoop.class.data(self)
 	local lyrics = internal.beatmap:getLyrics()

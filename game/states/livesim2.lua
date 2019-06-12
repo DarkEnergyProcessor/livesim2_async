@@ -258,12 +258,15 @@ function DEPLS:load(arg)
 	self.persist.dimValue = util.clamp(setting.get("LIVESIM_DIM") * 0.01, 0, 1)
 
 	-- score and stamina
-	self.persist.tapScore = arg.replay and self.persist.replayMode.scorePerTap or 0
+	self.persist.tapScore = arg.replay and self.persist.replayMode.scorePerTap or arg.summary.scorePerTap or 0
 	if self.persist.tapScore == 0 then
 		self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
 	end
 	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
-	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or setting.get("STAMINA_DISPLAY")
+	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or arg.summary.stamina or 0
+	if self.persist.stamina == 0 then
+		self.persist.stamina = setting.get("STAMINA_DISPLAY")
+	end
 	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
 
 	-- load live UI
