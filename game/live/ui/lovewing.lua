@@ -127,7 +127,8 @@ function lwui:update(dt, paused)
 		self.timer:update(dt)
 	end
 
-	self.noteIconTime = (self.noteIconTime + dt) % 1
+	local warnMult = (self.staminaInterpolate / self.maxStamina < 0.3) and 2 or 1
+	self.noteIconTime = (self.noteIconTime + dt * warnMult) % 1
 	-- Score
 	if self.currentScoreDisplay >= self.scoreBorders[4] then
 		self.scoreGlowColor = scoreColor[5]
@@ -251,16 +252,16 @@ function lwui:comboJudgement(judgement, addcombo)
 	-- judgement things
 	if self.judgementTimer1 then
 		self.timer:cancel(self.judgementTimer1)
-		self.judgementScale = 0
 		self.judgementTimer1 = nil
 	end
 
 	if self.judgementTimer2 then
 		self.timer:cancel(self.judgementTimer2)
-		self.judgementOpacity = 1
 		self.judgementTimer2 = nil
 	end
 
+	self.judgementScale = 0
+	self.judgementOpacity = 1
 	self.judgementTimer1 = self.timer:tween(0.4, self, {judgementScale = 1}, "out-expo")
 	self.judgementTimer2 = self.timer:tween(1, self, {judgementOpacity = 0}, "in-quad")
 end
@@ -497,19 +498,24 @@ function lwui:drawStatus()
 		local i = self.imageCenter[self.currentJudgement]
 		local s = self.judgementScale * self.textScaling * 0.4
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * self.judgementOpacity * 0.75))
-		love.graphics.draw(self.images[self.currentJudgement], 480, 320, 0, s, s, i.x, i.y)
+		love.graphics.draw(self.images[self.currentJudgement], 480, 370, 0, s, s, i:unpack())
 	end
 
 	-- Musical icon
+	local lz = love.graphics.getLineWidth()
 	local interp = self.noteIconTime * self.noteIconTime
-	local icScale = (1 + interp * 0.5625) * 0.8
+	local nicScale = 0.75 - self.noteIconTime * 0.15
 	setColor(warningMode, self.scoreGlowColor, self.opacity)
 	love.graphics.circle("fill", 480, 160, 51)
 	love.graphics.circle("line", 480, 160, 51)
 	setColor(warningMode, self.scoreGlowColor, self.opacity * (1 - interp))
-	love.graphics.draw(self.images[8], 480, 160, 0, icScale, icScale, 64, 64)
-	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
+	love.graphics.setLineWidth(7)
+	love.graphics.circle("line", 480, 160, 46 + interp * 30)
+	love.graphics.setLineWidth(lz)
+	love.graphics.setColor(color.compat(255, 255, 255, self.opacity * (1 - interp)))
 	love.graphics.draw(self.images[6], 480, 160, 0, 0.75, 0.75, self.imageCenter[6]:unpack())
+	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
+	love.graphics.draw(self.images[6], 480, 160, 0, nicScale, nicScale, self.imageCenter[6]:unpack())
 
 	-- Live clear
 	if self.liveClearTime ~= -math.huge then
