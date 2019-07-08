@@ -1,8 +1,15 @@
 How To Start
 ============
 
-Live Simulator: 2 requires LOVE 11.0. Most of the time this thing is already taken care
-by the distributed version, but you need to take this into account if you're under Linux.
+Live Simulator: 2 v3.0 requires LOVE 0.10.0 or later. Most of the time this thing is already taken
+care by the distributed version, but you need to take this into account if you're under Linux. Some
+Linux distros only ship with 0.9.2!
+
+Live Simultor: 2 v4.0 recommends LOVE 11.3 or later. There are some consequences when using older version:
+
+* 11.0 - 11.2: Performance regression on some systems.
+
+* 0.10.2 and earlier: Deprecated, support may removed in the future.
 
 System Requirements
 -------------------

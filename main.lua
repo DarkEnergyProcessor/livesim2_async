@@ -387,6 +387,14 @@ freely, subject to the following restrictions:
 ]]
 
 function love.load(argv, gameargv)
+	local love_010 = util.compareLOVEVersion(11, 0) < 0
+	if love_010 then
+		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
+	end
+	if not(love_010) and util.compareLOVEVersion(11, 3) < 0 then
+		log.warn("main", "Live Simulator: 2 recommends LOVE 11.3. Performance may degraded on some systems!")
+	end
+
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
 	-- Early initialization (crash on failure which means serious error)
@@ -420,6 +428,7 @@ function love.load(argv, gameargv)
 	local randomizeBeatmap
 	local randomSeed
 	local render
+	local alwaysSplash = false
 	do
 		local i = 1
 		while i <= #argv do
@@ -498,6 +507,8 @@ function love.load(argv, gameargv)
 			elseif arg == "-replay" then
 				replayFile = assert(argv[i+1], "please specify replay file")
 				i = i + 1
+			elseif arg == "-splash" then
+				alwaysSplash = true
 			elseif arg == "-storyboard" then
 				local u = assert(argv[i+1], "please specify storyboard mode"):lower()
 				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid storyboard mode")
@@ -730,7 +741,7 @@ function love.load(argv, gameargv)
 			})
 		else
 			-- Jump to default game state
-			if love.filesystem.isFused() then
+			if love.filesystem.isFused() or alwaysSplash then
 				gamestate.enter(nil, "splash")
 			else
 				gamestate.enter(loadingInstance.getInstance(), "mainMenu")

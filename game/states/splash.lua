@@ -10,6 +10,7 @@ local timer = require("libs.hump.timer")
 local color = require("color")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local util = require("util")
 
 local splash = gamestate.create {
 	fonts = {},
@@ -40,10 +41,11 @@ end
 function splash:load()
 	-- Create version text
 	if not(self.data.version) then
+		local deprecate = util.compareLOVEVersion(11, 0) < 0 and "DEPRECATED!" or ""
 		self.data.version = love.graphics.newText(
 			love.graphics.newFont(11),
-			string.format("v%s (%08d)\nPowered by LÖVE Framework (LÖVE %s)",
-				DEPLS_VERSION, DEPLS_VERSION_NUMBER, love._version
+			string.format("v%s (%08d)\nPowered by LÖVE Framework (LÖVE %s) %s",
+				DEPLS_VERSION, DEPLS_VERSION_NUMBER, love._version, deprecate
 			)
 		)
 	end
