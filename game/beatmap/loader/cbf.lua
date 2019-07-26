@@ -386,7 +386,7 @@ function cbfLoader:getNotesList()
 		local time, pos, _, isHold, isRel, _, _, isStar, colInfo = parseNote(line)
 		local r, g, b, isCustomcol = colInfo:match("([^,]+),([^,]+),([^,]+),([True|False]+)")
 
-		if time and pos and isHold and isRel and isStar and r and g and b and isCustomcol then
+		if time and pos and positionTranslate[pos] and isHold and isRel and isStar and r and g and b and isCustomcol then
 			local numPos = positionTranslate[pos]
 			local attr = attribute
 			time = tonumber(time)
@@ -403,10 +403,20 @@ function cbfLoader:getNotesList()
 			end
 
 			if isRel == "True" then
-				local last = assert(holdNoteQueue[numPos], "unbalanced release note")
+				local last = holdNoteQueue[numPos]
+				if last == nil then
+					log.errorf("noteloader.cbf", "problematic line %s", line)
+					error("unbalanced release note")
+				end
+
 				last.effect_value = time - last.timing_sec
 				holdNoteQueue[numPos] = nil
 			elseif isHold == "True" then
+				if holdNoteQueue[numPos] then
+					log.errorf("noteloader.cbf", "problematic line %s", line)
+					error("overlapping hold note")
+				end
+
 				local val = {
 					timing_sec = time,
 					notes_attribute = attr,
@@ -416,7 +426,6 @@ function cbfLoader:getNotesList()
 					position = numPos
 				}
 
-				assert(holdNoteQueue[numPos] == nil, "overlapped hold note")
 				holdNoteQueue[numPos] = val
 				notesData[#notesData + 1] = val
 			else
