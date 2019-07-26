@@ -403,10 +403,21 @@ function cbfLoader:getNotesList()
 			end
 
 			if isRel == "True" then
-				local last = assert(holdNoteQueue[numPos], "unbalanced release note")
+				--local last = assert(holdNoteQueue[numPos], "unbalanced release note")
+				local last = holdNoteQueue[numPos]
+				if last == nil then
+					log.errorf("cbf", "problematic line %s", line)
+					error("unbalanced release note")
+				end
+
 				last.effect_value = time - last.timing_sec
 				holdNoteQueue[numPos] = nil
 			elseif isHold == "True" then
+				if holdNoteQueue[numPos] then
+					log.errorf("cbf", "problematic line %s", line)
+					error("overlapping hold note")
+				end
+
 				local val = {
 					timing_sec = time,
 					notes_attribute = attr,
@@ -416,7 +427,6 @@ function cbfLoader:getNotesList()
 					position = numPos
 				}
 
-				assert(holdNoteQueue[numPos] == nil, "overlapped hold note")
 				holdNoteQueue[numPos] = val
 				notesData[#notesData + 1] = val
 			else
