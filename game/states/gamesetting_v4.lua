@@ -5,12 +5,14 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
+local async = require("async")
 local color = require("color")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local mainFont = require("font")
 local util = require("util")
 local volume = require("volume")
+local setting = require("setting")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
@@ -31,6 +33,18 @@ end
 
 local function setVolumeSetting(name, value)
 	return volume.set(name, value * 0.01)
+end
+
+local function changeBackgroundAsync(self, v)
+	self.persist.background = backgroundLoader.load(v)
+end
+
+local function startChangeBackground(self, v)
+	return async.runFunction(changeBackgroundAsync):run(self, v)
+end
+
+local function setBackgroundDim(self, v)
+	self.persist.backgroundDim = v / 100
 end
 
 local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
@@ -101,8 +115,8 @@ function gameSetting:load()
 	glow.clear()
 	self.data = self.data or {} -- for sake of LCA
 
-	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(2)
+	if self.persist.background == nil then
+		self.persist.background = backgroundLoader.load(tonumber(setting.get("BACKGROUND_IMAGE")))
 	end
 
 	if self.data.shadowGradient == nil then
@@ -183,14 +197,30 @@ function gameSetting:load()
 		}
 	end
 
+	-- Background settings
+	if self.persist.bgSetting == nil then
+		local frame = glow.frame(246, 86, 714, 548)
+		self.persist.bgFrame = frame
+		self.persist.bgSetting = {
+			switchSetting(frame, L"setting:background:loadCustom", "AUTO_BACKGROUND")
+				:setPosition(0, 64),
+			numberSetting(frame, L"setting:background:image", "BACKGROUND_IMAGE", {min = 1, max = 15})
+				:setChangedCallback(self, startChangeBackground)
+				:setPosition(0, 128),
+			numberSetting(frame, L"setting:background:dim", "LIVESIM_DIM", {min = 0, max = 100})
+				:setChangedCallback(self, setBackgroundDim)
+				:setPosition(0, 192)
+		}
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
 		local font = mainFont.get(22)
 		self.persist.categoryFrame = glow.frame(0, 86, 240, 548)
-		self.persist.selectedSetting = 0
 		self.persist.settings = {
 			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil},
 			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil},
+			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil}
 		}
 
 		local function setSelected(_, value)
@@ -219,6 +249,8 @@ function gameSetting:load()
 end
 
 function gameSetting:start()
+	self.persist.selectedSetting = 0
+	self.persist.backgroundDim = setting.get("LIVESIM_DIM") / 100
 end
 
 function gameSetting:update(dt)
@@ -232,15 +264,41 @@ function gameSetting:update(dt)
 end
 
 function gameSetting:draw()
+	local set = self.persist.settings[self.persist.selectedSetting]
+
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.background)
+	love.graphics.draw(self.persist.background)
+
+	-- Background setting specific
+	if self.persist.selectedSetting == 3 then
+		love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
+		love.graphics.rectangle("fill", -88, -43, 1136, 726)
+		love.graphics.setColor(color.white25PT)
+		love.graphics.rectangle("fill", 0, 0, 240, 640)
+
+		for i = 1, #set[3] do
+			love.graphics.rectangle("fill", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+			love.graphics.rectangle("line", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+		end
+	else
+		love.graphics.setColor(color.white)
+		love.graphics.rectangle("fill", 0, 0, 240, 640)
+
+		if set then
+			love.graphics.setColor(color.white50PT)
+			for i = 1, #set[3] do
+				love.graphics.rectangle("fill", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+				love.graphics.rectangle("line", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+			end
+		end
+	end
+
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	util.drawText(self.data.titleText, 480, 24)
-	love.graphics.rectangle("fill", 0, 86, 240, 548)
-	love.graphics.rectangle("fill", 246, 86, 714, 548)
+
 	glow.draw()
 	self.persist.categoryFrame:draw()
 
