@@ -5,12 +5,12 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local async = require("async")
 local color = require("color")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local mainFont = require("font")
 local util = require("util")
+local volume = require("volume")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
@@ -18,6 +18,7 @@ local tapSound = require("game.tap_sound")
 
 local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
+local ripple = require("game.ui.ripple")
 
 local numberSetting = require("game.settings.number_v4")
 local switchSetting = require("game.settings.switch_v4")
@@ -26,6 +27,65 @@ local mipmap = {mipmaps = true}
 
 local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
+end
+
+local function setVolumeSetting(name, value)
+	return volume.set(name, value * 0.01)
+end
+
+local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
+
+function categorySelect:new(font, name)
+	self.width, self.height = 240, 48
+	self.x, self.y = 0, 0
+	self.active = false
+	self.ripple = ripple(242.12393520674489483506979278946)
+	self.isPressed = false
+	self.textHeight = font:getHeight()
+	self.text = love.graphics.newText(font)
+	self.text:add(name, 8, (self.height - font:getHeight()) * 0.5)
+	self.stencilFunc = function()
+		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	end
+
+	self:addEventListener("mousepressed", categorySelect._pressed)
+	self:addEventListener("mousereleased", categorySelect._released)
+	self:addEventListener("mousecanceled", categorySelect._released)
+end
+
+function categorySelect:_pressed(_, x, y)
+	self.isPressed = true
+	self.ripple:pressed(x, y)
+end
+
+function categorySelect:_released()
+	self.isPressed = false
+	self.ripple:released()
+end
+
+function categorySelect:setActive(active)
+	self.active = active
+end
+
+function categorySelect:update(dt)
+	self.ripple:update(dt)
+end
+
+function categorySelect:render(x, y)
+	self.x, self.y = x, y
+	if self.active then
+		love.graphics.setColor(color.hexFF4FAE)
+		love.graphics.rectangle("fill", x, y, self.width, self.height)
+	end
+	love.graphics.setColor(self.active and color.white or color.black)
+	util.drawText(self.text, x, y)
+
+	if self.ripple:isActive() then
+		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+		love.graphics.setStencilTest("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		love.graphics.setStencilTest()
+	end
 end
 
 -- Setting section frame size is 868x426+50+184
@@ -64,62 +124,110 @@ function gameSetting:load()
 	end
 	glow.addFixedElement(self.data.back, 32, 4)
 
-	do
-		if self.persist.generalSetting == nil then
-			local generalFrame = glow.frame(246, 86, 714, 548)
-			local tapSoundDisplay = {}
-			for i = 1, #tapSound do
-				tapSoundDisplay[i] = tapSound[i].name
-			end
-			self.persist.generalFrame = generalFrame
-			self.persist.generalSetting = {
-				numberSetting(generalFrame, L"setting:general:defaultNote", "LLP_SIFT_DEFATTR", {
-					min = 1, max = 11,
-					display = {
-						"Smile", "Pure", "Cool",
-						"Blue", "Yellow", "Orange",
-						"Pink", "Purple", "Gray",
-						"Rainbow", "Black"
-					}
-				})
-					:setPosition(0, 64), -- next: y+=64
-				switchSetting(generalFrame, L"setting:general:nsAccumulation", "NS_ACCUMULATION")
-					:setPosition(0, 128),
-				numberSetting(generalFrame, L"setting:general:timingOffset", "TIMING_OFFSET", {
-					min = -50, max = 50, default = 0
-				})
-					:setPosition(0, 192),
-				numberSetting(generalFrame, L"setting:general:beatmapOffset", "GLOBAL_OFFSET", {
-					min = -5000, max = 5000, default = 0
-				})
-					:setPosition(0, 256),
-				numberSetting(generalFrame, L"setting:general:tapSound", "TAP_SOUND", {
-					min = 1, max = #tapSound, default = 1, display = tapSoundDisplay
-				})
-					:setPosition(0, 320),
-				switchSetting(generalFrame, L"setting:general:improvedSync", "IMPROVED_SYNC")
-					:setPosition(0, 384)
-			}
+	-- General settings
+	if self.persist.generalSetting == nil then
+		local frame = glow.frame(246, 86, 714, 548)
+		local tapSoundDisplay = {}
+		for i = 1, #tapSound do
+			tapSoundDisplay[i] = tapSound[i].name
 		end
-		glow.addFrame(self.persist.generalFrame)
+		self.persist.generalFrame = frame
+		self.persist.generalSetting = {
+			numberSetting(frame, L"setting:general:defaultNote", "LLP_SIFT_DEFATTR", {
+				min = 1, max = 11,
+				display = {
+					"Smile", "Pure", "Cool",
+					"Blue", "Yellow", "Orange",
+					"Pink", "Purple", "Gray",
+					"Rainbow", "Black"
+				}
+			})
+				:setPosition(0, 64), -- next: y+=64
+			switchSetting(frame, L"setting:general:nsAccumulation", "NS_ACCUMULATION")
+				:setPosition(0, 128),
+			numberSetting(frame, L"setting:general:timingOffset", "TIMING_OFFSET", {
+				min = -50, max = 50, default = 0
+			})
+				:setPosition(0, 192),
+			numberSetting(frame, L"setting:general:beatmapOffset", "GLOBAL_OFFSET", {
+				min = -5000, max = 5000, default = 0
+			})
+				:setPosition(0, 256),
+			numberSetting(frame, L"setting:general:tapSound", "TAP_SOUND", {
+				min = 1, max = #tapSound, default = 1, display = tapSoundDisplay
+			})
+				:setPosition(0, 320),
+			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
+				:setPosition(0, 384)
+		}
 	end
+	glow.addFrame(self.persist.generalFrame)
+
+	-- Volume settings
+	if self.persist.volumeSetting == nil then
+		local frame = glow.frame(246, 86, 714, 548)
+		self.persist.volumeFrame = frame
+		self.persist.volumeSetting = {
+			numberSetting(frame, L"setting:volume:master", "MASTER_VOLUME", {min = 0, max = 100, default = 80})
+				:setPosition(0, 64)
+				:setChangedCallback("master", setVolumeSetting),
+			numberSetting(frame, L"setting:volume:song", "SONG_VOLUME", {min = 0, max = 100, default = 80})
+				:setPosition(0, 128)
+				:setChangedCallback("music", setVolumeSetting),
+			numberSetting(frame, L"setting:volume:effect", "SE_VOLUME", {min = 0, max = 100, default = 80})
+				:setPosition(0, 192)
+				:setChangedCallback("se", setVolumeSetting),
+			numberSetting(frame, L"setting:volume:voice", "VOICE_VOLUME", {min = 0, max = 100, default = 80})
+				:setPosition(0, 256)
+				:setChangedCallback("voice", setVolumeSetting),
+		}
+	end
+
+	-- Setting selection cateogry
+	if self.persist.categoryFrame == nil then
+		local font = mainFont.get(22)
+		self.persist.categoryFrame = glow.frame(0, 86, 240, 548)
+		self.persist.selectedSetting = 0
+		self.persist.settings = {
+			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil},
+			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil},
+		}
+
+		local function setSelected(_, value)
+			for i, v in ipairs(self.persist.settings) do
+				if i == value then
+					v[4]:setActive(true)
+					glow.addFrame(v[2])
+				else
+					v[4]:setActive(false)
+					glow.removeFrame(v[2])
+				end
+			end
+
+			self.persist.selectedSetting = value
+		end
+
+		for i, v in ipairs(self.persist.settings) do
+			local elem = categorySelect(font, v[1])
+			elem:addEventListener("mousereleased", setSelected)
+			elem:setData(i)
+			self.persist.categoryFrame:addElement(elem, 0, (i - 1) * 48)
+			v[4] = elem
+		end
+	end
+	glow.addFrame(self.persist.categoryFrame)
 end
 
 function gameSetting:start()
-	self.persist = self.persist or {} -- for sake of LCA
-
-	-- Categories
-	self.persist.categoryFrame = glow.frame(0, 86, 240, 554)
-	self.persist.selectedSetting = 0
-	self.persist.settings = {
-		{self.persist.generalFrame, self.persist.generalSetting}
-	}
 end
 
 function gameSetting:update(dt)
-	self.persist.generalFrame:update(dt)
-	for _, v in ipairs(self.persist.generalSetting) do
-		v:update(dt)
+	self.persist.categoryFrame:update(dt)
+
+	local set = self.persist.settings[self.persist.selectedSetting]
+	if set then
+		set[2]:update(dt)
+		for _, v in ipairs(set[3]) do v:update(dt) end
 	end
 end
 
@@ -131,11 +239,15 @@ function gameSetting:draw()
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	util.drawText(self.data.titleText, 480, 24)
-
+	love.graphics.rectangle("fill", 0, 86, 240, 548)
+	love.graphics.rectangle("fill", 246, 86, 714, 548)
 	glow.draw()
-	self.persist.generalFrame:draw()
-	for _, v in ipairs(self.persist.generalSetting) do
-		v:draw()
+	self.persist.categoryFrame:draw()
+
+	local set = self.persist.settings[self.persist.selectedSetting]
+	if set then
+		set[2]:draw()
+		for _, v in ipairs(set[3]) do v:draw() end
 	end
 end
 

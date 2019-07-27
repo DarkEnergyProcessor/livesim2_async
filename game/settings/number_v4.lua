@@ -153,7 +153,7 @@ function numberSetting:draw()
 	baseSetting.draw(self)
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("line", self.x + 420 + 246, self.y + 86, 160, 36, 18, 18)
-	love.graphics.draw(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
+	util.drawText(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
 end
 
 return numberSetting
