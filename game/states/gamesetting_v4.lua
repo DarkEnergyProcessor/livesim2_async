@@ -30,7 +30,19 @@ local liveUI = require("game.live.ui")
 
 local mipmap = {mipmaps = true}
 
-local function leave()
+local function leave(_, self)
+	if
+		self.persist.currentLanguage ~= self.persist.previousLanguage and
+		util.compareLOVEVersion(0, 10, 2) >= 0 and
+		love.window.showMessageBox("Restart", L"setting:language:restart", {
+			L"dialog:yes",
+			L"dialog:no",
+			enterbutton = 1, escapebutton = 2
+		}, "info") == 1
+	then
+		love.event.quit("restart")
+	end
+
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
@@ -146,8 +158,8 @@ function categorySelect:render(x, y)
 	util.drawText(self.text, x, y)
 
 	if self.ripple:isActive() then
-		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-		love.graphics.setStencilTest("equal", 1)
+		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
+		love.graphics.setStencilTest("equal", 3)
 		self.ripple:draw(255, 255, 255, x, y)
 		love.graphics.setStencilTest()
 	end
@@ -190,8 +202,8 @@ function longSelect:render(x, y)
 	util.drawText(self.text, x, y)
 
 	if self.ripple:isActive() then
-		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-		love.graphics.setStencilTest("equal", 1)
+		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
+		love.graphics.setStencilTest("equal", 3)
 		self.ripple:draw(255, 255, 255, x, y)
 		love.graphics.setStencilTest()
 	end
@@ -417,6 +429,39 @@ function gameSetting:load()
 	-- Language settings
 	if self.persist.langFrame == nil then
 		local frame = newSettingFrame()
+		local font = mainFont.get(26)
+		local elements = {}
+
+		local function setLanguage(elem, value)
+			L.set(value.language.code)
+			value.instance.persist.currentLanguage = value.language.code
+
+			for _, v in ipairs(elements) do
+				if v == elem then
+					v:setActive(true)
+				else
+					v:setActive(false)
+				end
+			end
+		end
+
+		self.persist.previousLanguage = L.get()
+		self.persist.currentLanguage = self.persist.previousLanguage
+		for i, v in ipairs(L.enum()) do
+			local elem = longSelect(font, string.format("%s (%s)", v.name, v.code))
+			elem.width = 678 -- uh
+			elem:addEventListener("mousereleased", setLanguage)
+			elem:setData({language = v, instance = self})
+
+			if v.code == self.persist.previousLanguage then
+				elem:setActive(true)
+			end
+
+			elements[i] = elem
+			frame:addElement(elem, 0, (i - 1) * 64)
+		end
+
+		self.persist.langFrame = frame
 	end
 
 	-- Setting selection cateogry
@@ -431,6 +476,7 @@ function gameSetting:load()
 			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil},
 			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil},
 			{L"setting:liveUI", self.persist.liveUIFrame, {}, nil}, -- empty list
+			{L"setting:language", self.persist.langFrame, {}, nil}, -- empty list
 		}
 
 		local function setSelected(_, value)
