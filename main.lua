@@ -114,7 +114,6 @@ local function registerGamestates()
 	gamestate.register("result", require("game.states.result_summary"))
 	gamestate.register("selectUnits", require("game.states.select_units"))
 	gamestate.register("settings", require("game.states.gamesetting"))
-	gamestate.register("settings\0", require("game.states.gamesetting_v4"))
 	gamestate.register("splash", require("game.states.splash"))
 	gamestate.register("systemInfo", require("game.states.systeminfo"))
 end

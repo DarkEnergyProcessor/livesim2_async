@@ -259,12 +259,8 @@ function mainMenu:load()
 	glow.addElement(self.data.changeUnitsButton, 497, 29)
 
 	if not(self.data.settingsButton) then
-		local a = makeEnterGamestateFunction("settings")
-		local b = makeEnterGamestateFunction("settings\0")
 		self.data.settingsButton = settingsButton(self)
-		self.data.settingsButton:addEventListener("mousereleased", function()
-			return (love.keyboard.isDown("lshift", "rshift") and b or a)()
-		end)
+		self.data.settingsButton:addEventListener("mousereleased", makeEnterGamestateFunction("settings"))
 	end
 	glow.addElement(self.data.settingsButton, 497, 207)
 
