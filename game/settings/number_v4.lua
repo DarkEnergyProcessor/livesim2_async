@@ -46,7 +46,8 @@ function numberSetting:__construct(frame, name, settingName, opts)
 	internal.holdDelay = -math.huge
 	internal.updateDirection = 0
 	internal.range = opts
-	internal.value = util.clamp(opts.value or setting.get(settingName), opts.min, opts.max)
+	internal.div = opts.div or 1
+	internal.value = util.clamp((opts.value or setting.get(settingName)) * internal.div, opts.min, opts.max)
 	internal.font = mainFont.get(22)
 	internal.valueDisplay = love.graphics.newText(internal.font)
 	internal.snap = opts.snap or 1
@@ -56,7 +57,7 @@ function numberSetting:__construct(frame, name, settingName, opts)
 	local function released()
 		internal.holdDelay = -math.huge
 		internal.updateDirection = 0
-		if settingName then setting.set(settingName, internal.value) end
+		if settingName then setting.set(settingName, internal.value / internal.div) end
 	end
 
 	internal.increaseButton = ciButton(color.transparent, 18, img, 0.24, color.hexFF4FAE, math.pi)
@@ -73,7 +74,7 @@ function numberSetting:__construct(frame, name, settingName, opts)
 		internal.resetButton:addEventListener("mousereleased", function()
 			if internal.value ~= opts.default then
 				internal.value = opts.default
-				if settingName then setting.set(settingName, opts.default) end
+				if settingName then setting.set(settingName, opts.default / internal.div) end
 				self:_updateValueDisplay()
 				self:_emitChangedCallback(opts.default)
 			end
@@ -133,7 +134,7 @@ end
 
 function numberSetting:getValue()
 	local internal = Luaoop.class.data(self)
-	return internal.value
+	return internal.value / internal.div
 end
 
 function numberSetting:setValue(v)
@@ -142,7 +143,7 @@ function numberSetting:setValue(v)
 	assert(type(v) == "number", "invalid value")
 	v = util.clamp(v, internal.range.min, internal.range.max)
 	if v ~= internal.value then
-		internal.value = snapAt(v, internal.snap)
+		internal.value = snapAt(v * internal.div, internal.snap)
 		self:_updateValueDisplay()
 		self:_emitChangedCallback(internal.value)
 	end

@@ -291,6 +291,33 @@ function gameSetting:load()
 		}
 	end
 
+	-- Live settings
+	if self.persist.liveSetting == nil then
+		local frame = glow.frame(246, 86, 714, 548)
+		local vanish = {
+			[0] = L"setting:live:vanish:none",
+			L"setting:live:vanish:hidden",
+			L"setting:live:vanish:sudden"
+		}
+		self.persist.liveFrame = frame
+		self.persist.liveSetting = {
+			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
+				:setPosition(0, 64),
+			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
+				:setPosition(0, 128),
+			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 50})
+				:setPosition(0, 192),
+			numberSetting(frame, L"setting:live:textScaling", "TEXT_SCALING", {
+				min = 50, max = 100, default = 100, snap = 10, div = 100
+			})
+				:setPosition(0, 256),
+			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
+				:setPosition(0, 320),
+			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 2, default = 0, display = vanish})
+				:setPosition(0, 384)
+		}
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
 		local font = mainFont.get(22)
@@ -300,6 +327,7 @@ function gameSetting:load()
 			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil},
 			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil},
 			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil},
+			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil},
 		}
 
 		local function setSelected(_, value)
