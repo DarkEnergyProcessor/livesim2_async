@@ -25,6 +25,8 @@ local ripple = require("game.ui.ripple")
 local numberSetting = require("game.settings.number_v4")
 local switchSetting = require("game.settings.switch_v4")
 
+local note = require("game.live.note")
+
 local mipmap = {mipmaps = true}
 
 local function leave()
@@ -45,6 +47,50 @@ end
 
 local function setBackgroundDim(self, v)
 	self.persist.backgroundDim = v / 100
+end
+
+local function updateStyleData(self)
+	self.persist.styleLayer[1] = note.manager.getLayer(self.persist.styleData, 1, true, true, false, false)
+	self.persist.styleLayer[2] = note.manager.getLayer(self.persist.styleData, 2, true, true, false, false)
+	self.persist.styleLayer[3] = note.manager.getLayer(self.persist.styleData, 3, true, true, false, false)
+	self.persist.curStyle = note.manager.getLayer(self.persist.styleData, self.persist.defAttr, true, true, false, false)
+
+	-- simultaneous neon doesn't provide base frame if base frame is also neon
+	if self.persist.styleData.noteStyleFrame == 2 then
+		self.persist.curStyle[#self.persist.curStyle + 1] = self.persist.defAttr + 16
+	end
+
+	-- calculate note style value
+	setting.set("NOTE_STYLE", 63 +
+		self.persist.styleData.noteStyleFrame * 64 +
+		self.persist.styleData.noteStyleSwing * 4096 +
+		self.persist.styleData.noteStyleSimul * 262144
+	)
+end
+
+local function isSwingLayer(layerIndex)
+	return
+		layerIndex == 15 or
+		(layerIndex >= 29 and layerIndex <= 50) or
+		(layerIndex >= 63 and layerIndex <= 73)
+end
+
+local function isUncolorableLayer(layerIndex)
+	return
+		(layerIndex >= 1 and layerIndex <= 3) or
+		layerIndex == 16 or
+		layerIndex == 28 or
+		layerIndex == 62
+end
+
+local function isSimultaneousLayer(layerIndex)
+	return layerIndex == 16 or layerIndex == 28 or layerIndex == 62
+end
+
+local tempPosition = {x = 0, y = 0}
+local function drawLayerAt(styleData, layer, x, y)
+	tempPosition.x, tempPosition.y = x, y
+	return note.manager.drawNote(styleData, layer, 1, tempPosition, 0.75, 0)
 end
 
 local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
@@ -107,6 +153,7 @@ end
 local gameSetting = gamestate.create {
 	images = {
 		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmap},
+		note = {"noteImage:assets/image/tap_circle/notes.png", mipmap}
 	},
 	fonts = {}
 }
@@ -156,7 +203,11 @@ function gameSetting:load()
 					"Rainbow", "Black"
 				}
 			})
-				:setPosition(0, 64), -- next: y+=64
+				:setPosition(0, 64) -- next: y+=64
+				:setChangedCallback(self, function(obj, v)
+					obj.persist.defAttr = v
+					updateStyleData(obj)
+				end),
 			switchSetting(frame, L"setting:general:nsAccumulation", "NS_ACCUMULATION")
 				:setPosition(0, 128),
 			numberSetting(frame, L"setting:general:timingOffset", "TIMING_OFFSET", {
@@ -213,6 +264,33 @@ function gameSetting:load()
 		}
 	end
 
+	-- Note Style settings
+	if self.persist.nsSetting == nil then
+		local frame = glow.frame(246, 86, 714, 548)
+		local display = {"Default", "Neon", "Matte"}
+		self.persist.nsFrame = frame
+		self.persist.nsSetting = {
+			numberSetting(frame, L"setting:noteStyle:base", nil, {min = 1, max = 3, value = 1, display = display})
+				:setPosition(0, 64)
+				:setChangedCallback(self, function(obj, v)
+					obj.persist.styleData.noteStyleFrame = v
+					return updateStyleData(obj)
+				end),
+			numberSetting(frame, L"setting:noteStyle:swing", nil, {min = 1, max = 3, value = 1, display = display})
+				:setPosition(0, 128)
+				:setChangedCallback(self, function(obj, v)
+					obj.persist.styleData.noteStyleSwing = v
+					return updateStyleData(obj)
+				end),
+			numberSetting(frame, L"setting:noteStyle:simul", nil, {min = 1, max = 3, value = 1, display = display})
+				:setPosition(0, 192)
+				:setChangedCallback(self, function(obj, v)
+					obj.persist.styleData.noteStyleSimul = v
+					return updateStyleData(obj)
+				end),
+		}
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
 		local font = mainFont.get(22)
@@ -220,7 +298,8 @@ function gameSetting:load()
 		self.persist.settings = {
 			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil},
 			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil},
-			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil}
+			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil},
+			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil},
 		}
 
 		local function setSelected(_, value)
@@ -249,8 +328,38 @@ function gameSetting:load()
 end
 
 function gameSetting:start()
+	-- Settings
 	self.persist.selectedSetting = 0
+
+	-- Background settings
 	self.persist.backgroundDim = setting.get("LIVESIM_DIM") / 100
+
+	-- Note style settings
+	local noteStyle = setting.get("NOTE_STYLE")
+	local styleData = {
+		opacity = 1,
+		noteImage = self.assets.images.note
+	}
+	local preset = noteStyle % 64
+	local --[[const]] MAX_NOTE_STYLE = 3
+	assert(preset == 63 or (preset > 0 and preset <= MAX_NOTE_STYLE), "Invalid note style")
+	if preset == 63 then
+		local value = math.floor(noteStyle / 64) % 64
+		styleData.noteStyleFrame = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style frame")
+		value = math.floor(noteStyle / 4096) % 64
+		styleData.noteStyleSwing = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style swing")
+		value = math.floor(noteStyle / 262144) % 64
+		styleData.noteStyleSimul = assert(value > 0 and value <= MAX_NOTE_STYLE and value, "Invalid note style simul")
+	else
+		styleData.noteStyleFrame, styleData.noteStyleSwing, styleData.noteStyleSimul = preset, preset, preset
+	end
+	self.persist.defAttr = self.persist.generalSetting[1]:getValue()
+	self.persist.styleData = styleData
+	self.persist.styleLayer = {}
+	self.persist.nsSetting[1]:setValue(styleData.noteStyleFrame)
+	self.persist.nsSetting[2]:setValue(styleData.noteStyleSwing)
+	self.persist.nsSetting[3]:setValue(styleData.noteStyleSimul)
+	updateStyleData(self)
 end
 
 function gameSetting:update(dt)
@@ -297,12 +406,39 @@ function gameSetting:draw()
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
-	util.drawText(self.data.titleText, 480, 24)
+	util.drawText(self.data.titleText, 603, 24)
+
+	-- Note style-specific setting
+	if self.persist.selectedSetting == 4 then
+		local curLayer = self.persist.curStyle
+		for i = 1, #curLayer do
+			local xpos = 318
+			local layer = self.persist.curStyle[i]
+			local quad = note.quadRegion[layer]
+			if isUncolorableLayer(layer) then
+				love.graphics.setColor(color.white)
+			else
+				love.graphics.setColor(color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1))
+			end
+
+			local w, h = select(3, quad:getViewport())
+			if isSimultaneousLayer(layer) then
+				xpos = 888
+			elseif isSwingLayer(layer) then
+				xpos = 603
+			end
+
+			love.graphics.draw(self.assets.images.note, quad, xpos, 400, 0, 0.75, 0.75, w*0.5, h*0.5)
+		end
+
+		drawLayerAt(self.persist.styleData, self.persist.styleLayer[1], 318, 560)
+		drawLayerAt(self.persist.styleData, self.persist.styleLayer[2], 603, 560)
+		drawLayerAt(self.persist.styleData, self.persist.styleLayer[3], 888, 560)
+	end
 
 	glow.draw()
 	self.persist.categoryFrame:draw()
 
-	local set = self.persist.settings[self.persist.selectedSetting]
 	if set then
 		set[2]:draw()
 		for _, v in ipairs(set[3]) do v:draw() end
