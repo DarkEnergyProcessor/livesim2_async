@@ -116,7 +116,7 @@
 		"setting:stamina:display": "Stamina",
 		"setting:stamina:noFail": "Functional Stamina Meter",
 		"setting:stamina:score": "Base Score per Tap",
-		"setting:liveUI": "Live UI",
+		"setting:liveUI": "Live User Interface",
 		"setting:liveUI:current": "Current Live Show Interface: %{name}",
 		"setting:language": "Language",
 		"setting:language:current": "Current Language: %{name} (%{code})"

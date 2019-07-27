@@ -42,6 +42,10 @@ function element:setData(data)
 	Luaoop.class.data(self).opaque = data
 end
 
+function element:getData()
+	return Luaoop.class.data(self).opaque
+end
+
 function element:addEventListener(eventname, handler)
 	local internal = Luaoop.class.data(self)
 

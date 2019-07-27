@@ -26,6 +26,7 @@ local numberSetting = require("game.settings.number_v4")
 local switchSetting = require("game.settings.switch_v4")
 
 local note = require("game.live.note")
+local liveUI = require("game.live.ui")
 
 local mipmap = {mipmaps = true}
 
@@ -141,6 +142,50 @@ function categorySelect:render(x, y)
 		love.graphics.setColor(color.hexFF4FAE)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 	end
+	love.graphics.setColor(self.active and color.white or color.black)
+	util.drawText(self.text, x, y)
+
+	if self.ripple:isActive() then
+		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+		love.graphics.setStencilTest("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		love.graphics.setStencilTest()
+	end
+end
+
+local longSelect = Luaoop.class("Livesim2.Settings.LongSelectUI", glow.element)
+
+function longSelect:new(font, name)
+	self.width, self.height = 710, 60
+	self.x, self.y = 0, 0
+	self.active = false
+	self.ripple = ripple(712.53070109294238045145069048472)
+	self.isPressed = false
+	self.textHeight = font:getHeight()
+	self.text = love.graphics.newText(font)
+	self.text:add(name, (self.width - font:getWidth(name)) * 0.5, (self.height - font:getHeight()) * 0.5)
+	self.stencilFunc = function()
+		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height, 16, 16)
+	end
+
+	self:addEventListener("mousepressed", categorySelect._pressed)
+	self:addEventListener("mousereleased", categorySelect._released)
+	self:addEventListener("mousecanceled", categorySelect._released)
+end
+
+function longSelect:setActive(active)
+	self.active = active
+end
+
+function longSelect:update(dt)
+	self.ripple:update(dt)
+end
+
+function longSelect:render(x, y)
+	self.x, self.y = x, y
+	love.graphics.setColor(self.active and color.hexFF4FAE or color.white75PT)
+	love.graphics.rectangle("fill", x, y, self.width, self.height, 16, 16)
+	love.graphics.rectangle("line", x, y, self.width, self.height, 16, 16)
 	love.graphics.setColor(self.active and color.white or color.black)
 	util.drawText(self.text, x, y)
 
@@ -336,6 +381,39 @@ function gameSetting:load()
 		}
 	end
 
+	-- Live UI settings
+	if self.persist.liveUIFrame == nil then
+		local font = mainFont.get(26)
+		local frame = newSettingFrame()
+		local playUI = setting.get("PLAY_UI")
+		local elements = {}
+
+		local function setPlayUI(_, value)
+			setting.set("PLAY_UI", value.real)
+
+			for i, v in ipairs(elements) do
+				if i == value.index then
+					v:setActive(true)
+				else
+					v:setActive(false)
+				end
+			end
+		end
+
+		for i, v in ipairs(liveUI.enum()) do
+			local elem = longSelect(font, v)
+			elem:addEventListener("mousereleased", setPlayUI)
+			elem:setData({real = v, instance = self, index = i})
+			if v == playUI then
+				elem:setActive(true)
+			end
+			elements[i] = elem
+			frame:addElement(elem, 0, i * 64 - 12)
+		end
+
+		self.persist.liveUIFrame = frame
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
 		local font = mainFont.get(22)
@@ -346,7 +424,8 @@ function gameSetting:load()
 			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil},
 			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil},
 			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil},
-			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil}
+			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil},
+			{L"setting:liveUI", self.persist.liveUIFrame, {}, nil}, -- empty list
 		}
 
 		local function setSelected(_, value)
