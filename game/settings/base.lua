@@ -6,18 +6,18 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local assetCache = require("asset_cache")
 local mainFont = require("font")
 
 local baseSettingItem = Luaoop.class("Livesim2.SettingItem.Base")
+
+-- The height of setting is 36
 
 -- must be async (and called at least)
 function baseSettingItem:__construct(name)
 	assert(coroutine.running(), "must be called from async function")
 
 	local internal = Luaoop.class.data(self)
-	local font = mainFont.get(32)
-	internal.image = assetCache.loadImage("assets/image/ui/com_win_46.png", {mipmaps = true})
+	local font = mainFont.get(22)
 	internal.title = love.graphics.newText(font)
 	internal.title:add({color.black, name})
 
@@ -64,8 +64,7 @@ end
 function baseSettingItem:draw()
 	local internal = Luaoop.class.data(self)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(internal.image, self.x, self.y)
-	love.graphics.draw(internal.title, self.x + 21, self.y + 21)
+	love.graphics.draw(internal.title, self.x + 24 + 246, self.y + 5 + 86)
 	return self
 end
 
