@@ -5,6 +5,7 @@
 return {
 	-- Usual SIF tap SFX
 	{
+		name = "Default",
 		volumeMultipler = 0.75,
 		perfect = "sound/tap/sif/SE_306.ogg",
 		great = "sound/tap/sif/SE_307.ogg",
@@ -14,6 +15,7 @@ return {
 	},
 	-- don't ask
 	{
+		name = "GBP:Default",
 		volumeMultipler = 1,
 		perfect = "sound/tap/gbp/00005.wav",
 		great = "sound/tap/gbp/00004.wav",
@@ -23,6 +25,7 @@ return {
 	},
 	-- especially this one
 	{
+		name = "GBP:Michelle",
 		volumeMultipler = 1,
 		perfect = "sound/tap/gbp/a/00005.wav",
 		great = "sound/tap/gbp/a/00004.wav",
@@ -32,6 +35,7 @@ return {
 	},
 	-- and even this one
 	{
+		name = "GBP:Miku",
 		volumeMultipler = 1,
 		perfect = "sound/tap/gbp/miku/perfect.wav",
 		great = "sound/tap/gbp/miku/great.wav",
@@ -41,6 +45,7 @@ return {
 	},
 	-- New SIF tap sound
 	{
+		name = "SIF:2",
 		volumeMultipler = 0.8,
 		perfect = "sound/tap/sif/live_se_02_4.mp3",
 		great = "sound/tap/sif/live_se_02_3.mp3",
@@ -49,6 +54,7 @@ return {
 		starExplode = "sound/tap/sif/SE_326.ogg"
 	},
 	{
+		name = "SIF:3",
 		volumeMultipler = 0.8,
 		perfect = "sound/tap/sif/live_se_03_4.mp3",
 		great = "sound/tap/sif/live_se_03_3.mp3",
@@ -57,6 +63,7 @@ return {
 		starExplode = "sound/tap/sif/SE_326.ogg"
 	},
 	{
+		name = "SIF:4",
 		volumeMultipler = 0.8,
 		perfect = "sound/tap/sif/live_se_04_4.mp3",
 		great = "sound/tap/sif/live_se_04_3.mp3",
@@ -66,6 +73,7 @@ return {
 	},
 	-- Welcome to osu!
 	{
+		name = "osu!lazer",
 		volumeMultipler = 0.9,
 		perfect = "sound/tap/osu/perfect.wav",
 		great = "sound/tap/osu/great.wav",
