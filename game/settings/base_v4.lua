@@ -64,8 +64,7 @@ end
 function baseSettingItem:draw()
 	local internal = Luaoop.class.data(self)
 	love.graphics.setColor(color.white)
-	love.graphics.draw(internal.image, self.x, self.y)
-	love.graphics.draw(internal.title, self.x + 5, self.y + 16)
+	love.graphics.draw(internal.title, self.x + 24 + 246, self.y + 5 + 86)
 	return self
 end
 

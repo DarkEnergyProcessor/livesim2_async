@@ -11,11 +11,9 @@ local mainFont = require("font")
 local util = require("util")
 local assetCache = require("asset_cache")
 
-local baseSetting = require("game.settings.base_v4")
-
-local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 
+local baseSetting = require("game.settings.base_v4")
 local numberSetting = Luaoop.class("Livesim2.SettingItem.Number", baseSetting)
 
 local function snapAt(v, snap)
@@ -35,6 +33,10 @@ local function makePressed(obj, dir)
 		end
 	end
 end
+
+local INCREASE_X, INCREASE_Y = 420 + 160, 0
+local DECREASE_X, DECREASE_Y = 420 - 36, 0
+local RELOAD_X, RELOAD_Y = 420 + 160 + 40, 0
 
 function numberSetting:__construct(frame, name, settingName, opts)
 	local internal = Luaoop.class.data(self)
@@ -57,17 +59,17 @@ function numberSetting:__construct(frame, name, settingName, opts)
 		if settingName then setting.set(settingName, internal.value) end
 	end
 
-	internal.increaseButton = ciButton(color.hexFF4FAE, 18, img, 0.24, math.pi)
+	internal.increaseButton = ciButton(color.transparent, 18, img, 0.24, color.hexFF4FAE, math.pi)
 	internal.increaseButton:addEventListener("mousepressed", makePressed(self, 1))
 	internal.increaseButton:addEventListener("mousereleased", released)
-	frame:addElement(internal.increaseButton, self.x + 420 + 160 + 36, self.y + 18)
-	internal.decreaseButton = ciButton(color.hexFF4FAE, 18, img, 0.24, math.pi)
+	frame:addElement(internal.increaseButton, self.x + INCREASE_X, self.y + INCREASE_Y)
+	internal.decreaseButton = ciButton(color.transparent, 18, img, 0.24, color.hexFF4FAE)
 	internal.decreaseButton:addEventListener("mousepressed", makePressed(self, -1))
 	internal.decreaseButton:addEventListener("mousereleased", released)
-	frame:addElement(internal.decreaseButton, self.x + 420 - 36, self.y + 18)
+	frame:addElement(internal.decreaseButton, self.x + DECREASE_X, self.y + DECREASE_Y)
 	if opts.default then
 		local reload = assetCache.loadImage("assets/image/ui/over_the_rainbow/reload.png", {mipmaps = true})
-		internal.resetButton = ciButton(color.hexFF4FAE, 18, reload, 0.32)
+		internal.resetButton = ciButton(color.transparent, 18, reload, 0.32, color.hexFF4FAE)
 		internal.resetButton:addEventListener("mousereleased", function()
 			if internal.value ~= opts.default then
 				internal.value = opts.default
@@ -76,7 +78,7 @@ function numberSetting:__construct(frame, name, settingName, opts)
 				self:_emitChangedCallback(opts.default)
 			end
 		end)
-		frame:addElement(internal.resetButton, self.x + 420 + 160 + 36 + 40, self.y)
+		frame:addElement(internal.resetButton, self.x + RELOAD_X, self.y + RELOAD_Y)
 	end
 
 	return self:_updateValueDisplay()
@@ -85,10 +87,10 @@ end
 function numberSetting:__destruct()
 	local internal = Luaoop.class.data(self)
 
-	glow.removeElement(internal.increaseButton)
-	glow.removeElement(internal.decreaseButton)
+	internal.frame:removeElement(internal.increaseButton)
+	internal.frame:removeElement(internal.decreaseButton)
 	if internal.resetButton then
-		glow.removeElement(internal.resetButton)
+		internal.frame:removeElement(internal.resetButton)
 	end
 end
 
@@ -96,7 +98,7 @@ function numberSetting:_updateValueDisplay()
 	local internal = Luaoop.class.data(self)
 
 	local s = tostring(internal.display[internal.value] or internal.value)
-	local w = internal.font:getWidth(internal.value) * 0.5
+	local w = internal.font:getWidth(s) * 0.5
 	internal.valueDisplay:clear()
 	internal.valueDisplay:add({color.white, s}, 0, 0, 0, 1, 1, w, 0)
 end
@@ -104,10 +106,10 @@ end
 function numberSetting:_positionChanged()
 	local internal = Luaoop.class.data(self)
 
-	glow.setElementPosition(internal.increaseButton, self.x + 734, self.y + 16)
-	glow.setElementPosition(internal.decreaseButton, self.x + 556, self.y + 16)
+	internal.frame:setElementPosition(internal.increaseButton, self.x + INCREASE_X, self.y)
+	internal.frame:setElementPosition(internal.decreaseButton, self.x + DECREASE_X, self.y)
 	if internal.resetButton then
-		glow.setElementPosition(internal.resetButton, self.x + 396, self.y + 11)
+		internal.frame:setElementPosition(internal.resetButton, self.x + RELOAD_X, self.y)
 	end
 end
 
@@ -150,8 +152,8 @@ function numberSetting:draw()
 	local internal = Luaoop.class.data(self)
 	baseSetting.draw(self)
 	love.graphics.setColor(color.hexFF4FAE)
-	love.graphics.rectangle("line", self.x + 420, self.y, 160, 36, 18, 18)
-	love.graphics.draw(internal.valueDisplay, self.x + 500, self.y + 5)
+	love.graphics.rectangle("line", self.x + 420 + 246, self.y + 86, 160, 36, 18, 18)
+	love.graphics.draw(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
 end
 
 return numberSetting
