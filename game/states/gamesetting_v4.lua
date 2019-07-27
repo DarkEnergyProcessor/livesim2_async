@@ -406,7 +406,7 @@ function gameSetting:draw()
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
-	util.drawText(self.data.titleText, 603, 24)
+	util.drawText(self.data.titleText, 480, 24)
 
 	-- Note style-specific setting
 	if self.persist.selectedSetting == 4 then
@@ -415,10 +415,13 @@ function gameSetting:draw()
 			local xpos = 318
 			local layer = self.persist.curStyle[i]
 			local quad = note.quadRegion[layer]
+			local tcr, tcg, tcb
 			if isUncolorableLayer(layer) then
-				love.graphics.setColor(color.white)
+				tcr = color.white[1]
+				tcg = color.white[2]
+				tcb = color.white[3]
 			else
-				love.graphics.setColor(color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1))
+				tcr, tcg, tcb = color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1)
 			end
 
 			local w, h = select(3, quad:getViewport())
@@ -428,9 +431,20 @@ function gameSetting:draw()
 				xpos = 603
 			end
 
+			love.graphics.setColor(color.white50PT)
+			love.graphics.rectangle("fill", xpos - 64, 400-64, 128, 128, 32, 32)
+			love.graphics.rectangle("line", xpos - 64, 400-64, 128, 128, 32, 32)
+			love.graphics.setColor(tcr, tcg, tcb)
 			love.graphics.draw(self.assets.images.note, quad, xpos, 400, 0, 0.75, 0.75, w*0.5, h*0.5)
 		end
 
+		love.graphics.setColor(color.white50PT)
+		love.graphics.rectangle("fill", 318-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 603-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 888-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 318-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 603-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 888-64, 560-64, 128, 128, 32, 32)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[1], 318, 560)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[2], 603, 560)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[3], 888, 560)
