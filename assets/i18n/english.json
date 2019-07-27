@@ -112,7 +112,7 @@
 		"setting:noteStyle:base": "Base Frame Icon",
 		"setting:noteStyle:simul": "Simultaneous Icon",
 		"setting:noteStyle:swing": "Swing Icon",
-		"setting:stamina": "Score & Stamina",
+		"setting:stamina": "Score/Stamina",
 		"setting:stamina:display": "Stamina",
 		"setting:stamina:noFail": "Functional Stamina Meter",
 		"setting:stamina:score": "Base Score per Tap",

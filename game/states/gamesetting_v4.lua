@@ -93,6 +93,10 @@ local function drawLayerAt(styleData, layer, x, y)
 	return note.manager.drawNote(styleData, layer, 1, tempPosition, 0.75, 0)
 end
 
+local function newSettingFrame()
+	return glow.frame(246, 86, 714, 548)
+end
+
 local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
 
 function categorySelect:new(font, name)
@@ -187,7 +191,7 @@ function gameSetting:load()
 
 	-- General settings
 	if self.persist.generalSetting == nil then
-		local frame = glow.frame(246, 86, 714, 548)
+		local frame = newSettingFrame()
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
 			tapSoundDisplay[i] = tapSound[i].name
@@ -230,7 +234,7 @@ function gameSetting:load()
 
 	-- Volume settings
 	if self.persist.volumeSetting == nil then
-		local frame = glow.frame(246, 86, 714, 548)
+		local frame = newSettingFrame()
 		self.persist.volumeFrame = frame
 		self.persist.volumeSetting = {
 			numberSetting(frame, L"setting:volume:master", "MASTER_VOLUME", {min = 0, max = 100, default = 80})
@@ -250,7 +254,7 @@ function gameSetting:load()
 
 	-- Background settings
 	if self.persist.bgSetting == nil then
-		local frame = glow.frame(246, 86, 714, 548)
+		local frame = newSettingFrame()
 		self.persist.bgFrame = frame
 		self.persist.bgSetting = {
 			switchSetting(frame, L"setting:background:loadCustom", "AUTO_BACKGROUND")
@@ -266,7 +270,7 @@ function gameSetting:load()
 
 	-- Note Style settings
 	if self.persist.nsSetting == nil then
-		local frame = glow.frame(246, 86, 714, 548)
+		local frame = newSettingFrame()
 		local display = {"Default", "Neon", "Matte"}
 		self.persist.nsFrame = frame
 		self.persist.nsSetting = {
@@ -293,7 +297,7 @@ function gameSetting:load()
 
 	-- Live settings
 	if self.persist.liveSetting == nil then
-		local frame = glow.frame(246, 86, 714, 548)
+		local frame = newSettingFrame()
 		local vanish = {
 			[0] = L"setting:live:vanish:none",
 			L"setting:live:vanish:hidden",
@@ -318,6 +322,20 @@ function gameSetting:load()
 		}
 	end
 
+	-- Score settings
+	if self.persist.scoreSetting == nil then
+		local frame = newSettingFrame()
+		self.persist.scoreFrame = frame
+		self.persist.scoreSetting = {
+			numberSetting(frame, L"setting:stamina:score", "SCORE_ADD_NOTE", {min = 100, max = 8192})
+				:setPosition(0, 64),
+			numberSetting(frame, L"setting:stamina:display", "STAMINA_DISPLAY", {min = 1, max = 99})
+				:setPosition(0, 128),
+			switchSetting(frame, L"setting:stamina:noFail", "STAMINA_FUNCTIONAL")
+				:setPosition(0, 192),
+		}
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
 		local font = mainFont.get(22)
@@ -328,6 +346,7 @@ function gameSetting:load()
 			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil},
 			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil},
 			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil},
+			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil}
 		}
 
 		local function setSelected(_, value)
