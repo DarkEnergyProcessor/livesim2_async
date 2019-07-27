@@ -7,7 +7,7 @@ local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
 local setting = require("setting")
-local baseSetting = require("game.settings.base_v4")
+local baseSetting = require("game.settings.base")
 
 local glow = require("game.afterglow")
 

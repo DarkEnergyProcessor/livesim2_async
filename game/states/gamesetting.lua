@@ -22,8 +22,8 @@ local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 local ripple = require("game.ui.ripple")
 
-local numberSetting = require("game.settings.number_v4")
-local switchSetting = require("game.settings.switch_v4")
+local numberSetting = require("game.settings.number")
+local switchSetting = require("game.settings.switch")
 
 local note = require("game.live.note")
 local liveUI = require("game.live.ui")

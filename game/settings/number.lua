@@ -13,7 +13,7 @@ local assetCache = require("asset_cache")
 
 local ciButton = require("game.ui.circle_icon_button")
 
-local baseSetting = require("game.settings.base_v4")
+local baseSetting = require("game.settings.base")
 local numberSetting = Luaoop.class("Livesim2.SettingItem.Number", baseSetting)
 
 local function snapAt(v, snap)
