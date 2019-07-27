@@ -403,7 +403,7 @@ function gameSetting:load()
 		for i, v in ipairs(liveUI.enum()) do
 			local elem = longSelect(font, v)
 			elem:addEventListener("mousereleased", setPlayUI)
-			elem:setData({real = v, instance = self, index = i})
+			elem:setData({real = v, index = i})
 			if v == playUI then
 				elem:setActive(true)
 			end
@@ -412,6 +412,11 @@ function gameSetting:load()
 		end
 
 		self.persist.liveUIFrame = frame
+	end
+
+	-- Language settings
+	if self.persist.langFrame == nil then
+		local frame = newSettingFrame()
 	end
 
 	-- Setting selection cateogry
@@ -541,13 +546,10 @@ function gameSetting:draw()
 			local xpos = 318
 			local layer = self.persist.curStyle[i]
 			local quad = note.quadRegion[layer]
-			local tcr, tcg, tcb
 			if isUncolorableLayer(layer) then
-				tcr = color.white[1]
-				tcg = color.white[2]
-				tcb = color.white[3]
+				love.graphics.setColor(color.white)
 			else
-				tcr, tcg, tcb = color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1)
+				love.graphics.setColor(color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1))
 			end
 
 			local w, h = select(3, quad:getViewport())
@@ -557,17 +559,19 @@ function gameSetting:draw()
 				xpos = 603
 			end
 
-			love.graphics.setColor(color.white50PT)
-			love.graphics.rectangle("fill", xpos - 64, 400-64, 128, 128, 32, 32)
-			love.graphics.rectangle("line", xpos - 64, 400-64, 128, 128, 32, 32)
-			love.graphics.setColor(tcr, tcg, tcb)
 			love.graphics.draw(self.assets.images.note, quad, xpos, 400, 0, 0.75, 0.75, w*0.5, h*0.5)
 		end
 
 		love.graphics.setColor(color.white50PT)
+		love.graphics.rectangle("fill", 318-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 603-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 888-64, 400-64, 128, 128, 32, 32)
 		love.graphics.rectangle("fill", 318-64, 560-64, 128, 128, 32, 32)
 		love.graphics.rectangle("fill", 603-64, 560-64, 128, 128, 32, 32)
 		love.graphics.rectangle("fill", 888-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 318-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 603-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 888-64, 400-64, 128, 128, 32, 32)
 		love.graphics.rectangle("line", 318-64, 560-64, 128, 128, 32, 32)
 		love.graphics.rectangle("line", 603-64, 560-64, 128, 128, 32, 32)
 		love.graphics.rectangle("line", 888-64, 560-64, 128, 128, 32, 32)
