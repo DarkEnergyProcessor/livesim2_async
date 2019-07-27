@@ -264,27 +264,27 @@ function gameSetting:load()
 					"Rainbow", "Black"
 				}
 			})
-				:setPosition(0, 64) -- next: y+=64
+				:setPosition(0, 12) -- next: y+=64
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.defAttr = v
 					updateStyleData(obj)
 				end),
 			switchSetting(frame, L"setting:general:nsAccumulation", "NS_ACCUMULATION")
-				:setPosition(0, 128),
+				:setPosition(0, 64+12),
 			numberSetting(frame, L"setting:general:timingOffset", "TIMING_OFFSET", {
 				min = -50, max = 50, default = 0
 			})
-				:setPosition(0, 192),
+				:setPosition(0, 128+12),
 			numberSetting(frame, L"setting:general:beatmapOffset", "GLOBAL_OFFSET", {
 				min = -5000, max = 5000, default = 0
 			})
-				:setPosition(0, 256),
+				:setPosition(0, 192+12),
 			numberSetting(frame, L"setting:general:tapSound", "TAP_SOUND", {
 				min = 1, max = #tapSound, default = 1, display = tapSoundDisplay
 			})
-				:setPosition(0, 320),
+				:setPosition(0, 256+12),
 			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
-				:setPosition(0, 384)
+				:setPosition(0, 320+12)
 		}
 	end
 	glow.addFrame(self.persist.generalFrame)
@@ -295,16 +295,16 @@ function gameSetting:load()
 		self.persist.volumeFrame = frame
 		self.persist.volumeSetting = {
 			numberSetting(frame, L"setting:volume:master", "MASTER_VOLUME", {min = 0, max = 100, default = 80})
-				:setPosition(0, 64)
+				:setPosition(0, 12)
 				:setChangedCallback("master", setVolumeSetting),
 			numberSetting(frame, L"setting:volume:song", "SONG_VOLUME", {min = 0, max = 100, default = 80})
-				:setPosition(0, 128)
+				:setPosition(0, 64+12)
 				:setChangedCallback("music", setVolumeSetting),
 			numberSetting(frame, L"setting:volume:effect", "SE_VOLUME", {min = 0, max = 100, default = 80})
-				:setPosition(0, 192)
+				:setPosition(0, 128+12)
 				:setChangedCallback("se", setVolumeSetting),
 			numberSetting(frame, L"setting:volume:voice", "VOICE_VOLUME", {min = 0, max = 100, default = 80})
-				:setPosition(0, 256)
+				:setPosition(0, 192+12)
 				:setChangedCallback("voice", setVolumeSetting),
 		}
 	end
@@ -315,13 +315,13 @@ function gameSetting:load()
 		self.persist.bgFrame = frame
 		self.persist.bgSetting = {
 			switchSetting(frame, L"setting:background:loadCustom", "AUTO_BACKGROUND")
-				:setPosition(0, 64),
+				:setPosition(0, 12),
 			numberSetting(frame, L"setting:background:image", "BACKGROUND_IMAGE", {min = 1, max = 15})
 				:setChangedCallback(self, startChangeBackground)
-				:setPosition(0, 128),
+				:setPosition(0, 64+12),
 			numberSetting(frame, L"setting:background:dim", "LIVESIM_DIM", {min = 0, max = 100})
 				:setChangedCallback(self, setBackgroundDim)
-				:setPosition(0, 192)
+				:setPosition(0, 128+12)
 		}
 	end
 
@@ -332,19 +332,19 @@ function gameSetting:load()
 		self.persist.nsFrame = frame
 		self.persist.nsSetting = {
 			numberSetting(frame, L"setting:noteStyle:base", nil, {min = 1, max = 3, value = 1, display = display})
-				:setPosition(0, 64)
+				:setPosition(0, 12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleFrame = v
 					return updateStyleData(obj)
 				end),
 			numberSetting(frame, L"setting:noteStyle:swing", nil, {min = 1, max = 3, value = 1, display = display})
-				:setPosition(0, 128)
+				:setPosition(0, 64+12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleSwing = v
 					return updateStyleData(obj)
 				end),
 			numberSetting(frame, L"setting:noteStyle:simul", nil, {min = 1, max = 3, value = 1, display = display})
-				:setPosition(0, 192)
+				:setPosition(0, 128+12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleSimul = v
 					return updateStyleData(obj)
@@ -363,19 +363,19 @@ function gameSetting:load()
 		self.persist.liveFrame = frame
 		self.persist.liveSetting = {
 			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
-				:setPosition(0, 64),
+				:setPosition(0, 12),
 			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
-				:setPosition(0, 128),
+				:setPosition(0, 64+12),
 			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 50})
-				:setPosition(0, 192),
+				:setPosition(0, 128+12),
 			numberSetting(frame, L"setting:live:textScaling", "TEXT_SCALING", {
 				min = 50, max = 100, default = 100, snap = 10, div = 100
 			})
-				:setPosition(0, 256),
+				:setPosition(0, 192+12),
 			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
-				:setPosition(0, 320),
+				:setPosition(0, 256+12),
 			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 2, default = 0, display = vanish})
-				:setPosition(0, 384)
+				:setPosition(0, 320+12)
 		}
 	end
 
@@ -385,11 +385,11 @@ function gameSetting:load()
 		self.persist.scoreFrame = frame
 		self.persist.scoreSetting = {
 			numberSetting(frame, L"setting:stamina:score", "SCORE_ADD_NOTE", {min = 100, max = 8192})
-				:setPosition(0, 64),
+				:setPosition(0, 12),
 			numberSetting(frame, L"setting:stamina:display", "STAMINA_DISPLAY", {min = 1, max = 99})
-				:setPosition(0, 128),
+				:setPosition(0, 64+12),
 			switchSetting(frame, L"setting:stamina:noFail", "STAMINA_FUNCTIONAL")
-				:setPosition(0, 192),
+				:setPosition(0, 128+12),
 		}
 	end
 
@@ -420,7 +420,7 @@ function gameSetting:load()
 				elem:setActive(true)
 			end
 			elements[i] = elem
-			frame:addElement(elem, 0, i * 64 - 12)
+			frame:addElement(elem, 0, (i - 1) * 64)
 		end
 
 		self.persist.liveUIFrame = frame
@@ -563,8 +563,8 @@ function gameSetting:draw()
 		love.graphics.rectangle("fill", 0, 0, 240, 640)
 
 		for i = 1, #set[3] do
-			love.graphics.rectangle("fill", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
-			love.graphics.rectangle("line", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+			love.graphics.rectangle("fill", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
+			love.graphics.rectangle("line", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
 		end
 	else
 		love.graphics.setColor(color.white)
@@ -573,8 +573,8 @@ function gameSetting:draw()
 		if set then
 			love.graphics.setColor(color.white50PT)
 			for i = 1, #set[3] do
-				love.graphics.rectangle("fill", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
-				love.graphics.rectangle("line", 246, i * 64 - 12 + 86, 710, 60, 16, 16)
+				love.graphics.rectangle("fill", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
+				love.graphics.rectangle("line", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
 			end
 		end
 	end
