@@ -45,10 +45,11 @@ local function createCircleMesh(r1, r2, segment)
 	return mesh
 end
 
-function ciButton:new(cc, r, i, is, ic)
+function ciButton:new(cc, r, i, is, ic, ir)
 	self.color = cc
 	self:setImage(i, is, ic)
 	self.radius = r
+	self.rotation = ir or 0
 	self.width, self.height = 2 * r, 2 * r
 	self.isPressed = false
 	self.ripple = ripple(2 * r)
@@ -129,7 +130,7 @@ function ciButton:render(x, y)
 		love.graphics.setColor(self.imageColor)
 		love.graphics.draw(
 			self.image,
-			x + self.radius, y + self.radius, 0,
+			x + self.radius, y + self.radius, self.rotation,
 			self.imageScale, self.imageScale,
 			self.imageW * 0.5, self.imageH * 0.5
 		)
