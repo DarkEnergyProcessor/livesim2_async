@@ -580,7 +580,7 @@ function DEPLS:load(arg)
 	self.data.tapSFX = {accumulateTracking = {}}
 	local tapSoundIndex = assert(tapSound[tonumber(setting.get("TAP_SOUND"))], "invalid tap sound")
 	for k, v in pairs(tapSoundIndex) do
-		if type(v) == "string" then
+		if k ~= "name" and type(v) == "string" then
 			local audio = audioManager.newAudio(v, "se")
 			audioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
 			self.data.tapSFX[k] = audio
