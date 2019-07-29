@@ -100,6 +100,33 @@ note.quadRegion = {
 	region(4, 4), -- gray
 	region(5, 4), -- rainbow
 	region(6, 4), -- black
+	-- Lovewing note base frame
+	region(7, 4), -- smile (74)
+	region(8, 4), -- pure
+	region(9, 4), -- cool
+	region(10, 4), -- blue
+	region(11, 4), -- yellow
+	region(12, 4), -- orange
+	region(13, 4), -- pink
+	region(0, 5), -- purple
+	region(1, 5), -- gray
+	region(2, 5), -- rainbow
+	region(3, 5), -- black
+	region(4, 5), -- custom (dark gray)
+	region(14, 5, 256), -- simultaneous
+	-- Lovewing note swing icon only
+	region(5, 5), -- smile (87)
+	region(6, 5), -- pure
+	region(7, 5), -- cool
+	region(8, 5), -- blue
+	region(9, 5), -- yellow
+	region(10, 5), -- orange
+	region(11, 5), -- pink
+	region(12, 5), -- purple
+	region(13, 5), -- gray
+	region(0, 6), -- rainbow
+	region(1, 6), -- black
+	region(2, 6), -- custom (dark grey)
 }
 
 local swingRotationTable = {
@@ -232,14 +259,14 @@ function noteManager:__construct(param)
 	-- bit pattern for note style: 00000000 iiiiiiss ssssffff ffpppppp
 	--
 	-- Any values there range from 1-63 (0 is invalid)
-	-- 1 = default, 2 = neon, 3 = matte
+	-- 1 = default, 2 = neon, 3 = matte, 4 = lovewing
 	--
 	-- p = note style preset. If 63 then:
 	-- f = note style frame (base)
 	-- s = note style swing
 	-- i = note style simultaneous mark
 	local preset = bit.band(noteStyle, 63)
-	local MAX_NOTE_STYLE = 3 -- const
+	local MAX_NOTE_STYLE = 4 -- const
 	assert(preset == 63 or (preset > 0 and preset <= MAX_NOTE_STYLE), "Invalid note style")
 	if preset == 63 then
 		local value = bit.band(bit.rshift(noteStyle, 6), 63)
@@ -259,6 +286,7 @@ local white = {255, 255, 255}
 function noteManager:getLayer(attribute, simul, swing, token, star)
 	local layer = {}
 	local defCol = white
+	local customColor = false
 	if bit.band(attribute, 15) == 15 then
 		-- Custom Beatmap Festival extension attribute.
 		-- Bit pattern: rrrrrrrr rggggggg ggbbbbbb bbb0nnnn
@@ -269,6 +297,7 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 			bit.band(bit.rshift(attribute, 5), 511),
 		}
 		attribute = 9
+		customColor = true
 	end
 
 	---------------------
@@ -277,13 +306,6 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 	-- Default note style
 	if self.noteStyleFrame == 1 then
 		layer[#layer + 1] = 3 + attribute
-
-		if token then
-			layer[#layer + 1] = 2
-		end
-		if star then
-			layer[#layer + 1] = 1
-		end
 	-- Neon note style
 	elseif self.noteStyleFrame == 2 then
 		-- There's special case for neon note style.
@@ -297,23 +319,24 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 		else
 			layer[#layer + 1] = 16 + attribute
 		end
-
-		if token then
-			layer[#layer + 1] = 2
-		end
-		if star then
-			layer[#layer + 1] = 1
-		end
 	-- Matte note style
 	elseif self.noteStyleFrame == 3 then
 		layer[#layer + 1] = 50 + attribute
+	-- Lovewing note style
+	elseif self.noteStyleFrame == 4 then
+		if customColor then
+			layer[#layer + 1] = 84
+		else
+			layer[#layer + 1] = 73 + attribute
+		end
+	end
 
-		if token then
-			layer[#layer + 1] = 2
-		end
-		if star then
-			layer[#layer + 1] = 1
-		end
+	-- Token and star note layer
+	if token then
+		layer[#layer + 1] = 2
+	end
+	if star then
+		layer[#layer + 1] = 1
 	end
 	----------------------
 	-- Swing note style --
@@ -329,6 +352,13 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 		-- Matte note style
 		elseif self.noteStyleSwing == 3 then
 			layer[#layer + 1] = 62 + attribute
+		-- Lovewing note style
+		elseif self.noteStyleSwing == 4 then
+			if customColor then
+				layer[#layer + 1] = 98
+			else
+				layer[#layer + 1] = 86 + attribute
+			end
 		end
 	end
 	-----------------------------
@@ -344,32 +374,37 @@ function noteManager:getLayer(attribute, simul, swing, token, star)
 		-- Matte note style
 		elseif self.noteStyleSimul == 3 then
 			layer[#layer + 1] = 62
+		-- Lovewing note style
+		elseif self.noteStyleSimul == 4 then
+			layer[#layer + 1] = 86
 		end
 	end
 	layer.color = defCol
 	return layer
 end
 
-local function isSwingLayer(layerIndex)
+function noteManager.isSwingLayer(layerIndex)
 	return
 		layerIndex == 15 or
 		(layerIndex >= 29 and layerIndex <= 50) or
-		(layerIndex >= 63 and layerIndex <= 73)
+		(layerIndex >= 63 and layerIndex <= 73) or
+		(layerIndex >= 86 and layerIndex <= 98)
 end
 
-local function isUncolorableLayer(layerIndex)
+function noteManager.isUncolorableLayer(layerIndex)
 	return
 		(layerIndex >= 1 and layerIndex <= 3) or
 		layerIndex == 16 or
 		layerIndex == 28 or
-		layerIndex == 62
+		layerIndex == 62 or
+		layerIndex == 86
 end
 
 function noteManager:drawNote(layers, opacity, position, scale, rotation)
 	for i = 1, #layers do
 		local layer = layers[i]
 		local quad = note.quadRegion[layer]
-		if isUncolorableLayer(layer) then
+		if note.manager.isUncolorableLayer(layer) then
 			love.graphics.setColor(color.get(255, 255, 255, self.opacity * opacity))
 		else
 			love.graphics.setColor(color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity))
@@ -379,7 +414,7 @@ function noteManager:drawNote(layers, opacity, position, scale, rotation)
 		love.graphics.draw(
 			self.noteImage, quad, -- texture, quad
 			position.x, position.y, -- position
-			isSwingLayer(layer) and rotation or 0, -- rotation
+			note.manager.isSwingLayer(layer) and rotation or 0, -- rotation
 			scale, scale, -- scaling
 			w*0.5, h*0.5 -- offset
 		)

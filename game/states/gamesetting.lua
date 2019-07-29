@@ -29,6 +29,7 @@ local note = require("game.live.note")
 local liveUI = require("game.live.ui")
 
 local mipmap = {mipmaps = true}
+local --[[const]] MAX_NOTE_STYLE = 4
 
 local function leave(_, self)
 	if
@@ -81,23 +82,8 @@ local function updateStyleData(self)
 	)
 end
 
-local function isSwingLayer(layerIndex)
-	return
-		layerIndex == 15 or
-		(layerIndex >= 29 and layerIndex <= 50) or
-		(layerIndex >= 63 and layerIndex <= 73)
-end
-
-local function isUncolorableLayer(layerIndex)
-	return
-		(layerIndex >= 1 and layerIndex <= 3) or
-		layerIndex == 16 or
-		layerIndex == 28 or
-		layerIndex == 62
-end
-
 local function isSimultaneousLayer(layerIndex)
-	return layerIndex == 16 or layerIndex == 28 or layerIndex == 62
+	return layerIndex == 16 or layerIndex == 28 or layerIndex == 62 or layerIndex == 86
 end
 
 local tempPosition = {x = 0, y = 0}
@@ -328,22 +314,22 @@ function gameSetting:load()
 	-- Note Style settings
 	if self.persist.nsSetting == nil then
 		local frame = newSettingFrame()
-		local display = {"Default", "Neon", "Matte"}
+		local display = {"Default", "Neon", "Matte", "Lovewing"}
 		self.persist.nsFrame = frame
 		self.persist.nsSetting = {
-			numberSetting(frame, L"setting:noteStyle:base", nil, {min = 1, max = 3, value = 1, display = display})
+			numberSetting(frame, L"setting:noteStyle:base", nil, {min = 1, max = MAX_NOTE_STYLE, value = 1, display = display})
 				:setPosition(0, 12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleFrame = v
 					return updateStyleData(obj)
 				end),
-			numberSetting(frame, L"setting:noteStyle:swing", nil, {min = 1, max = 3, value = 1, display = display})
+			numberSetting(frame, L"setting:noteStyle:swing", nil, {min = 1, max = MAX_NOTE_STYLE, value = 1, display = display})
 				:setPosition(0, 64+12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleSwing = v
 					return updateStyleData(obj)
 				end),
-			numberSetting(frame, L"setting:noteStyle:simul", nil, {min = 1, max = 3, value = 1, display = display})
+			numberSetting(frame, L"setting:noteStyle:simul", nil, {min = 1, max = MAX_NOTE_STYLE, value = 1, display = display})
 				:setPosition(0, 128+12)
 				:setChangedCallback(self, function(obj, v)
 					obj.persist.styleData.noteStyleSimul = v
@@ -518,7 +504,6 @@ function gameSetting:start()
 		noteImage = self.assets.images.note
 	}
 	local preset = noteStyle % 64
-	local --[[const]] MAX_NOTE_STYLE = 3
 	assert(preset == 63 or (preset > 0 and preset <= MAX_NOTE_STYLE), "Invalid note style")
 	if preset == 63 then
 		local value = math.floor(noteStyle / 64) % 64
@@ -592,7 +577,7 @@ function gameSetting:draw()
 			local xpos = 318
 			local layer = self.persist.curStyle[i]
 			local quad = note.quadRegion[layer]
-			if isUncolorableLayer(layer) then
+			if note.manager.isUncolorableLayer(layer) then
 				love.graphics.setColor(color.white)
 			else
 				love.graphics.setColor(color.compat(curLayer.color[1], curLayer.color[2], curLayer.color[3], 1))
@@ -601,7 +586,7 @@ function gameSetting:draw()
 			local w, h = select(3, quad:getViewport())
 			if isSimultaneousLayer(layer) then
 				xpos = 888
-			elseif isSwingLayer(layer) then
+			elseif note.manager.isSwingLayer(layer) then
 				xpos = 603
 			end
 
@@ -635,9 +620,9 @@ function gameSetting:draw()
 	end
 end
 
-gameSetting:registerEvent("keyreleased", function(_, k)
+gameSetting:registerEvent("keyreleased", function(self, k)
 	if k == "escape" then
-		return leave()
+		return leave(nil, self)
 	end
 end)
 
