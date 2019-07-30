@@ -11,6 +11,7 @@ local Luaoop = require("libs.Luaoop")
 local audioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
+local mainFont = require("font")
 local sandbox = require("sandbox")
 local util = require("util")
 
@@ -122,13 +123,9 @@ function luaStoryboard:setupMainEnv()
 	-- LoadFont function
 	function self.mainEnv.loadFont(path, ...)
 		if path == nil then
-			if self.v3 then
-				local f = love.graphics.newFont("fonts/Roboto-Regular.ttf", ...)
-				f:setFallbacks(love.graphics.newFont("fonts/NotoSansCJKjp-Regular.otf", ...))
-				return f
-			else
-				return love.graphics.newFont("fonts/MTLmr3m.ttf", ...)
-			end
+			local f = love.graphics.newFont(mainFont.roboto, ...)
+			f:setFallbacks(love.graphics.newFont(mainFont.notoSansCJK, ...))
+			return f
 		elseif self.beatmapData[path] then
 			return love.graphics.newFont(self.beatmapData[path], ...)
 		elseif self.beatmapPath then

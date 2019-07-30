@@ -86,8 +86,8 @@ end
 function changeUnitsButton:new(state)
 	local text = L"menu:changeUnits"
 	self.image = state.assets.images.changeUnits
-	self.text = love.graphics.newText(state.assets.fonts.title)
-	self.text:add(text, -state.assets.fonts.title:getWidth(text) * 41/46, 0, 0, 41/46)
+	self.text = love.graphics.newText(state.data.titleFont)
+	self.text:add(text, -state.data.titleFont:getWidth(text) * 41/46, 0, 0, 41/46)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
@@ -135,8 +135,8 @@ end
 function settingsButton:new(state)
 	local text = L"menu:settings"
 	self.image = state.assets.images.settingsDualGear
-	self.text = love.graphics.newText(state.assets.fonts.title)
-	self.text:add(text, -state.assets.fonts.title:getWidth(text) * 41/46, 0, 0, 41/46)
+	self.text = love.graphics.newText(state.data.titleFont)
+	self.text:add(text, -state.data.titleFont:getWidth(text) * 41/46, 0, 0, 41/46)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
@@ -203,10 +203,7 @@ end
 
 local mipmaps = {mipmaps = true}
 local mainMenu = gamestate.create {
-	fonts = {
-		title = {"fonts/Roboto-Regular.ttf", 46},
-		versionSem = {"fonts/NotoSansCJKjp-Regular.woff", 23}
-	},
+	fonts = {},
 	images = {
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
 		settingsDualGear = {"assets/image/ui/over_the_rainbow/settings_main_menu.png", mipmaps},
@@ -221,26 +218,34 @@ function mainMenu:load()
 		self.data.playFont = mainFont.get(92)
 	end
 
+	if not(self.data.titleFont) then
+		self.data.titleFont = love.graphics.newFont(mainFont.roboto, 46)
+	end
+
 	if not(self.data.titleText) then
-		self.data.titleText = love.graphics.newText(self.assets.fonts.title, {
+		self.data.titleText = love.graphics.newText(self.data.titleFont, {
 			color.hexFFA73D, "Live ",
 			color.white, "Simulator: ",
 			color.hexFF4FAE, "2"
 		})
 	end
 
+	if not(self.data.verSemFont) then
+		self.data.verSemFont = love.graphics.newFont(mainFont.notoSansCJK, 23)
+	end
+
 	if not(self.data.verSemText) then
-		local text = love.graphics.newText(self.assets.fonts.versionSem)
+		local text = love.graphics.newText(self.data.verSemFont)
 		local ver = "v"..DEPLS_VERSION
-		text:add(ver, -self.assets.fonts.versionSem:getWidth(ver), 0)
+		text:add(ver, -self.data.verSemFont:getWidth(ver), 0)
 		self.data.verSemText = text
 	end
 
 	if not(self.data.verCodeText) then
-		local text = love.graphics.newText(self.assets.fonts.versionSem)
+		local text = love.graphics.newText(self.data.verSemFont)
 		text:add(
 			DEPLS_VERSION_CODENAME,
-			-self.assets.fonts.versionSem:getWidth(DEPLS_VERSION_CODENAME) * 16/23,
+			-self.data.verSemFont:getWidth(DEPLS_VERSION_CODENAME) * 16/23,
 			0, 0, 16/23
 		)
 		self.data.verCodeText = text
