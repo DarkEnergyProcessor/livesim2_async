@@ -169,7 +169,7 @@ function longSelect:new(font, name)
 	self.text = love.graphics.newText(font)
 	self.text:add(name, (self.width - font:getWidth(name)) * 0.5, (self.height - font:getHeight()) * 0.5)
 	self.stencilFunc = function()
-		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height, 16, 16)
+		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
 
 	self:addEventListener("mousepressed", categorySelect._pressed)
@@ -188,8 +188,7 @@ end
 function longSelect:render(x, y)
 	self.x, self.y = x, y
 	love.graphics.setColor(self.active and colorTheme.get() or color.white75PT)
-	love.graphics.rectangle("fill", x, y, self.width, self.height, 16, 16)
-	love.graphics.rectangle("line", x, y, self.width, self.height, 16, 16)
+	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(self.active and color.white or color.black)
 	util.drawText(self.text, x, y)
 
@@ -578,6 +577,12 @@ function gameSetting:draw()
 		local opacity = interpolation(self.persist.whiteOverlay)
 		love.graphics.setColor(color.compat(255, 255, 255, opacity))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
+
+		if set then
+			local theme = colorTheme.get()
+			love.graphics.setColor(theme[1], theme[2], theme[3], select(4, color.compat(0, 0, 0, opacity)))
+			love.graphics.rectangle("fill", 240, 86, 6, 597)
+		end
 	end
 
 	love.graphics.setColor(color.white)
