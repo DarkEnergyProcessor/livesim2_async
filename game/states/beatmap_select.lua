@@ -504,6 +504,7 @@ local beatmapSelect = gamestate.create {
 		movie = {"assets/image/ui/over_the_rainbow/movie.png", mipmaps},
 		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
+		poll = {"assets/image/ui/over_the_rainbow/poll.png", mipmaps},
 		shuffle = {"assets/image/ui/over_the_rainbow/shuffle.png", mipmaps},
 		star = {"assets/image/ui/over_the_rainbow/star.png", mipmaps},
 		video = {"assets/image/ui/over_the_rainbow/video.png", mipmaps},
@@ -546,6 +547,13 @@ function beatmapSelect:load()
 		end
 
 		self.data.monthNames = t
+	end
+
+	if self.data.emptyReplaysText == nil then
+		local t = love.graphics.newText(self.data.mainFont2)
+		local l = L"beatmapSelect:noReplays"
+		t:add(l, -0.5 * self.data.mainFont2:getWidth(l), 0)
+		self.data.emptyReplaysText = t
 	end
 
 	if self.data.back == nil then
@@ -754,6 +762,7 @@ function beatmapSelect:start()
 	self.persist.beatmapFrame:setVerticalSliderPosition("left")
 	self.persist.replaysFrame:setSliderColor(color.white)
 	self.persist.replaysFrame:setSliderHandleColor(colorTheme.get())
+	self.persist.emptyReplays = false
 
 	self.persist.summaryGet = function(d)
 		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
@@ -779,6 +788,8 @@ function beatmapSelect:start()
 
 		self.persist.replaysFrame:clear()
 		if #beatmapTarget.replays > 0 then
+			self.persist.emptyReplays = false
+
 			local function replayCallback(_, replay)
 				local comboRange = nil
 				local summary = self.persist.beatmapSummary
@@ -812,8 +823,10 @@ function beatmapSelect:start()
 				local elem = replayButton(self, v)
 				elem:addEventListener("mousereleased", replayCallback)
 				elem:setData(v)
-				self.persist.replaysFrame:addElement(elem, 0, (i - 1) * 72)
+				self.persist.replaysFrame:addElement(elem, 4, (i - 1) * 72)
 			end
+		else
+			self.persist.emptyReplays = true
 		end
 
 		glow.removeElement(self.data.deleteBeatmap)
@@ -1058,6 +1071,12 @@ function beatmapSelect:draw()
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
 	love.graphics.setColor(color.hex333131)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
+
+	if self.persist.emptyReplays then
+		love.graphics.setColor(color.hex8B8B8B)
+		love.graphics.draw(self.assets.images.poll, 720, 488, 0, 0.32, 0.32, 46, 46)
+		util.drawText(self.data.emptyReplaysText, 720, 500)
+	end
 
 	glow.draw()
 	self.persist.beatmapFrame:draw()

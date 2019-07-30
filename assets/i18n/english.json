@@ -45,6 +45,7 @@
 		"beatmapSelect:insert:overwrite": "Overwrite Existing Beatmap",
 		"beatmapSelect:insert:overwriteDesc": "Beatmap '%{name}' already exist. Overwrite?",
 		"beatmapSelect:loading": "Loading...",
+		"beatmapSelect:noReplays": "No Recent Plays",
 		"beatmapSelect:optionAutoplay": "Autoplay",
 		"beatmapSelect:optionRandom": "Random",
 		"beatmapSelect:optionStoryboard": "Storyboard",
