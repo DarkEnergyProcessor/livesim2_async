@@ -50,6 +50,7 @@ local log = require("logging")
 local volume = require("volume")
 local audioManager = require("audio_manager")
 
+local colorTheme = require("game.color_theme")
 local beatmapList = require("game.beatmap.list")
 local beatmapRandomizer = require("game.live.randomizer3")
 
@@ -123,6 +124,7 @@ local settingsList = {
 	AUTO_BACKGROUND = 1,
 	BACKGROUND_IMAGE = 10,
 	CBF_UNIT_LOAD = 1,
+	COLOR_THEME = 1,
 	GLOBAL_OFFSET = 0,
 	IDOL_IMAGE = " \t \t \t \t \t \t \t \t ",
 	IDOL_KEYS = "a\ts\td\tf\tspace\tj\tk\tl\t;",
@@ -403,6 +405,7 @@ function love.load(argv, gameargv)
 	initLS2()
 	initLSR()
 	language.init()
+	colorTheme.init(assert(tonumber(setting.get("COLOR_THEME"))))
 	--language.set(setting.get("LANGUAGE"))
 	-- Try to load command line
 	if (love._os == "Android" or love._os == "iOS") and util.fileExists("commandline.txt") then
