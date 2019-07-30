@@ -17,6 +17,7 @@ local loadingInstance = require("loading_instance")
 local L = require("language")
 
 local beatmapList = require("game.beatmap.list")
+local colorTheme = require("game.color_theme")
 local glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
 local ciButton = require("game.ui.circle_icon_button")
@@ -83,7 +84,7 @@ do
 		local shader = love.graphics.getShader()
 		self.x, self.y = x, y
 
-		love.graphics.setColor(self.selected and color.hexFF4FAE or color.hex434242)
+		love.graphics.setColor(self.selected and colorTheme.get() or color.hex434242)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 		love.graphics.setShader(util.drawText.workaroundShader)
 		love.graphics.setColor(color.white)
@@ -158,7 +159,7 @@ do
 	function optionToggleButton:render(x, y)
 		self.x, self.y = x, y
 
-		love.graphics.setColor(color.hexEF46A1)
+		love.graphics.setColor(colorTheme.getDark())
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 
 		if self.checked then
@@ -358,7 +359,7 @@ do
 	end
 
 	function diffText:render(x, y)
-		love.graphics.setColor(color.hexC31C76)
+		love.graphics.setColor(colorTheme.getDarker())
 		love.graphics.rectangle("fill", x, y, 150, 26, 13, 13)
 		love.graphics.rectangle("line", x, y, 150, 26, 13, 13)
 		love.graphics.setColor(color.white)
@@ -403,7 +404,7 @@ do
 		love.graphics.setShader(util.drawText.workaroundShader)
 		love.graphics.setColor(color.black)
 		love.graphics.draw(self.name, x + 16, y + 28)
-		love.graphics.setColor(color.hexFF4FAE)
+		love.graphics.setColor(colorTheme.get())
 		love.graphics.draw(self.score, x, y + 28)
 		love.graphics.setShader(shader)
 
@@ -548,14 +549,14 @@ function beatmapSelect:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, color.hexFF4FAE)
+		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, colorTheme.get())
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	glow.addFixedElement(self.data.back, 32, 4)
 
 	if self.data.openDirectory == nil then
-		self.data.openDirectory = ciButton(color.hex333131, 36, self.assets.images.folder, 0.64, color.hexFF4FAE)
+		self.data.openDirectory = ciButton(color.hex333131, 36, self.assets.images.folder, 0.64, colorTheme.get())
 		self.data.openDirectory:addEventListener("mousereleased", function(_, url)
 			love.system.openURL(url)
 		end)
@@ -564,7 +565,7 @@ function beatmapSelect:load()
 	glow.addFixedElement(self.data.openDirectory, 856, 4)
 
 	if self.data.downloadBeatmap == nil then
-		self.data.downloadBeatmap = ciButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.64, color.hexFF4FAE)
+		self.data.downloadBeatmap = ciButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.64, colorTheme.get())
 		self.data.downloadBeatmap:addEventListener("mousereleased", function()
 			gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
 		end)
@@ -574,7 +575,7 @@ function beatmapSelect:load()
 
 	if fileDialog.isSupported() then
 		if self.data.addBeatmap == nil then
-			self.data.addBeatmap = ciButton(color.hex333131, 36, self.assets.images.add, 0.64, color.hexFF4FAE)
+			self.data.addBeatmap = ciButton(color.hex333131, 36, self.assets.images.add, 0.64, colorTheme.get())
 			self.data.addBeatmap:addEventListener("mousereleased", function()
 				-- this block but oh well
 				local list = fileDialog.open(L"beatmapSelect:insert", nil, nil, true)
@@ -588,7 +589,7 @@ function beatmapSelect:load()
 	end
 
 	if self.data.deleteBeatmap == nil then
-		self.data.deleteBeatmap = ciButton(color.hexFFFFFF, 18, self.assets.images.delete, 0.32, color.hexFF4FAE)
+		self.data.deleteBeatmap = ciButton(color.hexFFFFFF, 18, self.assets.images.delete, 0.32, colorTheme.get())
 		self.data.deleteBeatmap:addEventListener("mousereleased", function()
 			if not(self.persist.selectedBeatmap) then
 				return
@@ -752,7 +753,7 @@ function beatmapSelect:start()
 	self.persist.beatmapFrame:setSliderColor(color.hex434242)
 	self.persist.beatmapFrame:setVerticalSliderPosition("left")
 	self.persist.replaysFrame:setSliderColor(color.white)
-	self.persist.replaysFrame:setSliderHandleColor(color.hexFF4FAE)
+	self.persist.replaysFrame:setSliderHandleColor(colorTheme.get())
 
 	self.persist.summaryGet = function(d)
 		local target = self.persist.beatmaps[self.persist.selectedBeatmap]
@@ -1009,7 +1010,7 @@ end
 function beatmapSelect:draw()
 	love.graphics.setColor(color.hex434242)
 	love.graphics.rectangle("fill", -88, -43, 1136, 726)
-	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("fill", 480, 10, 480, 673)
 
 	local shader = love.graphics.getShader()
@@ -1021,7 +1022,7 @@ function beatmapSelect:draw()
 		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
 	end
 	love.graphics.draw(self.persist.statusText)
-	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.setColor(colorTheme.get())
 	love.graphics.draw(self.data.replaysText, 500, 374)
 	love.graphics.setColor(color.white)
 

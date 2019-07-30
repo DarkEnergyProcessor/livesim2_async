@@ -10,6 +10,7 @@ local setting = require("setting")
 local baseSetting = require("game.settings.base")
 
 local glow = require("game.afterglow")
+local colorTheme = require("game.color_theme")
 
 local switchSetting = Luaoop.class("Livesim2.SettingItem.Switch", baseSetting)
 local switchUI = Luaoop.class("Livesim2.SettingItem.SwitchUI", glow.element)
@@ -41,7 +42,7 @@ function switchUI:setChecked(checked)
 end
 
 function switchUI:render(x, y)
-	local col = self.checked and color.hexFF4FAE or color.hex7F7F7F
+	local col = self.checked and colorTheme.get() or color.hex7F7F7F
 	local offset = self.checked and 112 or 0
 	love.graphics.setColor(col)
 	love.graphics.rectangle("line", x, y, self.width, self.height, 18, 18)

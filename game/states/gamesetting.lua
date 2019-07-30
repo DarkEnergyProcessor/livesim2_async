@@ -17,6 +17,7 @@ local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 local tapSound = require("game.tap_sound")
+local colorTheme = require("game.color_theme")
 
 local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
@@ -137,7 +138,7 @@ end
 function categorySelect:render(x, y)
 	self.x, self.y = x, y
 	if self.active then
-		love.graphics.setColor(color.hexFF4FAE)
+		love.graphics.setColor(colorTheme.get())
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 	end
 	love.graphics.setColor(self.active and color.white or color.black)
@@ -181,7 +182,7 @@ end
 
 function longSelect:render(x, y)
 	self.x, self.y = x, y
-	love.graphics.setColor(self.active and color.hexFF4FAE or color.white75PT)
+	love.graphics.setColor(self.active and colorTheme.get() or color.white75PT)
 	love.graphics.rectangle("fill", x, y, self.width, self.height, 16, 16)
 	love.graphics.rectangle("line", x, y, self.width, self.height, 16, 16)
 	love.graphics.setColor(self.active and color.white or color.black)
@@ -226,7 +227,7 @@ function gameSetting:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hexFF4FAE, 36, self.assets.images.navigateBack, 0.48)
+		self.data.back = ciButton(colorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
@@ -565,7 +566,7 @@ function gameSetting:draw()
 	end
 
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	util.drawText(self.data.titleText, 480, 24)

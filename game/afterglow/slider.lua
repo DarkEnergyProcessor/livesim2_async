@@ -7,6 +7,7 @@ local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
 local util = require("util")
+local colorTheme = require("game.color_theme")
 local element = require("game.afterglow.element")
 
 local slider = Luaoop.class("Afterglow.Slider", element)
@@ -17,7 +18,7 @@ function slider:new(type, length, maxValue)
 	self.sliderLength = length
 	self.sliderMaxValue = maxValue
 	self.sliderValue = 0
-	self.sliderColor = color.hexFF4FAE
+	self.sliderColor = colorTheme.get()
 	self.sliderHandleColor = color.white
 
 	if self.sliderType == "horizontal" then

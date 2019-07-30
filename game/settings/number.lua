@@ -12,6 +12,7 @@ local util = require("util")
 local assetCache = require("asset_cache")
 
 local ciButton = require("game.ui.circle_icon_button")
+local colorTheme = require("game.color_theme")
 
 local baseSetting = require("game.settings.base")
 local numberSetting = Luaoop.class("Livesim2.SettingItem.Number", baseSetting)
@@ -60,17 +61,17 @@ function numberSetting:__construct(frame, name, settingName, opts)
 		if settingName then setting.set(settingName, internal.value / internal.div) end
 	end
 
-	internal.increaseButton = ciButton(color.transparent, 18, img, 0.24, color.hexFF4FAE, math.pi)
+	internal.increaseButton = ciButton(color.transparent, 18, img, 0.24, colorTheme.get(), math.pi)
 	internal.increaseButton:addEventListener("mousepressed", makePressed(self, 1))
 	internal.increaseButton:addEventListener("mousereleased", released)
 	frame:addElement(internal.increaseButton, self.x + INCREASE_X, self.y + INCREASE_Y)
-	internal.decreaseButton = ciButton(color.transparent, 18, img, 0.24, color.hexFF4FAE)
+	internal.decreaseButton = ciButton(color.transparent, 18, img, 0.24, colorTheme.get())
 	internal.decreaseButton:addEventListener("mousepressed", makePressed(self, -1))
 	internal.decreaseButton:addEventListener("mousereleased", released)
 	frame:addElement(internal.decreaseButton, self.x + DECREASE_X, self.y + DECREASE_Y)
 	if opts.default then
 		local reload = assetCache.loadImage("assets/image/ui/over_the_rainbow/reload.png", {mipmaps = true})
-		internal.resetButton = ciButton(color.transparent, 18, reload, 0.32, color.hexFF4FAE)
+		internal.resetButton = ciButton(color.transparent, 18, reload, 0.32, colorTheme.get())
 		internal.resetButton:addEventListener("mousereleased", function()
 			if internal.value ~= opts.default then
 				internal.value = opts.default
@@ -152,7 +153,7 @@ end
 function numberSetting:draw()
 	local internal = Luaoop.class.data(self)
 	baseSetting.draw(self)
-	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("line", self.x + 420 + 246, self.y + 86, 160, 36, 18, 18)
 	util.drawText(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
 end

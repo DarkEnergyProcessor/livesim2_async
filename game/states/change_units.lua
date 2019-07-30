@@ -18,6 +18,7 @@ local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 
 local backgroundLoader = require("game.background_loader")
+local colorTheme = require("game.color_theme")
 
 local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
@@ -340,7 +341,7 @@ function changeUnits:load()
 
 	if self.data.selectUnitsText == nil then
 		self.data.selectUnitsText = love.graphics.newText(mainFont.get(31))
-		self.data.selectUnitsText:add({color.hexFF4FAE, L"changeUnits:selectUnits"})
+		self.data.selectUnitsText:add({colorTheme.get(), L"changeUnits:selectUnits"})
 	end
 
 	if self.data.keymapText == nil then
@@ -359,7 +360,7 @@ function changeUnits:load()
 	end
 
 	if self.data.modeButton == nil then
-		self.data.modeButton = ciButton(color.hexFF4FAE, 36)
+		self.data.modeButton = ciButton(colorTheme.get(), 36)
 		self.data.modeButton:addEventListener("mousereleased", setMode)
 		self.data.modeButton:setData(self)
 	end
@@ -420,7 +421,7 @@ function changeUnits:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hexFF4FAE, 36, self.assets.images.navigateBack, 0.48)
+		self.data.back = ciButton(colorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", tryLeave)
 	end
@@ -531,7 +532,7 @@ function changeUnits:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.setColor(color.hexFF4FAE)
+	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	love.graphics.setShader(self.data.textShader)
