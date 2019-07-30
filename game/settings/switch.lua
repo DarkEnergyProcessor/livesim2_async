@@ -15,6 +15,8 @@ local colorTheme = require("game.color_theme")
 local switchSetting = Luaoop.class("Livesim2.SettingItem.Switch", baseSetting)
 local switchUI = Luaoop.class("Livesim2.SettingItem.SwitchUI", glow.element)
 
+local interpolation = require("libs.cubic_bezier")(0.4, 0, 0.2, 1):getFunction()
+
 local defaultOnOffValue = {
 	on = 1,
 	off = 0
@@ -24,6 +26,7 @@ function switchUI:new()
 	self.width = 160
 	self.height = 36
 	self.checked = false
+	self.position = 0
 
 	self:addEventListener("mousereleased", switchUI._switch)
 end
@@ -31,6 +34,10 @@ end
 function switchUI:_switch()
 	self.checked = not(self.checked)
 	self:triggerEvent("checked", self.checked)
+end
+
+function switchUI:update(dt)
+	self.position = math.min(math.max(self.position + dt * (self.checked and 4 or -4), 0), 1)
 end
 
 function switchUI:isChecked()
@@ -43,7 +50,7 @@ end
 
 function switchUI:render(x, y)
 	local col = self.checked and colorTheme.get() or color.hex7F7F7F
-	local offset = self.checked and 112 or 0
+	local offset = interpolation(self.position) * 112
 	love.graphics.setColor(col)
 	love.graphics.rectangle("line", x, y, self.width, self.height, 18, 18)
 	love.graphics.rectangle("fill", x + 4 + offset, y + 4, 40, 28, 14, 14)
