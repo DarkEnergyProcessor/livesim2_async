@@ -33,10 +33,14 @@ local mipmap = {mipmaps = true}
 local --[[const]] MAX_NOTE_STYLE = 4
 
 local function leave(_, self)
+	local ct = assert(tonumber(setting.get("COLOR_THEME")))
 	if
-		self.persist.currentLanguage ~= self.persist.previousLanguage and
 		util.compareLOVEVersion(0, 10, 2) >= 0 and
-		love.window.showMessageBox("Restart", L"setting:language:restart", {
+		(
+			self.persist.currentLanguage ~= self.persist.previousLanguage or
+			self.persist.currentTheme ~= ct
+		) and
+		love.window.showMessageBox("Restart", L"dialog:restart", {
 			L"dialog:yes",
 			L"dialog:no",
 			enterbutton = 1, escapebutton = 2
@@ -236,6 +240,7 @@ function gameSetting:load()
 	-- General settings
 	if self.persist.generalSetting == nil then
 		local frame = newSettingFrame()
+		local themeDisplay = {"μ's", "Aqours", "NijiGaku"}
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
 			tapSoundDisplay[i] = tapSound[i].name
@@ -271,7 +276,11 @@ function gameSetting:load()
 			})
 				:setPosition(0, 256+12),
 			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
-				:setPosition(0, 320+12)
+				:setPosition(0, 320+12),
+			numberSetting(frame, L"setting:general:themeColor", "COLOR_THEME", {
+				min = 1, max = 3, default = 1, display = themeDisplay
+			})
+				:setPosition(0, 384+12)
 		}
 	end
 	glow.addFrame(self.persist.generalFrame)
@@ -495,6 +504,9 @@ function gameSetting:start()
 	-- Settings
 	self.persist.selectedSetting = 0
 
+	-- General settings
+	self.persist.currentTheme = setting.get("COLOR_THEME")
+
 	-- Background settings
 	self.persist.backgroundDim = setting.get("LIVESIM_DIM") / 100
 
@@ -557,7 +569,7 @@ function gameSetting:draw()
 		love.graphics.rectangle("fill", 0, 0, 240, 640)
 
 		if set then
-			love.graphics.setColor(color.white50PT)
+			love.graphics.setColor(color.white)
 			for i = 1, #set[3] do
 				love.graphics.rectangle("fill", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
 				love.graphics.rectangle("line", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
