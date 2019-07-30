@@ -29,6 +29,7 @@ local switchSetting = require("game.settings.switch")
 local note = require("game.live.note")
 local liveUI = require("game.live.ui")
 
+local interpolation = require("libs.cubic_bezier")(0.4, 0, 0.2, 1):getFunction()
 local mipmap = {mipmaps = true}
 local --[[const]] MAX_NOTE_STYLE = 4
 
@@ -503,6 +504,7 @@ end
 function gameSetting:start()
 	-- Settings
 	self.persist.selectedSetting = 0
+	self.persist.whiteOverlay = 1
 
 	-- General settings
 	self.persist.currentTheme = setting.get("COLOR_THEME")
@@ -539,6 +541,11 @@ end
 
 function gameSetting:update(dt)
 	self.persist.categoryFrame:update(dt)
+	self.persist.whiteOverlay = math.min(math.max(
+		self.persist.whiteOverlay + dt * (self.persist.selectedSetting == 3 and -2 or 2),
+		0),
+		1
+	)
 
 	local set = self.persist.settings[self.persist.selectedSetting]
 	if set then
@@ -550,26 +557,16 @@ end
 function gameSetting:draw()
 	local set = self.persist.settings[self.persist.selectedSetting]
 
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.persist.background)
-
 	-- Background setting specific
-	if self.persist.selectedSetting == 3 then
+	if self.persist.whiteOverlay < 1 then
+		love.graphics.setColor(color.white)
+		love.graphics.draw(self.persist.background)
 		love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
 		love.graphics.setColor(color.white25PT)
 		love.graphics.rectangle("fill", 0, 0, 240, 640)
 
-		for i = 1, #set[3] do
-			love.graphics.rectangle("fill", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
-			love.graphics.rectangle("line", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
-		end
-	else
-		love.graphics.setColor(color.white)
-		love.graphics.rectangle("fill", 0, 0, 240, 640)
-
 		if set then
-			love.graphics.setColor(color.white)
 			for i = 1, #set[3] do
 				love.graphics.rectangle("fill", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
 				love.graphics.rectangle("line", 246, (i - 1) * 64 + 86, 710, 60, 16, 16)
@@ -577,6 +574,13 @@ function gameSetting:draw()
 		end
 	end
 
+	if self.persist.whiteOverlay > 0 then
+		local opacity = interpolation(self.persist.whiteOverlay)
+		love.graphics.setColor(color.compat(255, 255, 255, opacity))
+		love.graphics.rectangle("fill", -88, -43, 1136, 726)
+	end
+
+	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
 	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
@@ -586,6 +590,20 @@ function gameSetting:draw()
 	-- Note style-specific setting
 	if self.persist.selectedSetting == 4 then
 		local curLayer = self.persist.curStyle
+		love.graphics.setColor(color.hex7F7F7F)
+		love.graphics.rectangle("fill", 318-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 603-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 888-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 318-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 603-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("fill", 888-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 318-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 603-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 888-64, 400-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 318-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 603-64, 560-64, 128, 128, 32, 32)
+		love.graphics.rectangle("line", 888-64, 560-64, 128, 128, 32, 32)
+
 		for i = 1, #curLayer do
 			local xpos = 318
 			local layer = self.persist.curStyle[i]
@@ -606,19 +624,6 @@ function gameSetting:draw()
 			love.graphics.draw(self.assets.images.note, quad, xpos, 400, 0, 0.75, 0.75, w*0.5, h*0.5)
 		end
 
-		love.graphics.setColor(color.white50PT)
-		love.graphics.rectangle("fill", 318-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("fill", 603-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("fill", 888-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("fill", 318-64, 560-64, 128, 128, 32, 32)
-		love.graphics.rectangle("fill", 603-64, 560-64, 128, 128, 32, 32)
-		love.graphics.rectangle("fill", 888-64, 560-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 318-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 603-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 888-64, 400-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 318-64, 560-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 603-64, 560-64, 128, 128, 32, 32)
-		love.graphics.rectangle("line", 888-64, 560-64, 128, 128, 32, 32)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[1], 318, 560)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[2], 603, 560)
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[3], 888, 560)
