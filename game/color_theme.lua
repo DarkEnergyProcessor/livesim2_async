@@ -28,12 +28,12 @@ function colorTheme.set(colid)
 		-- 007ec6
 		currentColorDarker = color.hex007EC6
 	elseif colid == 3 then
-		-- ffd83a
-		currentColor = color.hexFFD83A
-		-- eeca2f
-		currentColorDark = color.hexEECA2F
-		-- c09a00
-		currentColorDarker = color.hexC09A00
+		-- ffc22e
+		currentColor = color.hexFFC22E
+		-- e8b126
+		currentColorDark = color.hexE8B126
+		-- ac7b0a
+		currentColorDarker = color.hexAC7B0A
 	else
 		error("unknown color id "..colid)
 	end
