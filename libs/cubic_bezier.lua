@@ -38,12 +38,12 @@ if rawget(_G, "jit") and jit.status() and package.preload.ffi then
 end
 
 function cubicBezier:__init(p0, p1, p2, p3)
-    self.cx = 3.0 * p0
-    self.bx = 3.0 * (p2 - p0) - self.cx
-    self.ax = 1.0 - self.cx -self.bx
-    self.cy = 3.0 * p1
-    self.by = 3.0 * (p3 - p1) - self.cy
-    self.ay = 1.0 - self.cy - self.by
+	self.cx = 3.0 * p0
+	self.bx = 3.0 * (p2 - p0) - self.cx
+	self.ax = 1.0 - self.cx -self.bx
+	self.cy = 3.0 * p1
+	self.by = 3.0 * (p3 - p1) - self.cy
+	self.ay = 1.0 - self.cy - self.by
 end
 
 function cubicBezier:_sx(t)
@@ -77,7 +77,7 @@ function cubicBezier:_scx(x)
 
 	-- Try bi-section
 	local t0, t1 = 0, 1
-    if x < t0 then return t0 end
+	if x < t0 then return t0 end
 	if x > t1 then return t1 end
 	t2 = x
 
