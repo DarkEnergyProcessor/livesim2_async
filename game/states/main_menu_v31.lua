@@ -18,7 +18,6 @@ local backgroundLoader = require("game.background_loader")
 -- UI stuff
 local glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
-local invisibleButton = require("game.ui.invisible")
 
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
@@ -270,10 +269,6 @@ function mainMenu:load()
 	if not(self.data.grayGradient) then
 		self.data.grayGradient = util.gradient("vertical", color.transparent, color.hex6A6767F0)
 	end
-
-	local invbtn = invisibleButton(240, 80)
-	invbtn:addEventListener("mousereleased", makeEnterGamestateFunction("systemInfo", true))
-	glow.addFixedElement(invbtn, 720, 560)
 end
 
 -- Title text "{ffa73d}Live {ffffff}Simulator: {ff4fae}2" is in 38x584 (text "title")

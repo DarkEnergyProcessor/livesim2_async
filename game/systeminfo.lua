@@ -5,14 +5,6 @@
 -- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER DEPLS_VERSION_CODENAME
 
 local love = require("love")
-local color = require("color")
-local mainFont = require("font")
-local gamestate = require("gamestate")
-
-local backgroundLoader = require("game.background_loader")
-
-local glow = require("game.afterglow")
-local backNavigation = require("game.ui.back_navigation")
 
 local androidCodenames = setmetatable({
 	-- LOVE only supports Android 4.0 and later
@@ -33,11 +25,6 @@ local androidCodenames = setmetatable({
 	[27] = "Oreo",
 	[28] = "Pie"
 }, {__index = function() return "Unknown" end})
-
-local sysInfo = gamestate.create {
-	images = {},
-	fonts = {}
-}
 
 local osVersionString
 do
@@ -132,7 +119,7 @@ end
 -- Build version information
 local function buildTextString()
 	local sb = {
-		"Before reporting bug, please screenshot this window",
+		"System information",
 		"",
 		string.format("Live Simulator: 2 v%s \"%s\" %08d", DEPLS_VERSION, DEPLS_VERSION_CODENAME, DEPLS_VERSION_NUMBER),
 		string.format("LOVE %d.%d.%d \"%s\"", love.getVersion())
@@ -205,63 +192,17 @@ local function buildTextString()
 		end
 		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Renderer: "..table.concat({love.graphics.getRendererInfo()}, " ")
+		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Image Formats: "..table.concat(fmts, " ")
+		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Canvas Formats: "..table.concat(fbos, " ")
+		sb[#sb + 1] = ""
 		sb[#sb + 1] = "System Limits: "..table.concat(syslim, " ")
+		sb[#sb + 1] = ""
 		sb[#sb + 1] = "Graphics Features: "..table.concat(gftr, " ")
 	end
 
 	return table.concat(sb, "\n")
 end
 
-local function leave()
-	return gamestate.leave(nil)
-end
-
-function sysInfo:load()
-	glow.clear()
-
-	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(14)
-	end
-
-	if self.data.back == nil then
-		self.data.back = backNavigation("System Information")
-		self.data.back:addEventListener("mousereleased", leave)
-	end
-
-	if self.data.text == nil then
-		local font = mainFont.get(20)
-		local textString = buildTextString()
-		self.data.text = love.graphics.newText(font)
-		-- border
-		for i = 0, 360, 45 do
-			local mag = i % 90 == 0 and 1 or math.sqrt(2)
-			local x, y = mag * math.cos(math.rad(i)), mag * math.sin(math.rad(i))
-			self.data.text:addf({color.black, textString}, 956, "left", 2 + x, 50 + y)
-		end
-		self.data.text:addf({color.white, textString}, 956, "left", 2, 50)
-	end
-	glow.addFixedElement(self.data.back, 0, 0)
-end
-
-function sysInfo:draw()
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.background)
-	love.graphics.push()
-	love.graphics.origin()
-	love.graphics.setColor(color.white80PT)
-	love.graphics.rectangle("fill", 0, 0, love.graphics.getDimensions())
-	love.graphics.pop()
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.text)
-	glow.draw()
-end
-
-sysInfo:registerEvent("keyreleased", function(_, key)
-	if key == "escape" then
-		return leave()
-	end
-end)
-
-return sysInfo
+return buildTextString

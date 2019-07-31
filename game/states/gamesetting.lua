@@ -2,6 +2,8 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+-- luacheck: read_globals DEPLS_VERSION
+
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
@@ -22,16 +24,41 @@ local colorTheme = require("game.color_theme")
 local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 local ripple = require("game.ui.ripple")
+local invisibleUI = require("game.ui.invisible")
 
 local numberSetting = require("game.settings.number")
 local switchSetting = require("game.settings.switch")
 
 local note = require("game.live.note")
 local liveUI = require("game.live.ui")
+local systemInfo = require("game.systeminfo")
 
 local interpolation = require("libs.cubic_bezier")(0.4, 0, 0.2, 1):getFunction()
 local mipmap = {mipmaps = true}
 local --[[const]] MAX_NOTE_STYLE = 4
+
+local aboutString = string.format([[
+Live Simulator: 2 Version %s
+
+Live Simulator: 2 v3.0 and later is licensed under zLib license.
+Copyright (c) 2040 Dark Energy Processor
+This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+Special thanks to:
+* yuyu - Note circle images and Japanese translation.
+* MilesElectric168 - Note randomization algorithm.
+* sr229 - v4.0 UI redesign.
+* CK.Tex - Simplified Chinese translation.
+* Bass & Azux - Polish translation.
+* Luboss - Slovak translation.
+* RayFirefist - macOS app, iOS maintainer, Italian translation.
+* jwun & TheNozomi - Spanish translation.
+* Salaron & Nick "Zorb" Cage - Russian translation.
+]], DEPLS_VERSION):gsub("\r\n", "\n")
 
 local function leave(_, self)
 	local ct = assert(tonumber(setting.get("COLOR_THEME")))
@@ -203,6 +230,19 @@ function longSelect:render(x, y)
 	end
 end
 
+local textUI = Luaoop.class("Livesim2.TextUI", invisibleUI)
+
+function textUI:new(font, text, maxw)
+	self.text = love.graphics.newText(font)
+	self.text:addf({color.black, text}, maxw, "left")
+	invisibleUI.new(self, maxw, self.text:getHeight())
+end
+
+function textUI:render(x, y)
+	love.graphics.setColor(color.white)
+	util.drawText(self.text, x, y)
+end
+
 -- Setting section frame size is 868x426+50+184
 -- Tab selection is 868x62+50+162
 local gameSetting = gamestate.create {
@@ -226,6 +266,7 @@ local gameSetting = gamestate.create {
 function gameSetting:load()
 	glow.clear()
 	self.data = self.data or {} -- for sake of LCA
+	local font31, font26, font22, font16 = mainFont.get(31, 26, 22, 16)
 
 	if self.persist.background == nil then
 		self.persist.background = backgroundLoader.load(tonumber(setting.get("BACKGROUND_IMAGE")))
@@ -236,10 +277,9 @@ function gameSetting:load()
 	end
 
 	if self.data.titleText == nil then
-		local f = mainFont.get(31)
-		local t = love.graphics.newText(f)
+		local t = love.graphics.newText(font31)
 		local l = L"menu:settings"
-		t:add(l, -0.5 * f:getWidth(l), 0)
+		t:add(l, -0.5 * font31:getWidth(l), 0)
 		self.data.titleText = t
 	end
 
@@ -404,7 +444,6 @@ function gameSetting:load()
 
 	-- Live UI settings
 	if self.persist.liveUIFrame == nil then
-		local font = mainFont.get(26)
 		local frame = newSettingFrame()
 		local playUI = setting.get("PLAY_UI")
 		local elements = {}
@@ -422,7 +461,7 @@ function gameSetting:load()
 		end
 
 		for i, v in ipairs(liveUI.enum()) do
-			local elem = longSelect(font, v)
+			local elem = longSelect(font26, v)
 			elem:addEventListener("mousereleased", setPlayUI)
 			elem:setData({real = v, index = i})
 			if v == playUI then
@@ -438,7 +477,6 @@ function gameSetting:load()
 	-- Language settings
 	if self.persist.langFrame == nil then
 		local frame = newSettingFrame()
-		local font = mainFont.get(26)
 		local elements = {}
 
 		local function setLanguage(elem, value)
@@ -457,7 +495,7 @@ function gameSetting:load()
 		self.persist.previousLanguage = L.get()
 		self.persist.currentLanguage = self.persist.previousLanguage
 		for i, v in ipairs(L.enum()) do
-			local elem = longSelect(font, string.format("%s (%s)", v.name, v.code))
+			local elem = longSelect(font26, string.format("%s (%s)", v.name, v.code))
 			elem.width = 678 -- uh
 			elem:addEventListener("mousereleased", setLanguage)
 			elem:setData({language = v, instance = self})
@@ -473,9 +511,20 @@ function gameSetting:load()
 		self.persist.langFrame = frame
 	end
 
+	-- System Information
+	if self.persist.sysinfoFrame == nil then
+		self.persist.sysinfoFrame = newSettingFrame()
+		self.persist.sysinfoFrame:addElement(textUI, 4, 0, font16, systemInfo(), 674)
+	end
+
+	-- About
+	if self.persist.aboutFrame == nil then
+		self.persist.aboutFrame = newSettingFrame()
+		self.persist.aboutFrame:addElement(textUI, 4, 0, font16, aboutString, 674)
+	end
+
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
-		local font = mainFont.get(22)
 		self.persist.categoryFrame = glow.frame(0, 86, 240, 548)
 		self.persist.settings = {
 			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil, "settings"},
@@ -486,9 +535,11 @@ function gameSetting:load()
 			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil, "whatsHot"},
 			{L"setting:liveUI", self.persist.liveUIFrame, {}, nil, "aspectRatio"}, -- empty list
 			{L"setting:language", self.persist.langFrame, {}, nil, "language"}, -- empty list
+			{L"setting:sysinfo", self.persist.sysinfoFrame, {}, nil, "devInfo"}, -- empty list
+			{L"setting:about", self.persist.aboutFrame, {}, nil, "info"}, -- empty list
 		}
 
-		local function setSelected(_, value)
+		local function setSelected(elem, value)
 			for i, v in ipairs(self.persist.settings) do
 				if i == value then
 					v[4]:setActive(true)
@@ -499,16 +550,21 @@ function gameSetting:load()
 				end
 			end
 
+			elem:setActive(true)
 			self.persist.selectedSetting = value
 		end
 
 		for i, v in ipairs(self.persist.settings) do
-			local elem = categorySelect(font, self.assets.images[v[5]], v[1])
+			local elem = categorySelect(font22, self.assets.images[v[5]], v[1])
 			elem:addEventListener("mousereleased", setSelected)
 			elem:setData(i)
 			self.persist.categoryFrame:addElement(elem, 0, (i - 1) * 48)
 			v[4] = elem
 		end
+
+		-- Set element position
+		self.persist.categoryFrame:setElementPosition(self.persist.settings[9][4], 0, 452)
+		self.persist.categoryFrame:setElementPosition(self.persist.settings[10][4], 0, 500)
 	end
 	glow.addFrame(self.persist.categoryFrame)
 end

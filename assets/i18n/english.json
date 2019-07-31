@@ -83,6 +83,7 @@
 		"changeUnits:unitsDesc": "Simply click/tap on a circle to change the unit.\n\nWhen done, tap the save button to save your changes, otherwise, click the reset button to return to the last saved state.\n\nTo change keybinds, go to keymap mode and change the key bindings per unit.",
 		"changeUnits:unitsMode": "UNITS MODE",
 		"changeUnits:unitsText": "Click unit icon to change.\nPlease note that some beatmap\ncan override unit icon shown in here.",
+		"setting:about": "About",
 		"setting:general": "General",
 		"setting:general:beatmapOffset": "Beatmap Offset (ms)",
 		"setting:general:defaultNote": "Default Note Attribute",
@@ -121,6 +122,7 @@
 		"setting:liveUI": "Live User Interface",
 		"setting:liveUI:current": "Current Live Show Interface: %{name}",
 		"setting:language": "Language",
-		"setting:language:current": "Current Language: %{name} (%{code})"
+		"setting:language:current": "Current Language: %{name} (%{code})",
+		"setting:sysinfo": "System Information"
 	}
 }
