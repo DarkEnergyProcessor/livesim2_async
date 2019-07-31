@@ -326,7 +326,9 @@ if util.compareLOVEVersion(11, 3) >= 0 then
 	-- As of that commit, workaround shader to prevent black
 	-- fridges is no longer necessary. For compatibility of
 	-- previous LOVE versions, this function does nothing.
-	util.drawText = setmetatable({}, {__call = function() end})
+	util.drawText = setmetatable({}, {__call = function(self, ...)
+		return love.graphics.draw(...)
+	end})
 else
 	util.drawText = setmetatable({workaroundShader = nil}, {
 		__call = function(self, text, ...)
