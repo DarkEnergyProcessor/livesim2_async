@@ -2,6 +2,7 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
+local love = require("love")
 local async = require("async")
 local cache = require("cache")
 local lily = require("lily")

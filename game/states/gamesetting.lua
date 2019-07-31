@@ -104,7 +104,7 @@ end
 
 local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
 
-function categorySelect:new(font, name)
+function categorySelect:new(font, icon, name)
 	self.width, self.height = 240, 48
 	self.x, self.y = 0, 0
 	self.active = false
@@ -112,7 +112,9 @@ function categorySelect:new(font, name)
 	self.isPressed = false
 	self.textHeight = font:getHeight()
 	self.text = love.graphics.newText(font)
-	self.text:add(name, 8, (self.height - font:getHeight()) * 0.5)
+	self.text:add(assert(name), 0, (self.height - font:getHeight()) * 0.5)
+	self.icon = assert(icon)
+	self.iconW, self.iconH = icon:getDimensions()
 	self.stencilFunc = function()
 		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
@@ -147,7 +149,8 @@ function categorySelect:render(x, y)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 	end
 	love.graphics.setColor(self.active and color.white or color.black)
-	util.drawText(self.text, x, y)
+	love.graphics.draw(self.icon, x + 24, y + 24, 0, 0.32, 0.32, self.iconW * 0.5, self.iconH * 0.5)
+	util.drawText(self.text, x + 48, y)
 
 	if self.ripple:isActive() then
 		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
@@ -204,8 +207,18 @@ end
 -- Tab selection is 868x62+50+162
 local gameSetting = gamestate.create {
 	images = {
+		aspectRatio = {"assets/image/ui/over_the_rainbow/aspect_ratio.png"},
+		contacts = {"assets/image/ui/over_the_rainbow/contacts.png"},
+		devInfo = {"assets/image/ui/over_the_rainbow/perm_device_information.png", mipmap},
+		info = {"assets/image/ui/over_the_rainbow/info.png"},
+		language = {"assets/image/ui/over_the_rainbow/language.png"},
 		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmap},
-		note = {"noteImage:assets/image/tap_circle/notes.png", mipmap}
+		note = {"noteImage:assets/image/tap_circle/notes.png", mipmap},
+		panorama = {"assets/image/ui/over_the_rainbow/panorama.png"},
+		settings = {"assets/image/ui/over_the_rainbow/settings.png"},
+		slowMotion = {"assets/image/ui/over_the_rainbow/slow_motion_video.png"},
+		volume = {"assets/image/ui/over_the_rainbow/volume_up.png"},
+		whatsHot = {"assets/image/ui/over_the_rainbow/whatshot.png"}
 	},
 	fonts = {}
 }
@@ -465,14 +478,14 @@ function gameSetting:load()
 		local font = mainFont.get(22)
 		self.persist.categoryFrame = glow.frame(0, 86, 240, 548)
 		self.persist.settings = {
-			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil},
-			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil},
-			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil},
-			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil},
-			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil},
-			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil},
-			{L"setting:liveUI", self.persist.liveUIFrame, {}, nil}, -- empty list
-			{L"setting:language", self.persist.langFrame, {}, nil}, -- empty list
+			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil, "settings"},
+			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil, "volume"},
+			{L"setting:background", self.persist.bgFrame, self.persist.bgSetting, nil, "panorama"},
+			{L"setting:noteStyle", self.persist.nsFrame, self.persist.nsSetting, nil, "slowMotion"},
+			{L"setting:live", self.persist.liveFrame, self.persist.liveSetting, nil, "contacts"},
+			{L"setting:stamina", self.persist.scoreFrame, self.persist.scoreSetting, nil, "whatsHot"},
+			{L"setting:liveUI", self.persist.liveUIFrame, {}, nil, "aspectRatio"}, -- empty list
+			{L"setting:language", self.persist.langFrame, {}, nil, "language"}, -- empty list
 		}
 
 		local function setSelected(_, value)
@@ -490,7 +503,7 @@ function gameSetting:load()
 		end
 
 		for i, v in ipairs(self.persist.settings) do
-			local elem = categorySelect(font, v[1])
+			local elem = categorySelect(font, self.assets.images[v[5]], v[1])
 			elem:addEventListener("mousereleased", setSelected)
 			elem:setData(i)
 			self.persist.categoryFrame:addElement(elem, 0, (i - 1) * 48)
