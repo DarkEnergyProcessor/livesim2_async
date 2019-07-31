@@ -18,11 +18,11 @@ local backgroundLoader = require("game.background_loader")
 -- UI stuff
 local glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
+local invisibleButton = require("game.ui.invisible")
 
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
 -- because they're not reusable
-local invisibleButton = Luaoop.class("Livesim2.InvisibleButtonUI", glow.element)
 local playButton = Luaoop.class("Livesim2.MainMenu.PlayButton", glow.element)
 local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", glow.element)
 local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.element)
@@ -180,12 +180,6 @@ function settingsButton:render(x, y)
 		love.graphics.setStencilTest()
 	end
 end
-
-function invisibleButton:new(w, h)
-	self.width, self.height = w, h
-end
-
-function invisibleButton.render() end
 
 -- End UI stuff
 
