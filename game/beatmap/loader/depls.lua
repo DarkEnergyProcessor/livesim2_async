@@ -3,6 +3,8 @@
 -- See copyright notice in main.lua
 
 local Luaoop = require("libs.Luaoop")
+local yaml = require("libs.tinyyaml")
+
 local log = require("logging")
 local love = require("love")
 local util = require("util")
@@ -323,6 +325,45 @@ return function(path)
 			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
 			break
 		end
+	end
+
+	-- if there's beatmaplist.yml then use that
+	if util.fileExists(path.."beatmaplist.yml") then
+		-- multi-beatmap
+		local beatmaps = yaml.parse((love.filesystem.read(path.."beatmaplist.yml")))
+		local tempt = {}
+		local ret = {}
+
+		for k, v in pairs(beatmaps) do
+			tempt[#tempt + 1] = {k, v}
+		end
+		table.sort(tempt, function(a, b) return a[1] < b[1] end)
+
+		for _, v in ipairs(tempt) do
+			local file = love.filesystem.newFile(v[2], "r")
+			if file then
+				for j = 1, #beatmap.fileLoader do
+					file:seek(0)
+					local s, p = pcall(beatmap.fileLoader[j], file)
+
+					if s then
+						if getmetatable(p) == nil then
+							-- multi-beatmap in a multi beatmap
+							for k = 1, #p do
+								ret[#ret + 1] = deplsLoader(path, p[k])
+							end
+
+							return ret
+						else
+							-- single beatmap
+							ret[#ret + 1] = deplsLoader(path, v)
+						end
+					end
+				end
+			end
+		end
+
+		return ret
 	end
 
 	-- test all file candidates

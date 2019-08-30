@@ -2,7 +2,6 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local nbt = require("libs.nbt")
