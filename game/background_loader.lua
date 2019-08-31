@@ -148,12 +148,13 @@ function backgroundLoader.compose(main, left, right, top, bottom)
 
 	-- Build texture atlas
 	love.graphics.draw(main, 0, 43, 0, 960 / main:getWidth(), 640 / main:getHeight())
-	if left   then love.graphics.draw(left  , 640, 750, math.pi/2) end
-	if right  then love.graphics.draw(right , 640, 864, math.pi/2) end
-	if top    then love.graphics.draw(top   , 0  , 0  , 0        ) end
-	if bottom then love.graphics.draw(bottom, 0  , 683, 0        ) end
+	if left   then love.graphics.draw(left, 640, 750, math.pi/2, 88 / left:getWidth(), 640 / left:getHeight()) end
+	if right  then love.graphics.draw(right , 640, 864, math.pi/2, 88 / right:getWidth(), 640 / right:getHeight()) end
+	if top    then love.graphics.draw(top, 0, 0, 0, 960 / top:getWidth(), 43 / top:getHeight()) end
+	if bottom then love.graphics.draw(bottom, 0, 683, 0, 960 / bottom:getWidth(), 43 / bottom:getHeight()) end
 	love.graphics.pop()
 
+	framebuffer:newImageData():encode("png", "background_dump_compose.png")
 	local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
 	mesh:setTexture(framebuffer)
 	return mesh

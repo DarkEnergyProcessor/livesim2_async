@@ -69,6 +69,13 @@ local staminaJudgmentDamage = {
 	miss = 2
 }
 
+local function getBackgroundImageDebug(t, _)
+	--local p = table.remove(t, 2)
+	--p:encode("png", "background_dump-".._..".png")
+	--return p
+	return table.remove(t, 2)
+end
+
 local function pickLowestJudgement(j1, j2)
 	if j1 and j2 then
 		return validJudgement[math.max(
@@ -516,18 +523,18 @@ function DEPLS:load(arg)
 				-- main background
 				bitval = math.floor(value[1])
 				if bitval % 2 > 0 then
-					m = love.graphics.newImage(table.remove(value, 2))
-					bitval = math.floor(value[1] / 4)
+					m = love.graphics.newImage(getBackgroundImageDebug(value, 0))
+					bitval = math.floor(value[1] / 2)
 					-- left & right
 					if bitval % 2 > 0 then
-						l = love.graphics.newImage(table.remove(value, 2))
-						r = love.graphics.newImage(table.remove(value, 2))
+						l = love.graphics.newImage(getBackgroundImageDebug(value, 1))
+						r = love.graphics.newImage(getBackgroundImageDebug(value, 2))
 					end
-					bitval = math.floor(value[1] / 2)
+					bitval = math.floor(value[1] / 4)
 					-- top & bottom
 					if bitval % 2 > 0 then
-						t = love.graphics.newImage(table.remove(value, 2))
-						b = love.graphics.newImage(table.remove(value, 2))
+						t = love.graphics.newImage(getBackgroundImageDebug(value, 3))
+						b = love.graphics.newImage(getBackgroundImageDebug(value, 4))
 					end
 				else
 					-- number
