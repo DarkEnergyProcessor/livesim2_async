@@ -48,6 +48,12 @@ function switchUI:setChecked(checked)
 	self.checked = not(not(checked))
 end
 
+function switchUI:setCheckedDirect(checked)
+	local v = not(not(checked))
+	self.checked = v
+	self.position = v and 1 or 0
+end
+
 function switchUI:render(x, y)
 	local col = self.checked and colorTheme.get() or color.hex7F7F7F
 	local offset = interpolation(self.position) * 112
@@ -89,7 +95,7 @@ function switchSetting:__construct(frame, name, settingName, onoffValue)
 	end
 
 	internal.value = value
-	internal.ui:setChecked(value == internal.onOffValue.on)
+	internal.ui:setCheckedDirect(value == tostring(internal.onOffValue.on))
 end
 
 function switchSetting:__destruct()
