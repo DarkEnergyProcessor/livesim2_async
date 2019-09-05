@@ -132,7 +132,7 @@ function lwui:update(dt, paused)
 
 	local isWarn = self.staminaInterpolate / self.maxStamina < 0.3
 	local warnMult = isWarn and 2 or 1
-	self.staminaWarningDuration = util.clamp(self.staminaWarningDuration + dt * (isWarn and 1 or -1), 0, 0.3)
+	self.staminaWarningDuration = util.clamp(self.staminaWarningDuration + dt * (isWarn and 1 or -1), 0, 0.25)
 	self.noteIconTime = (self.noteIconTime + dt * warnMult) % 1
 	-- Score
 	if self.currentScoreDisplay >= self.scoreBorders[4] and self.scoreGlowPrev == 4 then
@@ -428,7 +428,7 @@ end
 -------------
 
 local function setColor(warn, r, g, b, a)
-	local warnLerp = warn / 0.3
+	local warnLerp = warn / 0.25
 	local c1, c2, c3, c4
 
 	if type(r) == "table" then
