@@ -73,7 +73,9 @@ function lwui:__construct()
 	self.currentScore = 0
 	self.currentScoreDisplay = 0
 	self.scoreBorders = {1, 2, 3, 4}
-	self.scoreGlowColor = scoreColor[1]
+	self.scoreGlowColor = {scoreColor[1][1], scoreColor[1][2], scoreColor[1][3]}
+	self.scoreGlowColorTween = nil
+	self.scoreGlowPrev = 1
 	self.scoreTimer = nil
 	-- combo
 	self.currentCombo = 0
@@ -86,6 +88,7 @@ function lwui:__construct()
 	self.stamina = 45
 	self.staminaInterpolate = 45
 	self.staminaTimer = nil
+	self.staminaWarningDuration = 0
 	self.staminaStencil = function()
 		love.graphics.rectangle("fill", 18, 50, 924 * self.staminaInterpolate / self.maxStamina, 32)
 	end
@@ -127,19 +130,27 @@ function lwui:update(dt, paused)
 		self.timer:update(dt)
 	end
 
-	local warnMult = (self.staminaInterpolate / self.maxStamina < 0.3) and 2 or 1
+	local isWarn = self.staminaInterpolate / self.maxStamina < 0.3
+	local warnMult = isWarn and 2 or 1
+	self.staminaWarningDuration = util.clamp(self.staminaWarningDuration + dt * (isWarn and 1 or -1), 0, 0.3)
 	self.noteIconTime = (self.noteIconTime + dt * warnMult) % 1
 	-- Score
-	if self.currentScoreDisplay >= self.scoreBorders[4] then
-		self.scoreGlowColor = scoreColor[5]
-	elseif self.currentScoreDisplay >= self.scoreBorders[3] then
-		self.scoreGlowColor = scoreColor[4]
-	elseif self.currentScoreDisplay >= self.scoreBorders[2] then
-		self.scoreGlowColor = scoreColor[3]
-	elseif self.currentScoreDisplay >= self.scoreBorders[1] then
-		self.scoreGlowColor = scoreColor[2]
-	else
-		self.scoreGlowColor = scoreColor[1]
+	if self.currentScoreDisplay >= self.scoreBorders[4] and self.scoreGlowPrev == 4 then
+		if self.scoreGlowColorTween then self.timer:cancel(self.scoreGlowColorTween) end
+		self.scoreGlowColorTween = self.timer:tween(0.25, self.scoreGlowColor, scoreColor[5])
+		self.scoreGlowPrev = 5
+	elseif self.currentScoreDisplay >= self.scoreBorders[3] and self.scoreGlowPrev == 3 then
+		if self.scoreGlowColorTween then self.timer:cancel(self.scoreGlowColorTween) end
+		self.scoreGlowColorTween = self.timer:tween(0.25, self.scoreGlowColor, scoreColor[4])
+		self.scoreGlowPrev = 4
+	elseif self.currentScoreDisplay >= self.scoreBorders[2] and self.scoreGlowPrev == 2 then
+		if self.scoreGlowColorTween then self.timer:cancel(self.scoreGlowColorTween) end
+		self.scoreGlowColorTween = self.timer:tween(0.25, self.scoreGlowColor, scoreColor[3])
+		self.scoreGlowPrev = 3
+	elseif self.currentScoreDisplay >= self.scoreBorders[1] and self.scoreGlowPrev == 1 then
+		if self.scoreGlowColorTween then self.timer:cancel(self.scoreGlowColorTween) end
+		self.scoreGlowColorTween = self.timer:tween(0.25, self.scoreGlowColor, scoreColor[2])
+		self.scoreGlowPrev = 2
 	end
 
 	-- live clear
@@ -417,23 +428,30 @@ end
 -------------
 
 local function setColor(warn, r, g, b, a)
-	if warn then
-		love.graphics.setColor(color.compat(217, 62, 52, a))
-	elseif type(r) == "table" then
-		love.graphics.setColor(color.compat(r[1], r[2], r[3], g))
+	local warnLerp = warn / 0.3
+	local c1, c2, c3, c4
+
+	if type(r) == "table" then
+		c1 = util.lerp(r[1], 217, warnLerp)
+		c2 = util.lerp(r[2], 62, warnLerp)
+		c3 = util.lerp(r[3], 52, warnLerp)
+		c4 = util.lerp(r[4] or g or 255, a or 255, warnLerp)
 	else
-		love.graphics.setColor(color.compat(r, g, b, a))
+		c1 = util.lerp(r, 217, warnLerp)
+		c2 = util.lerp(g, 62, warnLerp)
+		c3 = util.lerp(b, 52, warnLerp)
+		c4 = a
 	end
+
+	love.graphics.setColor(color.compat(c1, c2, c3, c4))
 end
 
 function lwui:drawHeader()
-	local warningMode = self.staminaInterpolate / self.maxStamina < 0.3
-
 	-- Placement
-	setColor(warningMode, 255, 190, 63, self.opacity)
+	setColor(self.staminaWarningDuration, 255, 190, 63, self.opacity)
 	love.graphics.rectangle("fill", 190, 21, 140, 24, 4, 4)
 	love.graphics.rectangle("line", 190, 21, 140, 24, 4, 4)
-	setColor(warningMode, 249, 141, 81, self.opacity)
+	setColor(self.staminaWarningDuration, 249, 141, 81, self.opacity)
 	love.graphics.rectangle("fill", 630, 21, 140, 24, 4, 4)
 	love.graphics.rectangle("line", 630, 21, 140, 24, 4, 4)
 
@@ -441,7 +459,7 @@ function lwui:drawHeader()
 	local lz = love.graphics.getLineWidth()
 	love.graphics.stencil(self.staminaStencil, "increment", 1)
 	love.graphics.setStencilTest("greater", 0)
-	setColor(warningMode, self.scoreGlowColor, self.opacity)
+	setColor(self.staminaWarningDuration, self.scoreGlowColor, self.opacity)
 	love.graphics.rectangle("fill", 16, 60, 928, 16, 8, 8)
 	love.graphics.setStencilTest()
 	love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
@@ -468,7 +486,7 @@ function lwui:drawHeader()
 		love.graphics.setFont(self.fonts[3])
 		str = tostring(math.floor(self.currentScoreDisplay))
 		w = self.fonts[3]:getWidth(str) * 0.5
-		setColor(warningMode, self.scoreGlowColor, self.opacity)
+		setColor(self.staminaWarningDuration, self.scoreGlowColor, self.opacity)
 		love.graphics.print(str, 480, 7, 0, 1, 1, w, 0)
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity))
 		love.graphics.print(str, 480, 5, 0, 1, 1, w, 0)
@@ -482,8 +500,6 @@ function lwui:drawHeader()
 end
 
 function lwui:drawStatus()
-	local warningMode = self.staminaInterpolate / self.maxStamina < 0.3
-
 	-- Tap effect
 	for i = #self.tapEffectList, 1, -1 do
 		local tap = self.tapEffectList[i]
@@ -505,10 +521,10 @@ function lwui:drawStatus()
 	local lz = love.graphics.getLineWidth()
 	local interp = self.noteIconTime * self.noteIconTime
 	local nicScale = 0.75 - self.noteIconTime * 0.15
-	setColor(warningMode, self.scoreGlowColor, self.opacity)
+	setColor(self.staminaWarningDuration, self.scoreGlowColor, self.opacity)
 	love.graphics.circle("fill", 480, 160, 51)
 	love.graphics.circle("line", 480, 160, 51)
-	setColor(warningMode, self.scoreGlowColor, self.opacity * (1 - interp))
+	setColor(self.staminaWarningDuration, self.scoreGlowColor, self.opacity * (1 - interp))
 	love.graphics.setLineWidth(7)
 	love.graphics.circle("line", 480, 160, 46 + interp * 30)
 	love.graphics.setLineWidth(lz)
