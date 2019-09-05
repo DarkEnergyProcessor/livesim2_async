@@ -434,8 +434,8 @@ function lwui:drawHeader()
 	love.graphics.rectangle("fill", 190, 21, 140, 24, 4, 4)
 	love.graphics.rectangle("line", 190, 21, 140, 24, 4, 4)
 	setColor(warningMode, 249, 141, 81, self.opacity)
-	love.graphics.rectangle("fill", 643, 21, 140, 24, 4, 4)
-	love.graphics.rectangle("line", 643, 21, 140, 24, 4, 4)
+	love.graphics.rectangle("fill", 630, 21, 140, 24, 4, 4)
+	love.graphics.rectangle("line", 630, 21, 140, 24, 4, 4)
 
 	-- Stamina bar
 	local lz = love.graphics.getLineWidth()
@@ -454,7 +454,7 @@ function lwui:drawHeader()
 	love.graphics.setShader(util.drawText.workaroundShader)
 	love.graphics.setFont(self.fonts[2])
 	love.graphics.draw(self.text.combo, 197, 26)
-	love.graphics.draw(self.text.accuracy, 649, 26)
+	love.graphics.draw(self.text.accuracy, 636, 26)
 	do
 		-- Combo
 		local str = tostring(self.currentCombo)
@@ -463,7 +463,7 @@ function lwui:drawHeader()
 		-- Accuracy
 		str = string.format("%.2f%%", self.accuracyCount == 0 and 0 or (self.accuracy / self.accuracyCount * 100))
 		w = self.fonts[2]:getWidth(str) * 0.5
-		love.graphics.print(str, 776 - w, 31, 0, 1, 1, w, 8)
+		love.graphics.print(str, 763 - w, 31, 0, 1, 1, w, 8)
 		-- Score
 		love.graphics.setFont(self.fonts[3])
 		str = tostring(math.floor(self.currentScoreDisplay))
