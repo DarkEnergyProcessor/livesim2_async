@@ -392,9 +392,6 @@ function love.load(argv, gameargv)
 	if love_010 then
 		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
 	end
-	if not(love_010) and util.compareLOVEVersion(11, 3) < 0 then
-		log.warn("main", "Live Simulator: 2 recommends LOVE 11.3. Performance may degraded on some systems!")
-	end
 
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
