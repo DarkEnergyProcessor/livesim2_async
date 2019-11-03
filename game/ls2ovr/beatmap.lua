@@ -42,6 +42,14 @@ local function readByte(f)
 	end
 end
 
+local function seek(f, pos)
+	if f.typeOf then
+		f:seek(pos)
+	else
+		f:seek("set", pos)
+	end
+end
+
 local beatmap = Luaoop.class("LS2OVR.Beatmap")
 
 function beatmap.load(file)
@@ -82,11 +90,13 @@ function beatmap.load(file)
 		error("unsupported compression mode")
 	end
 
+	-- Read beatmap list
 	local beatmapList = {}
 	local beatmapStr = beatmapDataString
 	local beatmapAmount = readByte(beatmapStr) beatmapStr = beatmapStr:sub(2)
 	assert(beatmapAmount > 0, "no beatmaps inside file")
 
+	-- Parse beatmaps
 	for i = 1, beatmapAmount do
 		local currentBeatmapSize = readDword(beatmapStr) beatmapStr = beatmapStr:sub(5)
 		local beatmapData = beatmapStr:sub(1, currentBeatmapSize)
@@ -96,7 +106,7 @@ function beatmap.load(file)
 		if md5(beatmapData) == hash then
 			-- insert to beatmap list
 			beatmapList[#beatmapList + 1] = {
-				data = beatmapData(nbt.decode(beatmapData, "plain")),
+				data = beatmapData(nbt.decode(beatmapData, "tag")),
 				hash = hash
 			}
 		else
@@ -104,7 +114,43 @@ function beatmap.load(file)
 		end
 	end
 
-	-- TODO: Complete
+	-- Additional data
+	local additionalDataSize = readDword(file)
+	local additionalDataInfo = nbt.decode(file:read(additionalDataSize), "plain")
+
+	-- Check EOF
+	assert(file:read(8) == "overrnbw", "EOF marker not found")
+
+	-- New beatmap object
+	local bm = beatmap()
+	bm.beatmapFormatVersion = version
+	bm.beatmapMetadata = metadata
+	bm.beatmapList = {}
+	bm.beatmapHash = {}
+
+	-- Initializ beatmapList and beatmapHash
+	for i, v in ipairs(beatmapList) do
+		bm.beatmapList[i] = v.data
+		bm.beatmapHash[i] = v.hash
+	end
+
+	-- Load files
+	local files = {}
+	for _, v in ipairs(additionalDataInfo) do
+		seek(file, v.offset)
+		files[v.filename] = file:read(v.size)
+	end
+	bm.fileDatabase = files
+
+	return bm
+end
+
+function bm:__construct()
+	self.beatmapFormatVersion = 0
+	self.beatmapMetadata = nil
+	self.beatmapList = nil
+	self.beatmapHash = nil
+	self.fileDatabase = nil
 end
 
 return beatmap
