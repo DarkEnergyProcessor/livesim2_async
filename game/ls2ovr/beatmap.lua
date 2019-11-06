@@ -99,14 +99,14 @@ function beatmap.load(file)
 	-- Parse beatmaps
 	for i = 1, beatmapAmount do
 		local currentBeatmapSize = readDword(beatmapStr) beatmapStr = beatmapStr:sub(5)
-		local beatmapData = beatmapStr:sub(1, currentBeatmapSize)
+		local bmData = beatmapStr:sub(1, currentBeatmapSize)
 		beatmapStr = beatmapStr:sub(currentBeatmapSize + 1)
 		local hash = beatmapStr:sub(1, 16)
 		beatmapStr = beatmapStr:sub(17)
-		if md5(beatmapData) == hash then
+		if md5(bmData) == hash then
 			-- insert to beatmap list
 			beatmapList[#beatmapList + 1] = {
-				data = beatmapData(nbt.decode(beatmapData, "tag")),
+				data = beatmapData(nbt.decode(bmData, "tag")),
 				hash = hash
 			}
 		else
@@ -125,8 +125,6 @@ function beatmap.load(file)
 	local bm = beatmap()
 	bm.beatmapFormatVersion = version
 	bm.beatmapMetadata = metadata
-	bm.beatmapList = {}
-	bm.beatmapHash = {}
 
 	-- Initializ beatmapList and beatmapHash
 	for i, v in ipairs(beatmapList) do
@@ -138,19 +136,55 @@ function beatmap.load(file)
 	local files = {}
 	for _, v in ipairs(additionalDataInfo) do
 		seek(file, v.offset)
-		files[v.filename] = file:read(v.size)
+		files[v.filename] = love.filesystem.newFileData(file:read(v.size), v.filename)
 	end
 	bm.fileDatabase = files
 
 	return bm
 end
 
-function bm:__construct()
+function beatmap:__construct()
 	self.beatmapFormatVersion = 0
 	self.beatmapMetadata = nil
-	self.beatmapList = nil
-	self.beatmapHash = nil
+	self.beatmapList = {}
+	self.beatmapHash = {}
 	self.fileDatabase = nil
+end
+
+function beatmap:getBeatmap(i)
+	return self.beatmapList[i]
+end
+
+function beatmap:getBeatmapHash(i)
+	local bm = self.beatmapList[i]
+	if bm then
+		if self.beatmapHash[i] then
+			return self.beatmapHash[i]
+		else
+			local nbtData = bm:encode():encode()
+			local hash = md5(nbtData)
+			self.beatmapHash[i] = hash
+			return hash
+		end
+	end
+
+	return nil
+end
+
+function beatmap:getBeatmapCount()
+	return #self.beatmapList
+end
+
+function beatmap:getMetadata()
+	return self.beatmapMetadata
+end
+
+function beatmap:getFile(filename)
+	return self.fileDatabase[filename]
+end
+
+function beatmap:getFileTable()
+	return self.fileDatabase
 end
 
 return beatmap

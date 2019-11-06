@@ -6,42 +6,46 @@ local math = require("math")
 local Luaoop = require("libs.Luaoop")
 local nbt = require("libs.nbt")
 
+local log = require("logging")
+
 local beatmapData = Luaoop.class("LS2OVR.BeatmapData")
 
 local function tryGetBackground(obj)
-	local t = obj:getTypeID()
+	if obj then
+		local t = obj:getTypeID()
 
-	if t == nbt.TAG_STRING then
-		local str = obj:getString()
+		if t == nbt.TAG_STRING then
+			local str = obj:getString()
 
-		if str:sub(1, 1) == ":" then
-			return tonumber(obj:sub(2))
-		else
-			return {
-				main = obj,
-				left = nil,
-				right = nil,
-				top = nil,
-				bottom = nil
-			}
-		end
-	elseif t == nbt.TAG_COMPOUND then
-		local v = obj:getValue()
-		local ret = {}
+			if str:sub(1, 1) == ":" then
+				return tonumber(obj:sub(2))
+			else
+				return {
+					main = obj,
+					left = nil,
+					right = nil,
+					top = nil,
+					bottom = nil
+				}
+			end
+		elseif t == nbt.TAG_COMPOUND then
+			local v = obj:getValue()
+			local ret = {}
 
-		if v.left and v.right then
-			ret.left, ret.right = v.left:getString(), v.right:getString()
-		end
+			if v.left and v.right then
+				ret.left, ret.right = v.left:getString(), v.right:getString()
+			end
 
-		if v.top and v.bottom then
-			ret.top, ret.bottom = v.top:getString(), v.bottom:getString()
-		end
+			if v.top and v.bottom then
+				ret.top, ret.bottom = v.top:getString(), v.bottom:getString()
+			end
 
-		if (ret.left and ret.right) or (ret.top and ret.bottom) then
-			ret.main = assert(v.main):getString()
-			return ret
-		else
-			return assert(v.main):getString()
+			if (ret.left and ret.right) or (ret.top and ret.bottom) then
+				ret.main = assert(v.main):getString()
+				return ret
+			else
+				return assert(v.main):getString()
+			end
 		end
 	end
 
@@ -80,7 +84,7 @@ local function sortSIFNote(a, b)
 	return a.timing_sec < b.timing_sec
 end
 
-function beatmapData:__construct(data)
+function beatmapData:__construct(nbtData)
 	self.star = 0
 	self.starRandom = 0
 	self.difficultyName = ""
@@ -96,7 +100,9 @@ function beatmapData:__construct(data)
 	self.editorData = nil -- Software-specific editor data. NBT Compound!
 
 	-- data is full NBT data
-	if data then
+	if nbtData then
+		local data = nbtData:getValue()
+
 		self.star = assert(data.star):getInteger()
 		self.starRandom = assert(data.starRandom):getInteger()
 		self.difficultyName = data.difficultyName and data.difficultyName:getString() or self.star.."\226\152\134"
@@ -118,7 +124,8 @@ function beatmapData:__construct(data)
 		self.initialStamina = data.stamina and data.stamina:getInteger() or 0
 
 		-- Beatmap data
-		for i, v in ipairs(self.map) do
+		for i, u in ipairs(data.map:getValue()) do
+			local v = u:getValue()
 			local b = {}
 
 			-- time
@@ -139,7 +146,7 @@ function beatmapData:__construct(data)
 			b.effect = isSwing and 10 + effectMode or effectMode
 
 			-- effect_value
-			if effectMode == 3 then
+			if effectMode == 4 then
 				local l = assert(v.length):getNumber()
 				b.effect_value = l > 0 and l == l and l < math.huge and l
 			else
@@ -165,10 +172,10 @@ function beatmapData:__construct(data)
 		if data.scoreInfo then
 			local v = data.scoreInfo:getValue()
 			if #v >= 4 then
-				self.scoreInfo[1] = v[1]:getInteger()
-				self.scoreInfo[2] = v[2]:getInteger()
-				self.scoreInfo[3] = v[3]:getInteger()
-				self.scoreInfo[4] = v[4]:getInteger()
+				self.scoreInfo[1] = v[1]
+				self.scoreInfo[2] = v[2]
+				self.scoreInfo[3] = v[3]
+				self.scoreInfo[4] = v[4]
 				hasScoreInfo = true
 			end
 		end
@@ -183,10 +190,10 @@ function beatmapData:__construct(data)
 		if data.comboInfo then
 			local v = data.comboInfo:getValue()
 			if #v >= 4 then
-				self.comboInfo[1] = v[1]:getInteger()
-				self.comboInfo[2] = v[2]:getInteger()
-				self.comboInfo[3] = v[3]:getInteger()
-				self.comboInfo[4] = v[4]:getInteger()
+				self.comboInfo[1] = v[1]
+				self.comboInfo[2] = v[2]
+				self.comboInfo[3] = v[3]
+				self.comboInfo[4] = v[4]
 				hasComboInfo = true
 			end
 		end
