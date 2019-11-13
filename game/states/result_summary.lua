@@ -119,7 +119,15 @@ function resultScreen:load(arg)
 		if arg.allowRetry and self.data.reloadLive == nil then
 			self.data.reloadLive = ciButton(color.hex1CA0FF, 43, self.assets.images.reload, 0.32)
 			self.data.reloadLive:addEventListener("mousereleased", function()
-				return gamestate.replace(loadingInstance.getInstance(), "livesim2", arg.livesim2)
+				-- It may contain replay data, but the table may used somewhere
+				-- so clone it first.
+				local newArg = {}
+				for k, v in pairs(arg.livesim2) do
+					newArg[k] = v
+				end
+				newArg.replay = nil
+
+				return gamestate.replace(loadingInstance.getInstance(), "livesim2", newArg)
 			end)
 		end
 
