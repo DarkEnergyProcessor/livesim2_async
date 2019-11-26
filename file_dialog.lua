@@ -142,7 +142,42 @@ if love._os == "Windows" and package.preload.ffi then
 		return nil
 	end
 elseif love._os == "Linux" and hasShell then
-	if os.execute("command -v zenity >/dev/null 2>&1") == 0 then
+	if os.execute("command -v kdialog >/dev/null 2>&1") == 0 then
+		function fileDialog.open(title, directory, filter, multiple)
+			-- title and multiple is not supported unfortunately
+			local cmdbuild = {}
+
+			cmdbuild[#cmdbuild + 1] = "kdialog --getopenfilename"
+
+			if directory then
+				cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
+			end
+
+			if filter then
+				cmdbuild[#cmdbuild + 1] = string.format("'%s|Specific Files (%s)'", filter, filter)
+			end
+
+			local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
+			local list = cmd:read("*a")
+			cmd:close()
+
+			if #list > 0 then
+				list = list:gsub("[\r\n|\r|\n]+", "")
+
+				if multiple then
+					return {list}
+				else
+					return list
+				end
+			else
+				if multiple then
+					return {}
+				else
+					return nil
+				end
+			end
+		end
+	elseif os.execute("command -v zenity >/dev/null 2>&1") == 0 then
 		function fileDialog.open(title, directory, filter, multiple)
 			local cmdbuild = {}
 
@@ -187,43 +222,6 @@ elseif love._os == "Linux" and hasShell then
 				return filelist
 			else
 				return list
-			end
-		end
-	elseif os.execute("command -v kdialog >/dev/null 2>&1") == 0 then
-		function fileDialog.open(title, directory, filter, multiple)
-			-- title and multiple is not supported unfortunately
-			local cmdbuild = {}
-
-			cmdbuild[#cmdbuild + 1] = "kdialog --getopenfilename"
-
-			if directory then
-				cmdbuild[#cmdbuild + 1] = string.format("%q", directory)
-			else
-				cmdbuild[#cmdbuild + 1] = ":aqsselect"
-			end
-
-			if filter then
-				cmdbuild[#cmdbuild + 1] = string.format("'%s|Specific Files (%s)'", filter, filter)
-			end
-
-			local cmd = assert(io.popen(table.concat(cmdbuild, " ")))
-			local list = cmd:read("*a")
-			cmd:close()
-
-			if #list > 0 then
-				list = list:gsub("[\r\n|\r|\n]+", "")
-
-				if multiple then
-					return {list}
-				else
-					return list
-				end
-			else
-				if multiple then
-					return {}
-				else
-					return nil
-				end
 			end
 		end
 	end
