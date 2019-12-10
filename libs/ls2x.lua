@@ -7,31 +7,38 @@ local haslib, lib = pcall(require, "ls2xlib")
 
 if not(haslib) then
 	-- no features
+    io.stderr:write("warning: no features.\n", lib)
 	return ls2x
 end
 
+assert(lib._VERSION >= "1.0", "incompatible ls2xlib loaded")
+
 local ffi = require("ffi")
+
+local function loadFunc(type, ptr)
+	return ffi.cast(type, ffi.cast("void**", ptr)[0])
+end
 
 -- audiomix
 if lib.features.audiomix then
 	local audiomix = {}
 	ls2x.audiomix = audiomix
 
-	audiomix.resample = ffi.cast("void(*)(const short*, short*, size_t, size_t, int)", lib.rawptr.resample)
-	audiomix.startSession = ffi.cast("bool(*)(float, int, size_t)", lib.rawptr.startAudioMixSession)
-	audiomix.mixSample = ffi.cast("bool(*)(const short *, size_t, int, float)", lib.rawptr.mixSample)
-	audiomix.getSample = ffi.cast("void(*)(short *)", lib.rawptr.getAudioMixPointer)
-	audiomix.endSession = ffi.cast("void(*)()", lib.rawptr.endAudioMixSession)
+	audiomix.resample = loadFunc("void(*)(const short*, short*, size_t, size_t, int)", lib.rawptr.resample)
+	audiomix.startSession = loadFunc("bool(*)(float, int, size_t)", lib.rawptr.startAudioMixSession)
+	audiomix.mixSample = loadFunc("bool(*)(const short *, size_t, int, float)", lib.rawptr.mixSample)
+	audiomix.getSample = loadFunc("void(*)(short *)", lib.rawptr.getAudioMixPointer)
+	audiomix.endSession = loadFunc("void(*)()", lib.rawptr.endAudioMixSession)
 end
 
 -- fft
 if lib.features.fft then
 	local fft = {}
-	local scalarType = ffi.string(ffi.cast("const char*(*)()", lib.rawptr.scalarType)())
+	local scalarType = ffi.string(loadFunc("const char*(*)()", lib.rawptr.scalarType)())
 	ls2x.fft = fft
 	ffi.cdef("typedef "..scalarType.." kiss_fft_scalar;")
-	fft.fftr1 = ffi.cast("void(*)(const short *, kiss_fft_scalar *, kiss_fft_scalar *, size_t)", lib.rawptr.fftr1)
-	fft.fftr2 = ffi.cast("void(*)(const short *, kiss_fft_scalar *, size_t, bool)", lib.rawptr.fftr2)
+	fft.fftr1 = loadFunc("void(*)(const short *, kiss_fft_scalar *, kiss_fft_scalar *, size_t)", lib.rawptr.fftr1)
+	fft.fftr2 = loadFunc("void(*)(const short *, kiss_fft_scalar *, size_t, bool)", lib.rawptr.fftr2)
 end
 
 -- libav
@@ -58,15 +65,15 @@ if lib.features.libav then
 			char *coverArt;
 		} songInformation;
 	]]
-	local loadAudioFile = ffi.cast("bool(*)(const char *input, songInformation *info)", lib.rawptr.loadAudioFile)
-	local encodingSupported = ffi.cast("bool(*)()", lib.rawptr.encodingSupported)
+	local loadAudioFile = loadFunc("bool(*)(const char *input, songInformation *info)", lib.rawptr.loadAudioFile)
+	local encodingSupported = loadFunc("bool(*)()", lib.rawptr.encodingSupported)
 
 	if encodingSupported() then
-		libav.startEncodingSession = ffi.cast("bool(*)(const char *, int, int, int)", lib.rawptr.startEncodingSession)
-		libav.supplyVideoEncoder = ffi.cast("bool(*)(const void *)", lib.rawptr.supplyEncoder)
-		libav.endEncodingSession = ffi.cast("void(*)()", lib.rawptr.endEncodingSession)
+		libav.startEncodingSession = loadFunc("bool(*)(const char *, int, int, int)", lib.rawptr.startEncodingSession)
+		libav.supplyVideoEncoder = loadFunc("bool(*)(const void *)", lib.rawptr.supplyEncoder)
+		libav.endEncodingSession = loadFunc("void(*)()", lib.rawptr.endEncodingSession)
 	end
-	libav.free = ffi.cast("void(*)(void *)", lib.rawptr.av_free)
+	libav.free = loadFunc("void(*)(void *)", lib.rawptr.av_free)
 
 	function libav.loadAudioFile(path)
 		local sInfoP = ffi.new("songInformation[1]") -- FFI-managed object
