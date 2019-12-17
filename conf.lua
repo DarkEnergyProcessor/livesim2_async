@@ -6,8 +6,9 @@
 -- luacheck: globals DEPLS_VERSION_NUMBER
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
-if jit then jit.off() jit.flush() end
 local love = require("love")
+if love._os == "Android" and jit then jit.on() end
+
 local errhand = love.errorhandler or love.errhand
 function love.errorhandler(msg)
 	print((debug.traceback("Error: " .. tostring(msg), 2):gsub("\n[^\n]+$", "")))
