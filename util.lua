@@ -392,4 +392,12 @@ util.drawBlur = setmetatable({shader = nil}, {
 	end
 })
 
+function util.stringToHex(str)
+	local a = {}
+	for i = 1, #str do
+		a[#a + 1] = string.format("%02x", str:sub(i, i):byte())
+	end
+	return table.concat(a)
+end
+
 return util

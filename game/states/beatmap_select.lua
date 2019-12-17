@@ -854,8 +854,10 @@ function beatmapSelect:start()
 
 	local unprocessedBeatmaps = {}
 
+	-- Lock fonts
+	self.persist.mainFont = self.data.mainFont
+	self.persist.formatFont = self.assets.fonts.formatFont
 	beatmapList.push()
-	-- TODO: Categorize beatmaps based on their difficulty
 	beatmapList.enumerate(function(id, name, fmt, diff, _, group)
 		if id == "" then
 			for _, v in ipairs(unprocessedBeatmaps) do
@@ -954,6 +956,10 @@ function beatmapSelect:start()
 			if self.persist.active then
 				setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 			end
+
+			-- Unlock fonts
+			self.persist.mainFont = nil
+			self.persist.formatFont = nil
 
 			return false
 		end
