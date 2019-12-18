@@ -52,10 +52,10 @@ do
 		local col = colorTheme[typeID] and colorTheme[typeID].currentColor or defaultColor
 		self.typeColor = col
 		self.name = love.graphics.newText(state.data.mainFont)
-		self.name:addf({col[4], name}, 609, "left", 0, 0, 0, 24/44)
+		self.name:addf({col[4], name}, 569, "left", 0, 0, 0, 24/44)
 		self:setCoverImage(coverImage)
 
-		self.width, self.height = 450, 94
+		self.width, self.height = 420, 94
 		self.x, self.y = 0, 0
 		self.ripple = ripple(460.691871)
 		self.stencilFunc = function()
@@ -117,7 +117,10 @@ local function leave()
 end
 
 local function onSelectButton(_, data)
-	gamestate.enter(nil, "beatmapInfoDL", data)
+	if data[4].persist.selectedIndex == nil then
+		data[4].persist.selectedIndex = data[3]
+		gamestate.enter(nil, "beatmapInfoDL", {data[1], data[2]})
+	end
 end
 
 local function getHashedName(str)
@@ -220,6 +223,7 @@ local function initializeBeatmapList(self, mapdata, etag)
 	end
 
 	self.persist.beatmapListGroup = liveTrack
+	self.persist.beatmapListElem = {}
 
 	-- Setup frame
 	for i = 1, #liveTrack do
@@ -234,8 +238,9 @@ local function initializeBeatmapList(self, mapdata, etag)
 
 		local elem = beatmapDLSelectButton(self, track.name, track.member, coverImage)
 		elem:addEventListener("mousereleased", onSelectButton)
-		elem:setData({self.persist.download, track})
+		elem:setData({self.persist.download, track, i, self})
 		self.persist.frame:addElement(elem, x, y)
+		self.persist.beatmapListElem[i] = elem
 	end
 end
 
@@ -243,7 +248,7 @@ local function setStatusText(self, text, blink)
 	self.persist.statusText:clear()
 	if not(text) or #text == 0 then return end
 
-	self.persist.statusText:add(text, self.data.beatmapDLText:getWidth() + 54, 106, 0, 23/44)
+	self.persist.statusText:add(text, 30, 96, 0, 23/44)
 
 	if blink then
 		if self.persist.statusTextBlink == math.huge then
@@ -334,18 +339,21 @@ function beatmapDownload:load()
 		self.persist.frame = glow.frame(0, 68, 960, 512)
 	end
 
-	if self.data.beatmapDLText == nil then
-		self.data.beatmapDLText = love.graphics.newText(self.data.mainFont, L"beatmapSelect:download")
+	if self.data.titleText == nil then
+		self.data.titleText = love.graphics.newText(self.data.mainFont)
+		self.data.titleText:add(L"beatmapSelect:download", 0, 0, 0, 31/44)
 	end
 end
 
 function beatmapDownload:start()
-	self.persist.frame = glow.frame(0, 152, 960, 488)
+	self.persist.frame = glow.frame(0, 80, 960, 560)
 	self.persist.frame:setSliderColor(color.hex434242)
+	self.persist.frame:setSliderHandleColor(colorTheme.get())
 	glow.addFrame(self.persist.frame)
 
 	self.persist.statusText = love.graphics.newText(self.data.mainFont)
 	self.persist.statusTextBlink = math.huge
+	self.persist.selectedIndex = nil
 
 	local hasEtag = util.fileExists("maps.json.etag")
 	if not(hasEtag and util.fileExists("maps.json")) then
@@ -383,22 +391,37 @@ end
 function beatmapDownload:draw()
 	love.graphics.setColor(color.hex434242)
 	love.graphics.rectangle("fill", -88, -43, 1136, 726)
+	self.persist.frame:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.draw(self.data.beatmapDLText, 30, 93)
+	love.graphics.setColor(color.hex333131)
+	love.graphics.rectangle("fill", -88, 0, 1136, 80)
+	love.graphics.setColor(color.white)
+	love.graphics.draw(self.data.titleText, 112, 24)
 	if self.persist.statusTextBlink ~= math.huge then
 		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
 	end
 	util.drawText(self.persist.statusText)
-	love.graphics.setColor(color.hex333131)
-	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 
 	glow.draw()
-	self.persist.frame:draw()
 end
 
 function beatmapDownload:resumed()
 	glow.addFrame(self.persist.frame)
+
+	if self.persist.selectedIndex then
+		-- Try to set the cover art
+		local i = self.persist.selectedIndex
+		async.runFunction(function()
+			local track = self.persist.beatmapListGroup[i]
+			local coverPath = getLiveIconPath(track.icon)
+			if util.fileExists(coverPath) then
+				self.persist.beatmapListElem[i]:setCoverImage(asset.loadImage(coverPath, mipmaps))
+			end
+		end):run()
+
+		self.persist.selectedIndex = nil
+	end
 end
 
 return beatmapDownload

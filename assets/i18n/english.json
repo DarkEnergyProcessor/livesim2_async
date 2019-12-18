@@ -27,7 +27,7 @@
 		"beatmapSelect:deleteGroup": "Are you sure want to delete this beatmap?\nAll difficulty of this beatmap will be lost!\nFile: %{id}\nName: %{name}",
 		"beatmapSelect:difficulty": "Difficulty: %{difficulty}",
 		"beatmapSelect:diffUnknown": "Unknown",
-		"beatmapSelect:download": "Download",
+		"beatmapSelect:download": "Download Beatmaps",
 		"beatmapSelect:download:downloading": "Downloading List...",
 		"beatmapSelect:download:downloadingAudio": "Downloading Audio...",
 		"beatmapSelect:download:downloadingBeatmap": "Downloading %{difficulty} beatmap...",
