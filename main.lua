@@ -102,7 +102,7 @@ local function registerGamestates()
 	postExit.add(loadingInstance.exit)
 
 	-- Load all gamestates.
-	gamestate.register("beatmapDownload", require("game.states.download_v4"))
+	gamestate.register("beatmapDownload", require("game.states.download_list"))
 	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
 	gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
 	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))

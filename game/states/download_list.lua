@@ -3,10 +3,10 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local utf8 = require("utf8")
 local Luaoop = require("libs.Luaoop")
 local JSON = require("libs.JSON")
 
+local assetCache = require("asset_cache")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local lily = require("lily")
@@ -16,131 +16,131 @@ local mainFont = require("font")
 local util = require("util")
 local L = require("language")
 
+local colorTheme = require("game.color_theme")
 local download = require("game.dm")
+local md5 = require("game.md5")
+
 local glow = require("game.afterglow")
-local backgroundLoader = require("game.background_loader")
-local backNavigation = require("game.ui.back_navigation")
-
-local beatmapDownload = gamestate.create {
-	images = {}, fonts = {}
-}
-
-local beatmapButton = Luaoop.class("Livesim2.BeatmapDLSelectButtonUI", glow.element)
+local ripple = require("game.ui.ripple")
+local ciButton = require("game.ui.circle_icon_button")
 
 local SERVER_ADDRESS = require("game.beatmap.download_address")
+local mipmaps = {mipmaps = true}
 
-function beatmapButton:new(name, member)
-	local font = mainFont.get(22)
-	local textBuilder = {}
+local beatmapDLSelectButton = Luaoop.class("Livesim2.Download.BeatmapSelectButton", glow.element)
 
-	-- break text
-	do
-		local txt = {}
-		for _, c in utf8.codes(name) do
-			txt[#txt + 1] = utf8.char(c)
-			local cat = table.concat(txt)
+do
+	local coverShader
 
-			if font:getWidth(cat) >= 294 then
-				textBuilder[#textBuilder + 1] = cat
-
-				for j = #txt, 1, -1 do
-					txt[j] = nil
-				end
-			end
-		end
-
-		if #txt > 0 then
-			textBuilder[#textBuilder + 1] = table.concat(txt)
-		end
+	local function commonPressed(self, _, x, y)
+		self.isPressed = true
+		self.ripple:pressed(x, y)
 	end
 
-	local usedText = table.concat(textBuilder, "\n")
-	self.width, self.height = 310, 64
-	self.isPressed = false
-	self.text = love.graphics.newText(font)
-	self.text:add({color.black, usedText}, 8, 32 - font:getHeight() * #textBuilder * 0.5)
-
-	-- default color
-	self.colorNormal = color.white70PT
-	self.colorPressed = color.white92PT
-	if member == 1 then
-		-- Myus color
-		self.colorNormal = color.hotPink70PT
-		self.colorPressed = color.hotPink92PT
-	elseif member == 2 then
-		-- Aqours color
-		self.colorNormal = color.dodgerBlue70PT
-		self.colorPressed = color.dodgerBlue92PT
-	elseif member == 3 then
-		-- Why tho
-		self.colorNormal = color.lightPink70PT
-		self.colorPressed = color.navajoWhite92PT
+	local function commonReleased(self)
+		self.isPressed = false
+		self.ripple:released()
 	end
 
-	self:addEventListener("mousepressed", beatmapButton._pressed)
-	self:addEventListener("mousecanceled", beatmapButton._released)
-	self:addEventListener("mousereleased", beatmapButton._released)
-end
+	local defaultColor = {255, 255, 255, color.white}
+	function beatmapDLSelectButton:new(state, name, typeID, coverImage)
+		coverShader = coverShader or state.data.coverMaskShader
 
-function beatmapButton:_pressed()
-	self.isPressed = true
-end
+		-- Color from type ID
+		local col = colorTheme[typeID] and colorTheme[typeID].currentColor or defaultColor
+		self.typeColor = col
+		self.name = love.graphics.newText(state.data.mainFont)
+		self.name:addf({col[4], name}, 569, "left", 0, 0, 0, 24/44)
+		self:setCoverImage(coverImage)
 
-function beatmapButton:_released()
-	self.isPressed = false
-end
+		self.width, self.height = 420, 94
+		self.x, self.y = 0, 0
+		self.ripple = ripple(460.691871)
+		self.stencilFunc = function()
+			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+		end
+		self.isPressed = false
+		self:addEventListener("mousepressed", commonPressed)
+		self:addEventListener("mousereleased", commonReleased)
+		self:addEventListener("mousecanceled", commonReleased)
+	end
 
-function beatmapButton:render(x, y)
-	love.graphics.setColor(self.isPressed and self.colorPressed or self.colorNormal)
-	love.graphics.rectangle("fill", x, y, self.width, self.height)
-	love.graphics.rectangle("line", x, y, self.width, self.height)
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.text, x, y)
+	function beatmapDLSelectButton:setCoverImage(coverImage)
+		if coverImage then
+			local w, h = coverImage:getDimensions()
+			self.coverScaleW, self.coverScaleH = 82 / w, 82 / h
+		end
+
+		self.coverImage = coverImage
+	end
+
+	function beatmapDLSelectButton:update(dt)
+		self.ripple:update(dt)
+	end
+
+	function beatmapDLSelectButton:render(x, y)
+		local shader = love.graphics.getShader()
+		self.x, self.y = x, y
+
+		love.graphics.setColor(color.hex434242)
+		love.graphics.rectangle("fill", x, y, self.width, self.height)
+		love.graphics.setShader(util.drawText.workaroundShader)
+		love.graphics.setColor(self.typeColor[4])
+		love.graphics.draw(self.name, x + 110, y + 20)
+		love.graphics.setColor(color.white)
+
+		if self.coverImage then
+			love.graphics.setShader(coverShader)
+			love.graphics.draw(self.coverImage, x + 6, y + 6, 0, self.coverScaleW, self.coverScaleH)
+		else
+			love.graphics.setShader()
+			love.graphics.setColor(color.hexC4C4C4)
+			love.graphics.rectangle("fill", x + 6, y + 6, 82, 82, 12, 12)
+			love.graphics.rectangle("line", x + 6, y + 6, 82, 82, 12, 12)
+		end
+
+		love.graphics.setShader(shader)
+
+		if self.ripple:isActive() then
+			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
+			love.graphics.setStencilTest("equal", 1)
+			self.ripple:draw(self.typeColor[1], self.typeColor[2], self.typeColor[3], x, y)
+			love.graphics.setStencilTest()
+		end
+	end
 end
 
 local function leave()
 	return gamestate.leave(loadingInstance.getInstance())
 end
 
-function beatmapDownload:load()
-	glow.clear()
-
-	if self.data.frame == nil then
-		self.data.frame = glow.frame(0, 68, 960, 512)
-	end
-	self.data.frame:clear()
-	glow.addFrame(self.data.frame)
-
-	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(13)
-	end
-
-	if self.data.back == nil then
-		self.data.back = backNavigation(L"beatmapSelect:download:title")
-		self.data.back:addEventListener("mousereleased", leave)
-	end
-	glow.addFixedElement(self.data.back, 0, 0)
-
-	if self.data.statusText == nil then
-		self.data.statusText = love.graphics.newText(mainFont.get(22))
-		if self.persist.statusText then
-			util.addTextWithShadow(self.data.statusText, self.persist.statusText, 52, 590)
-		end
-	end
-end
-
-local function setStatusText(self, fmt, ...)
-	self.data.statusText:clear()
-
-	if fmt then
-		local str = string.format(fmt, ...)
-		util.addTextWithShadow(self.data.statusText, str, 52, 590)
-		self.persist.statusText = str
-	end
-end
-
 local function onSelectButton(_, data)
-	gamestate.enter(nil, "beatmapInfoDL", data)
+	if data[4].persist.selectedIndex == nil then
+		data[4].persist.selectedIndex = data[3]
+		gamestate.enter(nil, "beatmapInfoDL", {data[1], data[2]})
+	end
+end
+
+local function getHashedName(str)
+	local keyhash = util.stringToHex(md5("The quick brown fox jumps over the lazy dog"..str))
+	local filehash = util.stringToHex(md5(str))
+	local strb = {}
+	local seed = tonumber(keyhash:sub(1, 8), 16) % 2147483648
+
+	for _ = 1, 20 do
+		local chr = math.floor(seed / 33) % 32
+		local sel = chr >= 16 and keyhash or filehash
+		chr = (chr % 16) + 1
+		strb[#strb + 1] = sel:sub(2 * chr - 1, 2 * chr)
+		seed = (214013 * seed + 2531011) % 2147483648
+	end
+
+	strb[#strb + 1] = str
+	return table.concat(strb)
+end
+
+local function getLiveIconPath(icon)
+	return "live_icon/"..getHashedName(util.basename(icon))
 end
 
 local function initializeBeatmapList(self, mapdata, etag)
@@ -221,25 +221,45 @@ local function initializeBeatmapList(self, mapdata, etag)
 	end
 
 	self.persist.beatmapListGroup = liveTrack
+	self.persist.beatmapListElem = {}
 
 	-- Setup frame
 	for i = 1, #liveTrack do
-		if not(self.data.frame) then break end
-
 		local track = liveTrack[i]
-		local x = ((i - 1) % 3) * 310
-		local y = math.floor((i - 1) / 3) * 64
-		local elem = beatmapButton(track.name, track.member)
+		local x = 30 + ((i - 1) % 2) * 480
+		local y = math.floor((i - 1) / 2) * 94
+		local coverPath = getLiveIconPath(track.icon)
+		local coverImage
+		if util.fileExists(coverPath) then
+			coverImage = assetCache.loadImage(coverPath, mipmaps)
+		end
+
+		local elem = beatmapDLSelectButton(self, track.name, track.member, coverImage)
 		elem:addEventListener("mousereleased", onSelectButton)
-		elem:setData({self.persist.download, track})
-		self.data.frame:addElement(elem, x, y)
+		elem:setData({self.persist.download, track, i, self})
+		self.persist.frame:addElement(elem, x, y)
+		self.persist.beatmapListElem[i] = elem
+	end
+end
+
+local function setStatusText(self, text, blink)
+	self.persist.statusText:clear()
+	if not(text) or #text == 0 then return end
+
+	self.persist.statusText:add(text, 30, 96, 0, 23/44)
+
+	if blink then
+		if self.persist.statusTextBlink == math.huge then
+			self.persist.statusTextBlink = 0
+		end
+	else
+		self.persist.statusTextBlink = math.huge
 	end
 end
 
 local function downloadResponseCallback(self, statusCode, headers, length)
 	if statusCode == 304 then
-		-- Use local copy
-		setStatusText(self, L"beatmapSelect:download:localCopy")
+		setStatusText(self)
 		-- Load local copy using async system
 		async.runFunction(initializeBeatmapList):run(self)
 	elseif statusCode == 200 then
@@ -260,7 +280,10 @@ local function downloadReceiveCallback(self, data)
 	dldata.bytesWritten = dldata.bytesWritten + #data
 
 	if dldata.length then
-		setStatusText(self, "%s (%d/%d bytes)", L"beatmapSelect:download:downloading", dldata.bytesWritten, dldata.length)
+		setStatusText(self, L("beatmapSelect:download:downloadingBytesProgress", {
+			a = dldata.bytesWritten,
+			b = dldata.length
+		}), true)
 	end
 end
 
@@ -282,60 +305,121 @@ local function downloadErrorCallback(self, message)
 	self.persist.downloadData = nil
 end
 
+local beatmapDownload = gamestate.create {
+	images = {
+		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
+		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
+	}, fonts = {}
+}
+
+function beatmapDownload:load()
+	glow.clear()
+
+	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
+
+	if self.data.back == nil then
+		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, colorTheme.get())
+		self.data.back:setData(self)
+		self.data.back:addEventListener("mousereleased", leave)
+	end
+	glow.addFixedElement(self.data.back, 32, 4)
+
+	if self.data.shadowGradient == nil then
+		self.data.shadowGradient = util.gradient("vertical", color.black75PT, color.transparent)
+	end
+
+	if self.data.coverMaskShader == nil then
+		self.data.coverMaskShader = love.graphics.newShader("assets/shader/mask.fs")
+		self.data.coverMaskShader:send("mask", self.assets.images.coverMask)
+	end
+
+	if self.persist.frame == nil then
+		self.persist.frame = glow.frame(0, 68, 960, 512)
+	end
+
+	if self.data.titleText == nil then
+		self.data.titleText = love.graphics.newText(self.data.mainFont)
+		self.data.titleText:add(L"beatmapSelect:download", 0, 0, 0, 31/44)
+	end
+end
+
 function beatmapDownload:start()
-	-- check if maps.json{.etag} exists
+	self.persist.frame = glow.frame(0, 80, 960, 560)
+	self.persist.frame:setSliderColor(color.hex434242)
+	self.persist.frame:setSliderHandleColor(colorTheme.get())
+	glow.addFrame(self.persist.frame)
+
+	self.persist.statusText = love.graphics.newText(self.data.mainFont)
+	self.persist.statusTextBlink = math.huge
+	self.persist.selectedIndex = nil
+
 	local hasEtag = util.fileExists("maps.json.etag")
 	if not(hasEtag and util.fileExists("maps.json")) then
 		hasEtag = false
 		love.filesystem.remove("maps.json")
 		love.filesystem.remove("maps.json.etag")
 	end
+
 	-- maps.json cache
 	local lastTag
 	if hasEtag then
 		lastTag = love.filesystem.read("maps.json.etag")
 	end
 
-	setStatusText(self, L"beatmapSelect:download:downloading")
+	setStatusText(self, L"beatmapSelect:download:downloading", true)
 	self.persist.download = download()
-	:setData(self)
-	:setResponseCallback(downloadResponseCallback)
-	:setReceiveCallback(downloadReceiveCallback)
-	:setFinishCallback(downloadFinishCallback)
-	:setErrorCallback(downloadErrorCallback)
-	:download(SERVER_ADDRESS.."/maps.json", {
-		["If-None-Match"] = lastTag
-	})
+		:setData(self)
+		:setResponseCallback(downloadResponseCallback)
+		:setReceiveCallback(downloadReceiveCallback)
+		:setFinishCallback(downloadFinishCallback)
+		:setErrorCallback(downloadErrorCallback)
+		:download(SERVER_ADDRESS.."/maps.json", {
+			["If-None-Match"] = lastTag
+		})
 end
 
 function beatmapDownload:update(dt)
-	return self.data.frame:update(dt)
+	self.persist.frame:update(dt)
+
+	if self.persist.statusTextBlink ~= math.huge then
+		self.persist.statusTextBlink = (self.persist.statusTextBlink + dt) % 2
+	end
 end
 
 function beatmapDownload:draw()
+	love.graphics.setColor(color.hex434242)
+	love.graphics.rectangle("fill", -88, -43, 1136, 726)
+	self.persist.frame:draw()
 	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.background)
-	love.graphics.draw(self.data.statusText)
+	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
+	love.graphics.setColor(color.hex333131)
+	love.graphics.rectangle("fill", -88, 0, 1136, 80)
+	love.graphics.setColor(color.white)
+	love.graphics.draw(self.data.titleText, 112, 24)
+	if self.persist.statusTextBlink ~= math.huge then
+		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
+	end
+	util.drawText(self.persist.statusText)
 
-	self.data.frame:draw()
 	glow.draw()
 end
 
 function beatmapDownload:resumed()
-	if self.persist.mapData then
-		async.runFunction(initializeBeatmapList):run(self, self.persist.mapData)
+	glow.addFrame(self.persist.frame)
+
+	if self.persist.selectedIndex then
+		-- Try to set the cover art
+		local i = self.persist.selectedIndex
+		async.runFunction(function()
+			local track = self.persist.beatmapListGroup[i]
+			local coverPath = getLiveIconPath(track.icon)
+			if util.fileExists(coverPath) then
+				self.persist.beatmapListElem[i]:setCoverImage(assetCache.loadImage(coverPath, mipmaps))
+			end
+		end):run()
+
+		self.persist.selectedIndex = nil
 	end
 end
-
-function beatmapDownload:exit()
-	self.persist.download:release()
-	self.persist.download = nil
-end
-
-beatmapDownload:registerEvent("keyreleased", function(_, key)
-	if key == "escape" then
-		leave()
-	end
-end)
 
 return beatmapDownload
