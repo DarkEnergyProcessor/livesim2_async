@@ -492,6 +492,34 @@ local function enumerateReplays(id, hash)
 	return dest
 end
 
+local function updateBeatmapList(self)
+	self.persist.beatmapFrame:clear()
+	self.data.searchText:clear()
+
+	if #self.persist.searchQuery > 0 then
+		local i = 1
+		local query = table.concat(self.persist.searchQuery)
+		local queryLower = query:lower()
+
+		for _, v in ipairs(self.persist.beatmaps) do
+			if v.name:lower():find(queryLower, 1, true) then
+				self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
+				i = i + 1
+			end
+		end
+
+		self.data.searchText:add(query, 0, 0, 0, 22/44)
+		setStatusText(self, L("beatmapSelect:searchResult", {amount = i - 1}))
+	else
+		for i, v in ipairs(self.persist.beatmaps) do
+			self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
+		end
+
+		self.data.searchText:add(L"beatmapSelect:searchPrompt", 0, 0, 0, 22/44)
+		setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}))
+	end
+end
+
 local beatmapSelect = gamestate.create {
 	images = {
 		add = {"assets/image/ui/over_the_rainbow/add_icon.png", mipmaps},
@@ -505,6 +533,7 @@ local beatmapSelect = gamestate.create {
 		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
 		poll = {"assets/image/ui/over_the_rainbow/poll.png", mipmaps},
+		search = {"assets/image/ui/over_the_rainbow/search.png", mipmaps},
 		shuffle = {"assets/image/ui/over_the_rainbow/shuffle.png", mipmaps},
 		star = {"assets/image/ui/over_the_rainbow/star.png", mipmaps},
 		video = {"assets/image/ui/over_the_rainbow/video.png", mipmaps},
@@ -555,6 +584,24 @@ function beatmapSelect:load()
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	glow.addFixedElement(self.data.back, 32, 4)
+
+	if self.data.search == nil then
+		self.data.search = ciButton(color.hex333131, 36, self.assets.images.search, 0.64, colorTheme.get())
+		self.data.search:setData(self)
+		self.data.search:addEventListener("mousereleased", function()
+			love.keyboard.setTextInput(not(love.keyboard.hasTextInput()))
+		end)
+	end
+	glow.addFixedElement(self.data.search, 112, 4)
+
+	if self.data.searchText == nil then
+		self.data.searchText = love.graphics.newText(self.data.mainFont)
+		if self.persist.searchQuery and #self.persist.searchQuery > 0 then
+			self.data.searchText:add(table.concat(self.persist.searchQuery), 0, 0, 0, 22/44)
+		else
+			self.data.searchText:add(L"beatmapSelect:searchPrompt", 0, 0, 0, 22/44)
+		end
+	end
 
 	if self.data.openDirectory == nil then
 		self.data.openDirectory = ciButton(color.hex333131, 36, self.assets.images.folder, 0.64, colorTheme.get())
@@ -633,7 +680,6 @@ function beatmapSelect:load()
 				-- Move element
 				for i = index, #self.persist.beatmaps do
 					local v = self.persist.beatmaps[i]
-					self.persist.beatmapFrame:setElementPosition(v.element, 30, (i - 1) * 94)
 					v.element:setData(i)
 				end
 
@@ -643,7 +689,8 @@ function beatmapSelect:load()
 				-- Send delete command
 				beatmapList.deleteBeatmap(firstID)
 				-- Set status text
-				setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
+				updateBeatmapList(self)
+				--setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 			end
 		end)
 	end
@@ -750,6 +797,7 @@ function beatmapSelect:start()
 	self.persist.beatmapText = love.graphics.newText(self.data.mainFont, L"beatmapSelect:beatmaps")
 	self.persist.statusText = love.graphics.newText(self.data.mainFont)
 	self.persist.statusTextBlink = math.huge
+	self.persist.searchQuery = {}
 
 	self.persist.beatmapFrame:setSliderColor(color.hex434242)
 	self.persist.beatmapFrame:setVerticalSliderPosition("left")
@@ -948,12 +996,12 @@ function beatmapSelect:start()
 
 			for i, v in ipairs(self.persist.beatmaps) do
 				v.element:setData(i)
-				self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
 			end
 
 			self.persist.beatmaps.sorted = true
 
 			if self.persist.active then
+				updateBeatmapList(self)
 				setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 			end
 
@@ -1070,6 +1118,8 @@ function beatmapSelect:draw()
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
 	love.graphics.setColor(color.hex333131)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
+	love.graphics.setColor(#self.persist.searchQuery > 0 and color.white or color.hexC0C0C0)
+	util.drawText(self.data.searchText, 192, 24)
 
 	if self.persist.emptyReplays then
 		love.graphics.setColor(color.hex8B8B8B)
@@ -1087,6 +1137,13 @@ beatmapSelect:registerEvent("mousereleased", function(self)
 	self.data.difficultyDropdown:hide()
 end)
 
+beatmapSelect:registerEvent("keypressed", function(self, key)
+	if key == "backspace" then
+		self.persist.searchQuery[#self.persist.searchQuery] = nil
+		updateBeatmapList(self)
+	end
+end)
+
 beatmapSelect:registerEvent("keyreleased", function(_, key)
 	if key == "escape" then
 		return leave()
@@ -1096,6 +1153,11 @@ end)
 beatmapSelect:registerEvent("filedropped", function(self, file)
 	self.persist.beatmapUpdate = self.persist.beatmapUpdate or {}
 	self.persist.beatmapUpdate[#self.persist.beatmapUpdate + 1] = file
+end)
+
+beatmapSelect:registerEvent("textinput", function(self, str)
+	self.persist.searchQuery[#self.persist.searchQuery + 1] = str
+	updateBeatmapList(self)
 end)
 
 return beatmapSelect

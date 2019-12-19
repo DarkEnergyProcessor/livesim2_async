@@ -52,6 +52,8 @@
 		"beatmapSelect:optionVideo": "Video Bg.",
 		"beatmapSelect:play": "PLAY",
 		"beatmapSelect:replays": "Replays",
+		"beatmapSelect:searchPrompt": "Search...",
+		"beatmapSelect:searchResult": "%{amount} result(s)",
 		"beatmapSelect:viewReplay": "View Replays",
 		"beatmapSelect:viewReplay:desc": "Replays of: %{beatmapName}",
 		"livesim2:pause:fail": "Failed",

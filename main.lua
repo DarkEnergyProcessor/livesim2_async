@@ -393,6 +393,8 @@ function love.load(argv, gameargv)
 		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
 	end
 
+	-- Enable key repeat
+	love.keyboard.setKeyRepeat(true)
 	-- Most codes in livesim2 uses math.random instead of love.math.random
 	math.randomseed(os.time())
 	-- Early initialization (crash on failure which means serious error)
