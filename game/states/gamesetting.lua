@@ -439,6 +439,15 @@ function gameSetting:load()
 				:setPosition(0, 64+12),
 			switchSetting(frame, L"setting:stamina:noFail", "STAMINA_FUNCTIONAL")
 				:setPosition(0, 128+12),
+			-- DEBUG v4.0.0-beta3
+			numberSetting(frame, "Perfect Accuracy", "PERFECT_ACCURACY", {min = 0, max = 128})
+				:setPosition(0, 192+12),
+			numberSetting(frame, "Great Accuracy", "GREAT_ACCURACY", {min = 0, max = 128})
+				:setPosition(0, 256+12),
+			numberSetting(frame, "Good Accuracy", "GOOD_ACCURACY", {min = 0, max = 128})
+				:setPosition(0, 320+12),
+			numberSetting(frame, "Bad Accuracy", "BAD_ACCURACY", {min = 0, max = 128})
+				:setPosition(0, 384+12),
 		}
 	end
 

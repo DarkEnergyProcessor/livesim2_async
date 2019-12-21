@@ -314,7 +314,14 @@ function DEPLS:load(arg)
 		trailImage = self.assets.images.longNoteTrail,
 		noteSpawningPosition = self.data.liveUI:getNoteSpawnPosition(),
 		lane = self.persist.lane,
-		accuracy = {16, 40, 64, 112, 128},
+		-- DEBUG v4.0.0-beta3
+		accuracy = {
+			tonumber(setting.get("PERFECT_ACCURACY")),
+			tonumber(setting.get("GREAT_ACCURACY")),
+			tonumber(setting.get("GOOD_ACCURACY")),
+			tonumber(setting.get("BAD_ACCURACY")),
+			128
+		},
 		autoplay = autoplay,
 		timingOffset = -setting.get("TIMING_OFFSET"), -- inverted for some reason
 		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,

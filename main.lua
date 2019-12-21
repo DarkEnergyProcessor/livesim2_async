@@ -150,7 +150,12 @@ local settingsList = {
 	TIMING_OFFSET = 0,
 	VANISH_TYPE = 0,
 	VIDEOBG = 0,
-	VOICE_VOLUME = 80
+	VOICE_VOLUME = 80,
+	-- DEBUG v4.0.0-beta3: remove this later
+	PERFECT_ACCURACY = 16,
+	GREAT_ACCURACY = 40,
+	GOOD_ACCURACY = 64,
+	BAD_ACCURACY = 112,
 }
 
 local function initializeSetting()
