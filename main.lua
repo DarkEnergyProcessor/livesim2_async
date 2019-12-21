@@ -368,7 +368,7 @@ Options:
 ]]
 
 local license = [[
-Live Simulator: 2 v3.0 is licensed under zLib license
+Live Simulator: 2 v3.0 and later is licensed under zLib license
 
 Copyright (c) 2039 Dark Energy Processor
 This software is provided 'as-is', without any express or implied
