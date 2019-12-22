@@ -37,7 +37,6 @@
 		"beatmapSelect:download:errorStatusCode": "Error: HTTP %{code}",
 		"beatmapSelect:download:errorGeneric": "Error: %{message}",
 		"beatmapSelect:download:ready": "Ready",
-		"beatmapSelect:download:refreshed": "List refreshed",
 		"beatmapSelect:download:title": "Beatmap Downloader",
 		"beatmapSelect:download:view": "Beatmap Info",
 		"beatmapSelect:insert": "Insert Beatmaps",

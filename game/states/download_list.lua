@@ -294,7 +294,6 @@ local function downloadFinishCallback(self)
 	if dldata then
 		local mapData = table.concat(dldata.data)
 		-- Save map data and initialize
-		setStatusText(self, L"beatmapSelect:download:refreshed")
 		async.runFunction(initializeBeatmapList):run(self, mapData, dldata.header.etag)
 		self.persist.downloadData = nil
 	end
