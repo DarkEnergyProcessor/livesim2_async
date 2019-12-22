@@ -4,7 +4,6 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local Yohane = require("libs.Yohane")
 
 local color = require("color")
 local mainFont = require("font")
@@ -23,7 +22,6 @@ function pause:__construct(callbacks, opaque, replay)
 	self.opaque = opaque
 	self.beatmapName = ""
 	self.displayText = ""
-	self.failedAnimation = Yohane.newFlashFromFilename("flash/live_gameover.flsh", "ef_312")
 	self.failedTimer = 3
 
 	if replay then
@@ -36,7 +34,7 @@ end
 function pause:update(dt)
 	if self.paused then
 		if self.isFailed then
-			self.failedAnimation:update(dt * 1000)
+			self.callback.failAnimation:update(dt * 1000)
 			self.failedTimer = math.max(self.failedTimer - dt, 0)
 		end
 
@@ -126,7 +124,7 @@ function pause:_drawPause()
 end
 
 function pause:_drawFailed()
-	return self.failedAnimation:draw(480, 320)
+	return self.callback.failAnimation:draw(480, 320)
 end
 
 function pause:draw()

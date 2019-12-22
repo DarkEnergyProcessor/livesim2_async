@@ -416,6 +416,10 @@ function sifui.getLanePosition()
 	}
 end
 
+function sifui.getFailAnimation()
+	return Yohane.newFlashFromFilename("flash/live_gameover.flsh", "ef_312")
+end
+
 --------------------
 -- Scoring System --
 --------------------

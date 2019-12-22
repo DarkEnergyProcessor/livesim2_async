@@ -34,6 +34,12 @@ function uibase:getLanePosition()
 	return -- {vector, vector, ...}
 end
 
+function uibase:getFailAnimation()
+	-- object that has :update(ms) and :draw(x, y)
+	error("pure virtual method 'getFailAnimation'")
+	return --{:update, :draw}
+end
+
 --------------------
 -- Scoring System --
 --------------------

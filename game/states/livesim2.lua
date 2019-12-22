@@ -640,7 +640,8 @@ function DEPLS:load(arg)
 		end,
 		restart = function()
 			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
-		end
+		end,
+		failAnimation = self.data.liveUI:getFailAnimation(),
 	}, nil, self.persist.replayMode and tostring(self.persist.replayMode.filename))
 
 	-- load keymapping
