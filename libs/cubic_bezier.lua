@@ -1,7 +1,7 @@
 -- CSS Cubic Bezier
 -- Part of Live Simulator: 2, can be used as standalone library
 --[[---------------------------------------------------------------------------
--- Copyright (c) 2040 Dark Energy Processor
+-- Copyright (c) 2041 Dark Energy Processor
 --
 -- This software is provided 'as-is', without any express or implied
 -- warranty. In no event will the authors be held liable for any damages
