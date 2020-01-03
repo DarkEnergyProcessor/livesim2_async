@@ -1,7 +1,7 @@
 -- Live Simulator: 2 binary beatmap loader
 -- Part of Live Simulator: 2 v2.x
 --[[---------------------------------------------------------------------------
--- Copyright (c) 2040 Dark Energy Processor Corporation
+-- Copyright (c) 2041 Dark Energy Processor Corporation
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to
@@ -24,7 +24,7 @@
 
 local ls2 = {
 	_VERSION = "2.0",
-	_LICENSE = "Copyright \169 2039 Dark Energy Processor, licensed under MIT/Expat. See copyright notice in Live Simulator: 2 main.lua",
+	_LICENSE = "Copyright \169 2041 Dark Energy Processor, licensed under MIT/Expat.",
 	_AUTHOR  = "Dark Energy Processor Corporation",
 	encoder = {}
 }
