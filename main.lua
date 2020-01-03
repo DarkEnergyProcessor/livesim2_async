@@ -484,6 +484,7 @@ function love.load(argv, gameargv)
 
 					desiredMSAA = msaa
 				end
+				i = i + 1
 			elseif arg == "-play" then
 				playBeatmapName = assert(argv[i+1], "please specify beatmap name")
 				i = i + 1
