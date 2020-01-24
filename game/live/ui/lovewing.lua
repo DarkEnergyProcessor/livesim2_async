@@ -708,11 +708,8 @@ function lwui:drawStatus()
 			local alpha = math.sqrt(1 - self.stageData.small)
 
 			-- draw black overlay
-			love.graphics.push()
-			love.graphics.origin()
 			love.graphics.setColor(color.compat(0, 0, 0, (1 - self.stageData.small) * 0.25))
-			love.graphics.rectangle("fill", 0, 0, love.graphics.getDimensions())
-			love.graphics.pop()
+			love.graphics.rectangle("fill", -88, -43, 1136, 726)
 
 			love.graphics.setColor(color.compat(255, 255, 255, alpha))
 			love.graphics.circle("fill", 199, 220, 26)
