@@ -101,17 +101,9 @@ local function setBeatmapInfo(_, data)
 	self.data.viewReplay:setData({self, infodata, true})
 end
 
-local function stringToHex(str)
-	local a = {}
-	for i = 1, #str do
-		a[#a + 1] = string.format("%02x", str:sub(i, i):byte())
-	end
-	return table.concat(a)
-end
-
 local function getHashedName(str)
-	local keyhash = stringToHex(md5("The quick brown fox jumps over the lazy dog"..str))
-	local filehash = stringToHex(md5(str))
+	local keyhash = util.stringToHex(md5("The quick brown fox jumps over the lazy dog"..str))
+	local filehash = util.stringToHex(md5(str))
 	local strb = {}
 	local seed = tonumber(keyhash:sub(1, 8), 16) % 2147483648
 

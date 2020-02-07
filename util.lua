@@ -400,4 +400,27 @@ function util.stringToHex(str)
 	return table.concat(a)
 end
 
+function util.split(text, delim, removeempty)
+	local t = {}
+
+	local b = 0
+	while b ~= nil do
+		local c, d = text:find(delim, b + 1, true)
+		c = c or (#text + 1)
+
+		t[#t + 1] = text:sub(b + 1, c - 1)
+		b = d
+	end
+
+	if removeempty then
+		local a = #t
+		while a > 0 and #t[a] == 0 do
+			t[a] = nil
+			a = a - 1
+		end
+	end
+
+	return t
+end
+
 return util
