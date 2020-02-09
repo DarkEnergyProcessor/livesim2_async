@@ -300,33 +300,6 @@ function deplsLoader:getLyrics()
 end
 
 return function(path)
-	-- get list of files named "beatmap"
-	local possibleBeatmapCandidate = {}
-	for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
-		if util.removeExtension(file) == "beatmap" then
-			possibleBeatmapCandidate[#possibleBeatmapCandidate + 1] = path..file
-		end
-	end
-
-	if #possibleBeatmapCandidate == 0 then
-		error("cannot find beatmap file candidate")
-	end
-
-	-- make sure beatmap.json has highest priority, then ls2
-	for i = 1, #possibleBeatmapCandidate do
-		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
-			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
-			break
-		end
-	end
-
-	for i = 1, #possibleBeatmapCandidate do
-		if util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
-			table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
-			break
-		end
-	end
-
 	-- if there's beatmaplist.yml then use that
 	if util.fileExists(path.."beatmaplist.yml") then
 		-- multi-beatmap
@@ -364,28 +337,54 @@ return function(path)
 		end
 
 		return ret
-	end
+	else
+		-- get list of files named "beatmap"
+		local possibleBeatmapCandidate = {}
+		for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
+			if util.removeExtension(file) == "beatmap" then
+				possibleBeatmapCandidate[#possibleBeatmapCandidate + 1] = path..file
+			end
+		end
 
-	-- test all file candidates
-	for i = 1, #possibleBeatmapCandidate do
-		local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
-		if file then
-			for j = 1, #beatmap.fileLoader do
-				file:seek(0)
-				local s, v = pcall(beatmap.fileLoader[j], file)
+		if #possibleBeatmapCandidate == 0 then
+			error("cannot find beatmap file candidate")
+		end
 
-				if s then
-					if getmetatable(v) == nil then
-						-- multi-beatmap
-						local ret = {}
-						for k = 1, #v do
-							ret[k] = deplsLoader(path, v[k])
+		-- make sure beatmap.json has highest priority, then ls2
+		for i = 1, #possibleBeatmapCandidate do
+			if util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
+				table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
+				break
+			end
+		end
+
+		for i = 1, #possibleBeatmapCandidate do
+			if util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
+				table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
+				break
+			end
+		end
+		-- test all file candidates
+		for i = 1, #possibleBeatmapCandidate do
+			local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
+			if file then
+				for j = 1, #beatmap.fileLoader do
+					file:seek(0)
+					local s, v = pcall(beatmap.fileLoader[j], file)
+
+					if s then
+						if getmetatable(v) == nil then
+							-- multi-beatmap
+							local ret = {}
+							for k = 1, #v do
+								ret[k] = deplsLoader(path, v[k])
+							end
+
+							return ret
+						else
+							-- single beatmap
+							return deplsLoader(path, v)
 						end
-
-						return ret
-					else
-						-- single beatmap
-						return deplsLoader(path, v)
 					end
 				end
 			end
