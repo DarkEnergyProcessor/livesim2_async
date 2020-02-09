@@ -250,6 +250,10 @@ function util.newVideoStream(path)
 	end
 end
 
+function util.hasExtendedVideoSupport()
+	return hasLVEP
+end
+
 function util.decompressToData(data, algo)
 	if version11 then
 		return love.data.decompress("data", algo, data)
