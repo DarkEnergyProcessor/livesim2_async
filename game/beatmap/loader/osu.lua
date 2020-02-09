@@ -267,4 +267,87 @@ function osuLoader:getName()
 	return Luaoop.class.data(self).metadata.Title
 end
 
+local videoExtension = util.hasExtendedVideoSupport() and
+	{".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or
+	{".ogg", ".ogv"}
+
+function osuLoader:getBackground()
+	local internal = Luaoop.class.data(self)
+
+	if internal.path and internal.background then
+		-- Background
+		local image = love.image.newImageData(internal.path..internal.background)
+		local w, h = image:getDimensions()
+		local ratio = w / h
+		local bg = {1}
+
+		if ratio >= 1.770 then
+			-- We can make the background to be 16:9
+			local calculatedMain = math.floor(88 * w / 1136)
+			local calculatedEndMain = math.floor(1048 * w / 1136)
+			local calculatedWidth = calculatedEndMain - calculatedMain
+			-- left
+			local imgl = love.image.newImageData(calculatedMain, h)
+			imgl:paste(image, 0, 0, 0, 0, calculatedMain, h)
+			-- center
+			local imgc = love.image.newImageData(calculatedWidth, h)
+			imgc:paste(image, 0, 0, calculatedMain, 0, calculatedWidth, h)
+			-- right
+			local imgr = love.image.newImageData(w - calculatedEndMain, h)
+			imgr:paste(image, 0, 0, calculatedEndMain, 0, w - calculatedEndMain, h)
+
+			bg[2] = imgc
+			bg[3] = imgl
+			bg[4] = imgr
+			bg[1] = 3
+		elseif ratio >= 1.5 then
+			-- 2:3 ratio. Put it as-is
+			bg[2] = image
+		elseif ratio >= 4/3 then
+			-- We can make the background to be 4:3
+			local calculatedMain = math.floor(43 * h / 726)
+			local calculatedEndMain = math.floor(683 * h / 726)
+			local calculatedHeight = calculatedEndMain - calculatedMain
+			-- top
+			local imgt = love.image.newImageData(w, calculatedMain)
+			imgt:paste(image, 0, 0, 0, 0, w, calculatedMain)
+			-- center
+			local imgc = love.image.newImageData(w, calculatedHeight)
+			imgc:paste(image, 0, 0, 0, calculatedMain, w, calculatedHeight)
+			-- bottom
+			local imgb = love.image.newImageData(w, h - calculatedEndMain)
+			imgb:paste(image, 0, 0, 0, calculatedEndMain, w, h - calculatedEndMain)
+
+			bg[2] = imgc
+			bg[3] = imgt
+			bg[4] = imgb
+			bg[1] = 5
+		end
+
+		-- Try to load video file
+		local videoFile
+		if internal.video then
+			local ext = util.getExtension(internal.video)
+
+			if util.isValueInArray("."..ext, videoExtension) then
+				local status
+				status, videoFile = pcall(util.newVideoStream, internal.path..internal.video)
+
+				if status == false then
+					videoFile = nil
+				end
+			end
+		end
+
+		if videoFile then
+			bg[#bg + 1] = videoFile
+			bg[1] = bg[1] + 8
+		end
+
+		return bg
+	end
+
+	return 0
+end
+
 return osuLoader, "file"
