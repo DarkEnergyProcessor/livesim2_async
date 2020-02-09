@@ -56,7 +56,9 @@ local function readKVSection(lines, dest, pattern)
 		end
 
 		local key, value = line:match(pattern)
-		dest[key] = tonumber(value) or value
+		if key and value then
+			dest[key] = tonumber(value) or value
+		end
 	end
 
 	return line
