@@ -62,9 +62,12 @@ local function readKVSection(lines, dest, pattern)
 	return line
 end
 
-function osuLoader:__construct(f)
+function osuLoader:__construct(f, dir)
 	local internal = Luaoop.class.data(self)
 	local lines = f:lines()
+
+	-- Starting directory (may be nil). If exist, with trailing slashes
+	internal.path = dir
 
 	-- Format check
 	assert(lines():gsub("\239\187\191", ""):find("osu file format", 1, true) == 1, "not osu beatmap file")
@@ -240,18 +243,22 @@ function osuLoader:getDifficultyString()
 end
 
 function osuLoader:getAudioPathList()
-	-- FIXME: Provided filename is too generic.
 	local internal = Luaoop.class.data(self)
-	local file = util.stringToHex(md5(internal.metadata.Artist..internal.metadata.Title..internal.general.AudioFilename))
 
-	log.debugf(
-		"noteloader.osu", "%s - %s (%s) = %s",
-		internal.metadata.Artist,
-		internal.metadata.Title,
-		internal.general.AudioFilename,
-		file
-	)
-	return {"audio/"..file}
+	if internal.path then
+		return {internal.path..util.removeExtension(internal.general.AudioFilename)}
+	else
+		local file = util.stringToHex(md5(internal.metadata.Artist..internal.metadata.Title..internal.general.AudioFilename))
+
+		log.debugf(
+			"noteloader.osu", "%s - %s (%s) = %s",
+			internal.metadata.Artist,
+			internal.metadata.Title,
+			internal.general.AudioFilename,
+			file
+		)
+		return {"audio/"..file}
+	end
 end
 
 function osuLoader:getName()
