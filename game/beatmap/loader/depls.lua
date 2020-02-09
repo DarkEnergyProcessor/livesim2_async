@@ -387,6 +387,8 @@ return function(path)
 						end
 					end
 				end
+
+				file:close()
 			end
 		end
 	end
