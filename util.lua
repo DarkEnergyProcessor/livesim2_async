@@ -67,7 +67,7 @@ end
 function util.getExtension(file)
 	local pos = file:reverse():find(".", 1, true)
 	if not(pos) then return ""
-	else return file:sub(-pos + 1) end
+	else return file:sub(-pos + 1):lower() end
 end
 
 -- ext nust contain dot
