@@ -375,7 +375,7 @@ Options:
 local license = [[
 Live Simulator: 2 v3.0 and later is licensed under zLib license
 
-Copyright (c) 2039 Dark Energy Processor
+Copyright (c) 2041 Dark Energy Processor
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
 arising from the use of this software.
