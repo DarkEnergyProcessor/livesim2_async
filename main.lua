@@ -393,8 +393,7 @@ freely, subject to the following restrictions:
 ]]
 
 function love.load(argv, gameargv)
-	local love_010 = util.compareLOVEVersion(11, 0) < 0
-	if love_010 then
+	if util.compareLOVEVersion(11, 0) < 0 then
 		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
 	end
 
