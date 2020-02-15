@@ -2,8 +2,9 @@
 -- This script patches LOVE rendering pipeline to workaround MRT bandwidth problem in some GPU drivers.
 -- See: https://github.com/love2d/love/commit/1896f82f5d40d33a551f7c5fd9662db3b4ccdf31
 
-if love._version >= "11.3" then
-	-- Already fixed in this version
+if love.getVersion() < 11 or love._version >= "11.3" then
+	-- LOVE pre-11.0 does not have this problem.
+	-- LOVE 11.3 already have this problem worked around.
 	return true
 end
 
