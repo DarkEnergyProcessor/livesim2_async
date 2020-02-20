@@ -372,7 +372,7 @@ function beatmapDownload:start()
 		:setReceiveCallback(downloadReceiveCallback)
 		:setFinishCallback(downloadFinishCallback)
 		:setErrorCallback(downloadErrorCallback)
-		:download(SERVER_ADDRESS.."/maps.json", {
+		:download(SERVER_ADDRESS.QUERY.."/maps.json", {
 			["If-None-Match"] = lastTag
 		})
 end
