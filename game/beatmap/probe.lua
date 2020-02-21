@@ -34,5 +34,20 @@ return function(f)
 		end
 	end
 
+	f:seek(0)
+	header = f:read(3)
+	-- BOM -_-
+	if header == "\239\187\191" then
+		if f:read(15) == "osu file format" then
+			-- osu!
+			return true
+		end
+	elseif header == "osu" then
+		if f:read(12) == " file format" then
+			-- osu!
+			return true
+		end
+	end
+
 	return false
 end
