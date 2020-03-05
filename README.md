@@ -54,7 +54,7 @@ Live Simulator: 2 uses these external libraries to run:
 
 Live Simulator: 2 uses these external libraries if available:
 
-* [FFmpeg 3.x](http://ffmpeg.org/)
+* [FFmpeg 4.x](http://ffmpeg.org/)
 
 Disclaimer
 ==========
@@ -78,7 +78,7 @@ Special Thanks
 
 * jwun - Spanish translation.
 
-* Salaron & Nick "Zorb" Cage - Russian translation.
+* Salaron & Nick "Zorb" Cage - Russian translation and new beatmap download provider.
 
 * Some other people who suggest something and helping me which I forgot his/her name
 
@@ -111,6 +111,6 @@ Live Simulator: 2 uses lua-tinyyaml. It's licensed under [MIT](https://github.co
 
 Live Simulator: 2 uses image asset from Love Live! School Idol Festival.
 
-Live Simulator: 2 uses FFmpeg when available, and it's licensed under GNU GPLv3 (or GNU LGPL, depending on used binaries).
+Live Simulator: 2 uses [FFmpeg](https://www.ffmpeg.org/) when available, and it's licensed under GNU LGPL (or GNU GPL, depending on used binaries).
 
 Please see respective files (or links) for license of those libraries.
