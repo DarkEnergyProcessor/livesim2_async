@@ -333,7 +333,7 @@ local function downloadAudio(self, infodata, dest)
 		end
 		self.persist.isAudioDownloading = false
 	end)
-	:download(SERVER_ADDRESS.."/"..self.persist.trackData.song)
+	:download(SERVER_ADDRESS.QUERY.."/"..self.persist.trackData.song)
 end
 
 local function selectPlayButton(_, data)
