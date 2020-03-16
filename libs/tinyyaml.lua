@@ -2,10 +2,19 @@
 -- tinyyaml - YAML subset parser
 -------------------------------------------------------------------------------
 
+local table = table
+local string = string
 local schar = string.char
 local ssub, gsub = string.sub, string.gsub
 local sfind, smatch = string.find, string.match
 local tinsert, tremove = table.insert, table.remove
+local setmetatable = setmetatable
+local pairs = pairs
+local type = type
+local tonumber = tonumber
+local math = math
+local getmetatable = getmetatable
+local error = error
 
 local UNESCAPES = {
   ['0'] = "\x00", z = "\x00", N    = "\x85",
@@ -51,14 +60,14 @@ function class.__meta.__call(cls, ...)
   return self
 end
 
-function class.def(base, type, cls)
+function class.def(base, typ, cls)
   base = base or class
   local mt = {__metatable=base, __index=base}
   for k, v in pairs(base.__meta) do mt[k] = v end
   cls = setmetatable(cls or {}, mt)
   cls.__index = cls
   cls.__metatable = cls
-  cls.__type = type
+  cls.__type = typ
   cls.__meta = mt
   return cls
 end
@@ -174,6 +183,12 @@ local function parsestring(line, stopper)
     end
     return buf, ssub(line, i+1)
   end
+  if q == '{' or q == '[' then  -- flow style
+    return nil, line
+  end
+  if q == '|' or q == '>' then  -- block
+    return nil, line
+  end
   if q == '-' or q == ':' then
     if ssub(line, 2, 2) == ' ' or #line == 1 then
       return nil, line
@@ -200,7 +215,7 @@ local function isemptyline(line)
   return line == '' or sfind(line, '^%s*$') or sfind(line, '^%s*#')
 end
 
-local function startswithline(line, needle)
+local function equalsline(line, needle)
   return startswith(line, needle) and isemptyline(ssub(line, #needle+1))
 end
 
@@ -385,7 +400,8 @@ end
 
 local function parsescalar(line, lines, indent)
   line = ltrim(line)
-  line = gsub(line, '%s*#.*$', '')
+  line = gsub(line, '^%s*#.*$', '')  -- comment only -> ''
+  line = gsub(line, '^%s*', '')  -- trim head spaces
 
   if line == '' or line == '~' then
     return null
@@ -397,19 +413,20 @@ local function parsescalar(line, lines, indent)
   end
 
   local s, _ = parsestring(line)
-  if s and s ~= line then
+  -- startswith quote ... string
+  -- not startswith quote ... maybe string
+  if s and (startswith(line, '"') or startswith(line, "'")) then
     return s
   end
 
-    -- Special cases
-  if sfind('\'"!$', ssub(line, 1, 1), 1, true) then
+  if startswith('!', line) then  -- unexpected tagchar
     error('unsupported line: '..line)
   end
 
-  if startswithline(line, '{}') then
+  if equalsline(line, '{}') then
     return {}
   end
-  if startswithline(line, '[]') then
+  if equalsline(line, '[]') then
     return {}
   end
 
@@ -422,6 +439,7 @@ local function parsescalar(line, lines, indent)
   end
 
   -- Regular unquoted string
+  line = gsub(line, '%s*#.*$', '')  -- trim tail comment
   local v = line
   if v == 'null' or v == 'Null' or v == 'NULL'then
     return null
@@ -442,7 +460,7 @@ local function parsescalar(line, lines, indent)
   elseif sfind(v, '^[%+%-]?[0-9]+%.[0-9]+$') then
     return tonumber(v)
   end
-  return v
+  return s or v
 end
 
 local parsemap;  -- : func
@@ -619,7 +637,7 @@ function parsemap(line, lines, indent)
     end
 
     if map[key] ~= nil then
-      print("found a duplicate key '"..key.."' in line: "..line)
+      -- print("found a duplicate key '"..key.."' in line: "..line)
       local suffix = 1
       while map[key..'__'..suffix] do
         suffix = suffix + 1
@@ -727,20 +745,22 @@ local function parsedocuments(lines)
   return root
 end
 
-
+--- Parse yaml string into table.
 local function parse(source)
   local lines = {}
-  for line in string.gmatch(source..'\n', '(.-)\n') do
+  for line in string.gmatch(source .. '\n', '(.-)\r?\n') do
     tinsert(lines, line)
   end
+
   local docs = parsedocuments(lines)
   if #docs == 1 then
     return docs[1]
   end
+
   return docs
 end
 
 return {
-  null = null,
+  version = 0.1,
   parse = parse,
 }
