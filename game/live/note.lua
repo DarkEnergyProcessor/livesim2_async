@@ -227,6 +227,19 @@ function noteManager:__construct(param)
 	-- timing window next rotation
 	self.timingWindowRotation = math.random(0, 11)
 
+	-- Workaround color clamping in LOVE 11.0
+	-- https://github.com/MikuAuahDark/livesim2/issues/22
+	if util.compareLOVEVersion(11, 0) >= 0 then
+		self.workaroundColor = love.graphics.newShader([[
+			vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
+			{
+				vec4 linearCol = unGammaCorrectColorPrecise(color);
+				vec4 fixedCol = gammaCorrectColorPrecise(linearCol * vec4(2.0, 2.0, 2.0, 1.0));
+				return fixedCol * Texel(tex, tc);
+			}
+		]])
+	end
+
 	-- Note style needs additional parsing
 	local noteStyle = setting.get("NOTE_STYLE")
 	-- bit pattern for note style: 00000000 iiiiiiss ssssffff ffpppppp
@@ -369,11 +382,18 @@ function noteManager:drawNote(layers, opacity, position, scale, rotation)
 	for i = 1, #layers do
 		local layer = layers[i]
 		local quad = note.quadRegion[layer]
+		local cr, cg, cb, ca
 		if isUncolorableLayer(layer) then
-			love.graphics.setColor(color.get(255, 255, 255, self.opacity * opacity))
+			cr, cg, cb, ca = color.get(255, 255, 255, self.opacity * opacity)
 		else
-			love.graphics.setColor(color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity))
+			cr, cg, cb, ca = color.compat(layers.color[1], layers.color[2], layers.color[3], self.opacity * opacity)
 		end
+
+		if self.workaroundColor then
+			cr, cg, cb = cr / 2, cg / 2, cb / 2
+		end
+
+		love.graphics.setColor(cr, cg, cb, ca)
 
 		local w, h = select(3, quad:getViewport())
 		love.graphics.draw(
@@ -1151,14 +1171,21 @@ function noteManager:draw()
 	end
 
 	-- draw notes
+	if self.workaroundColor then
+		-- See declaration of self.workaroundColor for more info
+		love.graphics.setShader(self.workaroundColor)
+	end
+
 	for _, v in ipairs(self.notesListByDraw) do
 		if not(self.delete) and self.elapsedTime >= v.spawnTime then
 			-- Well, just call draw method
 			v:draw()
 		else
-			return
+			break
 		end
 	end
+
+	love.graphics.setShader()
 end
 
 note.manager = noteManager
