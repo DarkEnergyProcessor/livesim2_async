@@ -143,6 +143,13 @@ local function getLiveIconPath(icon)
 	return "live_icon/"..getHashedName(util.basename(icon))
 end
 
+local function dummy() end
+
+local function loadCoverImage(elem, coverPath)
+	local coverImage = assetCache.loadImage(coverPath, mipmaps, dummy)
+	elem:setCoverImage(coverImage)
+end
+
 local function initializeBeatmapList(self, mapdata, etag)
 	if not(mapdata) then
 		-- Load maps.json
@@ -228,17 +235,16 @@ local function initializeBeatmapList(self, mapdata, etag)
 		local track = liveTrack[i]
 		local x = 30 + ((i - 1) % 2) * 480
 		local y = math.floor((i - 1) / 2) * 94
-		local coverPath = getLiveIconPath(track.icon)
-		local coverImage
-		if util.fileExists(coverPath) then
-			coverImage = assetCache.loadImage(coverPath, mipmaps)
-		end
-
-		local elem = beatmapDLSelectButton(self, track.name, track.member, coverImage)
+		local elem = beatmapDLSelectButton(self, track.name, track.member)
 		elem:addEventListener("mousereleased", onSelectButton)
 		elem:setData({self.persist.download, track, i, self})
 		self.persist.frame:addElement(elem, x, y)
 		self.persist.beatmapListElem[i] = elem
+
+		local coverPath = getLiveIconPath(track.icon)
+		if util.fileExists(coverPath) then
+			async.runFunction(loadCoverImage):run(elem, coverPath)
+		end
 	end
 end
 
