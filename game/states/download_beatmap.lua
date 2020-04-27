@@ -10,6 +10,7 @@ local async = require("async")
 local assetCache = require("asset_cache")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
+local log = require("logging")
 local color = require("color")
 local mainFont = require("font")
 local setting = require("setting")
@@ -494,7 +495,13 @@ function beatmapInfoDL:start(arg)
 		local name = getLiveIconPath(self)
 		if util.fileExists(name) then
 			async.runFunction(function()
-				self.data.coverArt = assetCache.loadImage(name, {mipmaps = true})
+				-- TODO: Review a better option for this case
+				self.data.coverArt = assetCache.loadImage(name, {mipmaps = true}, function(_, msg)
+					love.filesystem.remove(name)
+					log.error("download_beatmap", msg)
+					self.data.coverArt = nil
+					downloadCoverArt(self)
+				end)
 			end):run()
 		else
 			downloadCoverArt(self)

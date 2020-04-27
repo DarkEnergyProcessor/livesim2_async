@@ -33,7 +33,7 @@ local function getCacheByParam(a, b, nob)
 	end
 end
 
-function assetCache.loadImage(name, settings)
+function assetCache.loadImage(name, settings, errhand)
 	local s, a, b = getCacheByParam(name, settings, true)
 
 	if s then
@@ -46,7 +46,7 @@ function assetCache.loadImage(name, settings)
 			image = love.graphics.newImage(b, settings)
 		elseif coroutine.running() then
 			-- Run asynchronously
-			local c = async.loadImage(b, settings)
+			local c = async.loadImage(b, settings, errhand)
 			image = c:getValues()
 		else
 			error("synchronous mode is not allowed", 2)

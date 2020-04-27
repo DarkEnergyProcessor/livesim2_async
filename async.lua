@@ -145,9 +145,15 @@ end
 --- Load image in asynchronous way.
 -- @param path Path to image.
 -- @tparam table settings Image loading settings, as per love.graphics.newImage
+-- @tparam function errhand Error handler of the object
 -- @treturn WrapLilyClass Asynchronous object (Lily wrapper)
-function async.loadImage(path, settings)
-	return wrapLilyClass(lily.newImage(path, settings))
+function async.loadImage(path, settings, errhand)
+	local l = lily.newImage(path, settings)
+	if errhand then
+		l:onError(errhand)
+	end
+
+	return wrapLilyClass(l)
 end
 
 --- Load font in asynchronous way.
