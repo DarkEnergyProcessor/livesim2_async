@@ -302,6 +302,7 @@ local function downloadFinishCallback(self)
 		-- Save map data and initialize
 		async.runFunction(initializeBeatmapList):run(self, mapData, dldata.header.etag)
 		self.persist.downloadData = nil
+		setStatusText(self)
 	end
 end
 
