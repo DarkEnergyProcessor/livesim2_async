@@ -253,14 +253,21 @@ function resultScreen:start(arg)
 			}
 		]])
 
-		for i = 1, 890 do
-			local idx = (i-1) / 890 * #accuracyData
-			local v0 = accuracyData[math.floor(idx)+1]
-			local v1 = accuracyData[math.ceil(idx)+1] or accuracyData[#accuracyData]
-			local t = idx % 1
-			local v = (1 - t) * v0 + t * v1
-			lines[#lines + 1] = i - 1 + 5
-			lines[#lines + 1] = 132 - v * 127
+		if #accuracyData == 0 then
+			lines[1] = 5
+			lines[2] = 132
+			lines[3] = 894
+			lines[4] = 132
+		else
+			for i = 1, 890 do
+				local idx = (i-1) / 890 * #accuracyData
+				local v0 = accuracyData[math.floor(idx)+1]
+				local v1 = accuracyData[math.ceil(idx)+1] or accuracyData[#accuracyData]
+				local t = idx % 1
+				local v = (1 - t) * v0 + t * v1
+				lines[#lines + 1] = i - 1 + 5
+				lines[#lines + 1] = 132 - v * 127
+			end
 		end
 
 		love.graphics.push("all")
