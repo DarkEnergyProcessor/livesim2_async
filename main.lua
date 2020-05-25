@@ -557,7 +557,7 @@ function love.load(argv, gameargv)
 		local dumpFunc
 
 		-- TODO: Dump to LS2 beatmap
-		if dumpFormat == "json" then
+		if dumpFormat == "json" or dumpFormat == "json_pretty" then
 			dumpFunc = function(data)
 				if randomizeBeatmap then
 					local rndout
@@ -573,10 +573,11 @@ function love.load(argv, gameargv)
 						log.warnf("main", "cannot randomize beatmap, using original beatmap")
 					end
 				end
-				io.write(JSON:encode(data))
+
+				io.write(JSON[dumpFormat == "json_pretty" and "encode_pretty" or "encode"](JSON, data))
 				love.event.quit()
 			end
-		elseif dumpFormat == "llp" then
+		elseif dumpFormat == "llp" or dumpFormat == "llp_pretty" then
 			local function checkSimul(lane, timing)
 				for i = 1, 9 do
 					if lane[i] then
@@ -633,7 +634,7 @@ function love.load(argv, gameargv)
 					lane[#lane + 1] = note
 				end
 
-				io.write(JSON:encode(llpdata), "\n")
+				io.write(JSON[dumpFormat == "json_pretty" and "encode_pretty" or "encode"](JSON, llpdata), "\n")
 				love.event.quit()
 			end
 		else
