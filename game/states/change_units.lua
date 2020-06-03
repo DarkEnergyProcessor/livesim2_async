@@ -204,9 +204,8 @@ end
 
 local function tryLeave(_, self)
 	if self.persist.selectUnits > 0 then
-		glow.removeFrame(self.persist.unitSelectFrame)
 		self.persist.selectUnits = -1
-		showUnitList(self)
+		self.persist.startUnitSelector = false
 		showSaveRevertButton(self)
 	elseif self.persist.keymapIndex > 0 then
 		self.persist.timer:clear()
@@ -266,10 +265,13 @@ local function changeUnit(_, data)
 	local self = data[1]
 	local index = data[2]
 
+	if self.persist.selectUnits > 0 or self.persist.keymapIndex > 0 then
+		return
+	end
+
 	if self.persist.mode == "units" then
 		self.persist.selectUnits = index
-		glow.addFrame(self.persist.unitSelectFrame)
-		hideUnitList(self)
+		self.persist.startUnitSelector = true
 		hideSaveRevertButton(self)
 	elseif self.persist.mode == "keymap" then
 		self.persist.keymapIndex = index
@@ -286,12 +288,12 @@ local function selectedNewUnit(_, data)
 
 	if self.persist.selectUnits > 0 then
 		local val = data[2]
-		glow.removeFrame(self.persist.unitSelectFrame)
 		showUnitList(self)
 		showSaveRevertButton(self)
 		self.persist.unitList[self.persist.selectUnits] = val[2]
 		self.data.dummyButtons[self.persist.selectUnits]:setImage(val[3])
 		self.persist.selectUnits = -1
+		self.persist.startUnitSelector = false
 	end
 end
 
@@ -478,6 +480,9 @@ function changeUnits:start()
 	self.persist.keymapOpacity = 0
 	self.persist.keymapOverlayOpacity = 0
 	self.persist.keymapHighlightTime = 0
+	self.persist.unitSelectorTime = 0
+	self.persist.unitSelectorLerp = 0
+	self.persist.startUnitSelector = false
 
 	updateCurrentMode(self.data.modeText, self.data.modeButton, self.assets.images.keyboard, self.persist.mode)
 
@@ -526,6 +531,24 @@ function changeUnits:update(dt)
 	if self.persist.keymapIndex > 0 then
 		self.persist.keymapHighlightTime = (self.persist.keymapHighlightTime + dt) % 2
 	end
+
+	local prev = self.persist.unitSelectorTime
+	if self.persist.startUnitSelector then
+		self.persist.unitSelectorTime = math.min(self.persist.unitSelectorTime + dt * 2, 1)
+
+		if self.persist.unitSelectorTime ~= prev and self.persist.unitSelectorTime > 0 then
+			glow.addFrame(self.persist.unitSelectFrame)
+		end
+	else
+		self.persist.unitSelectorTime = math.max(self.persist.unitSelectorTime - dt * 2, 0)
+
+		if self.persist.unitSelectorTime ~= prev and self.persist.unitSelectorTime == 0 then
+			glow.removeFrame(self.persist.unitSelectFrame)
+		end
+	end
+
+	self.persist.unitSelectorLerp = 640 - materialInterpolation(self.persist.unitSelectorTime) * 499
+	self.persist.unitSelectFrame:setPosition(77, self.persist.unitSelectorLerp + 127)
 end
 
 function changeUnits:draw()
@@ -544,95 +567,95 @@ function changeUnits:draw()
 	love.graphics.setShader()
 	glow.draw()
 
-	if self.persist.selectUnits > 0 then
-		love.graphics.setColor(color.white)
-		love.graphics.rectangle("fill", 26, 141, 908, 498)
-		love.graphics.draw(self.data.selectUnitsText, 78, 177)
-		self.persist.unitSelectFrame:draw()
-	else
-		love.graphics.setColor(color.white)
+	love.graphics.setColor(color.white)
 
-		if self.persist.keymapIndex <= 0 then
-			love.graphics.draw(self.data.modeText, 780, 32)
+	if self.persist.keymapIndex <= 0 then
+		love.graphics.draw(self.data.modeText, 780, 32)
+	end
+
+	if self.persist.keymapOpacity > 0 then
+		if self.persist.keymapOverlayOpacity > 0 then
+			-- Draw dummy units
+			love.graphics.setColor(color.white)
+			for i = 1, 9 do
+				if i ~= self.persist.keymapIndex then
+					local x = idolPosition[i]
+					love.graphics.draw(self.persist.unitImageList[self.persist.unitList[i]], x[1], x[2])
+				end
+			end
 		end
 
-		if self.persist.keymapOpacity > 0 then
-			if self.persist.keymapOverlayOpacity > 0 then
-				-- Draw dummy units
-				love.graphics.setColor(color.white)
-				for i = 1, 9 do
-					if i ~= self.persist.keymapIndex then
-						local x = idolPosition[i]
-						love.graphics.draw(self.persist.unitImageList[self.persist.unitList[i]], x[1], x[2])
-					end
-				end
-			end
+		-- Show key overlay
+		love.graphics.setColor(color.compat(60, 57, 57, self.persist.keymapOpacity))
 
-			-- Show key overlay
-			love.graphics.setColor(color.compat(60, 57, 57, self.persist.keymapOpacity))
-
-			for i = 1, 9 do
-				if i ~= self.persist.keymapIndex then
-					local x = idolPosition[i]
-					love.graphics.rectangle("fill", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
-					love.graphics.rectangle("line", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
-				end
-			end
-
-			-- Show key text
-			-- It's better to use love.graphics.printf(text, Font) variant here
-			-- but that variant is only supported in 11.0 and later
-			love.graphics.setFont(self.data.keymapFont)
-			love.graphics.setColor(color.compat(255, 255, 255, self.persist.keymapOpacity))
-			local h = self.data.keymapFont:getHeight() * 0.5
-			for i = 1, 9 do
-				if i ~= self.persist.keymapIndex then
-					local x = idolPosition[i]
-					local key = self.persist.keymap[i]
-					love.graphics.printf(key:upper(), x[1] - 5, x[2] + 104 - h, 138, "center")
-				end
-			end
-
-			if self.persist.keymapIndex > 0 then
-				-- Draw gray rectangle
-				love.graphics.setColor(color.compat(70, 69, 69, self.persist.keymapOverlayOpacity * 0.65))
-				love.graphics.rectangle("fill", -88, -43, 1136, 726)
-
-				-- Highlight the current selected unit
-				local i = self.persist.keymapIndex
+		for i = 1, 9 do
+			if i ~= self.persist.keymapIndex then
 				local x = idolPosition[i]
-
-				love.graphics.setColor(color.white)
-				love.graphics.draw(self.persist.unitImageList[self.persist.unitList[i]], x[1], x[2])
-				love.graphics.setColor(color.compat(60, 57, 57, self.persist.keymapOpacity))
 				love.graphics.rectangle("fill", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
 				love.graphics.rectangle("line", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
-				love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.keymapHighlightTime)))
-				love.graphics.printf("PRESS KEY", x[1] - 5, x[2] + 104 - h, 138, "center")
 			end
 		end
 
-		if self.persist.keymapOverlayOpacity < 1 then
-			love.graphics.setColor(color.white)
-			love.graphics.stencil(stencilTextPlacement, "replace", 2, true)
-			love.graphics.setStencilTest("equal", 2)
-			love.graphics.draw(self.data.blurFramebuffer, 0, 0, 0, 2, 2)
-			love.graphics.setColor(color.compat(53, 53, 53, 0.5 + self.persist.keymapOverlayOpacity * 0.5))
-			love.graphics.setStencilTest()
-			stencilTextPlacement()
-		else
-			love.graphics.setColor(color.hex353535)
-			stencilTextPlacement()
+		-- Show key text
+		-- It's better to use love.graphics.printf(text, Font) variant here
+		-- but that variant is only supported in 11.0 and later
+		love.graphics.setFont(self.data.keymapFont)
+		love.graphics.setColor(color.compat(255, 255, 255, self.persist.keymapOpacity))
+		local h = self.data.keymapFont:getHeight() * 0.5
+		for i = 1, 9 do
+			if i ~= self.persist.keymapIndex then
+				local x = idolPosition[i]
+				local key = self.persist.keymap[i]
+				love.graphics.printf(key:upper(), x[1] - 5, x[2] + 104 - h, 138, "center")
+			end
 		end
 
-		love.graphics.setColor(color.white)
 		if self.persist.keymapIndex > 0 then
-			love.graphics.draw(self.data.keymapSelectText)
-		elseif self.persist.mode == "keymap" then
-			love.graphics.draw(self.data.keymapText)
-		else
-			love.graphics.draw(self.data.changeUnitText)
+			-- Draw gray rectangle
+			love.graphics.setColor(color.compat(70, 69, 69, self.persist.keymapOverlayOpacity * 0.65))
+			love.graphics.rectangle("fill", -88, -43, 1136, 726)
+
+			-- Highlight the current selected unit
+			local i = self.persist.keymapIndex
+			local x = idolPosition[i]
+
+			love.graphics.setColor(color.white)
+			love.graphics.draw(self.persist.unitImageList[self.persist.unitList[i]], x[1], x[2])
+			love.graphics.setColor(color.compat(60, 57, 57, self.persist.keymapOpacity))
+			love.graphics.rectangle("fill", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
+			love.graphics.rectangle("line", x[1] - 5, x[2] + 88, 138, 32, 14, 14)
+			love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.keymapHighlightTime)))
+			love.graphics.printf("PRESS KEY", x[1] - 5, x[2] + 104 - h, 138, "center")
 		end
+	end
+
+	if self.persist.keymapOverlayOpacity < 1 then
+		love.graphics.setColor(color.white)
+		love.graphics.stencil(stencilTextPlacement, "replace", 2, true)
+		love.graphics.setStencilTest("equal", 2)
+		love.graphics.draw(self.data.blurFramebuffer, 0, 0, 0, 2, 2)
+		love.graphics.setColor(color.compat(53, 53, 53, 0.5 + self.persist.keymapOverlayOpacity * 0.5))
+		love.graphics.setStencilTest()
+		stencilTextPlacement()
+	else
+		love.graphics.setColor(color.hex353535)
+		stencilTextPlacement()
+	end
+
+	love.graphics.setColor(color.white)
+	if self.persist.keymapIndex > 0 then
+		love.graphics.draw(self.data.keymapSelectText)
+	elseif self.persist.mode == "keymap" then
+		love.graphics.draw(self.data.keymapText)
+	else
+		love.graphics.draw(self.data.changeUnitText)
+	end
+
+	if self.persist.unitSelectorTime > 0 then
+		love.graphics.setColor(color.white)
+		love.graphics.rectangle("fill", 26, self.persist.unitSelectorLerp, 908, 498)
+		love.graphics.draw(self.data.selectUnitsText, 78, self.persist.unitSelectorLerp + 36)
+		self.persist.unitSelectFrame:draw()
 	end
 end
 

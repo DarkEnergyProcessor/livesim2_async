@@ -119,6 +119,15 @@ function frame:setElementPosition(element, x, y)
 	return false
 end
 
+function frame:getPosition()
+	return self.x, self.y
+end
+
+function frame:setPosition(x, y)
+	self.x = assert(x)
+	self.y = assert(y)
+end
+
 --! Remove element from frame
 --! @param element Element object
 function frame:removeElement(element)
