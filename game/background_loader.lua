@@ -154,7 +154,6 @@ function backgroundLoader.compose(main, left, right, top, bottom)
 	if bottom then love.graphics.draw(bottom, 0, 683, 0, 960 / bottom:getWidth(), 43 / bottom:getHeight()) end
 	love.graphics.pop()
 
-	framebuffer:newImageData():encode("png", "background_dump_compose.png")
 	local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
 	mesh:setTexture(framebuffer)
 	return mesh
