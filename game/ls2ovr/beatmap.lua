@@ -144,7 +144,7 @@ function beatmap.load(file)
 end
 
 function beatmap:__construct()
-	self.beatmapFormatVersion = 0
+	self.beatmapFormatVersion = TARGET_VERSION
 	self.beatmapMetadata = nil
 	self.beatmapList = {}
 	self.beatmapHash = {}

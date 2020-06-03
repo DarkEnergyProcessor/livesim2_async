@@ -1,11 +1,6 @@
 Live Simulator: 2 "Over the Rainbow" beatmap specification
-Version 0.7
+Version 1.0, format version 0
 Preferred file extension: .ls2ovr .ls3
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!                 Subject to change                !!
-!! Notice will be removed once the format is frozen !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 Live Simulator: 2 "Over the Rainbow" or referred as "ls2ovr" is new beatmap
 format aimed to overcome some limitation in older Live Simulator: 2 binary
@@ -79,7 +74,7 @@ Beatmap: Beatmap data, may be compressed
     byte - Amount of beatmap
     - For every "Amount of beatmap"
     {
-        dword - NBT data size
+        dword - NBT beatmap data size in bytes
         TAG_Compound("beatmap"): Beatmap data
         {
             TAG_Byte("star"): Beatmap star difficulty level (REQUIRED)
@@ -116,8 +111,8 @@ Beatmap: Beatmap data, may be compressed
                 - For every element
                 TAG_Compound(None): Custom unit definition
                 {
-                    TAG_BYTE("position"): Unit position where 1 is rightmost and 9 is leftmost (REQUIRED)
-                    TAG_String("filename"): Custom unit image filename
+                    TAG_Byte("position"): Unit position where 1 is rightmost and 9 is leftmost (REQUIRED)
+                    TAG_String("filename"): Custom unit image filename (REQUIRED)
                 }
             }
             TAG_Int_Array("scoreInfo"): 4 ints of score level, in C, B, A, and S score order (OPTIONAL)
@@ -161,7 +156,7 @@ Beatmap: Beatmap data, may be compressed
     }
 
 Data: Additional beatmap data such as audio and images goes here
-    dword - Additional beatmap data NBT size (can be 0)
+    dword - Additional beatmap data NBT size in bytes (can be 0)
     TAG_List("additionalData"): Beatmap additional data
     {
         - For every additional data
@@ -169,7 +164,7 @@ Data: Additional beatmap data such as audio and images goes here
         {
             TAG_String("filename"): Data file name (REQUIRED)
             TAG_Int("offset"): Data file position inside the beatmap file relative to beginning
-                               if the file, 16-byte aligned (REQUIRED)
+                               of the file. File must be aligned to 16-byte boundary (REQUIRED)
             TAG_Int("size"): Data file size (REQUIRED)
         }
     }
@@ -283,12 +278,17 @@ B. Encoder
    a. MUST support writing uncompressed, gzip, and zLib compressed beatmap data.
 
 Changelog:
+v1.0: 03-06-2020
+- Mark "filename" for each "customUnitList" as required.
+- Remove "Subject to Change" notice.
+- Add information about NBT size in bytes in some fields.
+
 v0.7: 18-04-2019
 - Merged "backgroundList" to "background" and "randomBackgroundList" to "backgroundRandom", so
   both field can be either be TAG_Compound or TAG_String.
 
 v0.6: 16-04-2019
-- Added end-of-file check
+- Added end-of-file check.
 
 v0.5: 15-04-2019
 - Removed unnecessary TAG_List in beatmap data.
