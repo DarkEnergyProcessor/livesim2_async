@@ -159,9 +159,11 @@ end
 --- Load font in asynchronous way.
 -- @tparam string path Path to font.
 -- @tparam number size Font size.
+-- @tparam number hinting For TTF fonts, type hinting of the font.
+-- @tparam number dpiscale For LOVE 11.0 and later, DPI scale of the font.
 -- @treturn WrapLilyClass Asynchronous object (Lily wrapper)
-function async.loadFont(path, size)
-	return wrapLilyClass(lily.newFont(path, size))
+function async.loadFont(path, size, hinting, dpiscale)
+	return wrapLilyClass(lily.newFont(path, size, hinting, dpiscale))
 end
 
 --- Load data with Lily

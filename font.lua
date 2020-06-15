@@ -7,31 +7,47 @@ local async = require("async")
 local cache = require("cache")
 local lily = require("lily")
 local log = require("logging")
+local util = require("util")
+
 local font = {}
 
 font.roboto = love.filesystem.newFileData("fonts/Roboto-Regular.ttf")
 font.notoSansCJK = love.filesystem.newFileData("fonts/NotoSansCJKjp-Regular.woff")
+font.dpiScale = util.getFontDPIScale()
 
 function font.get(...)
 	local arg = {...}
 	local result = {}
 	local isNull = {}
-	local fontsLoadQueue = {}
+	local fontsQueue = {}
 	local j = 1
 	local inSync = not(coroutine.running())
 
 	for i = 1, #arg do
 		local p = cache.get("MainFont"..arg[i])
+
 		if not(p) then
 			if inSync then
-				p = love.graphics.newFont(font.roboto, arg[i])
+				p = love.graphics.newFont(font.roboto, arg[i], "normal", font.dpiScale)
 				p:setFallbacks(love.graphics.newFont(font.notoSansCJK, arg[i]))
 				cache.set("MainFont"..arg[i], p)
 			else
 				isNull[i] = j
 				j = j + 1
-				fontsLoadQueue[#fontsLoadQueue + 1] = {lily.newFont, font.roboto, arg[i]}
-				fontsLoadQueue[#fontsLoadQueue + 1] = {lily.newFont, font.notoSansCJK, arg[i]}
+				fontsQueue[#fontsQueue + 1] = {
+					lily.newFont,
+					font.roboto,
+					arg[i],
+					"normal",
+					font.dpiScale
+				}
+				fontsQueue[#fontsQueue + 1] = {
+					lily.newFont,
+					font.notoSansCJK,
+					arg[i],
+					"normal",
+					font.dpiScale
+				}
 				p = false
 			end
 		end
@@ -39,8 +55,8 @@ function font.get(...)
 		result[i] = p
 	end
 
-	if #fontsLoadQueue > 0 then
-		local multi = lily.loadMulti(fontsLoadQueue)
+	if #fontsQueue > 0 then
+		local multi = lily.loadMulti(fontsQueue)
 		local time = love.timer.getTime()
 		while multi:isComplete() == false do
 			async.wait()

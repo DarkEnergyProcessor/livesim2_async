@@ -427,4 +427,16 @@ function util.split(text, delim, removeempty)
 	return t
 end
 
+if version11 then
+	local isMobile = love._os == "iOS" or love._os == "Android"
+
+	function util.getFontDPIScale()
+		return isMobile and ((love.window and love.window.getDPIScale() or 1) + 1) or 2
+	end
+else
+	function util.getFontDPIScale()
+		return 1
+	end
+end
+
 return util

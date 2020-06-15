@@ -8,6 +8,7 @@ local lily = require("lily")
 local async = require("async")
 local cache = require("cache")
 local log = require("logging")
+local util = require("util")
 
 local assetCache = {enableSync = false}
 
@@ -104,8 +105,10 @@ function assetCache.loadMultipleImages(images, settings)
 	return available
 end
 
-function assetCache.loadFont(name, settings)
-	local s, a, b = getCacheByParam(name, settings)
+function assetCache.loadFont(name, settings, hinting, dpi)
+	hinting = hinting or "normal"
+	dpi = dpi or util.getFontDPIScale()
+	local s, a, b = getCacheByParam(name, tostring(settings)..hinting..dpi)
 
 	if s then
 		return a
@@ -114,10 +117,10 @@ function assetCache.loadFont(name, settings)
 		if assetCache.enableSync then
 			-- Run synchronously (discouraged)
 			assert(assetCache.enableSync, "synchronous mode is not allowed")
-			image = love.graphics.newFont(b, settings)
+			image = love.graphics.newFont(b, settings, hinting, util.getFontDPIScale())
 		elseif coroutine.running() then
 			-- Run asynchronously
-			local c = async.loadFont(b, settings)
+			local c = async.loadFont(b, settings, hinting, util.getFontDPIScale())
 			image = c:getValues()
 		else
 			error("synchronous mode is not allowed", 2)
@@ -135,13 +138,16 @@ function assetCache.loadMultipleFonts(fonts)
 	local lilyload = {}
 
 	for i = 1, #fonts do
-		local s, a, b = getCacheByParam(fonts[i][1], fonts[i][2])
+		local dpi = fonts[i][4] or util.getFontDPIScale()
+		local hint = fonts[i][3] or "normal"
+		local s, a, b = getCacheByParam(fonts[i][1], tostring(fonts[i][2])..hint..dpi)
+
 		if s then
 			available[i] = a
 		else
 			needed[#needed + 1] = i
 			cachenames[#cachenames + 1] = a
-			lilyload[#lilyload + 1] = {lily.newFont, b, fonts[i][2]}
+			lilyload[#lilyload + 1] = {lily.newFont, b, fonts[i][2], hint, dpi}
 		end
 	end
 
@@ -149,7 +155,7 @@ function assetCache.loadMultipleFonts(fonts)
 		-- Run synchronously
 		assert(assetCache.enableSync, "synchronous mode is not allowed")
 		for i = 1, #lilyload do
-			local img = love.graphics.newFont(lilyload[i][2], lilyload[i][3])
+			local img = love.graphics.newFont(lilyload[i][2], lilyload[i][3], lilyload[i][4], lilyload[i][5])
 			available[needed[i]] = img
 			cache.set(cachenames[i], img)
 		end

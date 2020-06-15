@@ -212,7 +212,7 @@ function mainMenu:load()
 	end
 
 	if not(self.data.titleFont) then
-		self.data.titleFont = love.graphics.newFont(mainFont.roboto, 46)
+		self.data.titleFont = love.graphics.newFont(mainFont.roboto, 46, "normal", util.getFontDPIScale())
 	end
 
 	if not(self.data.titleText) then
