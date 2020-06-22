@@ -169,32 +169,37 @@ local function newFBO(w, h, f)
 	end
 end
 
-function render.initialize(out, audio, width, height, fxaa)
+function render.initialize(renderObj)
 	assert(hasffi, "FFI functionality needed to render")
 	assert(ls2x.libav, "libav functionality missing")
-	local fmt = love.graphics.getCanvasFormats().rgba16f and "rgba16f" or "rgba8"
-	log.debugf("render", "starting render, fps=60, w=%d, h=%d, canvas=%s", width, height, fmt)
-	log.debugf("render", "video=%s audio=%s", out, audio)
-	assert(ls2x.libav.startEncodingSession(out, width, height, 60), "failed to start encoding session")
-	audioManager.setRenderFramerate(60)
 
-	render.audio = assert(io.open(audio, "wb"))
+	local fmt = love.graphics.getCanvasFormats().rgba16f and "rgba16f" or "rgba8"
+	local width, height, fps = renderObj.width, renderObj.height, renderObj.fps
+
+	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, canvas=%s", fps, width, height, fmt)
+	log.debugf("render", "video=%s audio=%s", renderObj.output, renderObj.audio)
+	assert(ls2x.libav.startEncodingSession(renderObj.output, width, height, fps), "failed to start encoding session")
+	audioManager.setRenderFramerate(fps)
+
+	render.audio = assert(io.open(renderObj.audio, "wb"))
 	render.audioLen = 0
 
 	render.width, render.height = width, height
+	render.step = 1/fps
 	render.scaleOverall = math.min(width / vires.data.virtualW, height / vires.data.virtualH)
 	render.offX = (width - render.scaleOverall * vires.data.virtualW) / 2
 	render.offY = (height - render.scaleOverall * vires.data.virtualH) / 2
 	render.image = love.image.newImageData(width, height, "rgba8")
 	render.imagePointer = ffi.cast("uint8_t*", render.image:getPointer())
 	render.framebuffer = newFBO(width, height, fmt)
+
 	if util.compareLOVEVersion(11, 0) then
 		render.MUL = 255
 	else
 		render.MUL = 1
 	end
 
-	if fxaa then
+	if renderObj.fxaa then
 		render.fxaa = love.graphics.newShader(fxaaShader)
 		render.fxaaFramebuffer = newFBO(width, height, fmt)
 	end
@@ -229,14 +234,17 @@ function render.begin()
 end
 
 function render.mapPixel(x, y, r, g, b, a)
-	local index = y * render.width + x
-	-- Since it's premultipled alpha, we have to divide
-	-- all color component by alpha value
-	local alpha = a * render.MUL
-	render.imagePointer[index * 4 + 0] = util.clamp((r * render.MUL) / alpha * 255 + 0.5, 0, 255)
-	render.imagePointer[index * 4 + 1] = util.clamp((g * render.MUL) / alpha * 255 + 0.5, 0, 255)
-	render.imagePointer[index * 4 + 2] = util.clamp((b * render.MUL) / alpha * 255 + 0.5, 0, 255)
-	render.imagePointer[index * 4 + 3] = util.clamp(alpha + 0.5, 0, 255)
+	if a > 0 then
+		local index = y * render.width + x
+		-- Since it's premultipled alpha, we have to divide
+		-- all color component by alpha value
+		local alpha = a * render.MUL
+		render.imagePointer[index * 4 + 0] = util.clamp((r * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 1] = util.clamp((g * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 2] = util.clamp((b * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 3] = util.clamp(alpha + 0.5, 0, 255)
+	end
+
 	return r, g, b, a
 end
 
@@ -281,13 +289,13 @@ function render.getDimensions()
 end
 
 local function dwordu2string(num)
-	local b = {}
-	b[1] = string.char(bit.band(num, 0xFF))
-	b[2] = string.char(bit.rshift(bit.band(num, 0xFF00), 8))
-	b[3] = string.char(bit.rshift(bit.band(num, 0xFF0000), 16))
-	b[4] = string.char(bit.rshift(bit.band(num, 0xFF000000), 24))
-
-	return table.concat(b)
+	num = num % 4294967296
+	return string.char(
+		num % 256,
+		num / 256 % 256,
+		num / 65536 % 256,
+		num / 16777216
+	)
 end
 
 function render.done()

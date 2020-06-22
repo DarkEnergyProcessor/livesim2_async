@@ -494,13 +494,32 @@ function love.load(argv, gameargv)
 				render.output = assert(argv[i+1], "please specify output file")
 				render.audio = assert(argv[i+2], "please specify audio output file")
 				i = i + 2
+			elseif arg == "-renderfps" then
+				local fps = assert(tonumber(argv[i+1]), "please specify valid FPS")
+				assert(48000 / fps % 1 == 0, "FPS must be divisible by 48000")
+
+				if render then
+					render.fps = fps
+				end
+
+				i = i + 1
 			elseif arg == "-renderfxaa" and render then
 				render.fxaa = true
-			elseif arg == "-renderwidth" and render then
-				render.width = assert(tonumber(argv[i+1]), "please specify correct width")
+			elseif arg == "-renderwidth" then
+				local width = assert(tonumber(argv[i+1]), "please specify correct width")
+
+				if render then
+					render.width = width
+				end
+
 				i = i + 1
-			elseif arg == "-renderheight" and render then
-				render.height = assert(tonumber(argv[i+1]), "please specify correct height")
+			elseif arg == "-renderheight" then
+				local height = assert(tonumber(argv[i+1]), "please specify correct height")
+
+				if render then
+					render.height = height
+				end
+
 				i = i + 1
 			elseif arg == "-seed" then
 				local seed = assert(argv[i+1], "please specify seed in format <low>,<hi>")
@@ -707,6 +726,7 @@ function love.load(argv, gameargv)
 			)
 			render.width = render.width or windowWidth
 			render.height = render.height or windowHeight
+			render.fps = render.fps or 60
 			autoplayMode = true
 		end
 
