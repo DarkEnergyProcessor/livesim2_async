@@ -346,6 +346,10 @@ Options:
                              container and audio is in WAV format. FFmpeg
                              libraries must be installed to use this feature!
 
+* -renderfps <fps>           Set the render frames per second. FPS must be
+							 able to divide 48000 as whole integer. Default
+                             is 60.
+
 * -renderfxaa                Apply Fast Approximate Anti-Aliasing to the whole
                              screen while rendering to video file.
 
