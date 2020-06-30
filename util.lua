@@ -427,14 +427,23 @@ function util.split(text, delim, removeempty)
 	return t
 end
 
+local fontDPIScale = 1
+
 if version11 then
 	function util.getFontDPIScale()
 		local dpi = love.window and love.window.getDPIScale() or 1
-		return dpi > 1 and dpi or 2
+		return dpi > 1 and dpi or (fontDPIScale + 1)
+	end
+
+	function util.setDefaultFontDPIScale(scale)
+		fontDPIScale = math.max(math.ceil(scale), 1)
 	end
 else
 	function util.getFontDPIScale()
 		return 1
+	end
+
+	function util.setDefaultFontDPIScale()
 	end
 end
 

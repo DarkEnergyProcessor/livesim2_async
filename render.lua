@@ -175,9 +175,11 @@ function render.initialize(renderObj)
 
 	local fmt = love.graphics.getCanvasFormats().rgba16f and "rgba16f" or "rgba8"
 	local width, height, fps = renderObj.width, renderObj.height, renderObj.fps
+	local dpi = math.max(math.floor(height / 640 + 0.5), 1)
 
-	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, canvas=%s", fps, width, height, fmt)
+	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, canvas=%s, dpiscale=%d", fps, width, height, fmt, dpi)
 	log.debugf("render", "video=%s audio=%s", renderObj.output, renderObj.audio)
+	util.setDefaultFontDPIScale(dpi)
 	assert(ls2x.libav.startEncodingSession(renderObj.output, width, height, fps), "failed to start encoding session")
 	audioManager.setRenderFramerate(fps)
 
