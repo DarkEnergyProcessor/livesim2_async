@@ -332,7 +332,8 @@ Options:
 
 * -msaa <num>                Set Multi-Sample Anti-Aliasing steps. <num> must
                              be power of 2, rounded down to nearest POT
-                             otherwise. May not supported on older systems.
+							 otherwise. May not supported on older systems.
+                             This does not affect render mode output!
 
 * -play <beatmap>            Play specified beatmap name in beatmap directory.
                              This argument takes precedence of passed beatmap
