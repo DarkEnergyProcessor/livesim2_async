@@ -5,6 +5,7 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 require("libs.ls2x")
+require("io_open_wide")
 local color = require("color")
 local hasLVEP = not(not(package.preload.lvep))
 local lvep

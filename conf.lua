@@ -8,6 +8,7 @@
 
 local love = require("love")
 if love._os == "Android" and jit then jit.on() end
+if love._os == "Windows" then require("io_open_wide") end
 
 local errhand = love.errorhandler or love.errhand
 function love.errorhandler(msg)
