@@ -402,6 +402,11 @@ function love.load(argv, gameargv)
 		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
 	end
 
+	if love._os == "Windows" then
+		local ffi = require("ffi")
+		log.debug("main", "Active code page: "..ffi.C.GetACP())
+	end
+
 	-- Enable key repeat
 	love.keyboard.setKeyRepeat(true)
 	-- Most codes in livesim2 uses math.random instead of love.math.random

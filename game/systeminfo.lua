@@ -5,6 +5,7 @@
 -- luacheck: read_globals DEPLS_VERSION DEPLS_VERSION_NUMBER DEPLS_VERSION_CODENAME
 
 local love = require("love")
+local ls2x = require("libs.ls2x")
 
 local androidCodenames = setmetatable({
 	-- LOVE only supports Android 4.0 and later
@@ -23,7 +24,8 @@ local androidCodenames = setmetatable({
 	[25] = "Nougat",
 	[26] = "Oreo",
 	[27] = "Oreo",
-	[28] = "Pie"
+	[28] = "Pie",
+	[29] = "10.0",
 }, {__index = function() return "Unknown" end})
 
 local osVersionString
@@ -137,6 +139,14 @@ local function buildTextString()
 			feature[#feature + 1] = jit.version
 			if jit.status() then
 				feature[#feature + 1] = "JIT ON"
+			end
+		end
+
+		if ls2x.libav then
+			if package.preload.lvep then
+				feature[#feature + 1] = "LVEP"
+			else
+				feature[#feature + 1] = "libav audio decoding"
 			end
 		end
 
