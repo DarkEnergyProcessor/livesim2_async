@@ -25,7 +25,8 @@ local androidCodenames = setmetatable({
 	[26] = "Oreo",
 	[27] = "Oreo",
 	[28] = "Pie",
-	[29] = "10.0",
+	[29] = "Q",
+	[30] = "R",
 }, {__index = function() return "Unknown" end})
 
 local osVersionString
