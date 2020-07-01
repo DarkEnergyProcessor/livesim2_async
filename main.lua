@@ -56,21 +56,24 @@ local beatmapRandomizer = require("game.live.randomizer3")
 
 local function initWindow(w, h, f, v, m)
 	local vsync
+	local android = love._os == "Android"
+
 	if util.compareLOVEVersion(11, 0) >= 0 then
 		vsync = v and -1 or 0
 	else
 		vsync = v
 	end
+
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
 	love.window.setMode(w, h, {
-		resizable = true,
+		resizable = not android, -- do not allow freely-set orientation
 		minwidth = 320,
 		minheight = 240,
 		highdpi = true,
 		msaa = m,
 		-- RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
-		fullscreen = love._os == "iOS" or love._os == "Android" or f,
+		fullscreen = love._os == "iOS" or android or f,
 		fullscreentype = "desktop",
 		-- Use adaptive vsync (driver dependent)
 		vsync = vsync,
