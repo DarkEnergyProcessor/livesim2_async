@@ -1280,6 +1280,10 @@ DEPLS:registerEvent("focus", function(self)
 	if util.isMobile() then
 		pauseGame(self)
 	end
+
+	if self.data.pauseObject:isPaused() and self.data.song then
+		self.data.song:pause()
+	end
 end)
 
 return DEPLS
