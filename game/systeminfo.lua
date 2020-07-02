@@ -130,12 +130,8 @@ local function buildTextString()
 
 	do
 		local feature = {}
-		if os.getenv("LLA_IS_SET") then
-			-- From modified Openal-Soft
-			feature[#feature + 1] = "LLA: "..os.getenv("LLA_BUFSIZE").."smp/"..os.getenv("LLA_FREQUENCY").."Hz"
-		end
-
 		local hasJIT, jit = pcall(require, "jit")
+
 		if hasJIT then
 			feature[#feature + 1] = jit.version
 			if jit.status() then
