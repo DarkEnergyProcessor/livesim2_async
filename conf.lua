@@ -22,10 +22,6 @@ love._version = love._version or love.getVersion()
 -- Set identity and give game directory a priority
 love.filesystem.setIdentity("DEPLS", true)
 
--- Override love.run
-love.filesystem.load("run.lua")()
--- Override love.errhand
-love.filesystem.load("errorhandler.lua")()
 -- Fix MRT in LOVE 11.0-11.2
 if util.compareLOVEVersion(11, 0) >= 0 then
 	love.filesystem.load("fixmrt.lua")()

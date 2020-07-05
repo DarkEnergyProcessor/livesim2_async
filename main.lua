@@ -789,3 +789,8 @@ function love.load(argv, gameargv)
 		end
 	end
 end
+
+-- Override love.run
+love.filesystem.load("run.lua")()
+-- Override love.errhand
+love.filesystem.load("errorhandler.lua")()
