@@ -1,9 +1,32 @@
 -- Logging
--- Part of Live Simulator: 2
--- See copyright notice in main.lua
+-- Part of Live Simulator: 2, can be used as standalone library
+--[[---------------------------------------------------------------------------
+-- Copyright (c) 2020 Miku AuahDark
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a
+-- copy of this software and associated documentation files (the "Software"),
+-- to deal in the Software without restriction, including without limitation
+-- the rights to use, copy, modify, merge, publish, distribute, sublicense,
+-- and/or sell copies of the Software, and to permit persons to whom the
+-- Software is furnished to do so, subject to the following conditions:
+--
+-- The above copyright notice and this permission notice shall be included in
+-- all copies or substantial portions of the Software.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+-- OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+-- DEALINGS IN THE SOFTWARE.
+--]]---------------------------------------------------------------------------
 
 local love = require("love")
 local log = {}
+
+-- Modify these 2 variables to anything you want
+local ENVIRONMENT_VARIABLE = "LIVESIM2_LOGLEVEL"
 
 -- loglevel
 -- 0 = no log message
@@ -11,10 +34,10 @@ local log = {}
 -- 2 = warn (default)
 -- 3 = info
 -- 4 = debug
-local level = tonumber(os.getenv("LIVESIM2_LOGLEVEL"))
+local level = tonumber(os.getenv(ENVIRONMENT_VARIABLE))
 if not(level) or (level < 0 or level > 4) then
 	if love.filesystem then
-		level = tonumber((love.filesystem.read("LIVESIM2_LOGLEVEL")))
+		level = tonumber((love.filesystem.read(ENVIRONMENT_VARIABLE)))
 		if not(level) or (level < 0 or level > 4) then
 			level = 2
 		end
@@ -142,34 +165,76 @@ elseif love._os == "Linux" or love._os == "OS X" then
 	-- Well does macOS support this?
 	setupANSICode()
 elseif love._os == "Android" then
-	-- Screw this, use print and hope for the best
-	function infoImpl(tag, text)
-		print("I["..tag.."] "..text.."\n")
-	end
-	function warnImpl(tag, text)
-		print("W["..tag.."] "..text.."\n")
-	end
-	function errorImpl(tag, text)
-		print("E["..tag.."] "..text.."\n")
-	end
-	function debugImpl(tag, text)
-		print("D["..tag.."] "..text.."\n")
+	local hasFFI, ffi = pcall(require, "ffi")
+
+	if hasFFI then
+		-- Use native Android logging library
+		local androidLog = ffi.load("log")
+
+		ffi.cdef[[
+		enum AndroidLogPriority {
+			unknown,
+			default,
+			verbose,
+			debug,
+			info,
+			warning, warn = 6,
+			error,
+			fatal,
+			silent
+		};
+
+		int __android_log_write(enum AndroidLogPriority, const char *tag, const char *text);
+		]]
+
+		function infoImpl(tag, text)
+			androidLog.__android_log_write("info", tag, text)
+		end
+
+		function warnImpl(tag, text)
+			androidLog.__android_log_write("warning", tag, text)
+		end
+
+		function errorImpl(tag, text)
+			androidLog.__android_log_write("error", tag, text)
+		end
+
+		function debugImpl(tag, text)
+			androidLog.__android_log_write("debug", tag, text)
+		end
+	else
+		-- Screw this, use print and hope for the best
+		function infoImpl(tag, text)
+			print("I["..tag.."] "..text.."\n")
+		end
+
+		function warnImpl(tag, text)
+			print("W["..tag.."] "..text.."\n")
+		end
+
+		function errorImpl(tag, text)
+			print("E["..tag.."] "..text.."\n")
+		end
+
+		function debugImpl(tag, text)
+			print("D["..tag.."] "..text.."\n")
+		end
 	end
 end
 
-function infoImplMutex(_, tag, text)
+local function infoImplMutex(_, tag, text)
 	return infoImpl(tag, text)
 end
 
-function warnImplMutex(_, tag, text)
+local function warnImplMutex(_, tag, text)
 	return warnImpl(tag, text)
 end
 
-function errorImplMutex(_, tag, text)
+local function errorImplMutex(_, tag, text)
 	return errorImpl(tag, text)
 end
 
-function debugImplMutex(_, tag, text)
+local function debugImplMutex(_, tag, text)
 	return debugImpl(tag, text)
 end
 
