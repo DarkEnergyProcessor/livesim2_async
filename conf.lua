@@ -52,3 +52,7 @@ function love.conf(t)
 	t.modules.joystick = false          -- Enable the joystick module (boolean)
 	t.modules.physics = false           -- Enable the physics module (boolean)
 end
+
+function love.createhandlers()
+	love.handlers = {}
+end
