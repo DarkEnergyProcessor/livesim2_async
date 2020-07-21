@@ -115,11 +115,6 @@ function print(...)
 end
 ]]
 
-
-function love.createhandlers()
-	love.handlers = {}
-end
-
 function love.run()
 	-- At least LOVE 0.10.0 (must be checked here, otherwise window will show up)
 	assert(love._version >= "0.10.0", "minimum LOVE version needed is LOVE 0.10.0")
