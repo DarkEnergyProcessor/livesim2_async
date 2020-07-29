@@ -43,9 +43,9 @@ assert(love.filesystem.load("AquaShine/AquaShine.lua"))({
 	-- LOVE-specific configuration
 	LOVE = {
 		-- The name of the save directory
-		Identity = "DEPLS",
+		Identity = "DEPLSold",
 		-- The LÖVE version this game was made for
-		Version = "11.0",
+		Version = "11.3",
 		-- Enable external storage for Android
 		AndroidExternalStorage = true,
 		-- Window title name
