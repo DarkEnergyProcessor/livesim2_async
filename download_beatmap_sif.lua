@@ -10,8 +10,8 @@ local BackgroundImage = AquaShine.LoadModule("uielement.background_image")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
 local TextShadow = AquaShine.LoadModule("uielement.text_with_shadow")
+local Address = require("download_address")
 local DLBeatmap = {}
-local address = "http://r.llsif.win/"
 
 -- Set callbacks
 DLBeatmap.DLCB = {
@@ -64,8 +64,8 @@ end
 
 function DLBeatmap.SetupList(beatmaplist)
 	local live_track = {}
-	
-	for i, v in ipairs(beatmaplist) do
+
+	for _, v in ipairs(beatmaplist) do
 		-- Ignore it if it's TECHNICAL difficulty
 		if v.difficulty_text ~= "TECHNICAL" then
 			-- According to ieb, if the `live_difficulty_id` is 20000 and later
@@ -73,7 +73,7 @@ function DLBeatmap.SetupList(beatmaplist)
 			if v.live_setting_id >= 20000 then
 				v.difficulty_text = "SIFAC"
 			end
-			
+
 			local trackidx
 			-- Find the live track
 			for i = 1, #live_track do
@@ -82,11 +82,11 @@ function DLBeatmap.SetupList(beatmaplist)
 					break
 				end
 			end
-			
+
 			if not(trackidx) then
 				trackidx = {}
 				live_track[#live_track + 1] = trackidx
-				
+
 				trackidx.track = v.live_track_id
 				trackidx.name = v.name_translations and v.name_translations.english or v.name
 				trackidx.name = #trackidx.name > 0 and trackidx.name or v.name
@@ -98,11 +98,11 @@ function DLBeatmap.SetupList(beatmaplist)
 					trackidx.name = trackidx.name:sub(3)
 				end
 			end
-			
+
 			-- Create information data
 			local infodata = {}
 			trackidx.live[v.difficulty_text] = infodata
-			
+
 			-- in C, B, A, S format
 			infodata.score = {}
 			infodata.score[1], infodata.score[2] = v.c_rank_score, v.b_rank_score
@@ -110,30 +110,30 @@ function DLBeatmap.SetupList(beatmaplist)
 			infodata.combo = {}
 			infodata.combo[1], infodata.combo[2] = v.c_rank_combo, v.b_rank_combo
 			infodata.combo[3], infodata.combo[4] = v.a_rank_combo, v.s_rank_combo
-			
+
 			-- Background
 			infodata.background = math.min(v.stage_level, 12)
 			infodata.star = v.stage_level
 			if v.member_category == 2 and v.stage_level < 4 then
 				infodata.background = 12 + v.stage_level
 			end
-			
+
 			-- Livejson info
 			infodata.livejson = "livejson/"..v.notes_setting_asset
 		end
 	end
-	
+
 	DLBeatmap.BeatmapListRaw = live_track
-	
+
 	-- Setup node
 	local s_button_03 = AquaShine.LoadImage("assets/image/ui/s_button_03.png")
 	local s_button_03se = AquaShine.LoadImage("assets/image/ui/s_button_03se.png")
 	local selectFont = AquaShine.LoadFont("MTLmr3m.ttf", 14)
 	DLBeatmap.NodePageList = {}
-	
+
 	for i = 1, math.ceil(#live_track / 40) do
 		local nodelist = AquaShine.Node()
-		
+
 		for j = 1, 40 do
 			local idx = (i - 1) * 40 + j
 			local val = DLBeatmap.BeatmapListRaw[idx]
@@ -148,10 +148,10 @@ function DLBeatmap.SetupList(beatmaplist)
 				break
 			end
 		end
-		
+
 		DLBeatmap.NodePageList[#DLBeatmap.NodePageList + 1] = nodelist
 	end
-	
+
 	DLBeatmap.MainNode.brother = DLBeatmap.NodePageList[1]
 	DLBeatmap.MainNode.child[2]:setText("Page 1/"..#DLBeatmap.NodePageList)
 end
@@ -163,7 +163,7 @@ end
 
 function DLBeatmap.MovePage(inc)
 	if not(DLBeatmap.BeatmapListRaw) then return end
-	
+
 	DLBeatmap.CurrentPage = DLBeatmap.CurrentPage + inc
 	local idx = (DLBeatmap.CurrentPage) % #DLBeatmap.NodePageList
 	DLBeatmap.CurrentPage = (idx == idx and idx or 0)
@@ -186,7 +186,7 @@ function DLBeatmap.Start()
 		:addChild(TextShadow(descFont, "", 52, 536)
 			:setShadow(1, 1, true)
 		)
-	
+
 	-- If maps.json.etag exist, that means we downloaded a previous copy
 	-- and we keep attempt to download it, but by specifying If-None-Match.
 	-- In case of failure, if previous copy exist, use it anyway.
@@ -206,7 +206,7 @@ function DLBeatmap.Update()
 
 		DLBeatmap.SetStatus("Downloading Beatmap List...")
 		DLBeatmap.Download:SetCallback(DLBeatmap.DLCB)
-		DLBeatmap.Download:Download(address.."maps.json", header)
+		DLBeatmap.Download:Download(Address.QUERY.."/maps.json", header)
 		DLBeatmap.IsDownloaded = true
 	end
 end
@@ -226,13 +226,13 @@ function DLBeatmap.MousePressed(x, y, b, t)
 		DLBeatmap.SwipeData[1] = t or 0
 		DLBeatmap.SwipeData[2] = x
 	end
-	
+
 	return DLBeatmap.MainNode:triggerEvent("MousePressed", x, y, b, t)
 end
 
 function DLBeatmap.MouseMoved(x, y, dx, dy, t)
 	DLBeatmap.MainNode:triggerEvent("MouseMoved", x, y, dx, dy, t)
-	
+
 	if DLBeatmap.SwipeData[1] and math.abs(DLBeatmap.SwipeData[2] - x) >= DLBeatmap.SwipeThreshold then
 		DLBeatmap.MainNode:triggerEvent("MouseMoved", -200, -200, -1, -1, t)
 		DLBeatmap.MainNode:triggerEvent("MouseReleased", -200, -200, 1, t)
@@ -248,7 +248,7 @@ function DLBeatmap.MouseReleased(x, y, b, t)
 		else
 			DLBeatmap.MainNode:triggerEvent("MouseReleased", x, y, b, t)
 		end
-		
+
 		DLBeatmap.SwipeData[1] = nil
 	end
 end

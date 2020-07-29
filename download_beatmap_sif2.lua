@@ -11,15 +11,15 @@ local BackgroundImage = AquaShine.LoadModule("uielement.background_image")
 local SimpleButton = AquaShine.LoadModule("uielement.simple_button")
 local BackNavigation = AquaShine.LoadModule("uielement.backnavigation")
 local BeatmapInfoDL = AquaShine.LoadModule("uielement.beatmap_info_download")
+local Address = require("download_address")
 local DLBeatmap = {}
-local address = "http://r.llsif.win/"
 local difficultyString = {"EASY", "NORMAL", "HARD", "EXPERT", "MASTER", "SIFAC"}
 
 -- Cover art downloader
 DLBeatmap.DLArt = {
 	Response = {},
 	RespLen = 0,
-	Error = function(this, msg)
+	Error = function(_, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
 		DLBeatmap.DLArt.RespLen = 0
 		table.clear(DLBeatmap.DLArt.Response)
@@ -28,12 +28,12 @@ DLBeatmap.DLArt = {
 	Receive = function(this, msg)
 		DLBeatmap.DLArt.RespLen = DLBeatmap.DLArt.RespLen + #msg
 		DLBeatmap.DLArt.Response[#DLBeatmap.DLArt.Response + 1] = msg
-		
+
 		if this.ContentLength then
 			DLBeatmap.SetStatus(string.format("Downloading Cover Art... (%d%%)", DLBeatmap.DLArt.RespLen / this.ContentLength * 100))
 		end
 	end,
-	Done = function(this, msg)
+	Done = function(this)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
 			DLBeatmap.DLArt.RespLen = 0
@@ -54,23 +54,23 @@ DLBeatmap.DLArt = {
 	Start = function()
 		-- Retrieve already-loaded cover art image
 		DLBeatmap.CoverArtDraw = AquaShine.GetCachedData(DLBeatmap.TrackData.icon)
-		
+
 		if not(DLBeatmap.CoverArtDraw) then
 			-- Find in live_icon path first
 			local cover_path = DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData)
-			
+
 			if love.filesystem.getInfo(cover_path) then
 				-- Found one in liveicon/ path. Use that.
 				DLBeatmap.CoverArtDraw = love.graphics.newImage(cover_path)
 				AquaShine.CacheTable[DLBeatmap.TrackData.icon] = DLBeatmap.CoverArtDraw
-				
+
 				DLBeatmap.SetStatus("Ready...")
 				DLBeatmap.InfoDL:setLiveIconImage(DLBeatmap.CoverArtDraw)
 				DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
 			else
 				-- Download
 				DLBeatmap.Download:SetCallback(DLBeatmap.DLArt)
-				DLBeatmap.Download:Download(address..DLBeatmap.TrackData.icon)
+				DLBeatmap.Download:Download(Address.QUERY.."/"..DLBeatmap.TrackData.icon)
 				DLBeatmap.InfoDL:setOKButtonCallback(nil)
 				DLBeatmap.SetStatus("Downloading Cover Art...")
 			end
@@ -87,7 +87,7 @@ DLBeatmap.DLArt = {
 DLBeatmap.DLMP3 = {
 	Response = {},
 	RespLen = 0,
-	Error = function(this, msg)
+	Error = function(_, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
 		DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
 		table.clear(DLBeatmap.DLMP3.Response)
@@ -96,12 +96,12 @@ DLBeatmap.DLMP3 = {
 	Receive = function(this, msg)
 		DLBeatmap.DLMP3.RespLen = DLBeatmap.DLMP3.RespLen + #msg
 		DLBeatmap.DLMP3.Response[#DLBeatmap.DLMP3.Response + 1] = msg
-		
+
 		if this.ContentLength then
 			DLBeatmap.SetStatus(string.format("Downloading Song... (%d%%)", DLBeatmap.DLMP3.RespLen / this.ContentLength * 100))
 		end
 	end,
-	Done = function(this, msg)
+	Done = function(this)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLMP3.Start)
@@ -117,7 +117,7 @@ DLBeatmap.DLMP3 = {
 	end,
 	Start = function()
 		local audiopath = DLBeatmap.GetAudioPath(DLBeatmap.TrackData)
-		
+
 		-- If there's one in audio/ path, use that.
 		if love.filesystem.getInfo(audiopath) then
 			--DLBeatmap.MP3File = love.audio.newSource(audiopath, "stream")
@@ -125,7 +125,7 @@ DLBeatmap.DLMP3 = {
 		else
 			DLBeatmap.SetStatus("Downloading Song...")
 			DLBeatmap.Download:SetCallback(DLBeatmap.DLMP3)
-			DLBeatmap.Download:Download(address..DLBeatmap.TrackData.song)
+			DLBeatmap.Download:Download(Address.QUERY.."/"..DLBeatmap.TrackData.song)
 			DLBeatmap.InfoDL:setOKButtonCallback(nil)
 		end
 	end,
@@ -134,15 +134,15 @@ DLBeatmap.DLMP3 = {
 -- Beatmap downloader
 DLBeatmap.DLBM = {
 	Response = {},
-	Error = function(this, msg)
+	Error = function(_, msg)
 		DLBeatmap.SetStatus("Error: "..msg)
 		DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
 		table.clear(DLBeatmap.DLBM.Response)
 	end,
-	Receive = function(this, msg)
+	Receive = function(_, msg)
 		DLBeatmap.DLBM.Response[#DLBeatmap.DLBM.Response + 1] = msg
 	end,
-	Done = function(this, msg)
+	Done = function(this)
 		if this.StatusCode ~= 200 then
 			DLBeatmap.SetStatus("Error: Unknown error")
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
@@ -153,14 +153,14 @@ DLBeatmap.DLBM = {
 			DLBeatmap.SetStatus("Ready...")
 			DLBeatmap.InfoDL:setOKButtonCallback(DLBeatmap.DLBM.Start)
 		end
-		
+
 		table.clear(DLBeatmap.DLBM.Response)
 	end,
 	Start = function()
 		if #DLBeatmap.SelectedDifficulty == 0 then
 			return DLBeatmap.SetStatus("Warning: Difficulty not selected!")
 		end
-		
+
 		local beatmap_name = DLBeatmap.GetLS2Name(DLBeatmap.SelectedDifficulty)
 		if love.filesystem.getInfo(beatmap_name) then
 			AquaShine.LoadEntryPoint(":livesim", {
@@ -172,7 +172,7 @@ DLBeatmap.DLBM = {
 		end
 		DLBeatmap.SetStatus("Downloading Beatmap...")
 		DLBeatmap.Download:SetCallback(DLBeatmap.DLBM)
-		DLBeatmap.Download:Download(address..DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty].livejson)
+		DLBeatmap.Download:Download(Address.LIVEJSON.."/"..DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty].livejson)
 		DLBeatmap.InfoDL:setOKButtonCallback(nil)
 	end,
 }
@@ -217,12 +217,12 @@ function DLBeatmap.ToLS2(beatmap)
 	local cover = love.filesystem.read(DLBeatmap.GetLiveIconPath(DLBeatmap.TrackData))
 	local cur = DLBeatmap.TrackData.live[DLBeatmap.SelectedDifficulty]
 	local out = assert(love.filesystem.newFile(path, "w"))
-	
+
 	-- There are some -40ms offset, so decrease it.
 	for i = 1, #beatmap do
-		beatmap[i].timing_sec = beatmap[i].timing_sec - 0.04
+		beatmap[i].timing_sec = beatmap[i].timing_sec - 0.03
 	end
-	
+
 	-- New LS2 writer
 	ls2.encoder.new(out, {
 		name = DLBeatmap.TrackData.name,
@@ -246,9 +246,9 @@ end
 
 function DLBeatmap.SetBeatmap(diff)
 	if DLBeatmap.Download:IsDownloading() then return end
-	
+
 	DLBeatmap.SelectedDifficulty = diff
-		
+
 	return DLBeatmap.InfoDL:setBeatmapIndex(diff)
 end
 
@@ -259,20 +259,20 @@ function DLBeatmap.Start(arg)
 	if DLBeatmap.Download:IsDownloading() then
 		DLBeatmap.Download:Cancel()
 	end
-	
+
 	DLBeatmap.MainNode = BackgroundImage(13)
 		:addChild(BackNavigation("SIF Beatmap Info", "download_beatmap_sif.lua"))
 	DLBeatmap.InfoDL = BeatmapInfoDL(DLBeatmap.TrackData)
 	DLBeatmap.DiffSelect = AquaShine.Node()
 	AquaShine.SetWindowTitle(DLBeatmap.TrackData.name)
-	
+
 	local index = 0
 	for i = 1, #difficultyString do
 		local diff = difficultyString[i]
-		
+
 		if DLBeatmap.TrackData.live[diff] then
 			index = index + 1
-			
+
 			DLBeatmap.DiffSelect:addChild(
 				SimpleButton(
 					AquaShine.LoadImage("assets/image/ui/s_button_03.png"),
@@ -291,7 +291,7 @@ function DLBeatmap.Start(arg)
 			)
 		end
 	end
-	
+
 	DLBeatmap.MainNode:addChild(DLBeatmap.InfoDL)
 	DLBeatmap.MainNode.brother = DLBeatmap.DiffSelect
 end
@@ -300,11 +300,11 @@ function DLBeatmap.Update(deltaT)
 	if not(DLBeatmap.Download:IsDownloading()) and not(DLBeatmap.CoverArtDraw) then
 		DLBeatmap.DLArt.Start()
 	end
-	
+
 	if DLBeatmap.Download:IsDownloading() and DLBeatmap.InfoDL.okButtonCallback then
 		DLBeatmap.InfoDL:setOKButtonCallback(nil)
 	end
-	
+
 	return DLBeatmap.MainNode:update(deltaT)
 end
 
