@@ -139,7 +139,7 @@ ls2.setstreamwrapper {
 	end,
 	seek = function(stream, whence, offset)
 		local set = 0
-		
+
 		if whence == "cur" then
 			set = stream:tell()
 		elseif whence == "end" then
@@ -147,7 +147,7 @@ ls2.setstreamwrapper {
 		elseif whence ~= "set" then
 			assert(false, "Invalid whence")
 		end
-		
+
 		stream:seek(set + (offset or 0))
 		return stream:tell()
 	end
