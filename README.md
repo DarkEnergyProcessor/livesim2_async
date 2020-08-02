@@ -84,6 +84,8 @@ Special Thanks
 
 * Salaron & Nick "Zorb" Cage - Russian translation and new beatmap download provider.
 
+* Makuno - Thai translation.
+
 * Some other people who suggest something and helping me which I forgot his/her name
 
 License

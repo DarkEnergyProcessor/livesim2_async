@@ -13,6 +13,7 @@ local font = {}
 
 font.roboto = love.filesystem.newFileData("fonts/Roboto-Regular.ttf")
 font.notoSansCJK = love.filesystem.newFileData("fonts/NotoSansCJKjp-Regular.woff")
+font.sarabun = love.filesystem.newFileData("fonts/Sarabun-Regular.ttf")
 font.dpiScale = util.getFontDPIScale()
 
 function font.get(...)
@@ -48,6 +49,13 @@ function font.get(...)
 					"normal",
 					font.dpiScale
 				}
+				fontsQueue[#fontsQueue + 1] = {
+					lily.newFont,
+					font.sarabun,
+					arg[i],
+					"normal",
+					font.dpiScale
+				}
 				p = false
 			end
 		end
@@ -69,9 +77,10 @@ function font.get(...)
 		for i = 1, #arg do
 			if isNull[i] then
 				local index = isNull[i]
-				local f1 = multi:getValues(index * 2 - 1)
-				local f2 = multi:getValues(index * 2)
-				f1:setFallbacks(f2)
+				local f1 = multi:getValues(index * 3 - 2)
+				local f2 = multi:getValues(index * 3 - 1)
+				local f3 = multi:getValues(index * 3)
+				f1:setFallbacks(f2, f3)
 				cache.set("MainFont"..arg[i], f1)
 				result[i] = f1
 			end
