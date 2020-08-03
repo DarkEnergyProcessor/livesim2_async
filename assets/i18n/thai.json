@@ -44,8 +44,8 @@
 		"beatmapSelect:download:title": "ดาวน์โหลดบีทแมพ",
 		"beatmapSelect:download:view": "ข้อมูลบีทแมพ",
 
-		"beatmapSelect:insert": "เพิ่มบีทแมพจากไฟล์คอมพิวเตอร์",
-		"beatmapSelect:insert:errorFmt": "ไม่ทราบบีทแมพประเภทไฟล์ '%{name}'",
+		"beatmapSelect:insert": "เพิ่มไฟล์บีทแมพจากไฟล์คอมพิวเตอร์",
+		"beatmapSelect:insert:errorFmt": "ไม่ทราบไฟล์ข้อมูลบีทแมพของ '%{name}'",
 		"beatmapSelect:insert:overwrite": "เขียนบีทแมพทับซ้ำ",
 		"beatmapSelect:insert:overwriteDesc": "มีบีทแมพ '%{name}' อยู่แล้ว. ต้องการเขียนทับซ้ำ?",
 
@@ -65,10 +65,10 @@
 		"livesim2:pause:fail": "ไลฟ์ล้มเหลว",
 		"livesim2:pause:pause": "ไลฟ์หยุดชั่วคราว",
 		"livesim2:pause:replay": "รีเพลย์ %{name}",
-		"livesim2:pause:restart": "เริ่มไลฟ์ใหม่",
+		"livesim2:pause:restart": "เริ่มใหม่",
 		"livesim2:pause:resume": "ไลฟ์ต่อ",
 		"livesim2:pause:resumeIn": "ไลฟ์ต่อใน",
-		"livesim2:pause:quit": "ออกจากไลฟ์",
+		"livesim2:pause:quit": "ออก",
 
 		"livesim2:replay:errorAutoplay": "ไม่สามารถเชฟรีเพลย์ได้ในขณะเล่นอัตโนมัติ",
 		"livesim2:replay:errorDirectory": "ไม่สามารถสร้างไฟล์ได้",
@@ -84,15 +84,15 @@
 
 		"changeUnits:applyText": "กด OK เพื่อเชฟปุ่มและสมาชิกที่เปลี่ยน\nกด CANCEL เพื่อยกเลิกทั้งหมด\nกด BACK เพื่อยกเลิกและกลับสู่เมนู",
 		"changeUnits:exitConfirm": "มีบางอย่างที่เปลี่ยนแล้วยังไม่ได้เชฟ\nแน่ใจที่จะต้องการเชฟเพื่อเปลี่ยน?",
-		"changeUnits:keymapDesc": "กดบนวงกลม(ไอคอน) เพื่อเปลี่ยนปุ่ม\n\nเมื่อเสร็จแล้วกดปุ่ม Save เพื่อเชฟการเปลี่ยนปุ่ม หรือกดปุ่ม Reset เพื่อยกเลิกการเปลี่ยนและใช้เชฟล่าสุด\n\nในการเปลี่ยนสมาชิกกลับให้ไปที่โหมด 'เปลี่ยนสมาชิก' และเปลี่ยนสมาชิกในทีม",
-		"changeUnits:keymapMode": "เปลี่ยนปุ่ม",
+		"changeUnits:keymapDesc": "กดบนวงกลม(ไอคอน) เพื่อเปลี่ยนปุ่ม\n\nเมื่อเสร็จแล้วกดปุ่ม Save เพื่อเชฟการเปลี่ยนปุ่ม หรือกดปุ่ม Reset เพื่อยกเลิกการเปลี่ยนและใช้เชฟล่าสุด\n\nในการเปลี่ยนสมาชิก ให้กลับไปที่โหมด 'เปลี่ยนเป็นโหมดเปลี่ยนสมาชิก' และเปลี่ยนสมาชิกในทีม",
+		"changeUnits:keymapMode": "เปลี่ยนเป็นโหมดเปลี่ยนสมาชิก",
 		"changeUnits:keymapSelectDesc": "กำลังจะเปลี่ยนปุ่มบนวงกลม(ไอคอน)ที่เลือกไว้\n\nกดปุ่มอะไรก็ได้เพื่อเปลี่ยนปุ่ม กดปุ่ม ESC เพื่อยกเลิก",
 		"changeUnits:keymapText": "กดบนวงกลมเพื่อเปลี่ยนปุ่ม\n(ไม่สามารถทำได้บนสมาร์ทโฟนและแทบเล็ด)",
 		"changeUnits:keymapTitle": "เปลี่ยนปุ่ม",
 		"changeUnits:mode": "โหมด: %{mode}",
 		"changeUnits:selectUnits": "เลือกสมาชิกที่จะเปลี่ยน",
-		"changeUnits:unitsDesc": "กดบนวงกลม(ไอคอน) เพื่อเปลี่ยนสมาชิก\n\nเมื่อเสร็จแล้วกดปุ่ม Save เพื่อเชฟการเปลี่ยนปุ่ม หรือกดปุ่ม Reset เพื่อยกเลิกการเปลี่ยนและใช้เชฟล่าสุด\n\nในการเปลี่ยนปุ่มกลับให้ไปที่โหมด 'เปลี่ยนปุ่ม' และเปลี่ยนปุ่ม",
-		"changeUnits:unitsMode": "เปลี่ยนสมาชิก",
+		"changeUnits:unitsDesc": "กดบนวงกลม(ไอคอน) เพื่อเปลี่ยนสมาชิก\n\nเมื่อเสร็จแล้วกดปุ่ม Save เพื่อเชฟการเปลี่ยนปุ่ม หรือกดปุ่ม Reset เพื่อยกเลิกการเปลี่ยนและใช้เชฟล่าสุด\n\nในการเปลี่ยนปุ่ม ให้กลับไปที่โหมด 'เปลี่ยนเป็นโหมดเปลี่ยนปุ่ม' และเปลี่ยนปุ่ม",
+		"changeUnits:unitsMode": "เปลี่ยนเป็นโหมดเปลี่ยนปุ่ม",
 		"changeUnits:unitsText": "กดบนวงกลม(ไอคอน) เพื่อเปลี่ยนสมาชิก\nหมายเหตุ: บางบีทแมพอาจใช้ทีมที่มาจากไฟล์บีทแมพอยู่แล้วได้\n(ถ้าเปิด 'ใช้ทีมจากบีทแมพ' จากการตั้งค่าไลฟ์)",
 
 		"setting:about": "เกี่ยวกับระบบ",
@@ -111,11 +111,11 @@
 		"setting:live:minimalEffect": "ลดเอฟเฟคขณะไลฟ์",
 		"setting:live:noteSpeed": "ความเร็วโน้ต (พิกเซลต่อวินาที)",
 		"setting:live:skillPopup": "แสดงตัวละครเมื่อสกิลทำงาน",
-		"setting:live:textScaling": "ขนาดตัวอักษร (คอมโบ/สกิล/จัดเมนท์)",
+		"setting:live:textScaling": "ขนาดตัวอักษร",
 		"setting:live:vanish": "แสดงโน้ตในรูปแบบ",
 		"setting:live:vanish:none": "ปกติ",
-		"setting:live:vanish:hidden": "ล่องหนก่อนถึงปุ่ม",
-		"setting:live:vanish:sudden": "ปรากฎเมื่อใกล้ถึงปุ่ม",
+		"setting:live:vanish:hidden": "ล่องหนก่อนถึง",
+		"setting:live:vanish:sudden": "ปรากฎก่อนถึง",
 
 		"setting:volume": "ระดับเสียง",
 		"setting:volume:effect": "ระดับเสียงเอฟเฟค",
@@ -138,7 +138,7 @@
 		"setting:stamina:noFail": "สตามิน่าลดเมื่อพลาด",
 		"setting:stamina:score": "คะแนนเริ่มต้นต่อโน้ต",
 
-		"setting:liveUI": "การแสดงไลฟ์อินเตอร์เฟส",
+		"setting:liveUI": "ไลฟ์อินเตอร์เฟส",
 		"setting:liveUI:current": "กำลังใช้ไลฟ์อินเตอร์เฟส %{name}",
 
 		"setting:language": "ภาษา",
