@@ -564,9 +564,10 @@ function love.load(argv, gameargv)
 				love.event.quit()
 				return
 			elseif arg == "-vsync" then
-				local u = assert(argv[i+1], "please specify storyboard mode"):lower()
-				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid storyboard mode")
+				local u = assert(argv[i+1], "please specify vsync"):lower()
+				assert(u == "on" or u == "off" or u == "1" or u == "0", "invalid vsync value")
 				useVsync = u == "on" or u == "1"
+				i = i + 1
 			elseif arg == "-width" then
 				windowWidth = assert(tonumber(argv[i+1]), "please specify correct width")
 				i = i + 1
