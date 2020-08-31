@@ -154,6 +154,7 @@ local settingsList = {
 	VANISH_TYPE = 0,
 	VIDEOBG = 0,
 	VOICE_VOLUME = 80,
+	DOWNLOAD_OFFSET = -50,
 	-- DEBUG v4.0.0-beta3: remove this later
 	PERFECT_ACCURACY = 16,
 	GREAT_ACCURACY = 40,

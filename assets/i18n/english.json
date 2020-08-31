@@ -88,6 +88,7 @@
 		"setting:general": "General",
 		"setting:general:beatmapOffset": "Beatmap Offset (ms)",
 		"setting:general:defaultNote": "Default Note Attribute",
+		"setting:general:downloadOffset": "Downloaded Beatmap Offset (ms)",
 		"setting:general:improvedSync": "Improve Note Sync",
 		"setting:general:nsAccumulation": "Tap Sound Accumulation",
 		"setting:general:tapSound": "Tap Sound",

@@ -161,9 +161,8 @@ end
 local function beatmapToLS2(self, file, infodata, beatmap)
 	local cover = love.filesystem.read(getLiveIconPath(self))
 
-	-- There are some -30ms offset, so decrease it.
 	for i = 1, #beatmap do
-		beatmap[i].timing_sec = beatmap[i].timing_sec - 0.03
+		beatmap[i].timing_sec = beatmap[i].timing_sec + setting.get("DOWNLOAD_OFFSET") / 1000
 	end
 
 	-- New LS2 writer

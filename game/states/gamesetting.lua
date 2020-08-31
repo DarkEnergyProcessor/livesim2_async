@@ -324,16 +324,20 @@ function gameSetting:load()
 				min = -5000, max = 5000, default = 0
 			})
 				:setPosition(0, 192+12),
+			numberSetting(frame, L"setting:general:downloadOffset", "DOWNLOAD_OFFSET", {
+				min = -1000, max = 1000, default = -50
+			})
+				:setPosition(0, 256+12),
 			numberSetting(frame, L"setting:general:tapSound", "TAP_SOUND", {
 				min = 1, max = #tapSound, default = 1, display = tapSoundDisplay
 			})
-				:setPosition(0, 256+12),
-			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
 				:setPosition(0, 320+12),
+			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
+				:setPosition(0, 384+12),
 			numberSetting(frame, L"setting:general:themeColor", "COLOR_THEME", {
 				min = 1, max = 3, default = 1, display = themeDisplay
 			})
-				:setPosition(0, 384+12)
+				:setPosition(0, 448+12)
 		}
 	end
 	glow.addFrame(self.persist.generalFrame)
