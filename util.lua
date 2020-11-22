@@ -448,4 +448,8 @@ else
 	end
 end
 
+function util.ipairsi(t, i)
+	return ipairs(t), t, i - 1
+end
+
 return util

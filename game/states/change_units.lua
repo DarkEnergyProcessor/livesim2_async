@@ -8,10 +8,11 @@ local cubicBezier = require("libs.cubic_bezier")
 
 local async = require("async")
 local color = require("color")
-local setting = require("setting")
-local util = require("util")
 local mainFont = require("font")
 local lily = require("lily")
+local log = require("logging")
+local setting = require("setting")
+local util = require("util")
 local L = require("language")
 
 local gamestate = require("gamestate")
@@ -22,6 +23,7 @@ local colorTheme = require("game.color_theme")
 
 local glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
+local stripeText = require("game.ui.stripe_text")
 
 local mipmap = {mipmaps = true}
 local materialInterpolation = cubicBezier(0.4, 0.0, 0.2, 1):getFunction()
@@ -287,7 +289,7 @@ local function selectedNewUnit(_, data)
 	local self = data[1]
 
 	if self.persist.selectUnits > 0 then
-		local val = data[2]
+		local val = data[2].items[data[3]]
 		showUnitList(self)
 		showSaveRevertButton(self)
 		self.persist.unitList[self.persist.selectUnits] = val[2]
@@ -442,7 +444,18 @@ function changeUnits:load()
 		local unitFilename = {}
 		for _, file in ipairs(love.filesystem.getDirectoryItems("unit_icon")) do
 			local path = "unit_icon/"..file
-			if file:sub(-4) == ".png" and util.fileExists(path) then
+
+			if util.directoryExist(path) then
+				-- Scan at 1 folder deep. The code below is bit repetitive.
+				for _, file2 in ipairs(love.filesystem.getDirectoryItems(path)) do
+					local path2 = path.."/"..file2
+
+					if file2:sub(-4) == ".png" and util.fileExists(path2) then
+						unitLoad[#unitLoad + 1] = {lily.newImage, path2, mipmap}
+						unitFilename[#unitFilename + 1] = file.."/"..file2
+					end
+				end
+			elseif file:sub(-4) == ".png" and util.fileExists(path) then
 				unitLoad[#unitLoad + 1] = {lily.newImage, path, mipmap}
 				unitFilename[#unitFilename + 1] = file
 			end
@@ -511,17 +524,61 @@ function changeUnits:start()
 		assert(i == 0, "improper keymap setting")
 	end
 
+	-- Categorize unit icons by directory
+	local unitSelectCategory = {{name = "", y = 0, items = {}}}
+
+	for _, info in ipairs(self.persist.unitImageList) do
+		local path = info[2]
+		local pathsep = path:find("/", 1, true)
+		local cat
+
+		if pathsep then
+			-- Put in other category
+			local categoryName = path:sub(1, pathsep - 1)
+
+			for _, v in util.ipairsi(unitSelectCategory, 2) do
+				if v.name == categoryName then
+					cat = v
+					break
+				end
+			end
+
+			if cat == nil then
+				cat = {name = categoryName, y = 0, items = {}}
+				unitSelectCategory[#unitSelectCategory + 1] = cat
+			end
+		else
+			cat = unitSelectCategory[1]
+		end
+
+		cat.items[#cat.items + 1] = info
+	end
+
 	-- load unit select frame
 	local frame = glow.frame(77, 266, 856, 372)
-	for i, v in ipairs(self.persist.unitImageList) do
-		local x = (i - 1) % 7
-		local y = math.floor((i - 1) / 7)
-		local button = ciButton(color.transparent, 54, v[3], 108/128)
-		button:setData({self, v})
-		button:addEventListener("mousereleased", selectedNewUnit)
-		frame:addElement(button, x * 117, y * 117)
-	end
+	self.persist.unitSelectPosition = {}
 	self.persist.unitSelectFrame = frame
+
+	local ytrack = 0
+	for i, v in ipairs(unitSelectCategory) do
+		if v.name ~= "" then
+			local sep = stripeText(self.data.keymapFont, v.name, 4, 819)
+			frame:addElement(sep, 0, ytrack)
+			ytrack = ytrack + 8 + select(2, sep:getDimensions())
+			v.y = ytrack
+		end
+
+		for k, v2 in ipairs(v.items) do
+			local x = (k - 1) % 7
+			local y = math.floor((k - 1) / 7)
+			local button = ciButton(color.transparent, 54, v2[3], 108/128)
+			button:setData({self, v, k})
+			button:addEventListener("mousereleased", selectedNewUnit)
+			frame:addElement(button, x * 117, y * 117 + ytrack)
+		end
+
+		ytrack = ytrack + 8 + math.floor(#v.items / 7 + 1) * 117
+	end
 end
 
 function changeUnits:update(dt)
