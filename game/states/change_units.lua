@@ -577,7 +577,7 @@ function changeUnits:start()
 			frame:addElement(button, x * 117, y * 117 + ytrack)
 		end
 
-		ytrack = ytrack + 8 + math.floor(#v.items / 7 + 1) * 117
+		ytrack = ytrack + 8 + math.ceil(#v.items / 7) * 117
 	end
 end
 
