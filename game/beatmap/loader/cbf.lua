@@ -589,6 +589,8 @@ function cbfLoader:getLiveClearVoice()
 	return nil
 end
 
+local ASPECT_RATIO = {16/9, 16/10, 3/2, 4/3}
+
 function cbfLoader:getBackground()
 	local internal = Luaoop.class.data(self)
 	local background = util.substituteExtension(internal.path.."background", supportedImages)
@@ -599,11 +601,24 @@ function cbfLoader:getBackground()
 		local ratio = w / h
 		local bg = {1}
 
-		if ratio >= 1.770 then
+		-- Calculate aspect ratio
+		local aspectIndex = 0
+		local aspectRatioDiff = math.huge
+		for i, v in ipairs(ASPECT_RATIO) do
+			local diff = math.abs(ratio - v)
+
+			if diff < aspectRatioDiff then
+				aspectIndex = i
+				aspectRatioDiff = diff
+			end
+		end
+
+		if aspectIndex == 1 then
 			-- We can make the background to be 16:9
 			local calculatedMain = math.floor(88 * w / 1136)
 			local calculatedEndMain = math.floor(1048 * w / 1136)
 			local calculatedWidth = calculatedEndMain - calculatedMain
+
 			-- left
 			local imgl = love.image.newImageData(calculatedMain, h)
 			imgl:paste(image, 0, 0, 0, 0, calculatedMain, h)
@@ -618,10 +633,33 @@ function cbfLoader:getBackground()
 			bg[3] = imgl
 			bg[4] = imgr
 			bg[1] = 3
-		elseif ratio >= 1.5 then
+		elseif aspectIndex == 2 then
+			-- 16:10, 1136x710
+			local calculatedMain = math.floor(88 * w / 1136)
+			local calculatedEndMain = math.floor(1048 * w / 1136)
+			local calculatedWidth = calculatedEndMain - calculatedMain
+			local calculatedStartHeight = math.floor(35 * h / 710)
+			local calculatedEndHeight = math.floor(675 * h / 710)
+			local calculatedHeight = calculatedEndHeight - calculatedStartHeight
+
+			-- left
+			local imgl = love.image.newImageData(calculatedMain, calculatedHeight)
+			imgl:paste(image, 0, 0, 0, 0, calculatedMain, calculatedHeight)
+			-- center
+			local imgc = love.image.newImageData(calculatedWidth, calculatedHeight)
+			imgc:paste(image, 0, 0, calculatedMain, 0, calculatedWidth, calculatedHeight)
+			-- right
+			local imgr = love.image.newImageData(w - calculatedEndMain, calculatedHeight)
+			imgr:paste(image, 0, 0, calculatedEndMain, 0, w - calculatedEndMain, calculatedHeight)
+
+			bg[2] = imgc
+			bg[3] = imgl
+			bg[4] = imgr
+			bg[1] = 3
+		elseif aspectIndex == 3 then
 			-- 2:3 ratio. Put it as-is
 			bg[2] = image
-		elseif ratio >= 4/3 then
+		elseif aspectIndex == 4 then
 			-- We can make the background to be 4:3
 			local calculatedMain = math.floor(43 * h / 726)
 			local calculatedEndMain = math.floor(683 * h / 726)
