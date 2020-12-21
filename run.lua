@@ -201,8 +201,14 @@ function love.run()
 					log.info("run", "collectgarbage issued")
 					log.infof("run", "current usage: %.2fMB", collectgarbage("count")/1024)
 				elseif a == "f10" then
-					-- debug info
-					showDebugInfo = not(showDebugInfo)
+					if love.keyboard.isDown("lshift", "rshift") then
+						-- restart window in case the window freeze
+						log.debug("run", "restarting window")
+						love.window.setMode(love.window.getMode())
+					else
+						-- debug info
+						showDebugInfo = not(showDebugInfo)
+					end
 				elseif a == "f12" then
 					-- screenshot
 					local ssName = string.format("screenshots/screenshot_%s_%d.png",
