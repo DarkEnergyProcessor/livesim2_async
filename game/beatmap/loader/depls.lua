@@ -45,7 +45,7 @@ function deplsLoader:getName()
 	local name = internal.beatmap:getName()
 
 	if not(name) then
-		local coverArt = self:getCoverArt()
+		local coverArt = self:getCoverArt(true)
 		if coverArt then
 			name = coverArt.title
 		end
@@ -101,7 +101,7 @@ function deplsLoader:getCustomUnitInformation()
 end
 
 local coverArtExtensions = {".png", ".jpg", ".jpeg", ".tga", ".bmp"}
-function deplsLoader:getCoverArt()
+function deplsLoader:getCoverArt(noimage)
 	local internal = Luaoop.class.data(self)
 	local coverInfo = internal.beatmap:getCoverArt()
 
@@ -117,7 +117,10 @@ function deplsLoader:getCoverArt()
 
 			cover.title = lineIter()
 			cover.info = lineIter()
-			cover.image = love.image.newImageData(coverImage)
+
+			if not(noimage) then
+				cover.image = love.image.newImageData(coverImage)
+			end
 
 			return cover
 		end
