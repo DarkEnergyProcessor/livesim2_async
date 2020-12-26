@@ -75,6 +75,7 @@ local function initWindow(w, h, f, v, m)
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
 		fullscreen = love._os == "iOS" or android or f,
 		fullscreentype = "desktop",
+		borderless = f,
 		-- Use adaptive vsync (driver dependent)
 		vsync = vsync,
 	})

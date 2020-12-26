@@ -299,6 +299,33 @@ local function selectedNewUnit(_, data)
 	end
 end
 
+local function isImageFitInUnitIconCriteria(path)
+	-- File not exist? ignore
+	if not(util.fileExists(path)) then return false end
+
+	-- Other issue should be reported to user immediately!
+	local f = assert(love.filesystem.newFile(path, "r"))
+
+	-- Not PNG? ignore
+	if f:read(16) ~= "\137PNG\r\n\26\n\0\0\0\13IHDR" then
+		f:close()
+		return false
+	end
+
+	local dimensions = f:read(8)
+
+	f:close()
+
+	local a, b, c, d = dimensions:byte(1, 4)
+	local width = d + c * 256 + b * 65536 + a * 16777216
+	a, b, c, d = dimensions:byte(5, 8)
+	local height = d + c * 256 + b * 65536 + a * 16777216
+
+	-- not 128x128? it should be false
+	print(path, width, height)
+	return width == 128 and height == 128
+end
+
 function changeUnits:load()
 	local centeredInfoFont
 	glow.clear()
@@ -450,12 +477,12 @@ function changeUnits:load()
 				for _, file2 in ipairs(love.filesystem.getDirectoryItems(path)) do
 					local path2 = path.."/"..file2
 
-					if file2:sub(-4) == ".png" and util.fileExists(path2) then
+					if isImageFitInUnitIconCriteria(path2) then
 						unitLoad[#unitLoad + 1] = {lily.newImage, path2, mipmap}
 						unitFilename[#unitFilename + 1] = file.."/"..file2
 					end
 				end
-			elseif file:sub(-4) == ".png" and util.fileExists(path) then
+			elseif isImageFitInUnitIconCriteria(path) then
 				unitLoad[#unitLoad + 1] = {lily.newImage, path, mipmap}
 				unitFilename[#unitFilename + 1] = file
 			end
@@ -465,16 +492,10 @@ function changeUnits:load()
 		local unitImage = lily.loadMulti(unitLoad)
 		async.syncLily(unitImage):sync()
 
-		local j = 1
 		for i = 1, #unitFilename do
-			local image = unitImage:getValues(i)
-			local w, h = image:getDimensions()
-			if w == 128 and h == 128 then
-				local img = unitImage:getValues(i)
-				unitImageList[unitFilename[i]] = img
-				unitImageList[#unitImageList + 1] = {j, unitFilename[i], img}
-				j = j + 1
-			end
+			local img = unitImage:getValues(i)
+			unitImageList[unitFilename[i]] = img
+			unitImageList[#unitImageList + 1] = {i, unitFilename[i], img}
 		end
 
 		self.persist.unitImageList = unitImageList
