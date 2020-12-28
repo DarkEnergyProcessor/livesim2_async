@@ -178,7 +178,7 @@ function ls2Loader:getName()
 		return metadata.name
 	end
 
-	local cover = self:getCoverArt()
+	local cover = self:getCoverArt(true)
 	if cover and cover.title then
 		return cover.title
 	end
@@ -186,17 +186,22 @@ function ls2Loader:getName()
 	return nil
 end
 
-function ls2Loader:getCoverArt()
+function ls2Loader:getCoverArt(nocover)
 	local internal = Luaoop.class.data(self)
 
 	if internal.ls2.sections.COVR then
 		internal.file:seek(internal.ls2.sections.COVR[1])
 		local val = ls2.section_processor.COVR[1](internal.file, internal.ls2.version_2)
-		return {
+		local ret = {
 			title = val.title,
-			info = val.arrangement,
-			image = love.filesystem.newFileData(val.image, internal.file:getFilename()..".coverArt.png")
+			info = val.arrangement
 		}
+
+		if not(nocover) then
+			ret.image = love.filesystem.newFileData(val.image, internal.file:getFilename()..".coverArt.png")
+		end
+		
+		return ret
 	end
 
 	return nil
