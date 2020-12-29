@@ -143,28 +143,32 @@ function deplsLoader:getAudio()
 	end
 end
 
-local videoExtension = util.hasExtendedVideoSupport() and
+local VIDEO_EXTENSION = util.hasExtendedVideoSupport() and
 	{".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or
 	{".ogg", ".ogv"}
 
+local ASPECT_RATIO = {16/9, 16/10, 3/2, 4/3}
+
 function deplsLoader:getBackground(video)
 	local internal = Luaoop.class.data(self)
-	local bg = internal.beatmap:getBackground() -- file loader can't load video
+	local mode = internal.beatmap:getBackground() -- file loader can't load video
 	local videoObj
 
 	if video then
-		local f = util.substituteExtension(internal.path.."video_background", videoExtension)
+		local f = util.substituteExtension(internal.path.."video_background", VIDEO_EXTENSION)
 		if f then
 			videoObj = util.newVideoStream(f)
 		end
 	end
 
-	if bg == nil or bg == 0 then
+	if mode == nil or mode == 0 then
 		local bgfile = util.substituteExtension(internal.path.."background", coverArtExtensions)
 		if bgfile then
 			local mode = {1}
 			local backgrounds = {}
-			mode[#mode + 1] = love.image.newImageData(bgfile)
+			local image = love.image.newImageData(bgfile)
+
+			mode[#mode + 1] = image
 
 			for i = 1, 4 do
 				bgfile = util.substituteExtension(internal.path.."background-"..i, coverArtExtensions)
@@ -180,12 +184,98 @@ function deplsLoader:getBackground(video)
 			elseif not(backgrounds[1]) ~= not(backgrounds[2]) then
 				log.warning("noteloader.depls", "missing left or right background. Discard both!")
 			end
+
 			if backgrounds[3] and backgrounds[4] then
 				mode[1] = mode[1] + 4
 				mode[#mode + 1] = backgrounds[3]
 				mode[#mode + 1] = backgrounds[4]
 			elseif not(backgrounds[3]) ~= not(backgrounds[4]) then
 				log.warning("noteloader.depls", "missing top or bottom background. Discard both!")
+			end
+
+			if mode[1] == 1 then
+				-- Looks like no background-n file present, try to cut it
+				local w, h = image:getDimensions()
+				local ratio = w / h
+
+				-- Calculate aspect ratio
+				local aspectIndex = 0
+				local aspectRatioDiff = math.huge
+				for i, v in ipairs(ASPECT_RATIO) do
+					local diff = math.abs(ratio - v)
+
+					if diff < aspectRatioDiff then
+						aspectIndex = i
+						aspectRatioDiff = diff
+					end
+				end
+
+				if aspectIndex == 1 then
+					-- We can make the background to be 16:9
+					local calculatedMain = math.floor(88 * w / 1136)
+					local calculatedEndMain = math.floor(1048 * w / 1136)
+					local calculatedWidth = calculatedEndMain - calculatedMain
+
+					-- left
+					local imgl = love.image.newImageData(calculatedMain, h)
+					imgl:paste(image, 0, 0, 0, 0, calculatedMain, h)
+					-- center
+					local imgc = love.image.newImageData(calculatedWidth, h)
+					imgc:paste(image, 0, 0, calculatedMain, 0, calculatedWidth, h)
+					-- right
+					local imgr = love.image.newImageData(w - calculatedEndMain, h)
+					imgr:paste(image, 0, 0, calculatedEndMain, 0, w - calculatedEndMain, h)
+
+					mode[2] = imgc
+					mode[#mode + 1] = imgl
+					mode[#mode + 1] = imgr
+					mode[1] = mode[1] + 2
+				elseif aspectIndex == 2 then
+					-- 16:10, 1136x710
+					local calculatedMain = math.floor(88 * w / 1136)
+					local calculatedEndMain = math.floor(1048 * w / 1136)
+					local calculatedWidth = calculatedEndMain - calculatedMain
+					local calculatedStartHeight = math.floor(35 * h / 710)
+					local calculatedEndHeight = math.floor(675 * h / 710)
+					local calculatedHeight = calculatedEndHeight - calculatedStartHeight
+
+					-- left
+					local imgl = love.image.newImageData(calculatedMain, calculatedHeight)
+					imgl:paste(image, 0, 0, 0, 0, calculatedMain, calculatedHeight)
+					-- center
+					local imgc = love.image.newImageData(calculatedWidth, calculatedHeight)
+					imgc:paste(image, 0, 0, calculatedMain, 0, calculatedWidth, calculatedHeight)
+					-- right
+					local imgr = love.image.newImageData(w - calculatedEndMain, calculatedHeight)
+					imgr:paste(image, 0, 0, calculatedEndMain, 0, w - calculatedEndMain, calculatedHeight)
+
+					mode[2] = imgc
+					mode[#mode + 1] = imgl
+					mode[#mode + 1] = imgr
+					mode[1] = mode[1] + 2
+				elseif aspectIndex == 3 then
+					-- 2:3 ratio. Put it as-is
+					mode[2] = image -- noop
+				elseif aspectIndex == 4 then
+					-- We can make the background to be 4:3
+					local calculatedMain = math.floor(43 * h / 726)
+					local calculatedEndMain = math.floor(683 * h / 726)
+					local calculatedHeight = calculatedEndMain - calculatedMain
+					-- top
+					local imgt = love.image.newImageData(w, calculatedMain)
+					imgt:paste(image, 0, 0, 0, 0, w, calculatedMain)
+					-- center
+					local imgc = love.image.newImageData(w, calculatedHeight)
+					imgc:paste(image, 0, 0, 0, calculatedMain, w, calculatedHeight)
+					-- bottom
+					local imgb = love.image.newImageData(w, h - calculatedEndMain)
+					imgb:paste(image, 0, 0, 0, calculatedEndMain, w, h - calculatedEndMain)
+
+					mode[2] = imgc
+					mode[#mode + 1] = imgt
+					mode[#mode + 1] = imgb
+					mode[1] = mode[1] + 4
+				end
 			end
 
 			if videoObj then
@@ -205,9 +295,9 @@ function deplsLoader:getBackground(video)
 			end
 		end
 	elseif videoObj then
-		return {8, bg, videoObj}
+		return {8, mode, videoObj}
 	else
-		return bg
+		return mode
 	end
 
 	if videoObj then
