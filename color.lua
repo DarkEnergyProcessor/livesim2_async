@@ -81,7 +81,7 @@ local color = setmetatable({}, {
 
 -- Uncached. Return 4 values instead of table
 function color.get(r, g, b, a, premultiplied)
-	a = math.min(math.max(a or 1 + 0.0005, 0), 1)
+	a = math.min(math.max((a or 1) + 0.0005, 0), 1)
 	local v = hexCache(string.format("%02x%02x%02xff", r, g, b))
 	if premultiplied then
 		return
@@ -98,7 +98,7 @@ end
 -- based on LOVE version
 if loveV11 then
 	function color.compat(r, g, b, a, premul)
-		a = math.min(math.max(a or 1 + 0.0005, 0), 1)
+		a = math.min(math.max((a or 1) + 0.0005, 0), 1)
 		if premul then
 			return r * a / 255, g * a / 255, b * a / 255, a
 		else
@@ -107,7 +107,7 @@ if loveV11 then
 	end
 else
 	function color.compat(r, g, b, a, premul)
-		a = math.min(math.max(a or 1 + 0.0005, 0), 1)
+		a = math.min(math.max((a or 1) + 0.0005, 0), 1)
 		if premul then
 			return r * a, g * a, b * a, a * 255
 		else

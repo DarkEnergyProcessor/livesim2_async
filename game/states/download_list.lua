@@ -23,6 +23,7 @@ local md5 = require("game.md5")
 local glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
 local ciButton = require("game.ui.circle_icon_button")
+local ProgressBar = require("game.ui.progress")
 
 local SERVER_ADDRESS = require("game.beatmap.download_address")
 local mipmaps = {mipmaps = true}
@@ -252,7 +253,7 @@ local function setStatusText(self, text, blink)
 	self.persist.statusText:clear()
 	if not(text) or #text == 0 then return end
 
-	self.persist.statusText:add(text, 30, 96, 0, 23/44)
+	self.persist.statusText:add(text, 32, 542, 0, 23/44)
 
 	if blink then
 		if self.persist.statusTextBlink == math.huge then
@@ -265,6 +266,7 @@ end
 
 local function downloadResponseCallback(self, statusCode, headers, length)
 	if statusCode == 304 then
+		glow.removeElement(self.data.progress)
 		setStatusText(self)
 		-- Load local copy using async system
 		async.runFunction(initializeBeatmapList):run(self)
@@ -275,7 +277,12 @@ local function downloadResponseCallback(self, statusCode, headers, length)
 			header = headers,
 			length = length
 		}
+
+		if length then
+			self.data.progress:setMaxValue(length)
+		end
 	else
+		self.data.progress:setValue(math.huge)
 		setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
 	end
 end
@@ -286,6 +293,7 @@ local function downloadReceiveCallback(self, data)
 	dldata.bytesWritten = dldata.bytesWritten + #data
 
 	if dldata.length then
+		self.data.progress:setValue(dldata.bytesWritten)
 		setStatusText(self, L("beatmapSelect:download:downloadingBytesProgress", {
 			a = dldata.bytesWritten,
 			b = dldata.length
@@ -303,12 +311,14 @@ local function downloadFinishCallback(self)
 		async.runFunction(initializeBeatmapList):run(self, mapData, dldata.header.etag)
 		self.persist.downloadData = nil
 		setStatusText(self)
+		glow.removeElement(self.data.progress)
 	end
 end
 
 local function downloadErrorCallback(self, message)
 	setStatusText(self, L("beatmapSelect:download:errorGeneric", {message = message}))
 	self.persist.downloadData = nil
+	self.data.progress:setValue(math.huge)
 end
 
 local beatmapDownload = gamestate.create {
@@ -347,6 +357,10 @@ function beatmapDownload:load()
 		self.data.titleText = love.graphics.newText(self.data.mainFont)
 		self.data.titleText:add(L"beatmapSelect:download", 0, 0, 0, 31/44)
 	end
+
+	if self.data.progress == nil then
+		self.data.progress = ProgressBar(896, 36)
+	end
 end
 
 function beatmapDownload:start()
@@ -382,6 +396,7 @@ function beatmapDownload:start()
 		:download(SERVER_ADDRESS.QUERY.."/maps.json", {
 			["If-None-Match"] = lastTag
 		})
+	glow.addElement(self.data.progress, 32, 576)
 end
 
 function beatmapDownload:update(dt)

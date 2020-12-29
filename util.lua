@@ -315,10 +315,19 @@ do
 end
 
 if util.compareLOVEVersion(11, 0) >= 0 then
+	---@param w number
+	---@param h number
+	---@param f PixelFormat
+	---@param m boolean
+	---@return Canvas
 	function util.newCanvas(w, h, f, m)
 		return love.graphics.newCanvas(w, h, {dpiscale = 1, format = f or "normal", mipmaps = m and "auto" or "none"})
 	end
 else
+	---@param w number
+	---@param h number
+	---@param f PixelFormat
+	---@return Canvas
 	function util.newCanvas(w, h, f)
 		-- No mipmap support
 		return love.graphics.newCanvas(w, h, f or "normal")
