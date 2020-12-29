@@ -30,7 +30,10 @@ function font.get(...)
 		if not(p) then
 			if inSync then
 				p = love.graphics.newFont(font.roboto, arg[i], "normal", font.dpiScale)
-				p:setFallbacks(love.graphics.newFont(font.notoSansCJK, arg[i]))
+				p:setFallbacks(
+					love.graphics.newFont(font.notoSansCJK, arg[i], "normal", font.dpiScale),
+					love.graphics.newFont(font.sarabun, arg[i], "normal", font.dpiScale)
+				)
 				cache.set("MainFont"..arg[i], p)
 			else
 				isNull[i] = j
