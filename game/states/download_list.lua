@@ -50,8 +50,8 @@ do
 		-- Color from type ID
 		local col = colorTheme[typeID] and colorTheme[typeID].currentColor or defaultColor
 		self.typeColor = col
-		self.name = love.graphics.newText(state.data.mainFont)
-		self.name:addf({col[4], name}, 569, "left", 0, 0, 0, 24/44)
+		self.name = love.graphics.newText(state.data.statusFont)
+		self.name:addf({col[4], name}, 310, "left")
 		self:setCoverImage(coverImage)
 
 		self.width, self.height = 420, 94
@@ -253,7 +253,7 @@ local function setStatusText(self, text, blink)
 	self.persist.statusText:clear()
 	if not(text) or #text == 0 then return end
 
-	self.persist.statusText:add(text, 32, 542, 0, 23/44)
+	self.persist.statusText:add(text, 32, 550)
 
 	if blink then
 		if self.persist.statusTextBlink == math.huge then
@@ -331,7 +331,7 @@ local beatmapDownload = gamestate.create {
 function beatmapDownload:load()
 	glow.clear()
 
-	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
+	self.data.titleFont, self.data.statusFont = mainFont.get(31, 24)
 
 	if self.data.back == nil then
 		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, colorTheme.get())
@@ -354,12 +354,12 @@ function beatmapDownload:load()
 	end
 
 	if self.data.titleText == nil then
-		self.data.titleText = love.graphics.newText(self.data.mainFont)
-		self.data.titleText:add(L"beatmapSelect:download", 0, 0, 0, 31/44)
+		self.data.titleText = love.graphics.newText(self.data.titleFont)
+		self.data.titleText:add(L"beatmapSelect:download")
 	end
 
 	if self.data.progress == nil then
-		self.data.progress = ProgressBar(896, 36)
+		self.data.progress = ProgressBar(896, 24)
 	end
 end
 
@@ -369,7 +369,7 @@ function beatmapDownload:start()
 	self.persist.frame:setSliderHandleColor(colorTheme.get())
 	glow.addFrame(self.persist.frame)
 
-	self.persist.statusText = love.graphics.newText(self.data.mainFont)
+	self.persist.statusText = love.graphics.newText(self.data.statusFont)
 	self.persist.statusTextBlink = math.huge
 	self.persist.selectedIndex = nil
 
@@ -396,7 +396,7 @@ function beatmapDownload:start()
 		:download(SERVER_ADDRESS.QUERY.."/maps.json", {
 			["If-None-Match"] = lastTag
 		})
-	glow.addElement(self.data.progress, 32, 576)
+	glow.addElement(self.data.progress, 32, 584)
 end
 
 function beatmapDownload:update(dt)

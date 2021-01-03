@@ -58,7 +58,7 @@ function ProgressBar:render(x, y)
 	if math.abs(self.value) == math.huge then
 		self.usedColor = self.foregroundColor
 	else
-		v = util.clamp(self.value, 0, self.maxValue) / self.maxValue
+		v = util.clamp(self.value, 0, self.maxValue)
 	end
 
 	love.graphics.setShader(ProgressBar.shader)
@@ -68,7 +68,7 @@ function ProgressBar:render(x, y)
 
 	if v > 0 then
 		love.graphics.setColor(self.foregroundColor)
-		love.graphics.rectangle("fill", x, y, v * self.width, self.height)
+		love.graphics.rectangle("fill", x, y, v * self.width / self.maxValue, self.height)
 	end
 end
 
