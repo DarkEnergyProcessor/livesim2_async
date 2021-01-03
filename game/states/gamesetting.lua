@@ -58,6 +58,8 @@ Special thanks to:
 * RayFirefist - macOS app, iOS maintainer, Italian translation.
 * jwun & TheNozomi - Spanish translation.
 * Salaron & Nick "Zorb" Cage - Russian translation.
+
+And other people who contributed to the codebase
 ]], DEPLS_VERSION):gsub("\r\n", "\n")
 
 local function leave(_, self)
@@ -293,7 +295,7 @@ function gameSetting:load()
 	-- General settings
 	if self.persist.generalSetting == nil then
 		local frame = newSettingFrame()
-		local themeDisplay = {"μ's", "Aqours", "NijiGaku"}
+		local themeDisplay = {"μ's", "Aqours", "NijiGaku", "Liella"}
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
 			tapSoundDisplay[i] = tapSound[i].name
@@ -335,7 +337,7 @@ function gameSetting:load()
 			switchSetting(frame, L"setting:general:improvedSync", "IMPROVED_SYNC")
 				:setPosition(0, 384+12),
 			numberSetting(frame, L"setting:general:themeColor", "COLOR_THEME", {
-				min = 1, max = 3, default = 1, display = themeDisplay
+				min = 1, max = #themeDisplay, default = 1, display = themeDisplay
 			})
 				:setPosition(0, 448+12)
 		}

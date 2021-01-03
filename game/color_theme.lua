@@ -27,6 +27,14 @@ local colorTheme = {
 		currentColorDark = {0xe8, 0xb1, 0x26, color.hexE8B126},
 		-- ac7b0a
 		currentColorDarker = {0xac, 0x7b, 0x0a, color.hexAC7B0A}
+	},
+	[4] = {
+		-- d684df
+		currentColor = {0xd6, 0x84, 0xdf, color.hexD684DF},
+		-- 8b4993
+		currentColorDark = {0x8b, 0x49, 0x93, color.hex8B4993},
+		-- 68366d
+		currentColorDarker = {0x68, 0x36, 0x6d, color.hex68366D}
 	}
 }
 
