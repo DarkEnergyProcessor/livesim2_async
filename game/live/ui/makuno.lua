@@ -66,7 +66,7 @@ local l = {
 	ds_uxs = false,
 	--[[
 		1 - All extend ranks will display at once.
-		2 - Display SS/SSS after reached S, 
+		2 - Display SS/SSS after reached S,
 			and SPI/UPI after reached SSS.
 		3 - Only display SS/SSS after reached S.
 			not display SPI/UPI
@@ -102,7 +102,7 @@ local function setColor(r, g, b, a)
 		c1 = util.clamp(r[1], 0, 255)
 		c2 = util.clamp(r[2], 0, 255)
 		c3 = util.clamp(r[3], 0, 255)
-		c4 = util.clamp(r[4] or ((g or 255) / 255), 0, a or 1)
+		c4 = util.clamp(r[4] or g or 255, 0, a or 255)
 	else
 		c1 = util.clamp(r, 0, 255)
 		c2 = util.clamp(g, 0, 255)
@@ -194,7 +194,7 @@ function mknui:__construct(autoplay, mineff, stamfunc)
 	self.minimalEffect = mineff
 	self.autoplaying = autoplay
 
-	---- 
+	----
 	self.dis_opacity = 1
 	self.dis_textscaling = 1
 	--
@@ -210,7 +210,7 @@ function mknui:__construct(autoplay, mineff, stamfunc)
 	self.scorerankcolor = retrieveTheme()
 	self.dis_currentrank = scorerank.text[1]
 	--
-	self.tween_time_scoreflash = 0 
+	self.tween_time_scoreflash = 0
 	self.tween_time_score = nil
 	self.tween_dis_scorerankcolor = nil
 
@@ -340,7 +340,7 @@ function mknui:getFailAnimation()
 	end
 
 	function TRACKLOST:draw(_,x,y)
-		
+
 		love.graphics.setColor(color.compat(0, 0, 0, TRACKLOST.fa_dim))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
 
@@ -430,7 +430,7 @@ function mknui:update(dt,paused)
 			if self.dis_score >= self.scoreborders[i] then
 				if (l.ds_uxs == false) and i > 4 then i = 4 end
 				if (l.ds_uxs == true) and (l.ds_esm == 3) and i > 6 then i = 6 end
-				
+
 				if not(l.ds_fsne == 1) then
 					if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
 					self.tween_dis_scorerankcolor = self.timer:tween(0.25, self.scorerankcolor, retrieveTheme(1 + i))
@@ -471,7 +471,7 @@ function mknui:update(dt,paused)
 			self.dis_currentrank = scorerank.text[5]
 
 		else
-			for i = 3, 1, -1 do 
+			for i = 3, 1, -1 do
 				if self.dis_score >= (6 + i) * 1000000 then
 
 					if not(l.ds_fsne == 1) then
@@ -534,7 +534,7 @@ function mknui:update(dt,paused)
 		if self.time_live_postend > 0 then
 			self.time_live_postend = self.time_live_postend - dt
 		end
-		
+
 		if self.audio_liveclearvoice and not(self.check_liveclearvoiceplayed) then
 			audioManager.play(self.audio_liveclearvoice)
 			self.check_liveclearvoiceplayed = true
@@ -552,7 +552,7 @@ end
 -- Primary Function
 
 function mknui:addScore(amount)
-	
+
 	if amount == 0 then return end
 
 	self.currentscore = self.currentscore + math.ceil(amount)
@@ -626,7 +626,7 @@ function mknui:comboJudgement(judgement, addcombo)
 				960, "center", -480, self.fonts_hc[2]
 			)
 		end
-		
+
 		if combochoke then
 			if (l.ds_adm == 1) then
 				self.totalnote = self.totalnote + 1
@@ -721,7 +721,7 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 				{color.gold, self.text.Result.PF},
 				960, "center", -480, self.fonts_hc[4]
 			)
-			
+
 		elseif fullcombo and (self.FC == true) and not(self.PUC == true) then
 			some_x = 173
 
@@ -750,7 +750,7 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 
 			self.timer:tween(0.25, self, {dis_opacity = 0}, "out-quad")
 			self.timer:tween(
-				0.25, self.other_tween, 
+				0.25, self.other_tween,
 				{dim = 0.67,
 				re_b_y = 360,
 				re_s_y = 240,
@@ -760,7 +760,7 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 				re_b_s = 1,
 				--
 				color = {100, 98, 98}
-				}, 
+				},
 				"out-cubic"
 			)
 			self.timer:tween(0.3, self.other_tween, {fe_r_y = 231}, "out-quart")
@@ -1060,7 +1060,7 @@ function mknui:drawHeader()
 			love.graphics.printf(self.text.Top.AUTO, self.fonts[3], 0, auto_pos, 960, "center", 0)
 		end
 	end
-	
+
 
 	setColor(255, 255, 255, self.dis_opacity)
 	if self.pauseEnabled then
