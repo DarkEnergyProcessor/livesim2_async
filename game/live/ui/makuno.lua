@@ -11,6 +11,7 @@ local vector = require("libs.nvec")
 
 local assetCache = require("asset_cache")
 local audioManager = require("audio_manager")
+local setting = require("setting")
 
 local color = require("color")
 local util = require("util")
@@ -134,7 +135,7 @@ end
 --------------------
 -- Core:Construct
 
-function mknui:__construct(autoplay, mineff, stamfunc)
+function mknui:__construct(autoplay, mineff)
 	self.timer = timer:new()
 	self.fonts = assetCache.loadMultipleFonts({
 		{"fonts/Jost-Medium.ttf", 14},   -- Head Title (SCORE and STAMINA)
@@ -190,7 +191,7 @@ function mknui:__construct(autoplay, mineff, stamfunc)
 	self.tapEffectList = {}
 	self.scoreAddEffectList = {}
 	--
-	self.staminaFunction = stamfunc ~= nil and stamfunc or false
+	self.staminaFunction = setting.get("STAMINA_FUNCTIONAL") == 1
 	self.minimalEffect = mineff
 	self.autoplaying = autoplay
 
