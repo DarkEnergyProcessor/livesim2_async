@@ -164,6 +164,10 @@ function util.newFileWrapper(path, mode)
 	return fileWrapClass(path, file)
 end
 
+function util.isFileWrapped(f)
+	return Luaoop.class.is(f, fileWrapClass)
+end
+
 function util.addTextWithShadow(text, str, x, y, intensity)
 	x = x or 0 y = y or 0
 	intensity = intensity or 1

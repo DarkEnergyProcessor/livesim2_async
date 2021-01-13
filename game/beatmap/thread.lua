@@ -197,9 +197,18 @@ local function loadDirectly(path)
 	until beatmap.list[id] == nil
 
 	local newPath, beatmapIndex = path:match("(.+):(%d+)$")
+	local usedRealPath = false
 	newPath = newPath or path
-	local f, msg = util.newFileWrapper(path, "rb")
-	if not(f) then return nil, msg end
+
+	local f, msg = util.newFileWrapper(newPath, "rb")
+	if not(f) then
+		f, msg = util.newFileWrapper(path, "rb")
+		usedRealPath = true
+
+		if not(f) then
+			return nil, msg
+		end
+	end
 
 	-- Enumerate file beatmap loaders
 	for i = 1, #beatmap.fileLoader do
@@ -210,6 +219,10 @@ local function loadDirectly(path)
 			local bv
 
 			if getmetatable(value) == nil then
+				if usedRealPath then
+					return nil, "please remove colon from your beatmap filename to specify beatmap index"
+				end
+
 				beatmapIndex = tonumber(beatmapIndex)
 				if beatmapIndex and value[beatmapIndex] then
 					bv = {
@@ -227,7 +240,7 @@ local function loadDirectly(path)
 					noEnum = true,
 					name = newPath,
 					type = "file",
-					data = value[beatmapIndex]
+					data = value
 				}
 			end
 
@@ -288,6 +301,8 @@ do
 						beatmap.fileLoader[#beatmap.fileLoader + 1] = data
 					elseif type == "folder" then
 						beatmap.folderLoader[#beatmap.folderLoader + 1] = data
+					else
+						log.errorf("beatmap.thread", "cannot register loader %s: unknown type \"%s\"", v, type)
 					end
 				else
 					log.errorf("beatmap.thread", "cannot register loader %s: %s", v, func)
