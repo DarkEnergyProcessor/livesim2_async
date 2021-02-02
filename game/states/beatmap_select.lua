@@ -546,6 +546,7 @@ local beatmapSelect = gamestate.create {
 function beatmapSelect:load()
 	glow.clear()
 
+	---@type Font
 	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
 
 	if self.data.shadowGradient == nil then
@@ -1093,8 +1094,10 @@ function beatmapSelect:draw()
 		love.graphics.printf(v.name, 500, 98, 300 / (24/44), "left", 0, 24/44)
 
 		if summary.coverArt and summary.coverArt.info then
+			-- FIXME: Implement better caching for this table creation
+			local _, info = self.data.mainFont2:getWrap(v.info, 300)
 			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(v.info, 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
+			love.graphics.printf(table.concat(info, "\n", 1, math.min(#info, 2)), 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
 		end
 
 		if self.persist.beatmapCoverArt then
