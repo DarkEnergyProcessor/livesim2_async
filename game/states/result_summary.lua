@@ -381,12 +381,12 @@ function resultScreen:draw()
 		local ip3 = interpolation((self.persist.graphTimer - 2.8) * 5)
 		love.graphics.setColor(color.compat(255, 255, 255, ip3))
 
-		if self.persist.comboQuad then
-			love.graphics.draw(self.assets.images.ranking, self.persist.comboQuad, 32, 268, 0, 0.24)
+		if self.persist.scoreQuad then
+			love.graphics.draw(self.assets.images.ranking, self.persist.scoreQuad, 32, 268, 0, 0.24)
 		end
 
-		if self.persist.scoreQuad then
-			love.graphics.draw(self.assets.images.ranking, self.persist.scoreQuad, 32, 372, 0, 0.24)
+		if self.persist.comboQuad then
+			love.graphics.draw(self.assets.images.ranking, self.persist.comboQuad, 32, 372, 0, 0.24)
 		end
 	end
 
