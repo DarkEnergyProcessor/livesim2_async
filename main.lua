@@ -442,6 +442,7 @@ function love.load(argv, gameargv)
 	local windowWidth = 960
 	local windowHeight = 640
 	local dumpBeatmap = false
+	local overrideReplayHashCheck = false
 	local replayFile = nil
 	local dumpFormat = "json"
 	local desiredMSAA = 0
@@ -467,6 +468,8 @@ function love.load(argv, gameargv)
 			elseif arg == "-fullscreen" then
 				fullscreen = true
 				windowWidth, windowHeight = love.window.getDesktopDimensions()
+			elseif arg == "-forceloadreplay" then
+				overrideReplayHashCheck = true
 			elseif arg == "-license" then
 				print(license)
 				return love.event.quit()
@@ -765,6 +768,7 @@ function love.load(argv, gameargv)
 
 				autoplay = autoplayMode,
 				replay = replayFile,
+				checkHash = not overrideReplayHashCheck,
 				random = randomizeBeatmap,
 				seed = randomSeed,
 				storyboard = storyboardMode,

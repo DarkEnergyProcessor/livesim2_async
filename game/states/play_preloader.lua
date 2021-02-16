@@ -40,7 +40,13 @@ function playPreloader:load(arg)
 				self.persist.directLoad = false
 
 				if arg.replay then
-					self.data.replayData = assert(lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", summary.hash))
+					local hash = summary.hash
+
+					if not(arg.checkHash) then
+						hash = nil
+					end
+
+					self.data.replayData = assert(lsr.loadReplay("replays/"..name.."/"..arg.replay..".lsr", hash))
 				end
 			end)
 		end
