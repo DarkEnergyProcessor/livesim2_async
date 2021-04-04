@@ -81,6 +81,23 @@ local function getHTTPHandle(url, new)
 	return h, #uri == 0 and "/" or uri, dest
 end
 
+local function receiveWithLength(h, length)
+	while length > 0 do
+		local chunk, err, partial = socketReceive(h, math.min(2048, length))
+		if err then
+			if err == "closed" then
+				pushEvent("receive", partial)
+			end
+
+			return nil, err
+		end
+		length = length - string.len(chunk)
+		pushEvent("receive", chunk)
+	end
+
+	return true
+end
+
 local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	-- Adjust
 	local basicHeader = {
@@ -127,14 +144,17 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	end
 
 	local statusLine, msg = socketReceive(h, "*l")
-	if statusLine == nil and msg == "closed" then
-		-- Well, the keep-alive connection is closed
-		h = getHTTPHandle(url, true)
-		assert(socketSend(h, headerstr))
-		statusLine = assert(socketReceive(h, "*l"))
-	elseif statusLine == nil then
-		error(msg)
+	if statusLine == nil then
+		if msg == "closed" then
+			-- Well, the keep-alive connection is closed
+			h = getHTTPHandle(url, true)
+			assert(socketSend(h, headerstr))
+			statusLine = assert(socketReceive(h, "*l"))
+		else
+			error(msg)
+		end
 	end
+
 	local statusCode = tonumber(statusLine:match("HTTP/%d+%.%d+ (%d+)"))
 
 	-- receive headers
@@ -166,8 +186,11 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	end
 
 	-- receive body
-	if receivedHeaders["transfer-encoding"] and receivedHeaders["transfer-encoding"] ~= "identity" then
-		error("different transfer encoding is not supported")
+	local transferEncoding = receivedHeaders["transfer-encoding"]
+	local chunked = transferEncoding == "chunked"
+
+	if transferEncoding and not chunked and transferEncoding ~= "identity" then
+		error("Transfer-Encoding "..transferEncoding.." is not currently supported")
 	end
 
 	local size = receivedHeaders["content-length"]
@@ -186,25 +209,47 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	end
 
 	if size == nil then
-		-- receive until closed
-        local chunk, err, partial = socketReceive(h, 2048)
-		if not(err) then
-			pushEvent("receive", chunk)
-        elseif err == "closed" then
-			invalidateCache()
-			pushEvent("receive", partial)
+		if chunked then
+			-- receive chunk
+			while true do
+				local data, err = socketReceive(h, "*l")
+
+				if not(err) then
+					local length = tonumber(data, 16)
+
+					if length and length == 0 then
+						break
+					end
+
+					local result, errmsg = receiveWithLength(h, length)
+
+					if not(result) then
+						invalidateCache()
+						return nil, errmsg
+					end
+				elseif err == "closed" then
+					invalidateCache()
+					break
+				end
+			end
 		else
-			return nil, err
-		end
-	else
-		local length = size
-		while length > 0 do
-			local chunk, err, partial = socketReceive(h, math.min(2048, length))
-			if err then
+			-- receive until closed
+			local chunk, err, partial = socketReceive(h, 2048)
+			if not(err) then
+				pushEvent("receive", chunk)
+			elseif err == "closed" then
+				invalidateCache()
+				pushEvent("receive", partial)
+			else
 				return nil, err
 			end
-			length = length - string.len(chunk)
-			pushEvent("receive", chunk)
+		end
+	else
+		local result, errmsg = receiveWithLength(h, size)
+
+		if not(result) then
+			invalidateCache()
+			return nil, errmsg
 		end
 	end
 
