@@ -267,7 +267,7 @@ local function requestHTTP(url, sentHeaders)
 	local s, msg = pcall(requestHTTPReal, h, uri, dest, url, sentHeaders)
 	if not(s) then
 		invalidateCache()
-		if input:peek() == "cancel" then
+		if input:peek() == "cancel://" then
 			input:pop()
 		end
 		pushEvent("error", msg)
@@ -286,7 +286,7 @@ while true do
 
 	if destURL == nil then
 		pushEvent("error", "empty URL")
-	else
+	elseif destURL ~= "cancel://" then
 		local extraHeaders = {}
 		local hasExtraHeaders = input:demand()
 		while hasExtraHeaders do

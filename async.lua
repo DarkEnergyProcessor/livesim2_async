@@ -150,7 +150,7 @@ end
 function async.loadImage(path, settings, errhand)
 	local l = lily.newImage(path, settings)
 	if errhand then
-		l:onError(errhand)
+		l:setUserData(path):onError(errhand)
 	end
 
 	return wrapLilyClass(l)

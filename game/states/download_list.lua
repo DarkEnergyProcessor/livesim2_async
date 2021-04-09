@@ -10,6 +10,7 @@ local assetCache = require("asset_cache")
 local gamestate = require("gamestate")
 local loadingInstance = require("loading_instance")
 local lily = require("lily")
+local log = require("logging")
 local async = require("async")
 local color = require("color")
 local mainFont = require("font")
@@ -144,10 +145,13 @@ local function getLiveIconPath(icon)
 	return "live_icon/"..getHashedName(util.basename(icon))
 end
 
-local function dummy() end
+local function handleInvalidCover(path)
+	log.errorf("download_list", "cannot load cover '%s', deleting.", path)
+	love.filesystem.remove(path)
+end
 
 local function loadCoverImage(elem, coverPath)
-	local coverImage = assetCache.loadImage(coverPath, mipmaps, dummy)
+	local coverImage = assetCache.loadImage(coverPath, mipmaps, handleInvalidCover)
 	elem:setCoverImage(coverImage)
 end
 
@@ -435,7 +439,7 @@ function beatmapDownload:resumed()
 			local track = self.persist.beatmapListGroup[i]
 			local coverPath = getLiveIconPath(track.icon)
 			if util.fileExists(coverPath) then
-				self.persist.beatmapListElem[i]:setCoverImage(assetCache.loadImage(coverPath, mipmaps))
+				self.persist.beatmapListElem[i]:setCoverImage(assetCache.loadImage(coverPath, mipmaps, handleInvalidCover))
 			end
 		end):run()
 

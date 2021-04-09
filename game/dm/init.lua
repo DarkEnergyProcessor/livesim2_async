@@ -123,7 +123,7 @@ function downloadObject:cancel()
 
 	if internal.downloading then
 		log.debugf(TAG, "cancelling download")
-		internal.chan:push("cancel")
+		internal.chan:push("cancel://")
 	end
 end
 
@@ -131,8 +131,14 @@ love.handlers[TAG] = function(input, message, a, b, c)
 	local obj = download.list[tostring(input)]
 	if obj then
 		local internal = Luaoop.class.data(obj)
+		local peek = internal.chan:peek()
 
-		if message == "error" then
+		if peek == "cancel://" then
+			log.warnf(TAG, "catching cancel at main thread instead")
+			internal.chan:pop()
+			internal.downloading = false
+			internal.errorCallback(internal.opaque, "cancelled", "")
+		elseif message == "error" then
 			-- Parameters: opaque, message
 			local errmsg = a:match(":%d+:%s(.+)")
 			internal.downloading = false
