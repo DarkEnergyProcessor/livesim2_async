@@ -1,4 +1,4 @@
--- Makuno Live UI
+-- Makuno Live UI v.1.2
 -- Contributed by Makuno, slightly modified
 -- part of Live Simulator: 2
 -- See copyright notice in main.lua
@@ -23,77 +23,78 @@ local mknui = Luaoop.class("livesim2.MakunoLiveUI", uibase)
 -----------------
 -- Local Stuff --
 -----------------
-local debug_settings = {
-	--------------
-	-- GAMEPLAY --
-	--------------
 
-	-- LIVE INTERFACE
-	ScoreRules = 0,
-	--[[
-		0 - Same as SIF Rules
-		1 - Always Round up to 10,000,000 Points on All Perfects (No ScoreAdd Animation)
-	]]
-
-	AccDisplayMode = 2,
-	--[[
-		1 - Start with 100%, decrease depend on judgements.
-		2 - Start with 0%, increase depend on judgements.
-	]]
-}
-
-local scorerank = {
+local scr = {
 	text = {
 		"D","C","B","A","S","SS","SSS","SPI","UPI"
 	},
 
-	-- Prototype: Change theme color depend on LS2 system settings.
-	default = {
+	color = {
 		{255, 255, 255},	-- D
-		{0, 255, 255},	  -- C	(30%)
-		{255, 150, 50},	 -- B	(50%)
+		{0, 255, 255},		-- C	(30%)
+		{255, 150, 50},		-- B	(50%)
 		{255, 115, 115},	-- A	(70%)
 		{221, 136, 255},	-- S	(100%)
 		---
-		{255, 220, 85},	 -- SS   (x2 of S)
-		{143, 231, 255},	-- SSS  (x3 of S)
-		{255, 10, 215},	 -- SPI  (x6 of S)
-		{255, 50, 50},	  -- UPI  (x9 of S)
+		{255, 220, 85},		-- SS	(x2 of S)
+		{143, 231, 255},	-- SSS	(x3 of S)
+		{255, 10, 215},		-- SPI	(x6 of S)
+		{255, 50, 50},		-- UPI	(x9 of S)
 	},
 }
 
 local l = {
-	-- If 'true' use rank that exceed S.
+
+	--[[	uxs - UseExtendedScore
+		If 'true' use rank that exceed S.
+	]]
 	ds_uxs = false,
-	--[[
+
+	--[[	esm - ExtendScoreMode (If UseExtendedScore: true)
 		1 - All extend ranks will display at once.
 		2 - Display SS/SSS after reached S,
 			and SPI/UPI after reached SSS.
-		3 - Only display SS/SSS after reached S.
+		3 - Only display SS/SSS after reached S,
 			not display SPI/UPI
-	]]--
+	]]
 	ds_esm = 2,
-	--[[
+
+	--[[	casm - ComboAffectScoreMultiplier
 		0 - Combo does affect the Score Multiplier.
 		1 - Combo doesn't affect the Score Multiplier.
-		(Only applied when 'ScoreRules = 0')
 	]]
-	ds_cam = 0,
-	ds_srs = debug_settings.ScoreRules,
-	ds_adm = debug_settings.ScoreRules == 1 and 1 or debug_settings.AccDisplayMode,
-	--[[
-		0 - Regular Strict (No Score-Add effect)
-		1 - Very Strict (No animation from every effect, regardless of LS2 settings)
+	ds_casm = 1,
+
+	--[[	adm - AccuracyDisplayMode
+		1 - Start with 100%, decrease depend on judgements.
+		2 - Start with 0%, increase depend on judgements.
+	]]
+	ds_adm = 2,
+
+	--[[	fsne - ForceStrictNoEffects
+		0 - Don't Force Strict (Depend on LS2 settings)
+		1 - Force Strict (Regardless of LS2 settings all effects will turn off)
 	]]
 	ds_fsne = 0,
-	--[[
+
+	--[[	dpy - DisplayingMode (Only Left side of the UI)
 		1 - Display Only Accuracy
-		2 - Display Only Judgements
+		2 - Display Only Accuracy Score
+		3 - Display Only Judgements
 	]]
 	ds_dpy = 1,
-	----
-	ds_sbs = 952,
-	ds_rlo = 3,
+
+	--[[	sbt - Scorebar Type
+		1 - Display v.1.0 - v.1.1 Scorebar (Display only Scorerank Bar)
+		2 - Display v.1.2+ Scorebar (Scorerank Bar + PIGI Ratio + EX-Score)
+	]]
+	ds_sbt = 2,
+	
+	--[[	sof - Stamina Overflow
+		If 'true' will allow heal skill to continue fill the stamina bar
+		even It already full. (Just like new Stamina system in SIF)
+	]]
+	ds_sof = true,
 }
 
 local function setColor(r, g, b, a)
@@ -114,22 +115,32 @@ local function setColor(r, g, b, a)
 	love.graphics.setColor(color.compat(c1, c2, c3, c4))
 end
 
-local function drawLine(direction, line, pos_start, pos_end)
-	if direction == nil then return end
+local function drawLine(direc, line, pos_s, pos_e)
+	if direc == nil then return end
 
-	if direction == "vertical" then
-		love.graphics.line(line, pos_start, line, pos_end)
-	elseif direction == "horizontal" then
-		love.graphics.line(pos_start, line, pos_end, line)
+	if direc == "vertical" then
+		love.graphics.line(line, pos_s, line, pos_e)
+	elseif direc == "horizontal" then
+		love.graphics.line(pos_s, line, pos_e, line)
 	end
 end
 
 local function retrieveTheme(i)
 	if i then
-		return {scorerank.default[i][1], scorerank.default[i][2], scorerank.default[i][3]}
+		return {scr.color[i][1], scr.color[i][2], scr.color[i][3]}
 	else
-		return {scorerank.default[1][1], scorerank.default[1][2], scorerank.default[1][3]}
+		return {scr.color[1][1], scr.color[1][2], scr.color[1][3]}
 	end
+end
+
+local function addLine(max, bar, size, ofs)
+	local tl = {}
+
+	for i = 1, max do
+		tl[#tl + 1] = (util.clamp(bar[i] / bar[max], 0, 1) * size) + ofs
+	end
+
+	return tl
 end
 
 --------------------
@@ -138,16 +149,17 @@ end
 function mknui:__construct(autoplay, mineff)
 	self.timer = timer:new()
 	self.fonts = assetCache.loadMultipleFonts({
-		{"fonts/Jost-Medium.ttf", 14},   -- Head Title (SCORE and STAMINA)
-		{"fonts/Jost-Light.ttf", 40},	-- Score
+		{"fonts/Jost-Medium.ttf", l.ds_sbt == 1 and 15 or 13},   -- Head Title (SCORE and STAMINA)
+		{"fonts/Jost-Light.ttf", l.ds_sbt == 1 and 40 or 36}, -- Score & Acc
 		{"fonts/Jost-Italic.ttf", 15},   -- Autoplay
 		{"fonts/Jost-Light.ttf", 21},	-- Judgements
-		{"fonts/Jost-Regular.ttf", 23},  -- Combo Number
+		{"fonts/Jost-Regular.ttf", 22},  -- Combo
 		{"fonts/Jost-Light.ttf", 45},	-- End Screen (FC/LC/Fail)
-		{"fonts/Jost-Light.ttf", 25},	-- Score Added
+		{"fonts/Jost-Light.ttf", 22},	-- End Screen 'Live'
+		{"fonts/Jost-Italic.ttf", 20},	-- Score Added
 		--
-		{"fonts/Jost-Regular.ttf", 14},   -- Judgements
-		{"fonts/Jost-Regular.ttf", 18},   -- Amount of Judgements
+		{"fonts/Jost-Regular.ttf", 14},   -- Sub Info (v.1.2)
+		{"fonts/Jost-Medium.ttf", 13},   -- Overflow Count (v.1.2)
 	})
 	self.fonts_hc = {
 		self.fonts[3]:getHeight() * -0.5,
@@ -160,7 +172,7 @@ function mknui:__construct(autoplay, mineff)
 		{
 			"assets/image/live/lw_pause.png",
 			"assets/image/dummy.png",
-		},{mipmaps = true}
+		},	{mipmaps = true}
 	)
 	self.text = {
 		Top = {
@@ -168,11 +180,14 @@ function mknui:__construct(autoplay, mineff)
 			ACC = "ACCURACY",
 			JUDGE = "JUDGEMENTS",
 			AUTO = "AUTOPLAY",
+			PIGI = "PIGI Ratio",
+			EXSCORE = "EX-SCORE",
 		},
 
 		Result = {
 			L = "L I V E",
 			F = "F A I L E D",
+			FM = "F U L L  M I S S E D",
 			C = "C L E A R E D",
 			FC = "F U L L  C O M B O",
 			PF = "P E R F E C T",
@@ -194,6 +209,8 @@ function mknui:__construct(autoplay, mineff)
 	self.staminaFunction = setting.get("STAMINA_FUNCTIONAL") == 1
 	self.minimalEffect = mineff
 	self.autoplaying = autoplay
+	--
+	self.nameDisplay = nil
 
 	----
 	self.dis_opacity = 1
@@ -203,35 +220,52 @@ function mknui:__construct(autoplay, mineff)
 
 	---- thing #2
 	self.currentscore = 0
+	self.current_exscore = 0
 	self.currentscore_2 = 0
 	self.currentscoreAdd = 0
 	self.dis_score = self.currentscore
+	self.dis_score_2 = self.currentscore_2
+	self.dis_ex_score = self.current_exscore
 	--
 	self.scoreborders = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 	self.scorerankcolor = retrieveTheme()
-	self.dis_currentrank = scorerank.text[1]
+	self.dis_currentrank = scr.text[1]
 	--
-	self.tween_time_scoreflash = 0
 	self.tween_time_score = nil
+	self.tween_time_score_2 = nil
+	self.tween_dis_ex_score = nil
 	self.tween_dis_scorerankcolor = nil
 
 	---- Combo #3
 	self.currentcombo = 0
+	self.miss_combo = 0
 	self.highestcombo = 0
 	self.dis_opacity_combo = 1
 	--
 	self.tween_dis_combo = nil
 
 	---- Stam #4
-	self.currentstamina = 100
-	self.maxstamina = 250
+	self.currentstamina = 9
+	self.maxstamina = 9
+	self.currentoverflow = 0
+	self.overflow_bonus = 0
+	self.overflow_multiply = 0
+	self.maxoverflow_bonus = 10
+	--
 	self.dis_stamina = 100
+	self.dis_overflow_stamina = 0
+	self.dis_stamina_color1 = {35, 35, 35}
+	self.dis_stamina_color2 = {225, 225, 225}
+	self.dis_ov_sta_color = {5, 185, 255}
 	--
 	self.tween_stamina = nil
+	self.tween_stamina_of = nil
+	self.tween_stamina_color = nil
+	self.tween_stamina_color2 = nil
 
 	---- Judge #5
 	self.dis_opacity_judge = 1
-	self.dis_scale_judge = 1
+	self.dis_scale_judge = 1.1
 	--
 	self.count_perfect = 0
 	self.count_great = 0
@@ -239,11 +273,14 @@ function mknui:__construct(autoplay, mineff)
 	self.count_bad = 0
 	self.count_miss = 0
 	--
+	self.PIGI_ratio = 0
+	--
 	self.tween1_judge = nil
 	self.tween2_judge = nil
 
 	---- Acc #6
 	self.totalnote = 0
+	self.tn = 0
 	self.totalnotescore = 0
 	self.acc = 0
 	self.dis_acc = 0
@@ -253,6 +290,7 @@ function mknui:__construct(autoplay, mineff)
 	---- Result #7
 	self.PUC = true
 	self.FC = true
+	self.MC = true
 	--
 	self.audio_liveclearvoice = nil
 	self.audio_livefailvoice = nil
@@ -396,7 +434,7 @@ function mknui:getMaxCombo()
 end
 
 function mknui:getScoreComboMultipler()
-	if l.ds_cam == 0 and l.ds_srs == 0 then
+	if l.ds_casm == 1 then
 		if self.currentcombo < 50 then
 			return 1
 		elseif self.currentcombo < 100 then
@@ -426,71 +464,24 @@ function mknui:update(dt,paused)
 		self.timer:update(dt)
 	end
 
-	if not(l.ds_srs == 1) then
-		for i = 8, 1, -1 do
-			if self.dis_score >= self.scoreborders[i] then
-				if (l.ds_uxs == false) and i > 4 then i = 4 end
-				if (l.ds_uxs == true) and (l.ds_esm == 3) and i > 6 then i = 6 end
-
-				if not(l.ds_fsne == 1) then
-					if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
-					self.tween_dis_scorerankcolor = self.timer:tween(0.25, self.scorerankcolor, retrieveTheme(1 + i))
-				else
-					self.scorerankcolor = retrieveTheme(1 + i)
-				end
-
-				self.dis_currentrank = scorerank.text[1 + i]
-				break
-			end
-		end
-	else
-		if self.dis_score >= 9750000 then
-			for i = 4, 1, -1 do
-				if self.dis_score >= (196 + i) * 50000 then
-
-					if not(l.ds_fsne == 1) then
-						if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
-						self.tween_dis_scorerankcolor = self.timer:tween(0.25, self.scorerankcolor, retrieveTheme(5 + i))
-					else
-						self.scorerankcolor = retrieveTheme(5 + i)
-					end
-
-					self.dis_currentrank = scorerank.text[5 + i]
-					break
-
-				end
-			end
-		elseif self.dis_score >= 9500000 then
+	for i = (#scr.text - 1), 1, -1 do
+		if self.dis_score >= self.scoreborders[i] then
+			if (l.ds_uxs == false) and i > 4 then i = 4 end
+			if (l.ds_uxs == true) and (l.ds_esm == 3) and i > 6 then i = 6 end
 
 			if not(l.ds_fsne == 1) then
 				if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
-				self.tween_dis_scorerankcolor = self.timer:tween(0.25, self.scorerankcolor, retrieveTheme(5))
+				self.tween_dis_scorerankcolor = self.timer:tween(1, self.scorerankcolor, retrieveTheme(1 + i), "out-expo")
 			else
-				self.scorerankcolor = retrieveTheme(5)
+				self.scorerankcolor = retrieveTheme(1 + i)
 			end
 
-			self.dis_currentrank = scorerank.text[5]
-
-		else
-			for i = 3, 1, -1 do
-				if self.dis_score >= (6 + i) * 1000000 then
-
-					if not(l.ds_fsne == 1) then
-						if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
-						self.tween_dis_scorerankcolor = self.timer:tween(0.25, self.scorerankcolor, retrieveTheme(1 + i))
-					else
-						self.scorerankcolor = retrieveTheme(1 + i)
-					end
-
-					self.dis_currentrank = scorerank.text[1 + i]
-					break
-
-				end
-			end
+			self.dis_currentrank = scr.text[1 + i]
+			break
 		end
 	end
-
-	if self.currentscoreAdd > 0 and not(self.minimalEffect) and not(l.ds_fsne == 1) then
+	
+	if self.currentscoreAdd ~= 0 and not(self.minimalEffect) and not(l.ds_fsne == 1) then
 		local scadd_new
 		for s = 1,#self.scoreAddEffectList do
 			local sdel = self.scoreAddEffectList[s]
@@ -503,24 +494,31 @@ function mknui:update(dt,paused)
 		if not(scadd_new) then
 			scadd_new = {
 				ts = nil, done = false,
-				text = love.graphics.newText(self.fonts[7]),
+				text = love.graphics.newText(self.fonts[8]),
 				o = 0, x = 360
 			}
 
 			scadd_new.func = function(wait)
 				self.timer:tween(0.15, scadd_new, {x = 360 * 1.4, o = 1}, "out-expo")
 				wait(0.2)
-				self.timer:tween(0.15, scadd_new, {x = 360 * 1.75, o = 0}, "in-quart")
+				self.timer:tween(0.15, scadd_new, {x = 360 * 1.75, o = 0}, "in-expo")
 				wait(0.15)
 				scadd_new.done = true
 			end
 		end
 
 		scadd_new.text:clear()
-		scadd_new.text:addf(
-			{color.white, "+ "..tostring(self.currentscoreAdd)},
-			480, "right", -240, self.fonts_hc[5]
-		)
+		if self.currentscoreAdd > 0 then
+            scadd_new.text:addf(
+                {color.white, "+ "..tostring(self.currentscoreAdd)},
+                480, "right", -240, self.fonts_hc[5]
+            )
+        elseif self.currentscoreAdd < 0 then -- Lol someone decrease your score
+            scadd_new.text:addf(
+                {color.red, "- "..tostring(math.abs(self.currentscoreAdd))},
+                480, "right", -240, self.fonts_hc[5]
+            )
+        end
 		--
 		scadd_new.done = false
 		scadd_new.o = 0
@@ -552,32 +550,33 @@ end
 --------------------
 -- Primary Function
 
-function mknui:addScore(amount)
+function mknui:addScore(amount) 
+	
+	local a = math.ceil(amount + (amount * self.overflow_multiply))
 
-	if amount == 0 then return end
+	if a == 0 then return end
 
-	self.currentscore = self.currentscore + math.ceil(amount)
-	self.currentscore_2 = (self.acc / self.totalnotescore) * 10000000
-	--
-	self.currentscoreAdd = self.currentscoreAdd + math.ceil(amount)
+	self.currentscore = self.currentscore + a
+	self.currentscore_2 = (self.acc / self.totalnotescore) * 1000000
+	----
+	self.currentscoreAdd = self.currentscoreAdd + a
 
 	if (l.ds_fsne == 1) then
-		if (l.ds_srs == 0) then
-			self.dis_score = self.currentscore
-		else
-			self.dis_score = self.currentscore_2
-		end
+		self.dis_score = self.currentscore
+		self.dis_score_2 = self.currentscore_2
 	else
 		if self.tween_time_score then
 			self.timer:cancel(self.tween_time_score)
 			self.tween_time_score = nil
 		end
 
-		if (l.ds_srs == 0) then
-			self.tween_time_score = self.timer:tween(0.5, self, {dis_score = self.currentscore}, "out-quart")
-		else
-			self.tween_time_score = self.timer:tween(0.5, self, {dis_score = self.currentscore_2}, "out-quart")
+		if self.tween_time_score_2 then
+			self.timer:cancel(self.tween_time_score_2)
+			self.tween_time_score_2 = nil
 		end
+
+		self.tween_time_score = self.timer:tween(0.5, self, {dis_score = self.currentscore}, "out-quint")
+		self.tween_time_score_2 = self.timer:tween(0.5, self, {dis_score_2 = self.currentscore_2}, "out-quint")
 	end
 end
 
@@ -591,12 +590,16 @@ function mknui:comboJudgement(judgement, addcombo)
 				{color.white, self.text.Judge.Perfect},
 				960, "center", -480, self.fonts_hc[2]
 			)
+			self.MC = false
+			self.current_exscore = self.current_exscore + 4
 		elseif judgement == "great" then
 			self.judgeText:addf(
 				{color.white, self.text.Judge.Great},
 				960, "center", -480, self.fonts_hc[2]
 			)
 			self.PUC = false
+			self.MC = false
+			self.current_exscore = self.current_exscore + 2
 		elseif judgement == "good" then
 			self.judgeText:addf(
 				{color.white, self.text.Judge.Good},
@@ -604,7 +607,9 @@ function mknui:comboJudgement(judgement, addcombo)
 			)
 			self.PUC = false
 			self.FC = false
+			self.MC = false
 			combochoke = true
+			self.current_exscore = self.current_exscore - 4
 		elseif judgement == "bad" then
 			self.judgeText:addf(
 				{color.white, self.text.Judge.Bad},
@@ -612,7 +617,9 @@ function mknui:comboJudgement(judgement, addcombo)
 			)
 			self.PUC = false
 			self.FC = false
+			self.MC = false
 			combochoke = true
+			self.current_exscore = self.current_exscore - 2
 		elseif judgement == "miss" then
 			self.judgeText:addf(
 				{color.white, self.text.Judge.Miss},
@@ -621,6 +628,7 @@ function mknui:comboJudgement(judgement, addcombo)
 			self.PUC = false
 			self.FC = false
 			combochoke = true
+			self.current_exscore = self.current_exscore - 1
 		else
 			self.judgeText:addf(
 				{color.white, tostring(judgement)},
@@ -633,25 +641,35 @@ function mknui:comboJudgement(judgement, addcombo)
 				self.totalnote = self.totalnote + 1
 			end
 
+			self.tn = self.tn - 1
 			self.currentcombo = 0
 
 			if judgement == "good" then
 				self.acc = self.acc + 0.5
+				self.miss_combo = 0
 				self.count_good = self.count_good + 1
 			elseif judgement == "bad" then
 				self.acc = self.acc + 0.25
+				self.miss_combo = 0
 				self.count_bad = self.count_bad + 1
 			elseif judgement == "miss" then
+				self.miss_combo = self.miss_combo + 1
 				self.count_miss = self.count_miss + 1
 			end
 
 			self.comboText:clear()
+			self.comboText:addf(
+				{color.red, tostring(self.miss_combo)},
+				960, "center", -480, self.fonts_hc[1]
+			)
 
 		elseif addcombo then
 			if (l.ds_adm == 1) then
 				self.totalnote = self.totalnote + 1
 			end
 
+			self.tn = self.tn - 1
+			self.miss_combo = 0
 			self.currentcombo = self.currentcombo + 1
 			self.highestcombo = math.max(self.highestcombo, self.currentcombo)
 
@@ -678,6 +696,8 @@ function mknui:comboJudgement(judgement, addcombo)
 				if self.tween_dis_acc then self.timer:cancel(self.tween_dis_acc) end
 				self.tween_dis_acc = self.timer:tween(0.5, self, {dis_acc = (self.acc/self.totalnote) * 100}, "out-quart")
 			end
+
+			self.PIGI_ratio = self.count_perfect / (self.count_great + self.count_good + self.count_bad + self.count_miss)
 		end
 
 		if not(l.ds_fsne == 1) then
@@ -686,6 +706,10 @@ function mknui:comboJudgement(judgement, addcombo)
 				self.dis_scale_judge = 1.1
 				self.tween1_judge = nil
 			end
+
+			if self.tween_dis_ex_score then self.timer:cancel(self.tween_dis_ex_score) end
+
+			self.tween_dis_ex_score = self.timer:tween(0.5, self, {dis_ex_score = self.current_exscore}, "out-expo")
 			self.tween1_judge = self.timer:tween(0.5, self, {dis_scale_judge = 1}, "out-quart")
 		end
 
@@ -693,6 +717,16 @@ function mknui:comboJudgement(judgement, addcombo)
 			self.timer:cancel(self.tween2_judge)
 			self.dis_opacity_judge = 1
 			self.tween2_judge = nil
+		end
+
+		if self.tn == 0 then
+			if self.tween_dis_combo then
+				self.timer:cancel(self.tween_dis_combo)
+				self.dis_opacity_combo = 1
+				self.tween_dis_combo = nil
+			end
+
+			self.tween_dis_combo = self.timer:tween(1, self, {dis_opacity_combo = 0}, "in-quart")
 		end
 
 		self.tween2_judge = self.timer:tween(1, self, {dis_opacity_judge = 0}, "in-quart")
@@ -709,7 +743,6 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 		local some_x = 0
 
 		self.timer:tween(0.5, self.other_tween, {dim = 0.35, color = {0, 0, 0}}, "out-quad")
-		self.tween_dis_combo = self.timer:tween(1, self, {dis_opacity_combo = 0}, "in-quart")
 
 		------
 		self.resultText_small:addf(
@@ -724,10 +757,17 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 			)
 
 		elseif fullcombo and (self.FC == true) and not(self.PUC == true) then
-			some_x = 173
+			some_x = 172
 
 			self.resultText:addf(
 				{color.skyBlue, self.text.Result.FC},
+				960, "center", -480, self.fonts_hc[4]
+			)
+		elseif not fullcombo and (self.MC == true) then
+			some_x = 171
+
+			self.resultText:addf(
+				{color.red, self.text.Result.FM},
 				960, "center", -480, self.fonts_hc[4]
 			)
 		else
@@ -770,20 +810,66 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 end
 
 function mknui:addStamina(amount)
-	if amount == 0 then return end
-	amount = math.ceil(amount)
 
-	self.currentstamina = util.clamp(self.currentstamina + amount, 0, self.maxstamina)
+	local a = math.ceil(amount)
+
+	if a == 0 then return end
+
+	local b_c1, b_c2
+
+	if amount < 0 and (l.ds_sof == true) then
+		self.currentoverflow = 0
+	end
+
+	if (self.currentstamina + a) > self.maxstamina and (l.ds_sof == true) then
+		local rf = self.maxstamina - self.currentstamina
+		local ovf = a - rf
+		self.currentstamina = util.clamp(self.currentstamina + rf, 0, self.maxstamina)
+		if (self.currentoverflow + a) >= self.maxstamina then
+			local ovrf = self.maxstamina - self.currentoverflow
+			local ovna = a - ovrf
+			self.currentoverflow = 0
+			self.currentoverflow = util.clamp(self.currentoverflow + ovna, 0, self.maxstamina)
+
+			if self.overflow_bonus >= self.maxoverflow_bonus then
+				self.overflow_bonus = self.maxoverflow_bonus
+				self.overflow_multiply = (self.maxoverflow_bonus * 0.005) + (self.maxstamina / 500)
+			else 
+				self.overflow_bonus = self.overflow_bonus + 1
+				self.overflow_multiply = (self.overflow_bonus * 0.005) + (self.maxstamina / 500)
+			end
+
+		else
+			self.currentoverflow = util.clamp(self.currentoverflow + ovf, 0, self.maxstamina)
+		end
+	else
+		self.currentstamina = util.clamp(self.currentstamina + a, 0, self.maxstamina)
+	end
+
+	if (self.currentstamina / self.maxstamina) <= 0.2 then
+		b_c1 = {100, 0, 0}
+		b_c2 = {255, 25, 25}
+	else
+		b_c1 = {35, 35, 35}
+		b_c2 = {225, 225, 225}
+	end
 
 	if (l.ds_fsne == 1) then
 		self.dis_stamina = self.currentstamina
+		self.dis_overflow_stamina = self.currentoverflow
+		self.dis_stamina_color1 = b_c1
+		self.dis_stamina_color2 = b_c2
 	else
-		if self.tween_stamina then
-			self.timer:cancel(self.tween_stamina)
-			self.tween_stamina = nil
-		end
+		if self.tween_stamina then self.timer:cancel(self.tween_stamina) self.tween_stamina = nil end
+		if self.tween_stamina_of then self.timer:cancel(self.tween_stamina_of) self.tween_stamina_of = nil end
 
+		if self.tween_stamina_color then self.timer:cancel(self.tween_stamina_color) end
+		if self.tween_stamina_color2 then self.timer:cancel(self.tween_stamina_color2) end
+
+		self.tween_stamina_color = self.timer:tween(0.15, self.dis_stamina_color1, b_c1, "out-quart")
+		self.tween_stamina_color2 = self.timer:tween(0.15, self.dis_stamina_color2, b_c2, "out-quart")
 		self.tween_stamina = self.timer:tween(0.1, self, {dis_stamina = self.currentstamina}, "out-quart")
+		self.tween_stamina_of = self.timer:tween(0.1, self, {dis_overflow_stamina = self.currentoverflow}, "out-quart")
 	end
 end
 
@@ -839,15 +925,20 @@ function mknui:setOpacity(opacity, time, mode)
 	end
 end
 
+function mknui:setSongInfo(songname)
+	self.nameDisplay = tostring(songname)
+end
+
 function mknui:setTextScaling(scale)
 
 end
 
 function mknui:setTotalNotes(tl)
-	if l.ds_adm == 2 then
+	if (l.ds_adm == 2) then
 		self.totalnote = tl
 	end
 
+	self.tn = tl
 	self.totalnotescore = tl
 end
 
@@ -895,126 +986,121 @@ end
 
 
 
+
 --------------------
 -- Primary Draw Function
 
 function mknui:drawHeader()
-	local score_text = tostring(self.text.Top.SCORE.." (Rank "..self.dis_currentrank..")")
-	local judge_text = tostring(self.text.Top.JUDGE)
-	local acc_text = tostring(self.text.Top.ACC)
-	local score_amo = string.format("%07d", self.dis_score)
-	local acc_amo = string.format("%.2f", self.dis_acc == 0 and 0 or self.dis_acc).."%"
-	local sta_pos = 63
-	local auto_pos = 68
+
+	local dh = {
+		score_t = tostring(self.text.Top.SCORE.." (Rank "..self.dis_currentrank..")"),
+		judge_t = tostring(self.text.Top.JUDGE),
+		acc_t = tostring(self.text.Top.ACC),
+		scacc_t = tostring(self.text.Top.ACC.." "..self.text.Top.SCORE),
+		pigi_t = tostring(self.text.Top.PIGI),
+		exsc_t = tostring(self.text.Top.EXSCORE),
+		--
+		score_amo = string.format("%06d", self.dis_score),
+		scacc_amo = string.format("%06d", self.dis_score_2),
+		acc_amo = string.format("%.2f", self.dis_acc == 0 and 0 or self.dis_acc).."%",
+		exscc_amo = string.format("%04d", self.dis_ex_score),
+		ov_amo = "x"..tostring(self.overflow_bonus),
+		sta_amo = tostring(math.floor(self.dis_stamina)),
+		--
+		pigi_ratio = string.format("%.2f", tostring(self.PIGI_ratio))..":1",
+		--
+		sta_pos = 63,
+		auto_pos = 68,
+		--
+		sbs = 960,
+		abs = 160,
+		ofs = 0,
+		--
+		t_y2 = l.ds_sbt == 1 and 12 or 10,
+	}
 
 	do
-		setColor(255, 255, 255, self.dis_opacity * 0.95)
-		love.graphics.printf(score_text, self.fonts[1], (l.ds_sbs / 2) - 1, 3, 480, "right", 0)
-		if l.ds_dpy == 1 then
-			love.graphics.printf(acc_text, self.fonts[1], (480 - (l.ds_sbs / 2)) + 1, 3, 480, "left", 0)
-		else
-			love.graphics.printf(judge_text, self.fonts[1], (480 - (l.ds_sbs / 2)) + 1, 3, 480, "left", 0)
-			---
-			love.graphics.printf(self.text.Judge.Perfect, self.fonts[8], (480 - (l.ds_sbs / 2)), 22, 480, "left", 0)
-			love.graphics.printf(self.text.Judge.Great, self.fonts[8], (576 - (l.ds_sbs / 2)), 22, 480, "left", 0)
-			love.graphics.printf(self.text.Judge.Good, self.fonts[8], (672 - (l.ds_sbs / 2)), 22, 480, "left", 0)
-			love.graphics.printf(self.text.Judge.Bad, self.fonts[8], (768 - (l.ds_sbs / 2)), 22, 480, "left", 0)
-			love.graphics.printf(self.text.Judge.Miss, self.fonts[8], (864 - (l.ds_sbs / 2)), 22, 480, "left", 0)
+		if self.nameDisplay ~= nil then
+			setColor(255, 255, 255, self.dis_opacity * 0.5)
 		end
 
-		setColor(self.scorerankcolor, self.dis_opacity * 0.9)
-		love.graphics.printf(score_amo, self.fonts[2], (l.ds_sbs / 2) - 1, 12, 480, "right", 0)
-		if l.ds_dpy == 1 then
-			setColor(255, 255, 255, self.dis_opacity * 0.9)
-			love.graphics.printf(acc_amo, self.fonts[2], (480 - (l.ds_sbs / 2)) - 1, 12, 480, "left", 0)
-		else
-			if self.acc > 0 and (self.FC == true) and (self.PUC == true) then
-				setColor(255, 215, 0, self.dis_opacity * 0.9)
-			elseif self.acc > 0 and (self.FC == true) and (self.PUC == false) then
-				setColor(135, 206, 235, self.dis_opacity * 0.9)
-			else
+		dh.ofs = (960 - dh.sbs) / 2
+		if not(self.minimalEffect) and not(l.ds_fsne == 1) then
+			dh.sta_pos = dh.sta_pos + 12
+			dh.auto_pos = dh.auto_pos + 4
+
+			local lyne, sc_bar
+
+			if l.ds_sbt == 2 then
+				dh.sbs = dh.sbs - (dh.abs * 2)
+				dh.ofs = (960 - dh.sbs) / 2
+
+				setColor(75, 75, 75, self.dis_opacity * 0.5)
+				love.graphics.rectangle("fill", 0, 56, dh.abs, 18)
+				love.graphics.rectangle("fill", dh.ofs + dh.sbs, 56, dh.abs, 18)
+
+				setColor(255, 255, 255, self.dis_opacity * 0.6)
+				love.graphics.setLineWidth(1.05)
+				love.graphics.rectangle("line", 0, 56, dh.abs, 18)
+				love.graphics.rectangle("line", dh.ofs + dh.sbs, 56, dh.abs, 18)
+
 				setColor(255, 255, 255, self.dis_opacity * 0.9)
+				love.graphics.printf(dh.exsc_t..":", self.fonts[1], dh.ofs + dh.sbs + 3, 56, dh.abs, "left", 0)
+				love.graphics.printf(dh.exscc_amo, self.fonts[9], dh.ofs + dh.sbs - 2, 55, dh.abs, "right", 0)
+				love.graphics.printf(dh.pigi_t..":", self.fonts[1], 3, 56, dh.abs, "left", 0)
+				love.graphics.printf(dh.pigi_ratio, self.fonts[9], -2, 55, dh.abs, "right", 0)
+
 			end
-			love.graphics.printf(self.count_perfect, self.fonts[9], (480 - (l.ds_sbs / 2)), 36, 480, "left", 0)
-			love.graphics.printf(self.count_great, self.fonts[9], (576 - (l.ds_sbs / 2)), 36, 480, "left", 0)
-			love.graphics.printf(self.count_good, self.fonts[9], (672 - (l.ds_sbs / 2)), 36, 480, "left", 0)
-			love.graphics.printf(self.count_bad, self.fonts[9], (768 - (l.ds_sbs / 2)), 36, 480, "left", 0)
-			love.graphics.printf(self.count_miss, self.fonts[9], (864 - (l.ds_sbs / 2)), 36, 480, "left", 0)
-		end
 
-		if not(self.minimalEffect) and not(l.ds_fsne == 1) and not(l.ds_srs == 1) then
-			sta_pos = sta_pos + 12
-			auto_pos = auto_pos + 4
-			local lyne, so_bar
-
-			if (l.ds_uxs == true) and not(l.ds_srs == 1) then
+			if l.ds_uxs == true then
 				if l.ds_esm == 1 then
-					so_bar = util.clamp(self.dis_score / self.scoreborders[8], 0, 1) * l.ds_sbs
-					lyne = {
-						ly_C = util.clamp(self.scoreborders[1] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_B = util.clamp(self.scoreborders[2] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_A = util.clamp(self.scoreborders[3] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_S = util.clamp(self.scoreborders[4] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_SS = util.clamp(self.scoreborders[5] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_SSS = util.clamp(self.scoreborders[6] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-						ly_SPI = util.clamp(self.scoreborders[7] / self.scoreborders[8], 0, 1) * l.ds_sbs + l.ds_rlo,
-					}
+					sc_bar = util.clamp(self.dis_score / self.scoreborders[8], 0, 1) * dh.sbs
+					lyne = addLine(8, self.scoreborders, dh.sbs, dh.ofs)
+
 				elseif l.ds_esm == 2 then
 					if self.dis_score < self.scoreborders[4] then
-						so_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * l.ds_sbs
-						lyne = {
-							ly_C = util.clamp(self.scoreborders[1] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-							ly_B = util.clamp(self.scoreborders[2] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-							ly_A = util.clamp(self.scoreborders[3] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-						}
+						sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
+						lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
 					elseif self.dis_score < self.scoreborders[6] then
-						so_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * l.ds_sbs
+						sc_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs
 						lyne = {
-							ly_SS = util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * l.ds_sbs + l.ds_rlo,
+							util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					else
-						so_bar = util.clamp((self.dis_score - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * l.ds_sbs
+						sc_bar = util.clamp((self.dis_score - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * dh.sbs
 						lyne = {
-							ly_SPI = util.clamp((self.scoreborders[7] - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * l.ds_sbs + l.ds_rlo,
+							util.clamp((self.scoreborders[7] - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				else
 					if self.dis_score < self.scoreborders[4] then
-						so_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * l.ds_sbs
-						lyne = {
-							ly_C = util.clamp(self.scoreborders[1] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-							ly_B = util.clamp(self.scoreborders[2] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-							ly_A = util.clamp(self.scoreborders[3] / self.scoreborders[4], 0, 1) * l.ds_sbs + l.ds_rlo,
-						}
+						sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
+						lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
 					else
-						so_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * l.ds_sbs
+						sc_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs
 						lyne = {
-							ly_SS = util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * l.ds_sbs + l.ds_rlo,
+							ly_SS = util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				end
-			elseif not(l.ds_srs == 1) then
-				so_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * l.ds_sbs
-				lyne = {
-					ly_C = (util.clamp(self.scoreborders[1] / self.scoreborders[4], 0, 1) * l.ds_sbs) + l.ds_rlo,
-					ly_B = (util.clamp(self.scoreborders[2] / self.scoreborders[4], 0, 1) * l.ds_sbs) + l.ds_rlo,
-					ly_A = (util.clamp(self.scoreborders[3] / self.scoreborders[4], 0, 1) * l.ds_sbs) + l.ds_rlo
-				}
+			else
+				sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
+				lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
 			end
 
 			setColor(75, 75, 75, self.dis_opacity * 0.5)
-			love.graphics.rectangle("fill", ((960 - l.ds_sbs) / 3.5), 63, l.ds_sbs, 4)
+			love.graphics.rectangle("fill", dh.ofs, 63, dh.sbs, 4)
 
-			if so_bar ~= nil and so_bar > 0 then
+			if sc_bar ~= nil and sc_bar > 0 then
 				setColor(self.scorerankcolor, self.dis_opacity * 0.9)
-				love.graphics.rectangle("fill", ((960 - l.ds_sbs) / 3.5), 63, so_bar, 4)
+				love.graphics.rectangle("fill", dh.ofs, 63, sc_bar, 4)
 			end
 
-			setColor(255,255,255,self.dis_opacity * 0.6)
+			setColor(255, 255, 255, self.dis_opacity * 0.6)
 			love.graphics.setLineWidth(1.05)
-			love.graphics.rectangle("line", ((960 - l.ds_sbs) / 3.5), 63, l.ds_sbs, 4)
+			love.graphics.rectangle("line", dh.ofs, 63, dh.sbs, 4)
 
-			if lyne ~= nil and l.ds_sbs == 952 then
+			if lyne ~= nil then
 				for i,v in pairs(lyne) do
 					drawLine("vertical", v, 63, 67)
 				end
@@ -1024,44 +1110,58 @@ function mknui:drawHeader()
 				local sael = self.scoreAddEffectList[e]
 				if sael.done then break end
 				setColor(255, 255, 255, self.dis_opacity * sael.o)
-				love.graphics.draw(sael.text, sael.x, 46, 0, 1, 1, 0, 0)
+				love.graphics.draw(sael.text, sael.x, 44, 0, 1, 1, 0, 0)
 			end
 
 		else
-			sta_pos = sta_pos + 8
+			dh.sta_pos = dh.sta_pos + 8
 
-			setColor(255,255,255,self.dis_opacity * 0.6)
+			setColor(255, 255, 255, self.dis_opacity * 0.6)
 			love.graphics.setLineWidth(1.25)
-			drawLine("horizontal", 63, ((960 - l.ds_sbs) / 3.5), l.ds_sbs)
+			drawLine("horizontal", 63, dh.ofs, dh.sbs)
 		end
 
 		if (self.staminaFunction) then
-			auto_pos = auto_pos + 8
+			dh.auto_pos = dh.auto_pos + 8
 
-			local bar_color1, bar_color2, sbar_color3, sta_bar
-			sta_bar = util.clamp(self.dis_stamina / self.maxstamina, 0, 1) * math.ceil(l.ds_sbs / 3)
+			local sta_bar, of_bar
+			sta_bar = util.clamp(self.dis_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
+			of_bar = util.clamp(self.dis_overflow_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
 
-			if (self.dis_stamina / self.maxstamina) <= 0.25 then
-				bar_color1 = {100, 0, 0, self.dis_opacity * 0.9}
-				bar_color2 = {255, 25, 25, self.dis_opacity * 0.8}
-			else
-				bar_color1 = {25, 25, 25, self.dis_opacity * 0.9}
-				bar_color2 = {250, 250, 250, self.dis_opacity * 0.8}
+			setColor(self.dis_stamina_color1, self.dis_opacity * 0.7)
+			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, dh.abs * 2, 4)
+			setColor(self.dis_stamina_color2, self.dis_opacity * 0.85)
+			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, sta_bar, 4)
+			love.graphics.printf(dh.sta_amo, self.fonts[10], 645, dh.sta_pos - 7, dh.abs, "left", 0)
+			setColor(self.dis_ov_sta_color, self.dis_opacity * 0.9)
+			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, of_bar, 4)
+
+			if self.overflow_bonus > 0 then
+				setColor(self.dis_ov_sta_color, self.dis_opacity * 0.95)
+				love.graphics.printf(dh.ov_amo, self.fonts[10], 155, dh.sta_pos - 7, dh.abs, "right", 0)
 			end
 
-			setColor(bar_color1)
-			love.graphics.rectangle("fill", (960 / 3), sta_pos, math.ceil(l.ds_sbs / 3), 4)
-			setColor(bar_color2)
-			love.graphics.rectangle("fill", (960 / 3), sta_pos, sta_bar, 4)
-
 		end
+
+		setColor(255, 255, 255, self.dis_opacity * 0.95)
+		love.graphics.printf(dh.score_t, self.fonts[1], 480 - 2, 1, 480, "right", 0)
+		if l.ds_dpy == 1 then
+			love.graphics.printf(dh.acc_t, self.fonts[1], 2, 1, 480, "left", 0)
+			setColor(255, 255, 255, self.dis_opacity * 0.9)
+			love.graphics.printf(dh.acc_amo, self.fonts[2], 2, dh.t_y2, 480, "left", 0)
+		elseif l.ds_dpy == 2 then
+			love.graphics.printf(dh.scacc_t, self.fonts[1], 2, 1, 480, "left", 0)
+			setColor(self.scorerankcolor, self.dis_opacity * 0.9)
+			love.graphics.printf(dh.scacc_amo, self.fonts[2], 2, dh.t_y2, 480, "left", 0)
+		end
+		setColor(self.scorerankcolor, self.dis_opacity * 0.9)
+		love.graphics.printf(dh.score_amo, self.fonts[2], 480 - 2, dh.t_y2, 480, "right", 0)
 
 		if (self.autoplaying) then
 			setColor(255, 255, 255, self.dis_opacity * 0.9)
-			love.graphics.printf(self.text.Top.AUTO, self.fonts[3], 0, auto_pos, 960, "center", 0)
+			love.graphics.printf(self.text.Top.AUTO, self.fonts[3], 0, dh.auto_pos, 960, "center", 0)
 		end
 	end
-
 
 	setColor(255, 255, 255, self.dis_opacity)
 	if self.pauseEnabled then
@@ -1082,9 +1182,9 @@ function mknui:drawStatus()
 		end
 	end
 
-	if self.currentcombo > 1 then
+	if self.currentcombo > 1 or self.miss_combo > 4 then
 		setColor(255, 255, 255, self.dis_opacity * self.dis_opacity_combo * 0.9)
-		love.graphics.draw(self.comboText, 480, 427, 0, self.dis_textscaling)
+		love.graphics.draw(self.comboText, 480, 430, 0, self.dis_textscaling)
 	end
 
 	if self.dis_opacity_judge > 0 then
