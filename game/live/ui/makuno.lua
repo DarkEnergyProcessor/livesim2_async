@@ -1,4 +1,4 @@
--- Makuno Live UI v.1.2
+-- Makuno Live UI v.1.2a
 -- Contributed by Makuno, slightly modified
 -- part of Live Simulator: 2
 -- See copyright notice in main.lua
@@ -80,7 +80,6 @@ local l = {
 	--[[	dpy - DisplayingMode (Only Left side of the UI)
 		1 - Display Only Accuracy
 		2 - Display Only Accuracy Score
-		3 - Display Only Judgements
 	]]
 	ds_dpy = 1,
 
@@ -92,35 +91,42 @@ local l = {
 	
 	--[[	sof - Stamina Overflow
 		If 'true' will allow heal skill to continue fill the stamina bar
-		even It already full. (Just like new Stamina system in SIF)
+		even It already full. (Similar to new Stamina system in SIF)
 	]]
 	ds_sof = true,
 }
 
+local fonts = {
+	Li = "fonts/Jost-Light.ttf",
+	Re = "fonts/Jost-Regular.ttf",
+	It = "fonts/Jost-Italic.ttf",
+	Me = "fonts/Jost-Medium.ttf",
+}
+
 local function setColor(r, g, b, a)
-	local c1, c2, c3, c4
+	local c1, c2, c3, o
 
 	if type(r) == "table" then
 		c1 = util.clamp(r[1], 0, 255)
 		c2 = util.clamp(r[2], 0, 255)
 		c3 = util.clamp(r[3], 0, 255)
-		c4 = util.clamp(r[4] or g or 255, 0, a or 255)
+		o = util.clamp(r[4] or g or 255, 0, a or 255)
 	else
 		c1 = util.clamp(r, 0, 255)
 		c2 = util.clamp(g, 0, 255)
 		c3 = util.clamp(b, 0, 255)
-		c4 = a or 1
+		o = a or 1
 	end
 
-	love.graphics.setColor(color.compat(c1, c2, c3, c4))
+	love.graphics.setColor(color.compat(c1, c2, c3, o))
 end
 
-local function drawLine(direc, line, pos_s, pos_e)
-	if direc == nil then return end
+local function drawLine(dir, line, pos_s, pos_e)
+	if dir == nil then return end
 
-	if direc == "vertical" then
+	if dir == "vertical" then
 		love.graphics.line(line, pos_s, line, pos_e)
-	elseif direc == "horizontal" then
+	elseif dir == "horizontal" then
 		love.graphics.line(pos_s, line, pos_e, line)
 	end
 end
@@ -133,11 +139,11 @@ local function retrieveTheme(i)
 	end
 end
 
-local function addLine(max, bar, size, ofs)
+local function addLine(ma, ba, s, os)
 	local tl = {}
 
-	for i = 1, max do
-		tl[#tl + 1] = (util.clamp(bar[i] / bar[max], 0, 1) * size) + ofs
+	for i = 1, ma do
+		tl[#tl + 1] = (util.clamp(ba[i] / ba[ma], 0, 1) * s) + os
 	end
 
 	return tl
@@ -149,17 +155,17 @@ end
 function mknui:__construct(autoplay, mineff)
 	self.timer = timer:new()
 	self.fonts = assetCache.loadMultipleFonts({
-		{"fonts/Jost-Medium.ttf", l.ds_sbt == 1 and 15 or 13},   -- Head Title (SCORE and STAMINA)
-		{"fonts/Jost-Light.ttf", l.ds_sbt == 1 and 40 or 36}, -- Score & Acc
-		{"fonts/Jost-Italic.ttf", 15},   -- Autoplay
-		{"fonts/Jost-Light.ttf", 21},	-- Judgements
-		{"fonts/Jost-Regular.ttf", 22},  -- Combo
-		{"fonts/Jost-Light.ttf", 45},	-- End Screen (FC/LC/Fail)
-		{"fonts/Jost-Light.ttf", 22},	-- End Screen 'Live'
-		{"fonts/Jost-Italic.ttf", 20},	-- Score Added
+		{fonts.Me, l.ds_sbt == 1 and 15 or 13},   -- Head Title (SCORE and STAMINA)
+		{fonts.Li, l.ds_sbt == 1 and 40 or 36}, -- Score & Acc
+		{fonts.It, 15}, -- Autoplay
+		{fonts.Li, 21},	-- Judgements
+		{fonts.Re, 20}, -- Combo
+		{fonts.Li, 45},	-- End Screen (FC/LC/Fail)
+		{fonts.Li, 22},	-- End Screen 'Live'
+		{fonts.It, 20},	-- Score Added
 		--
-		{"fonts/Jost-Regular.ttf", 14},   -- Sub Info (v.1.2)
-		{"fonts/Jost-Medium.ttf", 13},   -- Overflow Count (v.1.2)
+		{fonts.Re, 14},   -- Sub Info (v.1.2)
+		{fonts.Me, 13},   -- Overflow Count & Stamina (v.1.2)
 	})
 	self.fonts_hc = {
 		self.fonts[3]:getHeight() * -0.5,
@@ -170,7 +176,6 @@ function mknui:__construct(autoplay, mineff)
 	}
 	self.images = assetCache.loadMultipleImages(
 		{
-			"assets/image/live/lw_pause.png",
 			"assets/image/dummy.png",
 		},	{mipmaps = true}
 	)
@@ -220,26 +225,28 @@ function mknui:__construct(autoplay, mineff)
 
 	---- thing #2
 	self.currentscore = 0
-	self.current_exscore = 0
 	self.currentscore_2 = 0
+	self.current_exscore = 0
 	self.currentscoreAdd = 0
+	--
 	self.dis_score = self.currentscore
 	self.dis_score_2 = self.currentscore_2
 	self.dis_ex_score = self.current_exscore
 	--
-	self.scoreborders = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-	self.scorerankcolor = retrieveTheme()
+	self.sc_bars = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+	self.sc_rc = retrieveTheme()
 	self.dis_currentrank = scr.text[1]
 	--
 	self.tween_time_score = nil
 	self.tween_time_score_2 = nil
 	self.tween_dis_ex_score = nil
-	self.tween_dis_scorerankcolor = nil
+	self.tween_dis_sc_rc = nil
 
 	---- Combo #3
 	self.currentcombo = 0
 	self.miss_combo = 0
 	self.highestcombo = 0
+	--
 	self.dis_opacity_combo = 1
 	--
 	self.tween_dis_combo = nil
@@ -247,6 +254,7 @@ function mknui:__construct(autoplay, mineff)
 	---- Stam #4
 	self.currentstamina = 9
 	self.maxstamina = 9
+	--
 	self.currentoverflow = 0
 	self.overflow_bonus = 0
 	self.overflow_multiply = 0
@@ -255,13 +263,15 @@ function mknui:__construct(autoplay, mineff)
 	self.dis_stamina = 100
 	self.dis_overflow_stamina = 0
 	self.dis_stamina_color1 = {35, 35, 35}
-	self.dis_stamina_color2 = {225, 225, 225}
-	self.dis_ov_sta_color = {5, 185, 255}
+	self.dis_stamina_color2 = {240, 240, 240}
+	self.dis_overflow_color = {50, 175, 255}
+	self.dis_overflow = {o = 0, t = 8}
 	--
 	self.tween_stamina = nil
 	self.tween_stamina_of = nil
 	self.tween_stamina_color = nil
 	self.tween_stamina_color2 = nil
+	self.tween_overflow = nil
 
 	---- Judge #5
 	self.dis_opacity_judge = 1
@@ -299,9 +309,14 @@ function mknui:__construct(autoplay, mineff)
 	--
 
 	---- Other #8
+	self.time_live_pre = 5
 	self.time_live_postend = -math.huge
 	self.maj_LCCB = nil
 	self.maj_LCCBO = nil
+	self.check_dispause = false
+	self.pause = {
+		o = 1,
+	}
 	self.other_tween = {
 		dim = 0,
 		----
@@ -320,7 +335,6 @@ function mknui:__construct(autoplay, mineff)
 	}
 
 	---- Text #9
-	self.comboText = love.graphics.newText(self.fonts[5])
 	self.judgeText = love.graphics.newText(self.fonts[4])
 	--
 	self.resultText = love.graphics.newText(self.fonts[6])
@@ -374,7 +388,7 @@ function mknui:getFailAnimation()
 		960, "center", -480, self.fonts_hc[4]
 	)
 
-	function TRACKLOST.update(_,dt) -- It can be only 3 seconds so :(
+	function TRACKLOST.update(_,dt)
 		TRACKLOST.t:update(dt)
 	end
 
@@ -435,6 +449,8 @@ end
 
 function mknui:getScoreComboMultipler()
 	if l.ds_casm == 1 then
+		return 1
+	else
 		if self.currentcombo < 50 then
 			return 1
 		elseif self.currentcombo < 100 then
@@ -450,8 +466,6 @@ function mknui:getScoreComboMultipler()
 		else
 			return 1.35
 		end
-	else
-		return 1
 	end
 end
 
@@ -461,19 +475,20 @@ end
 function mknui:update(dt,paused)
 
 	if not(paused) then
+		self.time = dt
 		self.timer:update(dt)
 	end
 
 	for i = (#scr.text - 1), 1, -1 do
-		if self.dis_score >= self.scoreborders[i] then
+		if self.dis_score >= self.sc_bars[i] then
 			if (l.ds_uxs == false) and i > 4 then i = 4 end
 			if (l.ds_uxs == true) and (l.ds_esm == 3) and i > 6 then i = 6 end
 
 			if not(l.ds_fsne == 1) then
-				if self.tween_dis_scorerankcolor then self.timer:cancel(self.tween_dis_scorerankcolor) end
-				self.tween_dis_scorerankcolor = self.timer:tween(1, self.scorerankcolor, retrieveTheme(1 + i), "out-expo")
+				if self.tween_dis_sc_rc then self.timer:cancel(self.tween_dis_sc_rc) end
+				self.tween_dis_sc_rc = self.timer:tween(1, self.sc_rc, retrieveTheme(1 + i), "out-expo")
 			else
-				self.scorerankcolor = retrieveTheme(1 + i)
+				self.sc_rc = retrieveTheme(1 + i)
 			end
 
 			self.dis_currentrank = scr.text[1 + i]
@@ -494,14 +509,15 @@ function mknui:update(dt,paused)
 		if not(scadd_new) then
 			scadd_new = {
 				ts = nil, done = false,
+				value = nil,
 				text = love.graphics.newText(self.fonts[8]),
 				o = 0, x = 360
 			}
 
 			scadd_new.func = function(wait)
-				self.timer:tween(0.15, scadd_new, {x = 360 * 1.4, o = 1}, "out-expo")
-				wait(0.2)
-				self.timer:tween(0.15, scadd_new, {x = 360 * 1.75, o = 0}, "in-expo")
+				self.timer:tween(0.1, scadd_new, {x = 360 * 1.35, o = 1}, "out-expo")
+				wait(0.15)
+				self.timer:tween(0.15, scadd_new, {x = 360 * 1.75, o = 0}, "in-quart")
 				wait(0.15)
 				scadd_new.done = true
 			end
@@ -509,16 +525,11 @@ function mknui:update(dt,paused)
 
 		scadd_new.text:clear()
 		if self.currentscoreAdd > 0 then
-            scadd_new.text:addf(
-                {color.white, "+ "..tostring(self.currentscoreAdd)},
-                480, "right", -240, self.fonts_hc[5]
-            )
-        elseif self.currentscoreAdd < 0 then -- Lol someone decrease your score
-            scadd_new.text:addf(
-                {color.red, "- "..tostring(math.abs(self.currentscoreAdd))},
-                480, "right", -240, self.fonts_hc[5]
-            )
+			scadd_new.value = {color.white, "+ "..tostring(self.currentscoreAdd)}
+        elseif self.currentscoreAdd < 0 then
+			scadd_new.value = {color.red, "- "..tostring(math.abs(self.currentscoreAdd))}
         end
+		scadd_new.text:addf(scadd_new.value, 480, "right", -240, self.fonts_hc[5])
 		--
 		scadd_new.done = false
 		scadd_new.o = 0
@@ -527,6 +538,13 @@ function mknui:update(dt,paused)
 
 		self.scoreAddEffectList[#self.scoreAddEffectList + 1] = scadd_new
 		self.currentscoreAdd = 0
+	end
+
+	if self.time_live_pre > 0 then
+		self.time_live_pre = self.time_live_pre - dt
+	elseif self.time_live_pre <= 0 and self.check_dispause == false then
+		self.check_dispause = true
+		self.timer:tween(1, self.pause, {o = 0}, "out-quart")
 	end
 
 	if self.time_live_postend ~= -math.huge then
@@ -657,12 +675,6 @@ function mknui:comboJudgement(judgement, addcombo)
 				self.count_miss = self.count_miss + 1
 			end
 
-			self.comboText:clear()
-			self.comboText:addf(
-				{color.red, tostring(self.miss_combo)},
-				960, "center", -480, self.fonts_hc[1]
-			)
-
 		elseif addcombo then
 			if (l.ds_adm == 1) then
 				self.totalnote = self.totalnote + 1
@@ -680,13 +692,6 @@ function mknui:comboJudgement(judgement, addcombo)
 				self.acc = self.acc + 0.75
 				self.count_great = self.count_great + 1
 			end
-
-			self.comboText:clear()
-			self.comboText:addf(
-				tostring(self.currentcombo),
-				960, "center", -480, self.fonts_hc[1]
-			)
-
 		end
 
 		if self.totalnote > 0 then
@@ -787,8 +792,6 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 		end)
 
 		self.timer:after(4.25, function()
-			self.comboText:clear()
-
 			self.timer:tween(0.25, self, {dis_opacity = 0}, "out-quad")
 			self.timer:tween(
 				0.25, self.other_tween,
@@ -813,11 +816,12 @@ function mknui:addStamina(amount)
 
 	local a = math.ceil(amount)
 
+	if self.staminaFunction == false then return end
 	if a == 0 then return end
 
 	local b_c1, b_c2
 
-	if amount < 0 and (l.ds_sof == true) then
+	if a < 0 and (l.ds_sof == true) then
 		self.currentoverflow = 0
 	end
 
@@ -832,11 +836,19 @@ function mknui:addStamina(amount)
 			self.currentoverflow = util.clamp(self.currentoverflow + ovna, 0, self.maxstamina)
 
 			if self.overflow_bonus >= self.maxoverflow_bonus then
+				self.currentoverflow = self.maxstamina
 				self.overflow_bonus = self.maxoverflow_bonus
-				self.overflow_multiply = (self.maxoverflow_bonus * 0.005) + (self.maxstamina / 500)
-			else 
+				self.overflow_multiply = (self.maxoverflow_bonus * 0.005) + ((self.maxstamina + 10) / 500)
+			else
 				self.overflow_bonus = self.overflow_bonus + 1
-				self.overflow_multiply = (self.overflow_bonus * 0.005) + (self.maxstamina / 500)
+				self.overflow_multiply = (self.overflow_bonus * 0.005) + ((self.maxstamina + 10) / 500)
+
+				if self.tween_overflow then 
+					self.timer:cancel(self.tween_overflow)
+					self.tween_overflow = nil
+				end
+				self.dis_overflow = {o = 1, t = 0}
+				self.tween_overflow = self.timer:tween(1.5, self.dis_overflow, {o = 0, t = 16}, "out-quart")
 			end
 
 		else
@@ -866,10 +878,10 @@ function mknui:addStamina(amount)
 		if self.tween_stamina_color then self.timer:cancel(self.tween_stamina_color) end
 		if self.tween_stamina_color2 then self.timer:cancel(self.tween_stamina_color2) end
 
-		self.tween_stamina_color = self.timer:tween(0.15, self.dis_stamina_color1, b_c1, "out-quart")
-		self.tween_stamina_color2 = self.timer:tween(0.15, self.dis_stamina_color2, b_c2, "out-quart")
-		self.tween_stamina = self.timer:tween(0.1, self, {dis_stamina = self.currentstamina}, "out-quart")
-		self.tween_stamina_of = self.timer:tween(0.1, self, {dis_overflow_stamina = self.currentoverflow}, "out-quart")
+		self.tween_stamina_color = self.timer:tween(0.15, self.dis_stamina_color1, b_c1, "out-quint")
+		self.tween_stamina_color2 = self.timer:tween(0.15, self.dis_stamina_color2, b_c2, "out-quint")
+		self.tween_stamina = self.timer:tween(0.1, self, {dis_stamina = self.currentstamina}, "out-quint")
+		self.tween_stamina_of = self.timer:tween(0.1, self, {dis_overflow_stamina = self.currentoverflow}, "out-quint")
 	end
 end
 
@@ -908,10 +920,10 @@ function mknui:addTapEffect(x, y, r, g, b, a)
 end
 
 -- For Set
-function mknui:setOpacity(opacity, time, mode)
-	if time == nil then time = 1 end
-	if opacity == nil then opacity = 1 end
-	if mode == nil then mode = "out-quart" end
+function mknui:setOpacity(o, t, m)
+	if t == nil then t = 1 end
+	if o == nil then o = 1 end
+	if m == nil then m = "out-quart" end
 
 	if self.tween_dis_opacity then
 		self.timer:cancel(self.tween_dis_opacity)
@@ -919,17 +931,17 @@ function mknui:setOpacity(opacity, time, mode)
 	end
 
 	if (l.ds_fsne == 1) then
-		self.dis_opacity = opacity
+		self.dis_opacity = o
 	else
-		self.tween_dis_opacity = self.timer:tween(time, self, {dis_opacity = opacity}, mode)
+		self.tween_dis_opacity = self.timer:tween(t, self, {dis_opacity = o}, m)
 	end
 end
 
-function mknui:setSongInfo(songname)
-	self.nameDisplay = tostring(songname)
+function mknui:setSongInfo(sn)
+	self.nameDisplay = tostring(sn)
 end
 
-function mknui:setTextScaling(scale)
+function mknui:setTextScaling(s)
 
 end
 
@@ -952,19 +964,19 @@ function mknui:setComboCheer()
 
 end
 
-function mknui:setLiveClearVoice(voice)
-	self.audio_liveclearvoice = voice
+function mknui:setLiveClearVoice(v)
+	self.audio_liveclearvoice = v
 end
 
 function mknui:setScoreRange(c, b, a, s)
-	self.scoreborders[1],
-	self.scoreborders[2],
-	self.scoreborders[3],
-	self.scoreborders[4],
-	self.scoreborders[5],
-	self.scoreborders[6],
-	self.scoreborders[7],
-	self.scoreborders[8] = c, b, a, s, (s*2), (s*3), (s*6), (s*9)
+	self.sc_bars[1],
+	self.sc_bars[2],
+	self.sc_bars[3],
+	self.sc_bars[4],
+	self.sc_bars[5],
+	self.sc_bars[6],
+	self.sc_bars[7],
+	self.sc_bars[8] = c, b, a, s, (s*2), (s*3), (s*6), (s*9)
 end
 
 -- For Other Use
@@ -981,7 +993,7 @@ function mknui:isPauseEnabled()
 end
 
 function mknui:checkPause(x, y)
-	return self:isPauseEnabled() and x >= (468.5 - 12) and y >= 10 and x < (468.5 + 38) and y < 50
+	return self:isPauseEnabled() and x >= 155 and y >= 0 and x < 800 and y < 64
 end
 
 
@@ -1007,7 +1019,9 @@ function mknui:drawHeader()
 		ov_amo = "x"..tostring(self.overflow_bonus),
 		sta_amo = tostring(math.floor(self.dis_stamina)),
 		--
-		pigi_ratio = string.format("%.2f", tostring(self.PIGI_ratio))..":1",
+		pigi_ratio = string.format("%.3f", tostring(self.PIGI_ratio))..":1",
+		--
+		pause_t = "",
 		--
 		sta_pos = 63,
 		auto_pos = 68,
@@ -1022,77 +1036,79 @@ function mknui:drawHeader()
 	do
 		if self.nameDisplay ~= nil then
 			setColor(255, 255, 255, self.dis_opacity * 0.5)
+			love.graphics.printf(self.nameDisplay, self.fonts[4], 478, 607, 480, "right", 0)
 		end
 
 		dh.ofs = (960 - dh.sbs) / 2
+
+		if l.ds_sbt == 2 then
+			dh.sbs = dh.sbs - (dh.abs * 2)
+			dh.ofs = (960 - dh.sbs) / 2
+
+			setColor(75, 75, 75, self.dis_opacity * 0.5)
+			love.graphics.rectangle("fill", 0, 56, dh.abs, 18)
+			love.graphics.rectangle("fill", dh.ofs + dh.sbs, 56, dh.abs, 18)
+
+			setColor(255, 255, 255, self.dis_opacity * 0.6)
+			love.graphics.setLineWidth(1.05)
+			love.graphics.rectangle("line", 0, 56, dh.abs, 18)
+			love.graphics.rectangle("line", dh.ofs + dh.sbs, 56, dh.abs, 18)
+
+			setColor(255, 255, 255, self.dis_opacity * 0.9)
+			love.graphics.printf(dh.exsc_t..":", self.fonts[1], dh.ofs + dh.sbs + 3, 56, dh.abs, "left", 0)
+			love.graphics.printf(dh.exscc_amo, self.fonts[9], dh.ofs + dh.sbs - 2, 55, dh.abs, "right", 0)
+			love.graphics.printf(dh.pigi_t..":", self.fonts[1], 3, 56, dh.abs, "left", 0)
+			love.graphics.printf(dh.pigi_ratio, self.fonts[9], -2, 55, dh.abs, "right", 0)
+
+		end
+
 		if not(self.minimalEffect) and not(l.ds_fsne == 1) then
 			dh.sta_pos = dh.sta_pos + 12
 			dh.auto_pos = dh.auto_pos + 4
 
 			local lyne, sc_bar
 
-			if l.ds_sbt == 2 then
-				dh.sbs = dh.sbs - (dh.abs * 2)
-				dh.ofs = (960 - dh.sbs) / 2
-
-				setColor(75, 75, 75, self.dis_opacity * 0.5)
-				love.graphics.rectangle("fill", 0, 56, dh.abs, 18)
-				love.graphics.rectangle("fill", dh.ofs + dh.sbs, 56, dh.abs, 18)
-
-				setColor(255, 255, 255, self.dis_opacity * 0.6)
-				love.graphics.setLineWidth(1.05)
-				love.graphics.rectangle("line", 0, 56, dh.abs, 18)
-				love.graphics.rectangle("line", dh.ofs + dh.sbs, 56, dh.abs, 18)
-
-				setColor(255, 255, 255, self.dis_opacity * 0.9)
-				love.graphics.printf(dh.exsc_t..":", self.fonts[1], dh.ofs + dh.sbs + 3, 56, dh.abs, "left", 0)
-				love.graphics.printf(dh.exscc_amo, self.fonts[9], dh.ofs + dh.sbs - 2, 55, dh.abs, "right", 0)
-				love.graphics.printf(dh.pigi_t..":", self.fonts[1], 3, 56, dh.abs, "left", 0)
-				love.graphics.printf(dh.pigi_ratio, self.fonts[9], -2, 55, dh.abs, "right", 0)
-
-			end
-
 			if l.ds_uxs == true then
 				if l.ds_esm == 1 then
-					sc_bar = util.clamp(self.dis_score / self.scoreborders[8], 0, 1) * dh.sbs
-					lyne = addLine(8, self.scoreborders, dh.sbs, dh.ofs)
+					sc_bar = util.clamp(self.dis_score / self.sc_bars[8], 0, 1) * dh.sbs
+					lyne = addLine(8, self.sc_bars, dh.sbs, dh.ofs)
 
 				elseif l.ds_esm == 2 then
-					if self.dis_score < self.scoreborders[4] then
-						sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
-						lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
-					elseif self.dis_score < self.scoreborders[6] then
-						sc_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs
+					if self.dis_score < self.sc_bars[4] then
+						sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+						lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
+					elseif self.dis_score < self.sc_bars[6] then
+						sc_bar = util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
 						lyne = {
-							util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs + dh.ofs,
+							util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					else
-						sc_bar = util.clamp((self.dis_score - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * dh.sbs
+						sc_bar = util.clamp((self.dis_score - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs
 						lyne = {
-							util.clamp((self.scoreborders[7] - self.scoreborders[6]) / (self.scoreborders[8] - self.scoreborders[6]), 0, 1) * dh.sbs + dh.ofs,
+							util.clamp((self.sc_bars[7] - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				else
-					if self.dis_score < self.scoreborders[4] then
-						sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
-						lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
+					if self.dis_score < self.sc_bars[4] then
+						sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+						lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
 					else
-						sc_bar = util.clamp((self.dis_score - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs
+						sc_bar = util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
 						lyne = {
-							ly_SS = util.clamp((self.scoreborders[5] - self.scoreborders[4]) / (self.scoreborders[6] - self.scoreborders[4]), 0, 1) * dh.sbs + dh.ofs,
+							ly_SS = util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				end
 			else
-				sc_bar = util.clamp(self.dis_score / self.scoreborders[4], 0, 1) * dh.sbs
-				lyne = addLine(4, self.scoreborders, dh.sbs, dh.ofs)
+				sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+				lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
 			end
 
 			setColor(75, 75, 75, self.dis_opacity * 0.5)
 			love.graphics.rectangle("fill", dh.ofs, 63, dh.sbs, 4)
 
 			if sc_bar ~= nil and sc_bar > 0 then
-				setColor(self.scorerankcolor, self.dis_opacity * 0.9)
+				setColor(self.sc_rc, self.dis_opacity * 0.9)
 				love.graphics.rectangle("fill", dh.ofs, 63, sc_bar, 4)
 			end
 
@@ -1114,11 +1130,12 @@ function mknui:drawHeader()
 			end
 
 		else
-			dh.sta_pos = dh.sta_pos + 8
+			dh.auto_pos = dh.auto_pos + 5
+			dh.sta_pos = dh.sta_pos + 11
 
 			setColor(255, 255, 255, self.dis_opacity * 0.6)
 			love.graphics.setLineWidth(1.25)
-			drawLine("horizontal", 63, dh.ofs, dh.sbs)
+			drawLine("horizontal", 65, dh.ofs, dh.ofs + dh.sbs)
 		end
 
 		if (self.staminaFunction) then
@@ -1133,13 +1150,17 @@ function mknui:drawHeader()
 			setColor(self.dis_stamina_color2, self.dis_opacity * 0.85)
 			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, sta_bar, 4)
 			love.graphics.printf(dh.sta_amo, self.fonts[10], 645, dh.sta_pos - 7, dh.abs, "left", 0)
-			setColor(self.dis_ov_sta_color, self.dis_opacity * 0.9)
+			setColor(self.dis_overflow_color, self.dis_opacity * 0.9)
 			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, of_bar, 4)
 
 			if self.overflow_bonus > 0 then
-				setColor(self.dis_ov_sta_color, self.dis_opacity * 0.95)
+				setColor(self.dis_overflow_color, self.dis_opacity * 0.95)
 				love.graphics.printf(dh.ov_amo, self.fonts[10], 155, dh.sta_pos - 7, dh.abs, "right", 0)
 			end
+
+			setColor(self.dis_overflow_color, self.dis_opacity * 0.9 * self.dis_overflow.o)
+			love.graphics.setLineWidth(self.dis_overflow.t)
+			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, dh.abs * 2, 4)
 
 		end
 
@@ -1151,10 +1172,10 @@ function mknui:drawHeader()
 			love.graphics.printf(dh.acc_amo, self.fonts[2], 2, dh.t_y2, 480, "left", 0)
 		elseif l.ds_dpy == 2 then
 			love.graphics.printf(dh.scacc_t, self.fonts[1], 2, 1, 480, "left", 0)
-			setColor(self.scorerankcolor, self.dis_opacity * 0.9)
+			setColor(self.sc_rc, self.dis_opacity * 0.9)
 			love.graphics.printf(dh.scacc_amo, self.fonts[2], 2, dh.t_y2, 480, "left", 0)
 		end
-		setColor(self.scorerankcolor, self.dis_opacity * 0.9)
+		setColor(self.sc_rc, self.dis_opacity * 0.9)
 		love.graphics.printf(dh.score_amo, self.fonts[2], 480 - 2, dh.t_y2, 480, "right", 0)
 
 		if (self.autoplaying) then
@@ -1163,9 +1184,19 @@ function mknui:drawHeader()
 		end
 	end
 
-	setColor(255, 255, 255, self.dis_opacity)
+	if util.isMobile() then
+		dh.pause_t = "Tap inside this area to pause live."
+	else
+		dh.pause_t = "Click inside this area to pause live."
+	end
+
 	if self.pauseEnabled then
-		love.graphics.draw(self.images[1], 468.5, 19, 0, 0.21, 0.21)
+
+		setColor(150, 210, 255, self.dis_opacity * self.pause.o)
+		local gra = util.gradient("vertical", color.hex99d5ff70, color.transparent)
+		love.graphics.draw(gra, 160, 0, 0, 640, 64)
+		love.graphics.printf(dh.pause_t, self.fonts[3], 0, 5, 960, "center", 0)
+
 	end
 
 end
@@ -1178,16 +1209,21 @@ function mknui:drawStatus()
 			if tel_i.d then break end
 
 			setColor(tel_i.r, tel_i.g, tel_i.b, tel_i.a * tel_i.o)
-			love.graphics.draw(self.images[2], tel_i.x, tel_i.y, 0, tel_i.s, tel_i.s, 64, 64)
+			love.graphics.draw(self.images[1], tel_i.x, tel_i.y, 0, tel_i.s, tel_i.s, 64, 64)
 		end
 	end
 
 	if self.currentcombo > 1 or self.miss_combo > 4 then
-		setColor(255, 255, 255, self.dis_opacity * self.dis_opacity_combo * 0.9)
-		love.graphics.draw(self.comboText, 480, 430, 0, self.dis_textscaling)
+		if self.currentcombo > 0 and self.miss_combo == 0 then
+			setColor(255, 255, 255, self.dis_opacity * self.dis_opacity_combo * 0.9)
+			love.graphics.printf(self.currentcombo, self.fonts[5], 0, 419, 960, "center", 0)
+		else
+			setColor(255, 55, 55, self.dis_opacity * self.dis_opacity_combo * 0.9)
+			love.graphics.printf(self.miss_combo, self.fonts[5], 0, 419, 960, "center", 0)
+		end
 	end
 
-	if self.dis_opacity_judge > 0 then
+	if self.judgeText and self.dis_opacity_judge > 0 then
 		setColor(255, 255, 255, self.dis_opacity * self.dis_opacity_judge * 0.95)
 		love.graphics.draw(self.judgeText, 480, 470, 0, self.dis_textscaling * self.dis_scale_judge)
 	end
