@@ -72,7 +72,7 @@ Special Thanks
 
 * [sr229](https://github.com/sr229) - v4.0 UI redesign.
 
-* CK.Tex - Simplified Chinese translation.
+* CK.Tex & LovelyA72 - Simplified Chinese translation.
 
 * Bass & Azux - Polish translation.
 
@@ -85,6 +85,8 @@ Special Thanks
 * Salaron & Nick "Zorb" Cage - Russian translation and new beatmap download provider.
 
 * Makuno - Thai translation.
+
+* LovelyA72 - Traditional Chinese translation.
 
 * Some other people who suggest something and helping me which I forgot his/her name
 
