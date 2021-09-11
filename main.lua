@@ -65,6 +65,7 @@ local function initWindow(w, h, f, v, m)
 	end
 
 	log.infof("main", "creating window, width: %d, height: %d", w, h)
+	love.window.setTitle("Live Simulator: 2")
 	love.window.setMode(w, h, {
 		resizable = not android, -- do not allow freely-set orientation
 		minwidth = 320,
@@ -79,7 +80,6 @@ local function initWindow(w, h, f, v, m)
 		-- Use adaptive vsync (driver dependent)
 		vsync = vsync,
 	})
-	love.window.setTitle("Live Simulator: 2")
 	local icon
 	if love._os == "OS X" then
 		icon = love.image.newImageData("assets/image/icon/new_icon_1024x1024_macos.png")
