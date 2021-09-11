@@ -3,14 +3,14 @@
 -- See copyright notice in main.lua
 
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 local osuLoader = require("game.beatmap.loader.osu")
 
 return function(path)
 	-- List all files containing *.osu extension
 	local files = {}
 	for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
-		if util.getExtension(file) == "osu" then
+		if Util.getExtension(file) == "osu" then
 			files[#files + 1] = path..file
 		end
 	end

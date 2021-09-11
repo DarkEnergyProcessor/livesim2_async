@@ -5,7 +5,7 @@
 local love = require("love")
 local md5fb = require("libs.md5")
 
-local util = require("util")
+local Util = require("util")
 
 local md5impl
 local md5implfb
@@ -23,7 +23,7 @@ function md5implfb(code)
 end
 md5impl = md5implfb
 
-if util.compareLOVEVersion(11, 0) >= 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 then
 	function md5impl(code)
 		return love.data.hash("md5", code)
 	end
@@ -36,7 +36,7 @@ return function(code)
 	-- LOVE 11.2 and earlier produces wrong hash for
 	-- data that is 56 + 64k bytes long (k = 0, 1, 2, ...).
 	-- In that case, keep using kikito's MD5 implementation
-	if len % 64 == 56 and util.compareLOVEVersion(11, 2) <= 0 then
+	if len % 64 == 56 and Util.compareLOVEVersion(11, 2) <= 0 then
 		return md5implfb(code)
 	else
 		return md5impl(code)

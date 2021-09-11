@@ -6,8 +6,8 @@ local love = require("love")
 local bit = require("bit")
 local JSON = require("libs.JSON")
 local Luaoop = require("libs.Luaoop")
-local setting = require("setting")
-local util = require("util")
+local Setting = require("setting")
+local Util = require("util")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
@@ -88,7 +88,7 @@ function siftLoader:__construct(bm, file, hash)
 	local i = Luaoop.class.data(self)
 	i.hash = hash
 	i.data = bm
-	i.filename = util.basename(file:getFilename())
+	i.filename = Util.basename(file:getFilename())
 end
 
 function siftLoader.getFormatName()
@@ -102,7 +102,7 @@ end
 function siftLoader:getNotesList()
 	local internal = Luaoop.class.data(self)
 	local sif_notes = {}
-	local defattr = setting.get("LLP_SIFT_DEFATTR")
+	local defattr = Setting.get("LLP_SIFT_DEFATTR")
 	local nd = internal.data.song_info[1].notes
 
 	for i = 1, #nd do
@@ -151,7 +151,7 @@ end
 function siftLoader:getCoverArt()
 	local internal = Luaoop.class.data(self)
 
-	if internal.data.live_icon and util.fileExists("live_icon/"..internal.data.live_icon) then
+	if internal.data.live_icon and Util.fileExists("live_icon/"..internal.data.live_icon) then
 		-- Can't use love.graphics.newImage here
 		local s, img = pcall(love.image.newImageData, "live_icon/"..internal.data.live_icon)
 
@@ -272,7 +272,7 @@ end
 
 function llpLoader:getNotesList()
 	local internal = Luaoop.class.data(self)
-	local attribute = setting.get("LLP_SIFT_DEFATTR")
+	local attribute = Setting.get("LLP_SIFT_DEFATTR")
 	local sifMap = {}
 
 	for _, v in ipairs(internal.llp.lane) do

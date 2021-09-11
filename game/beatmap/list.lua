@@ -26,7 +26,7 @@ processed (parsed) in another thread.
 ]]
 
 local love = require("love")
-local postExit = require("post_exit")
+local PostExit = require("post_exit")
 local beatmapList = {
 	count = 0,
 	thread = nil,
@@ -249,7 +249,7 @@ function beatmapList.isActive()
 	return beatmapList.count > 0
 end
 
-postExit.add(function()
+PostExit.add(function()
 	if beatmapList.count > 0 then
 		beatmapList.channel:performAtomic(sendData, "quit", {})
 		if beatmapList.thread and beatmapList.thread:isRunning() then

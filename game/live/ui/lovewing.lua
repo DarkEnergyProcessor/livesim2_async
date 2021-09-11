@@ -7,10 +7,10 @@ local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 local vector = require("libs.nvec")
 
-local assetCache = require("asset_cache")
-local audioManager = require("audio_manager")
+local AssetCache = require("asset_cache")
+local AudioManager = require("audio_manager")
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 
 local uibase = require("game.live.uibase")
 
@@ -63,7 +63,7 @@ end
 
 function lwui:__construct()
 	self.timer = timer.new()
-	self.fonts = assetCache.loadMultipleFonts({
+	self.fonts = AssetCache.loadMultipleFonts({
 		{"fonts/Exo2-Regular.ttf", 12},
 		{"fonts/Exo2-Regular.ttf", 16},
 		{"fonts/Exo2-Regular.ttf", 43}
@@ -73,7 +73,7 @@ function lwui:__construct()
 		accuracy = love.graphics.newText(self.fonts[1], "ACC"),
 		score = love.graphics.newText(self.fonts[3])
 	}
-	self.images = assetCache.loadMultipleImages({
+	self.images = AssetCache.loadMultipleImages({
 		"assets/image/live/lw2/Perfect.png",
 		"assets/image/live/lw2/Great.png",
 		"assets/image/live/lw2/Good.png",
@@ -175,7 +175,7 @@ function lwui:update(dt, paused)
 
 	local isWarn = self.staminaInterpolate / self.maxStamina < 0.3
 	local warnMult = isWarn and 2 or 1
-	self.staminaWarningDuration = util.clamp(self.staminaWarningDuration + dt * (isWarn and 1 or -1), 0, 0.25)
+	self.staminaWarningDuration = Util.clamp(self.staminaWarningDuration + dt * (isWarn and 1 or -1), 0, 0.25)
 	self.noteIconTime = (self.noteIconTime + dt * warnMult) % 1
 	-- Score
 	if self.currentScoreDisplay >= self.scoreBorders[4] and self.scoreGlowPrev == 4 then
@@ -203,7 +203,7 @@ function lwui:update(dt, paused)
 		end
 
 		if self.liveClearVoice and not(self.liveClearVoicePlayed) then
-			audioManager.play(self.liveClearVoice)
+			AudioManager.play(self.liveClearVoice)
 			self.liveClearVoicePlayed = true
 		end
 
@@ -468,7 +468,7 @@ function lwui:addStamina(val)
 	val = math.floor(val)
 	if val == 0 then return end
 
-	self.stamina = util.clamp(self.stamina + val, 0, self.maxStamina)
+	self.stamina = Util.clamp(self.stamina + val, 0, self.maxStamina)
 
 	if self.staminaTimer then
 		self.timer:cancel(self.staminaTimer)
@@ -600,14 +600,14 @@ local function setColor(warn, r, g, b, a)
 	local c1, c2, c3, c4
 
 	if type(r) == "table" then
-		c1 = util.lerp(r[1], 217, warnLerp)
-		c2 = util.lerp(r[2], 62, warnLerp)
-		c3 = util.lerp(r[3], 52, warnLerp)
-		c4 = util.lerp(r[4] or g or 255, a or 255, warnLerp)
+		c1 = Util.lerp(r[1], 217, warnLerp)
+		c2 = Util.lerp(r[2], 62, warnLerp)
+		c3 = Util.lerp(r[3], 52, warnLerp)
+		c4 = Util.lerp(r[4] or g or 255, a or 255, warnLerp)
 	else
-		c1 = util.lerp(r, 217, warnLerp)
-		c2 = util.lerp(g, 62, warnLerp)
-		c3 = util.lerp(b, 52, warnLerp)
+		c1 = Util.lerp(r, 217, warnLerp)
+		c2 = Util.lerp(g, 62, warnLerp)
+		c3 = Util.lerp(b, 52, warnLerp)
 		c4 = a
 	end
 
@@ -637,7 +637,7 @@ function lwui:drawHeader()
 
 	-- Text
 	local shader = love.graphics.getShader()
-	love.graphics.setShader(util.drawText.workaroundShader)
+	love.graphics.setShader(Util.drawText.workaroundShader)
 	love.graphics.setFont(self.fonts[2])
 	love.graphics.draw(self.text.combo, 197, 26)
 	love.graphics.draw(self.text.accuracy, 636, 26)

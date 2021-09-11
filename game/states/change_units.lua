@@ -10,25 +10,24 @@ local async = require("async")
 local color = require("color")
 local mainFont = require("font")
 local lily = require("lily")
-local log = require("logging")
-local setting = require("setting")
-local util = require("util")
+local Setting = require("setting")
+local Util = require("util")
 local L = require("language")
 
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
 
 local backgroundLoader = require("game.background_loader")
 local colorTheme = require("game.color_theme")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 local stripeText = require("game.ui.stripe_text")
 
 local mipmap = {mipmaps = true}
 local materialInterpolation = cubicBezier(0.4, 0.0, 0.2, 1):getFunction()
 
-local changeUnits = gamestate.create {
+local changeUnits = Gamestate.create {
 	images = {
 		dummyUnit = {"assets/image/dummy.png", mipmap},
 		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmap},
@@ -107,26 +106,26 @@ local unmapableKeys = {
 local function showUnitList(self)
 	for i = 1, 9 do
 		local x = idolPosition[i]
-		glow.addElement(self.data.dummyButtons[i], x[1], x[2])
+		Glow.addElement(self.data.dummyButtons[i], x[1], x[2])
 	end
 end
 
 local function hideUnitList(self)
 	for i = 1, 9 do
-		glow.removeElement(self.data.dummyButtons[i])
+		Glow.removeElement(self.data.dummyButtons[i])
 	end
 end
 
 local function showSaveRevertButton(self)
-	glow.addFixedElement(self.data.saveButton, 731, 524)
-	glow.addFixedElement(self.data.revertButton, 827, 524)
-	glow.addFixedElement(self.data.modeButton, 700, 4)
+	Glow.addFixedElement(self.data.saveButton, 731, 524)
+	Glow.addFixedElement(self.data.revertButton, 827, 524)
+	Glow.addFixedElement(self.data.modeButton, 700, 4)
 end
 
 local function hideSaveRevertButton(self)
-	glow.removeElement(self.data.saveButton)
-	glow.removeElement(self.data.revertButton)
-	glow.removeElement(self.data.modeButton)
+	Glow.removeElement(self.data.saveButton)
+	Glow.removeElement(self.data.revertButton)
+	Glow.removeElement(self.data.modeButton)
 end
 
 local function applySetting(_, self)
@@ -139,8 +138,8 @@ local function applySetting(_, self)
 		self.persist.currentKeymap[i] = self.persist.keymap[i]
 	end
 
-	setting.set("IDOL_IMAGE", table.concat(uval, "\t"))
-	setting.set("IDOL_KEYS", table.concat(kval, "\t"))
+	Setting.set("IDOL_IMAGE", table.concat(uval, "\t"))
+	Setting.set("IDOL_KEYS", table.concat(kval, "\t"))
 end
 
 local function revertSetting(_, self)
@@ -249,7 +248,7 @@ local function tryLeave(_, self)
 			end
 		end
 
-		gamestate.leave(loadingInstance.getInstance())
+		Gamestate.leave(LoadingInstance.getInstance())
 	end
 end
 
@@ -301,7 +300,7 @@ end
 
 local function isImageFitInUnitIconCriteria(path)
 	-- File not exist? ignore
-	if not(util.fileExists(path)) then return false end
+	if not(Util.fileExists(path)) then return false end
 
 	-- Other issue should be reported to user immediately!
 	local f = assert(love.filesystem.newFile(path, "r"))
@@ -328,7 +327,7 @@ end
 
 function changeUnits:load()
 	local centeredInfoFont
-	glow.clear()
+	Glow.clear()
 
 	local function loadCenteredInfoFont()
 		if not(centeredInfoFont) then
@@ -395,7 +394,7 @@ function changeUnits:load()
 		self.data.modeButton:addEventListener("mousereleased", setMode)
 		self.data.modeButton:setData(self)
 	end
-	glow.addFixedElement(self.data.modeButton, 700, 4)
+	Glow.addFixedElement(self.data.modeButton, 700, 4)
 
 	if self.data.saveButton == nil then
 		self.data.saveButton = ciButton(color.hexFF4FAE, 45, self.assets.images.save, 0.32)
@@ -403,7 +402,7 @@ function changeUnits:load()
 		self.data.saveButton:addEventListener("mousereleased", applySetting)
 		self.data.saveButton:setData(self)
 	end
-	glow.addFixedElement(self.data.saveButton, 731, 524)
+	Glow.addFixedElement(self.data.saveButton, 731, 524)
 
 	if self.data.revertButton == nil then
 		self.data.revertButton = ciButton(color.hexFF6854, 45, self.assets.images.revert, 0.32)
@@ -411,7 +410,7 @@ function changeUnits:load()
 		self.data.revertButton:addEventListener("mousereleased", revertSetting)
 		self.data.revertButton:setData(self)
 	end
-	glow.addFixedElement(self.data.revertButton, 827, 524)
+	Glow.addFixedElement(self.data.revertButton, 827, 524)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
@@ -436,19 +435,19 @@ function changeUnits:load()
 		local x = idolPosition[i]
 		self.data.dummyButtons[i]:setData({self, i})
 		self.data.dummyButtons[i]:addEventListener("mousereleased", changeUnit)
-		glow.addElement(self.data.dummyButtons[i], x[1], x[2])
+		Glow.addElement(self.data.dummyButtons[i], x[1], x[2])
 	end
 
 	-- Nice effect but I usually used this sparingly
 	if self.data.blurFramebuffer == nil then
-		self.data.blurFramebuffer = util.drawBlur(480, 320, 1.5, function()
+		self.data.blurFramebuffer = Util.drawBlur(480, 320, 1.5, function()
 			love.graphics.setColor(color.white)
 			love.graphics.draw(self.data.background, 0, 0, 0, 0.5, 0.5)
 		end)
 	end
 
 	if self.data.shadowGradient == nil then
-		self.data.shadowGradient = util.gradient("vertical", color.black75PT, color.transparent)
+		self.data.shadowGradient = Util.gradient("vertical", color.black75PT, color.transparent)
 	end
 
 	if self.data.back == nil then
@@ -456,7 +455,7 @@ function changeUnits:load()
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", tryLeave)
 	end
-	glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 32, 4)
 
 	-- Units loading
 	if self.persist.unitImageList == nil then
@@ -472,7 +471,7 @@ function changeUnits:load()
 		for _, file in ipairs(love.filesystem.getDirectoryItems("unit_icon")) do
 			local path = "unit_icon/"..file
 
-			if util.directoryExist(path) then
+			if Util.directoryExist(path) then
 				-- Scan at 1 folder deep. The code below is bit repetitive.
 				for _, file2 in ipairs(love.filesystem.getDirectoryItems(path)) do
 					local path2 = path.."/"..file2
@@ -523,7 +522,7 @@ function changeUnits:start()
 	-- load unit image name
 	do
 		local i = 9
-		for w in setting.get("IDOL_IMAGE"):gmatch("[^\t]+") do
+		for w in Setting.get("IDOL_IMAGE"):gmatch("[^\t]+") do
 			self.persist.unitList[i] = w
 			self.persist.currentUnitList[i] = w
 			self.data.dummyButtons[i]:setImage(self.persist.unitImageList[w])
@@ -536,7 +535,7 @@ function changeUnits:start()
 	-- load keymap
 	do
 		local i = 9
-		for w in setting.get("IDOL_KEYS"):gmatch("[^\t]+") do
+		for w in Setting.get("IDOL_KEYS"):gmatch("[^\t]+") do
 			self.persist.keymap[i] = w
 			self.persist.currentKeymap[i] = w
 			i = i - 1
@@ -557,7 +556,7 @@ function changeUnits:start()
 			-- Put in other category
 			local categoryName = path:sub(1, pathsep - 1)
 
-			for _, v in util.ipairsi(unitSelectCategory, 2) do
+			for _, v in Util.ipairsi(unitSelectCategory, 2) do
 				if v.name == categoryName then
 					cat = v
 					break
@@ -576,7 +575,7 @@ function changeUnits:start()
 	end
 
 	-- load unit select frame
-	local frame = glow.frame(77, 266, 856, 372)
+	local frame = Glow.Frame(77, 266, 856, 372)
 	self.persist.unitSelectPosition = {}
 	self.persist.unitSelectFrame = frame
 
@@ -615,13 +614,13 @@ function changeUnits:update(dt)
 		self.persist.unitSelectorTime = math.min(self.persist.unitSelectorTime + dt * 2, 1)
 
 		if self.persist.unitSelectorTime ~= prev and self.persist.unitSelectorTime > 0 then
-			glow.addFrame(self.persist.unitSelectFrame)
+			Glow.addFrame(self.persist.unitSelectFrame)
 		end
 	else
 		self.persist.unitSelectorTime = math.max(self.persist.unitSelectorTime - dt * 2, 0)
 
 		if self.persist.unitSelectorTime ~= prev and self.persist.unitSelectorTime == 0 then
-			glow.removeFrame(self.persist.unitSelectFrame)
+			Glow.removeFrame(self.persist.unitSelectFrame)
 		end
 	end
 
@@ -643,7 +642,7 @@ function changeUnits:draw()
 		love.graphics.draw(self.data.keymapTitleText, 480, 24)
 	end
 	love.graphics.setShader()
-	glow.draw()
+	Glow.draw()
 
 	love.graphics.setColor(color.white)
 

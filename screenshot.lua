@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local util = require("util")
+local Util = require("util")
 local screenshot = {
 	list = {}
 }
@@ -30,7 +30,7 @@ if love._version <= "11.0" then
 				local tobj = type(obj)
 
 				if tobj == "string" then
-					local ext = util.getExtension(obj):lower()
+					local ext = Util.getExtension(obj):lower()
 					ext = #ext > 0 and ext or "png"
 					ss:encode(ext, obj)
 				elseif tobj == "function" then

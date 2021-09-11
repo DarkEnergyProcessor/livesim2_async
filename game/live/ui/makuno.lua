@@ -9,12 +9,12 @@ local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 local vector = require("libs.nvec")
 
-local assetCache = require("asset_cache")
-local audioManager = require("audio_manager")
-local setting = require("setting")
+local AssetCache = require("asset_cache")
+local AudioManager = require("audio_manager")
+local Setting = require("setting")
 
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 
 local uibase = require("game.live.uibase")
 
@@ -107,14 +107,14 @@ local function setColor(r, g, b, a)
 	local c1, c2, c3, o
 
 	if type(r) == "table" then
-		c1 = util.clamp(r[1], 0, 255)
-		c2 = util.clamp(r[2], 0, 255)
-		c3 = util.clamp(r[3], 0, 255)
-		o = util.clamp(r[4] or g or 255, 0, a or 255)
+		c1 = Util.clamp(r[1], 0, 255)
+		c2 = Util.clamp(r[2], 0, 255)
+		c3 = Util.clamp(r[3], 0, 255)
+		o = Util.clamp(r[4] or g or 255, 0, a or 255)
 	else
-		c1 = util.clamp(r, 0, 255)
-		c2 = util.clamp(g, 0, 255)
-		c3 = util.clamp(b, 0, 255)
+		c1 = Util.clamp(r, 0, 255)
+		c2 = Util.clamp(g, 0, 255)
+		c3 = Util.clamp(b, 0, 255)
 		o = a or 1
 	end
 
@@ -143,7 +143,7 @@ local function addLine(ma, ba, s, os)
 	local tl = {}
 
 	for i = 1, ma do
-		tl[#tl + 1] = (util.clamp(ba[i] / ba[ma], 0, 1) * s) + os
+		tl[#tl + 1] = (Util.clamp(ba[i] / ba[ma], 0, 1) * s) + os
 	end
 
 	return tl
@@ -154,7 +154,7 @@ end
 
 function mknui:__construct(autoplay, mineff)
 	self.timer = timer:new()
-	self.fonts = assetCache.loadMultipleFonts({
+	self.fonts = AssetCache.loadMultipleFonts({
 		{fonts.Me, l.ds_sbt == 1 and 15 or 13},   -- Head Title (SCORE and STAMINA)
 		{fonts.Li, l.ds_sbt == 1 and 40 or 36}, -- Score & Acc
 		{fonts.It, 15}, -- Autoplay
@@ -174,7 +174,7 @@ function mknui:__construct(autoplay, mineff)
 		self.fonts[6]:getHeight() * -0.5,
 		self.fonts[7]:getHeight() * -0.5,
 	}
-	self.images = assetCache.loadMultipleImages(
+	self.images = AssetCache.loadMultipleImages(
 		{
 			"assets/image/dummy.png",
 		},	{mipmaps = true}
@@ -211,7 +211,7 @@ function mknui:__construct(autoplay, mineff)
 	self.tapEffectList = {}
 	self.scoreAddEffectList = {}
 	--
-	self.staminaFunction = setting.get("STAMINA_FUNCTIONAL") == 1
+	self.staminaFunction = Setting.get("STAMINA_FUNCTIONAL") == 1
 	self.minimalEffect = mineff
 	self.autoplaying = autoplay
 	--
@@ -553,7 +553,7 @@ function mknui:update(dt,paused)
 		end
 
 		if self.audio_liveclearvoice and not(self.check_liveclearvoiceplayed) then
-			audioManager.play(self.audio_liveclearvoice)
+			AudioManager.play(self.audio_liveclearvoice)
 			self.check_liveclearvoiceplayed = true
 		end
 
@@ -828,12 +828,12 @@ function mknui:addStamina(amount)
 	if (self.currentstamina + a) > self.maxstamina and (l.ds_sof == true) then
 		local rf = self.maxstamina - self.currentstamina
 		local ovf = a - rf
-		self.currentstamina = util.clamp(self.currentstamina + rf, 0, self.maxstamina)
+		self.currentstamina = Util.clamp(self.currentstamina + rf, 0, self.maxstamina)
 		if (self.currentoverflow + a) >= self.maxstamina then
 			local ovrf = self.maxstamina - self.currentoverflow
 			local ovna = a - ovrf
 			self.currentoverflow = 0
-			self.currentoverflow = util.clamp(self.currentoverflow + ovna, 0, self.maxstamina)
+			self.currentoverflow = Util.clamp(self.currentoverflow + ovna, 0, self.maxstamina)
 
 			if self.overflow_bonus >= self.maxoverflow_bonus then
 				self.currentoverflow = self.maxstamina
@@ -852,10 +852,10 @@ function mknui:addStamina(amount)
 			end
 
 		else
-			self.currentoverflow = util.clamp(self.currentoverflow + ovf, 0, self.maxstamina)
+			self.currentoverflow = Util.clamp(self.currentoverflow + ovf, 0, self.maxstamina)
 		end
 	else
-		self.currentstamina = util.clamp(self.currentstamina + a, 0, self.maxstamina)
+		self.currentstamina = Util.clamp(self.currentstamina + a, 0, self.maxstamina)
 	end
 
 	if (self.currentstamina / self.maxstamina) <= 0.2 then
@@ -1070,37 +1070,37 @@ function mknui:drawHeader()
 
 			if l.ds_uxs == true then
 				if l.ds_esm == 1 then
-					sc_bar = util.clamp(self.dis_score / self.sc_bars[8], 0, 1) * dh.sbs
+					sc_bar = Util.clamp(self.dis_score / self.sc_bars[8], 0, 1) * dh.sbs
 					lyne = addLine(8, self.sc_bars, dh.sbs, dh.ofs)
 
 				elseif l.ds_esm == 2 then
 					if self.dis_score < self.sc_bars[4] then
-						sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+						sc_bar = Util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
 						lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
 					elseif self.dis_score < self.sc_bars[6] then
-						sc_bar = util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
+						sc_bar = Util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
 						lyne = {
-							util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
+							Util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					else
-						sc_bar = util.clamp((self.dis_score - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs
+						sc_bar = Util.clamp((self.dis_score - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs
 						lyne = {
-							util.clamp((self.sc_bars[7] - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs + dh.ofs,
+							Util.clamp((self.sc_bars[7] - self.sc_bars[6]) / (self.sc_bars[8] - self.sc_bars[6]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				else
 					if self.dis_score < self.sc_bars[4] then
-						sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+						sc_bar = Util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
 						lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
 					else
-						sc_bar = util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
+						sc_bar = Util.clamp((self.dis_score - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs
 						lyne = {
-							ly_SS = util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
+							ly_SS = Util.clamp((self.sc_bars[5] - self.sc_bars[4]) / (self.sc_bars[6] - self.sc_bars[4]), 0, 1) * dh.sbs + dh.ofs,
 						}
 					end
 				end
 			else
-				sc_bar = util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
+				sc_bar = Util.clamp(self.dis_score / self.sc_bars[4], 0, 1) * dh.sbs
 				lyne = addLine(4, self.sc_bars, dh.sbs, dh.ofs)
 			end
 
@@ -1142,8 +1142,8 @@ function mknui:drawHeader()
 			dh.auto_pos = dh.auto_pos + 8
 
 			local sta_bar, of_bar
-			sta_bar = util.clamp(self.dis_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
-			of_bar = util.clamp(self.dis_overflow_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
+			sta_bar = Util.clamp(self.dis_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
+			of_bar = Util.clamp(self.dis_overflow_stamina / self.maxstamina, 0, 1) * (dh.abs * 2)
 
 			setColor(self.dis_stamina_color1, self.dis_opacity * 0.7)
 			love.graphics.rectangle("fill", dh.sbs/2, dh.sta_pos, dh.abs * 2, 4)
@@ -1184,7 +1184,7 @@ function mknui:drawHeader()
 		end
 	end
 
-	if util.isMobile() then
+	if Util.isMobile() then
 		dh.pause_t = "Tap inside this area to pause live."
 	else
 		dh.pause_t = "Click inside this area to pause live."
@@ -1193,7 +1193,7 @@ function mknui:drawHeader()
 	if self.pauseEnabled then
 
 		setColor(150, 210, 255, self.dis_opacity * self.pause.o)
-		local gra = util.gradient("vertical", color.hex99d5ff70, color.transparent)
+		local gra = Util.gradient("vertical", color.hex99d5ff70, color.transparent)
 		love.graphics.draw(gra, 160, 0, 0, 640, 64)
 		love.graphics.printf(dh.pause_t, self.fonts[3], 0, 5, 960, "center", 0)
 

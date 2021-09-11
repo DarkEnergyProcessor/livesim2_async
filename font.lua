@@ -7,14 +7,14 @@ local async = require("async")
 local cache = require("cache")
 local lily = require("lily")
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 
 local font = {}
 
 font.roboto = love.filesystem.newFileData("fonts/Roboto-Regular.ttf")
 font.notoSansCJK = love.filesystem.newFileData("fonts/NotoSansCJKjp-Regular.woff")
 font.sarabun = love.filesystem.newFileData("fonts/Sarabun-Regular.ttf")
-font.dpiScale = util.getFontDPIScale()
+font.dpiScale = Util.getFontDPIScale()
 
 function font.get(...)
 	local arg = {...}

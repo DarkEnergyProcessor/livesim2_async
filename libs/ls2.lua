@@ -24,7 +24,7 @@
 
 local ls2 = {
 	_VERSION = "2.0.1",
-	_LICENSE = "Copyright \169 2041 Dark Energy Processor, licensed under MIT/Expat.",
+	_LICENSE = "Copyright (c) 2041 Dark Energy Processor, licensed under MIT/Expat.",
 	_AUTHOR  = "Dark Energy Processor Corporation",
 	encoder = {}
 }

@@ -6,10 +6,10 @@ local love = require("love")
 local hasffi, ffi = pcall(require, "ffi")
 local ls2x = require("libs.ls2x")
 
-local audioManager = require("audio_manager")
+local AudioManager = require("audio_manager")
 local log = require("logging")
-local util = require("util")
-local vires = require("vires")
+local Util = require("util")
+local Vires = require("vires")
 
 local render = {
 	width = 0, height = 0,
@@ -162,7 +162,7 @@ vec4 position(mat4 clipSpaceFromLocal, vec4 localPosition) {
 ]]
 
 local function newFBO(w, h, f)
-	if util.compareLOVEVersion(11, 0) >= 0 then
+	if Util.compareLOVEVersion(11, 0) >= 0 then
 		return love.graphics.newCanvas(w, h, {format = f, dpiscale = 1})
 	else
 		return love.graphics.newCanvas(w, h, f)
@@ -179,23 +179,23 @@ function render.initialize(renderObj)
 
 	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, canvas=%s, dpiscale=%d", fps, width, height, fmt, dpi)
 	log.debugf("render", "video=%s audio=%s", renderObj.output, renderObj.audio)
-	util.setDefaultFontDPIScale(dpi)
+	Util.setDefaultFontDPIScale(dpi)
 	assert(ls2x.libav.startEncodingSession(renderObj.output, width, height, fps), "failed to start encoding session")
-	audioManager.setRenderFramerate(fps)
+	AudioManager.setRenderFramerate(fps)
 
 	render.audio = assert(io.open(renderObj.audio, "wb"))
 	render.audioLen = 0
 
 	render.width, render.height = width, height
 	render.step = 1/fps
-	render.scaleOverall = math.min(width / vires.data.virtualW, height / vires.data.virtualH)
-	render.offX = (width - render.scaleOverall * vires.data.virtualW) / 2
-	render.offY = (height - render.scaleOverall * vires.data.virtualH) / 2
+	render.scaleOverall = math.min(width / Vires.data.virtualW, height / Vires.data.virtualH)
+	render.offX = (width - render.scaleOverall * Vires.data.virtualW) / 2
+	render.offY = (height - render.scaleOverall * Vires.data.virtualH) / 2
 	render.image = love.image.newImageData(width, height, "rgba8")
 	render.imagePointer = ffi.cast("uint8_t*", render.image:getPointer())
 	render.framebuffer = newFBO(width, height, fmt)
 
-	if util.compareLOVEVersion(11, 0) then
+	if Util.compareLOVEVersion(11, 0) then
 		render.MUL = 255
 	else
 		render.MUL = 1
@@ -241,10 +241,10 @@ function render.mapPixel(x, y, r, g, b, a)
 		-- Since it's premultipled alpha, we have to divide
 		-- all color component by alpha value
 		local alpha = a * render.MUL
-		render.imagePointer[index * 4 + 0] = util.clamp((r * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 1] = util.clamp((g * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 2] = util.clamp((b * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 3] = util.clamp(alpha + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 0] = Util.clamp((r * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 1] = Util.clamp((g * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 2] = Util.clamp((b * render.MUL) / alpha * 255 + 0.5, 0, 255)
+		render.imagePointer[index * 4 + 3] = Util.clamp(alpha + 0.5, 0, 255)
 	end
 
 	return r, g, b, a
@@ -269,9 +269,9 @@ function render.commit()
 
 	local id = render.framebuffer:newImageData()
 	id:mapPixel(render.mapPixel)
-	util.releaseObject(id)
+	Util.releaseObject(id)
 	ls2x.libav.supplyVideoEncoder(render.imagePointer)
-	local sd = audioManager.updateRender()
+	local sd = AudioManager.updateRender()
 	render.audio:write(sd:getString())
 	render.audioLen = render.audioLen + sd:getSampleCount()
 
@@ -305,7 +305,7 @@ function render.done()
 
 	-- done encoding
 	ls2x.libav.endEncodingSession()
-	audioManager.setRenderFramerate(0)
+	AudioManager.setRenderFramerate(0)
 	-- finalize audio
 	local cur = render.audio:seek("cur")
 	render.audio:seek("set", 4)

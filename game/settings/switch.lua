@@ -6,14 +6,14 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local setting = require("setting")
+local Setting = require("setting")
 local baseSetting = require("game.settings.base")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local colorTheme = require("game.color_theme")
 
 local switchSetting = Luaoop.class("Livesim2.SettingItem.Switch", baseSetting)
-local switchUI = Luaoop.class("Livesim2.SettingItem.SwitchUI", glow.element)
+local switchUI = Luaoop.class("Livesim2.SettingItem.SwitchUI", Glow.Element)
 
 local interpolation = require("libs.cubic_bezier")(0.4, 0, 0.2, 1):getFunction()
 
@@ -68,7 +68,7 @@ local function valueChanged(_, switch, value)
 	local idx = internal.onOffValue[value and "on" or "off"]
 
 	if internal.settingName then
-		setting.set(internal.settingName, idx)
+		Setting.set(internal.settingName, idx)
 	end
 
 	switch:_emitChangedCallback(idx)
@@ -87,7 +87,7 @@ function switchSetting:__construct(frame, name, settingName, onoffValue)
 	frame:addElement(internal.ui, self.x + 420, self.y)
 
 	local value
-	local set = setting.get(settingName)
+	local set = Setting.get(settingName)
 	if settingName then
 		value = tostring(set)
 	else

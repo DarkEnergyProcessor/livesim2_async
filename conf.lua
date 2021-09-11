@@ -15,7 +15,7 @@ function love.errorhandler(msg)
 	print((debug.traceback("Error: " .. tostring(msg), 2):gsub("\n[^\n]+$", "")))
 end
 
-local util = require("util")
+local Util = require("util")
 
 love._version = love._version or love.getVersion()
 
@@ -23,7 +23,7 @@ love._version = love._version or love.getVersion()
 love.filesystem.setIdentity("DEPLS", true)
 
 -- Fix MRT in LOVE 11.0-11.2
-if util.compareLOVEVersion(11, 0) >= 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 then
 	love.filesystem.load("fixmrt.lua")()
 end
 
@@ -40,12 +40,12 @@ if love._exe then
 	})
 end
 
-if love.filesystem.isFused() and util.fileExists("OUTSIDE_ASSET") then
+if love.filesystem.isFused() and Util.fileExists("OUTSIDE_ASSET") then
 	assert(love.filesystem.mount(love.filesystem.getSourceBaseDirectory(), ""), "failed to load game directory")
 end
 
 function love.conf(t)
-	t.version = util.compareLOVEVersion(0, 10, 0) >= 0 and love._version or "0.10.0"
+	t.version = Util.compareLOVEVersion(0, 10, 0) >= 0 and love._version or "0.10.0"
 	t.identity = "DEPLS"
 	t.appendidentity = true             -- Search files in source directory before save directory (boolean)
 	t.console = false                   -- Attach a console (boolean, Windows only)

@@ -6,7 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 local colorTheme = require("game.color_theme")
 local element = require("game.afterglow.element")
 
@@ -40,7 +40,7 @@ function slider:_pressed(_, x, y)
 		pos = pos + y
 	end
 
-	self.sliderValue = util.clamp(pos / (self.sliderLength - 72), 0, 1) * self.sliderMaxValue
+	self.sliderValue = Util.clamp(pos / (self.sliderLength - 72), 0, 1) * self.sliderMaxValue
 end
 
 function slider:render(x, y)
@@ -70,7 +70,7 @@ function slider:setMaxValue(maxval)
 end
 
 function slider:setValue(value)
-	self.sliderValue = util.clamp(value, 0, self.sliderMaxValue)
+	self.sliderValue = Util.clamp(value, 0, self.sliderMaxValue)
 end
 
 function slider:getValue()

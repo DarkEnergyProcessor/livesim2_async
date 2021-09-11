@@ -6,21 +6,21 @@ local love = require("love")
 local utf8 = require("utf8")
 local Luaoop = require("libs.Luaoop")
 
-local gamestate = require("gamestate")
+local Gamestate = require("gamestate")
 local async = require("async")
 local color = require("color")
 local mainFont = require("font")
 local L = require("language")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local backgroundLoader = require("game.background_loader")
 local backNavigation = require("game.ui.back_navigation")
 
-local selectUnits = gamestate.create {
+local selectUnits = Gamestate.create {
 	images = {}, fonts = {}
 }
 
-local unitButton = Luaoop.class("Livesim2.UnitSelectButtonUI", glow.element)
+local unitButton = Luaoop.class("Livesim2.UnitSelectButtonUI", Glow.Element)
 
 function unitButton:new(image, name)
 	local font = mainFont.get(22)
@@ -77,7 +77,7 @@ function unitButton:render(x, y)
 end
 
 local function leave()
-	return gamestate.leave(nil)
+	return Gamestate.leave(nil)
 end
 
 local function unitButtonPressed(_, value)
@@ -86,13 +86,13 @@ local function unitButtonPressed(_, value)
 end
 
 function selectUnits:load()
-	glow.clear()
+	Glow.clear()
 
 	if self.data.frame == nil then
-		self.data.frame = glow.frame(0, 68, 960, 572) -- horizontal working space actually 930
+		self.data.frame = Glow.Frame(0, 68, 960, 572) -- horizontal working space actually 930
 	end
 	self.data.frame:clear()
-	glow.addFrame(self.data.frame)
+	Glow.addFrame(self.data.frame)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(5)
@@ -102,7 +102,7 @@ function selectUnits:load()
 		self.data.back = backNavigation(L"changeUnits:selectUnits")
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	glow.addFixedElement(self.data.back, 0, 0)
+	Glow.addFixedElement(self.data.back, 0, 0)
 end
 
 local function generateFrame(self, ref, unitListTemp)
@@ -143,7 +143,7 @@ function selectUnits:draw()
 	love.graphics.draw(self.data.background)
 
 	self.data.frame:draw()
-	glow.draw()
+	Glow.draw()
 end
 
 selectUnits:registerEvent("keyreleased", function(_, key)

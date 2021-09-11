@@ -5,7 +5,7 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 local colorTheme = require("game.color_theme")
 local slider = require("game.afterglow.slider")
 
@@ -244,7 +244,7 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 
 					return true
 				-- treshold is 40px
-				elseif util.distance(mbuf.x, mbuf.y, mbuf.sX, mbuf.sY) >= 40 then
+				elseif Util.distance(mbuf.x, mbuf.y, mbuf.sX, mbuf.sY) >= 40 then
 					if info then
 						if not(info.fixed) then
 							info.element:triggerEvent("mousecanceled")
@@ -409,8 +409,8 @@ function frame:update(dt)
 
 	local mbuf = internal.mouseBuffer
 	if not(mbuf.pressed) then
-		mbuf.scX = math.max(math.abs(mbuf.scX) - dt * 20, 0) * util.sign(mbuf.scX)
-		mbuf.scY = math.max(math.abs(mbuf.scY) - dt * 20, 0) * util.sign(mbuf.scY)
+		mbuf.scX = math.max(math.abs(mbuf.scX) - dt * 20, 0) * Util.sign(mbuf.scX)
+		mbuf.scY = math.max(math.abs(mbuf.scY) - dt * 20, 0) * Util.sign(mbuf.scY)
 
 		if self.sliderH then
 			self.sliderH.element:setValue(self.sliderH.element:getValue() - mbuf.scX)

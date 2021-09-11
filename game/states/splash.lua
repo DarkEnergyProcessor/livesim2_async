@@ -8,11 +8,11 @@ local love = require("love")
 local timer = require("libs.hump.timer")
 
 local color = require("color")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
-local util = require("util")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
+local Util = require("util")
 
-local splash = gamestate.create {
+local splash = Gamestate.create {
 	fonts = {},
 	images = {
 		icon1 = {"new_icon1:assets/image/icon/new_icon_1024x1024_1.png", {mipmaps = true}},
@@ -23,7 +23,7 @@ local splash = gamestate.create {
 }
 
 local function done()
-	gamestate.replace(loadingInstance.getInstance(), "mainMenu")
+	Gamestate.replace(LoadingInstance.getInstance(), "mainMenu")
 end
 
 local function skip(self)
@@ -41,7 +41,7 @@ end
 function splash:load()
 	-- Create version text
 	if not(self.data.version) then
-		local deprecate = util.compareLOVEVersion(11, 0) < 0 and "DEPRECATED!" or ""
+		local deprecate = Util.compareLOVEVersion(11, 0) < 0 and "DEPRECATED!" or ""
 		self.data.version = love.graphics.newText(
 			love.graphics.newFont(11),
 			string.format("v%s (%08d)\nPowered by LÖVE Framework (LÖVE %s) %s",

@@ -22,7 +22,7 @@ require("love.timer")
 require("love.video")
 
 local utf8V = require("libs.utf8_validator")
-local util = require("util")
+local Util = require("util")
 local log = require("logging")
 
 math.randomseed(os.time())
@@ -88,7 +88,7 @@ function beatmap.findSuitableForFolder(dir)
 end
 
 function beatmap.findSuitable(path)
-	if util.directoryExist(path) then
+	if Util.directoryExist(path) then
 		return beatmap.findSuitableForFolder(path), "folder"
 	else
 		return beatmap.findSuitableForFile(path), "file"
@@ -151,7 +151,7 @@ local function enumerateBeatmap(id)
 end
 
 local function substituteAudio(name, isdir)
-	local value = util.substituteExtension("audio/"..name, util.getNativeAudioExtensions(), not(isdir))
+	local value = Util.substituteExtension("audio/"..name, Util.getNativeAudioExtensions(), not(isdir))
 	if value then
 		return love.filesystem.newFileData(value)
 	end
@@ -200,9 +200,9 @@ local function loadDirectly(path)
 	local usedRealPath = false
 	newPath = newPath or path
 
-	local f, msg = util.newFileWrapper(newPath, "rb")
+	local f, msg = Util.newFileWrapper(newPath, "rb")
 	if not(f) then
-		f, msg = util.newFileWrapper(path, "rb")
+		f, msg = Util.newFileWrapper(path, "rb")
 		usedRealPath = true
 
 		if not(f) then

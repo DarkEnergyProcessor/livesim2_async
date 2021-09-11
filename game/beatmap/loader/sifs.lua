@@ -6,8 +6,8 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local util = require("util")
-local setting = require("setting")
+local Util = require("util")
+local Setting = require("setting")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
@@ -32,9 +32,9 @@ function sifsLoader:__construct(file)
 	lines()
 	internal.attribute = (sifsFetchNumber(lines, "ATTRIBUTE") or 2) + 1
 	internal.difficulty = assert(sifsFetchNumber(lines, "DIFFICULTY"))
-	internal.audioFile = assert(util.basename(lines():match("^MUSIC = GetCurrentScriptDirectory~\"([^\"]+)\";")))
+	internal.audioFile = assert(Util.basename(lines():match("^MUSIC = GetCurrentScriptDirectory~\"([^\"]+)\";")))
 	lines()
-	internal.coverImage = assert(util.basename(lines():match("^imgJacket = \"([^\"]+)\";")))
+	internal.coverImage = assert(Util.basename(lines():match("^imgJacket = \"([^\"]+)\";")))
 	internal.title = assert(lines():match("^TITLE = \"([^\"]+)\";"))
 	internal.comment = assert(lines():match("^COMMENT = \"([^\"]+)\";"))
 	lines()
@@ -54,7 +54,7 @@ function sifsLoader:getNotesList()
 	local notesData = {}
 	local speedMultipler = 1
 	local stopTimeCount = 0
-	local noteSpeed = setting.get("NOTE_SPEED") * 0.001
+	local noteSpeed = Setting.get("NOTE_SPEED") * 0.001
 	local lastTimingSec = 0
 	local lastTick = 0
 	local attribute = internal.attribute
@@ -112,7 +112,7 @@ function sifsLoader:getCoverArt()
 	local internal = Luaoop.class.data(self)
 	local path = "live_icon/"..internal.cover_image
 
-	if util.fileExists(path) then
+	if Util.fileExists(path) then
 		return {
 			title = internal.title,
 			info = internal.comment,

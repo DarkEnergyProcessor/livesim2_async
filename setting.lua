@@ -3,11 +3,11 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local util = require("util")
+local Util = require("util")
 
 love._version = love._version or love.getVersion()
 
-local setting = {}
+local Setting = {}
 local arg = ...
 
 if type(arg) == "userdata" and arg:typeOf("Channel") then
@@ -20,18 +20,18 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	require("util")
 	local log = require("logging")
 	local channel = arg
-	setting.list = {}
-	setting.default = {}
-	setting.modified = {}
+	Setting.list = {}
+	Setting.default = {}
+	Setting.modified = {}
 
 	-- Get configuration
 	local function getConfigImpl(key)
 		key = key:upper()
-		assert(setting.default[key], "invalid setting name")
+		assert(Setting.default[key], "invalid setting name")
 
 		-- Cache
-		if setting.list[key] then
-			return setting.list[key]
+		if Setting.list[key] then
+			return Setting.list[key]
 		end
 
 		local file = love.filesystem.newFile("config/"..key..".txt")
@@ -42,10 +42,10 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			if not(file:open("r")) then
 				file = love.filesystem.newFile("config/"..key..".txt")
 				assert(file:open("w"))
-				file:write(assert(setting.default[key]))
+				file:write(assert(Setting.default[key]))
 				file:close()
 
-				return setting.default[key]
+				return Setting.default[key]
 			end
 		end
 
@@ -57,15 +57,15 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 
 	local function setConfigImpl(key, val)
 		key = key:upper()
-		assert(setting.default[key], "invalid setting name")
-		setting.list[key] = val
-		setting.modified[key] = true
+		assert(Setting.default[key], "invalid setting name")
+		Setting.list[key] = val
+		Setting.modified[key] = true
 	end
 
 	local function commitConfigImpl()
 		-- Call sparingly, expensive!
-		for k in pairs(setting.modified) do
-			love.filesystem.write("config/"..k:upper()..".txt", tostring(setting.list[k]))
+		for k in pairs(Setting.modified) do
+			love.filesystem.write("config/"..k:upper()..".txt", tostring(Setting.list[k]))
 		end
 	end
 
@@ -79,20 +79,20 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 			-- initialize new configuration
 			local name = channel:demand():upper()
 			local default = channel:demand()
-			setting.default[name] = tonumber(default) or default
+			Setting.default[name] = tonumber(default) or default
 
-			if util.fileExists(name..".txt") then
+			if Util.fileExists(name..".txt") then
 				-- old, backward compatible livesim2 config
-				setting.list[name] = getConfigImpl(name)
-				setting.modified[name] = true
+				Setting.list[name] = getConfigImpl(name)
+				Setting.modified[name] = true
 				love.filesystem.remove(name..".txt")
-			elseif not(util.fileExists("config/"..name..".txt")) then
-				setting.list[name] = default
-				setting.modified[name] = true
+			elseif not(Util.fileExists("config/"..name..".txt")) then
+				Setting.list[name] = default
+				Setting.modified[name] = true
 			end
 		elseif command == "def" then
 			local name = channel:demand():upper()
-			receiveChannel:push(setting.default[name])
+			receiveChannel:push(Setting.default[name])
 		elseif command == "get" then
 			local name = channel:demand()
 			local s, value = pcall(getConfigImpl, name)
@@ -129,17 +129,17 @@ if type(arg) == "userdata" and arg:typeOf("Channel") then
 	end
 else
 	-- Get named channel
-	setting.channel = love.thread.getChannel("setting.lua")
-	setting.channelMain = love.thread.getChannel("setting.lua.lock")
-	setting.receiveChannel = love.thread.newChannel()
+	Setting.channel = love.thread.getChannel("setting.lua")
+	Setting.channelMain = love.thread.getChannel("setting.lua.lock")
+	Setting.receiveChannel = love.thread.newChannel()
 
-	if setting.channelMain:getCount() == 0 then
+	if Setting.channelMain:getCount() == 0 then
 		-- Main thread only
 		assert(love.filesystem.createDirectory("config"), "failed to create configuration directory")
-		setting.thread = assert(love.thread.newThread("setting.lua"))
-		setting.channelMain:push(0) -- arbitrary value
-		while setting.channel:getCount() > 0 do setting.channel:pop() end
-		setting.thread:start(setting.channel)
+		Setting.thread = assert(love.thread.newThread("setting.lua"))
+		Setting.channelMain:push(0) -- arbitrary value
+		while Setting.channel:getCount() > 0 do Setting.channel:pop() end
+		Setting.thread:start(Setting.channel)
 	end
 end
 
@@ -156,46 +156,46 @@ end
 
 local function send(name, ...)
 	--return setting.channel:push({name, setting.receiveChannel, ...})
-	return setting.channel:performAtomic(sendImpl, name, setting.receiveChannel, ...)
+	return Setting.channel:performAtomic(sendImpl, name, Setting.receiveChannel, ...)
 end
 
-function setting.define(key, default)
-	assert(setting.thread, "'define' can only be called in main thread")
+function Setting.define(key, default)
+	assert(Setting.thread, "'define' can only be called in main thread")
 	return send("init", key, default)
 end
 
-function setting.default(key)
+function Setting.default(key)
 	return send("def", key)
 end
 
-function setting.get(key)
+function Setting.get(key)
 	send("get", key)
 
-	local v = setting.receiveChannel:demand()
-	if v == setting.receiveChannel then
-		error(setting.receiveChannel:demand(), 2)
+	local v = Setting.receiveChannel:demand()
+	if v == Setting.receiveChannel then
+		error(Setting.receiveChannel:demand(), 2)
 	end
 	return v
 end
 
-function setting.set(key, value)
+function Setting.set(key, value)
 	return send("set", key, value)
 end
 
-function setting.update()
-	assert(setting.thread, "'update' can only be called in main thread")
+function Setting.update()
+	assert(Setting.thread, "'update' can only be called in main thread")
 	return send("commit")
 end
 
-function setting.quit()
-	assert(setting.thread, "'quit' can only be called in main thread")
+function Setting.quit()
+	assert(Setting.thread, "'quit' can only be called in main thread")
 	send("quit")
-	if setting.thread:isRunning() then
-		setting.thread:wait()
+	if Setting.thread:isRunning() then
+		Setting.thread:wait()
 	end
 
-	while setting.channelMain:getCount() > 0 do setting.channelMain:pop() end
+	while Setting.channelMain:getCount() > 0 do Setting.channelMain:pop() end
 end
 
 
-return setting
+return Setting

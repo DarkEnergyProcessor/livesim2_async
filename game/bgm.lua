@@ -6,8 +6,8 @@ local Luaoop = require("libs.Luaoop")
 
 local async = require("async")
 local lily = require("lily")
-local audioManager = require("audio_manager")
-local util = require("util")
+local AudioManager = require("audio_manager")
+local Util = require("util")
 
 local BGM = {}
 local BGMClass = Luaoop.class("livesim2.BGM")
@@ -17,22 +17,22 @@ function BGMClass:__construct(sd)
 		sd = love.sound.newSoundData(sd)
 	end
 
-	self.audio = audioManager.newAudioDirect(sd, "music")
-	self.channel = util.getChannelCount(sd)
+	self.audio = AudioManager.newAudioDirect(sd, "music")
+	self.channel = Util.getChannelCount(sd)
 	self.soundData = sd
 end
 
 function BGMClass:play()
-	return audioManager.play(self.audio)
+	return AudioManager.play(self.audio)
 end
 
 function BGMClass:pause()
-	return audioManager.pause(self.audio)
+	return AudioManager.pause(self.audio)
 end
 
 function BGMClass:rewind()
-	audioManager.stop(self.audio)
-	return audioManager.play(self.audio)
+	AudioManager.stop(self.audio)
+	return AudioManager.play(self.audio)
 end
 
 function BGMClass._getSampleSafe(sd, pos)
@@ -75,7 +75,7 @@ end
 -- interleaved samples: {l, r, l, r, l, r, ...}
 function BGMClass:getSamples(amount)
 	local output = {}
-	if audioManager.renderRate > 0 then
+	if AudioManager.renderRate > 0 then
 		self:_getSamplesRender(output, amount)
 	else
 		self:_populateSample(output, self.soundData, self.audio.source:tell("samples"), amount)
@@ -85,11 +85,11 @@ function BGMClass:getSamples(amount)
 end
 
 function BGMClass:seek(timepos)
-	return audioManager.seek(self.audio, timepos)
+	return AudioManager.seek(self.audio, timepos)
 end
 
 function BGMClass:tell()
-	if audioManager.renderRate > 0 then
+	if AudioManager.renderRate > 0 then
 		return self.audio.pos / 48000
 	else
 		return self.audio.source:tell()
@@ -97,11 +97,11 @@ function BGMClass:tell()
 end
 
 function BGMClass:isPlaying()
-	return audioManager.isPlaying(self.audio)
+	return AudioManager.isPlaying(self.audio)
 end
 
 function BGMClass:getSampleRate()
-	if audioManager.renderRate > 0 then
+	if AudioManager.renderRate > 0 then
 		return 48000
 	else
 		return self.soundData:getSampleRate()
@@ -109,7 +109,7 @@ function BGMClass:getSampleRate()
 end
 
 function BGM.newSong(decoder)
-	return BGMClass(util.newDecoder(decoder))
+	return BGMClass(Util.newDecoder(decoder))
 end
 
 return BGM

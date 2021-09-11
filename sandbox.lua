@@ -6,20 +6,20 @@
 
 local Luaoop = require("libs.Luaoop")
 local utf8 = require("utf8")
-local util = require("util")
+local Util = require("util")
 local sandbox = Luaoop.class("Livesim2.Sandbox")
 
 function sandbox:__construct()
 	local internal = Luaoop.class.data(self)
 
 	-- Module sandboxing (blacklist method)
-	local stringModule = util.deepCopy(string)
+	local stringModule = Util.deepCopy(string)
 	stringModule.dump = nil
 
 	-- Modules that is loaded
 	internal.loadedModules = {
-		coroutine = util.deepCopy(coroutine),
-		math = util.deepCopy(math),
+		coroutine = Util.deepCopy(coroutine),
+		math = Util.deepCopy(math),
 		os = {
 			difftime = os.difftime,
 			time = os.time,
@@ -27,11 +27,11 @@ function sandbox:__construct()
 			clock = os.clock
 		},
 		string = stringModule,
-		table = util.deepCopy(table),
-		utf8 = util.deepCopy(utf8),
+		table = Util.deepCopy(table),
+		utf8 = Util.deepCopy(utf8),
 	}
 	if bit then
-		internal.loadedModules.bit = util.deepCopy(bit)
+		internal.loadedModules.bit = Util.deepCopy(bit)
 	end
 
 	-- Require function handlers

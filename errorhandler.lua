@@ -4,8 +4,8 @@
 local love = require("love")
 local color = require("color")
 local log = require("logging")
-local util = require("util")
-local postExit = require("post_exit")
+local Util = require("util")
+local PostExit = require("post_exit")
 local utf8 = require("utf8")
 
 local function error_printer(msg, layer)
@@ -13,7 +13,7 @@ local function error_printer(msg, layer)
 end
 
 function love.errorhandler(msg)
-	postExit.exit()
+	PostExit.exit()
 	msg = tostring(msg)
 	error_printer(msg, 2)
 	if not love.window or not love.graphics or not love.event then
@@ -29,7 +29,7 @@ function love.errorhandler(msg)
 		love.mouse.setVisible(true)
 		love.mouse.setGrabbed(false)
 		love.mouse.setRelativeMode(false)
-		if util.isCursorSupported() then
+		if Util.isCursorSupported() then
 			love.mouse.setCursor()
 		end
 	end

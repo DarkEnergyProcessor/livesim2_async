@@ -3,11 +3,11 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local vires = require("vires")
+local Vires = require("vires")
 local log = require("logging")
-local postExit = require("post_exit")
+local PostExit = require("post_exit")
 local timer = require("libs.hump.timer")
-local util = require("util")
+local Util = require("util")
 local color = require("color")
 
 --------------------------------
@@ -123,9 +123,9 @@ function love.run()
 	-- and doesn't require them.
 	local async = require("async")
 	local lily = require("lily")
-	local gamestate = require("gamestate")
+	local Gamestate = require("gamestate")
 	-- delay-load setting library also
-	local setting = require("setting")
+	local Setting = require("setting")
 	-- screenshot depends on love.graphics
 	local screenshot = require("screenshot")
 	-- reparse it because we lose it in above code
@@ -139,16 +139,16 @@ function love.run()
 
 	-- Only load UI if window is present, also it must be after
 	-- love.load, because love.load may initialize window.
-	local glow
+	local Glow
 	if love.window.isOpen() then
-		glow = require("game.afterglow")
+		Glow = require("game.afterglow")
 		defaultText = love.graphics.newText(love.graphics.newFont(20))
 	end
 
 	-- Register post exit
-	postExit.add(gamestate.internal.quit)
-	postExit.add(lily.quit)
-	postExit.add(setting.quit)
+	PostExit.add(Gamestate.internal.quit)
+	PostExit.add(lily.quit)
+	PostExit.add(Setting.quit)
 	-- We don't want the first frame's dt to include time taken by love.load.
 	love.timer.step()
 
@@ -158,7 +158,7 @@ function love.run()
 		-- Update dt, as we'll be passing it to update
 		love.timer.step()
 		local dt = love.timer.getDelta()
-		gamestate.internal.loop()
+		Gamestate.internal.loop()
 		timer.update(dt)
 		async.loop(dt)
 		-- Process events.
@@ -166,9 +166,9 @@ function love.run()
 		for name, a, b, c, d, e, f, g, h, i, j in love.event.poll() do
 			-- update virtual resolution for resize
 			if name == "resize" then
-				vires.update(a, b)
+				Vires.update(a, b)
 			elseif name == "displayrotated" then
-				vires.update(love.graphics.getDimensions())
+				Vires.update(love.graphics.getDimensions())
 			-- low memory warning
 			elseif name == "lowmemory" then
 				collectgarbage()
@@ -176,19 +176,19 @@ function love.run()
 				if jit then jit.flush() end
 			-- modify position with virtual resolution
 			elseif name == "mousepressed" or name == "mousereleased" or name == "mousemoved" then
-				a, b = vires.screenToLogical(a, b)
+				a, b = Vires.screenToLogical(a, b)
 				if name == "mousemoved" then
-					c, d = c / vires.data.scaleOverall, d / vires.data.scaleOverall
+					c, d = c / Vires.data.scaleOverall, d / Vires.data.scaleOverall
 				end
 			elseif name == "touchpressed" or name == "touchreleased" or name == "touchmoved" then
-				b, c = vires.screenToLogical(b, c)
-				d, e = d / vires.data.scaleOverall, e / vires.data.scaleOverall
+				b, c = Vires.screenToLogical(b, c)
+				d, e = d / Vires.data.scaleOverall, e / Vires.data.scaleOverall
 			-- print information (debug). sent from another thread
 			--elseif name == "print" then
 				--print(a)
 			-- update setting on focus triggered
 			elseif name == "focus" then
-				setting.update()
+				Setting.update()
 			end
 			-- Hardcoded "collectgarbage" button
 			if name == "keyreleased" then
@@ -227,27 +227,27 @@ function love.run()
 
 			-- Have to quit all instance in here
 			if name == "quit" then
-				gamestate.internal.quit()
+				Gamestate.internal.quit()
 				lily.quit()
-				setting.quit()
-				postExit.exit()
+				Setting.quit()
+				PostExit.exit()
 				return a or 0
 			-- prioritize love.handlers
 			elseif love.handlers[name] then
 				love.handlers[name](a, b, c, d, e, f, g, h, i, j)
-			elseif not(glow) or not(glow.handleEvents(name, a, b, c, d, e, f, g, h, i, j)) then
-				gamestate.internal.handleEvents(name, a, b, c, d, e, f, g, h, i, j)
+			elseif not(Glow) or not(Glow.handleEvents(name, a, b, c, d, e, f, g, h, i, j)) then
+				Gamestate.internal.handleEvents(name, a, b, c, d, e, f, g, h, i, j)
 			end
 		end
 
-		local currentGame = gamestate.internal.getActive()
+		local currentGame = Gamestate.internal.getActive()
 		-- Call update and draw
 		if currentGame then currentGame:update(dt) end
-		if glow then glow.update(dt) end
+		if Glow then Glow.update(dt) end
 
 		if love.graphics and love.graphics.isActive() then
 			love.graphics.push("all")
-			vires.set()
+			Vires.set()
 			if currentGame then currentGame:draw() end
 			if showDebugInfo then
 				local stats = love.graphics.getStats()
@@ -269,11 +269,11 @@ LOADED_FONTS = %d]],
 					stats.canvasswitches, stats.fonts
 				)
 				defaultText:clear()
-				util.addTextWithShadow(defaultText, text, 0, 0, 0.7)
+				Util.addTextWithShadow(defaultText, text, 0, 0, 0.7)
 				love.graphics.setColor(color.white)
 				love.graphics.draw(defaultText)
 			end
-			vires.unset()
+			Vires.unset()
 			love.graphics.pop()
 			screenshot.update() -- slime: call love.graphics.newScreenshot just before love.graphics.present
 			love.graphics.present()

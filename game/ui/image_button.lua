@@ -5,10 +5,10 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local color = require("color")
-local assetCache = require("asset_cache")
-local glow = require("game.afterglow")
+local AssetCache = require("asset_cache")
+local Glow = require("game.afterglow")
 
-local imageButton = Luaoop.class("Livesim2.ImageButtonUI", glow.element)
+local imageButton = Luaoop.class("Livesim2.ImageButtonUI", Glow.Element)
 
 function imageButton:new(name, scale)
 	-- name..".png"
@@ -17,7 +17,7 @@ function imageButton:new(name, scale)
 	if type(name) == "table" then
 		images = name
 	else
-		images = assetCache.loadMultipleImages({
+		images = AssetCache.loadMultipleImages({
 			name..".png",
 			name.."se.png"
 		}, {mipmaps = true})

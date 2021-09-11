@@ -5,7 +5,7 @@
 local love = require("love")
 local NLay = require("libs.nlay")
 
-local vires = {
+local Vires = {
 	data = {
 		virtualW = 0,
 		virtualH = 0,
@@ -16,15 +16,15 @@ local vires = {
 	isInit = false
 }
 
-function vires.init(width, height)
-	if vires.isInit then return end
-	vires.data.virtualW, vires.data.virtualH = width, height
-	vires.isInit = true
+function Vires.init(width, height)
+	if Vires.isInit then return end
+	Vires.data.virtualW, Vires.data.virtualH = width, height
+	Vires.isInit = true
 
 	-- Create background sprite batch.
 	-- Cannot use async here because it's not available.
 	local thickness = 3
-	vires.spriteBatch = love.graphics.newSpriteBatch(
+	Vires.spriteBatch = love.graphics.newSpriteBatch(
 		love.graphics.newImage("assets/image/background/pattern.png"),
 		thickness * 26
 	)
@@ -33,77 +33,77 @@ function vires.init(width, height)
 
 	for i = 0, thickness-1 do
 		-- Myus, left, Y start at 0
-		vires.spriteBatch:add(patternMyus, -i * 128, 0, 0, 1, 1, 128, 0)
-		vires.spriteBatch:add(patternMyus, -i * 128, 128, 0, 1, 1, 128, 0)
-		vires.spriteBatch:add(patternMyus, -i * 128, 256, 0, 1, 1, 128, 0)
-		vires.spriteBatch:add(patternMyus, -i * 128, 384, 0, 1, 1, 128, 0)
-		vires.spriteBatch:add(patternMyus, -i * 128, 512, 0, 1, 1, 128, 0)
+		Vires.spriteBatch:add(patternMyus, -i * 128, 0, 0, 1, 1, 128, 0)
+		Vires.spriteBatch:add(patternMyus, -i * 128, 128, 0, 1, 1, 128, 0)
+		Vires.spriteBatch:add(patternMyus, -i * 128, 256, 0, 1, 1, 128, 0)
+		Vires.spriteBatch:add(patternMyus, -i * 128, 384, 0, 1, 1, 128, 0)
+		Vires.spriteBatch:add(patternMyus, -i * 128, 512, 0, 1, 1, 128, 0)
 		-- Aqua, right, Y start at 0
-		vires.spriteBatch:add(patternAqua, 960 + i * 128, 0)
-		vires.spriteBatch:add(patternAqua, 960 + i * 128, 128)
-		vires.spriteBatch:add(patternAqua, 960 + i * 128, 256)
-		vires.spriteBatch:add(patternAqua, 960 + i * 128, 384)
-		vires.spriteBatch:add(patternAqua, 960 + i * 128, 512)
+		Vires.spriteBatch:add(patternAqua, 960 + i * 128, 0)
+		Vires.spriteBatch:add(patternAqua, 960 + i * 128, 128)
+		Vires.spriteBatch:add(patternAqua, 960 + i * 128, 256)
+		Vires.spriteBatch:add(patternAqua, 960 + i * 128, 384)
+		Vires.spriteBatch:add(patternAqua, 960 + i * 128, 512)
 		-- Myus, top, X start at -64
-		vires.spriteBatch:add(patternMyus, -64, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 64, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 192, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 320, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 448, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 576, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 704, -i * 128, 0, 1, 1, 0, 128)
-		vires.spriteBatch:add(patternMyus, 832, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, -64, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 64, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 192, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 320, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 448, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 576, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 704, -i * 128, 0, 1, 1, 0, 128)
+		Vires.spriteBatch:add(patternMyus, 832, -i * 128, 0, 1, 1, 0, 128)
 		-- Aqua, bottom, X start at -64
-		vires.spriteBatch:add(patternMyus, -64, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 64, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 192, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 320, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 448, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 576, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 704, 640 + i * 128)
-		vires.spriteBatch:add(patternMyus, 832, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, -64, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 64, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 192, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 320, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 448, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 576, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 704, 640 + i * 128)
+		Vires.spriteBatch:add(patternMyus, 832, 640 + i * 128)
 	end
 
-	NLay.update(0, 0, vires.data.virtualW, vires.data.virtualH)
+	NLay.update(0, 0, Vires.data.virtualW, Vires.data.virtualH)
 end
 
-function vires.update(nw, nh)
-	if not(vires.isInit) then return end
+function Vires.update(nw, nh)
+	if not(Vires.isInit) then return end
 
-	vires.data.scaleOverall = math.min(nw / vires.data.virtualW, nh / vires.data.virtualH)
-	vires.data.offX = (nw - vires.data.scaleOverall * vires.data.virtualW) / 2
-	vires.data.offY = (nh - vires.data.scaleOverall * vires.data.virtualH) / 2
+	Vires.data.scaleOverall = math.min(nw / Vires.data.virtualW, nh / Vires.data.virtualH)
+	Vires.data.offX = (nw - Vires.data.scaleOverall * Vires.data.virtualW) / 2
+	Vires.data.offY = (nh - Vires.data.scaleOverall * Vires.data.virtualH) / 2
 end
 
-function vires.screenToLogical(x, y)
-	if not(vires.isInit) then return x, y end
-	return (x - vires.data.offX) / vires.data.scaleOverall, (y - vires.data.offY) / vires.data.scaleOverall
+function Vires.screenToLogical(x, y)
+	if not(Vires.isInit) then return x, y end
+	return (x - Vires.data.offX) / Vires.data.scaleOverall, (y - Vires.data.offY) / Vires.data.scaleOverall
 end
 
-function vires.logicalToScreen(x, y)
-	if not(vires.isInit) then return x, y end
-	return x * vires.data.scaleOverall + vires.data.offX, y * vires.data.scaleOverall + vires.data.offY
+function Vires.logicalToScreen(x, y)
+	if not(Vires.isInit) then return x, y end
+	return x * Vires.data.scaleOverall + Vires.data.offX, y * Vires.data.scaleOverall + Vires.data.offY
 end
 
-function vires.getScaling()
-	return vires.data.scaleOverall
+function Vires.getScaling()
+	return Vires.data.scaleOverall
 end
 
-function vires.getOffset()
-	return vires.data.offX, vires.data.offY
+function Vires.getOffset()
+	return Vires.data.offX, Vires.data.offY
 end
 
-function vires.set()
-	if not(vires.isInit) then return end
-	love.graphics.translate(vires.data.offX, vires.data.offY)
-	love.graphics.scale(vires.data.scaleOverall)
-	love.graphics.draw(vires.spriteBatch)
+function Vires.set()
+	if not(Vires.isInit) then return end
+	love.graphics.translate(Vires.data.offX, Vires.data.offY)
+	love.graphics.scale(Vires.data.scaleOverall)
+	love.graphics.draw(Vires.spriteBatch)
 end
 
-function vires.unset()
-	if not(vires.isInit) then return end
-	love.graphics.scale(1/vires.data.scaleOverall)
-	love.graphics.translate(-vires.data.offX, -vires.data.offY)
+function Vires.unset()
+	if not(Vires.isInit) then return end
+	love.graphics.scale(1/Vires.data.scaleOverall)
+	love.graphics.translate(-Vires.data.offX, -Vires.data.offY)
 end
 
-return vires
+return Vires

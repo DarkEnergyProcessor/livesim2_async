@@ -7,18 +7,18 @@ local timer = require("libs.hump.timer")
 
 local color = require("color")
 local async = require("async")
-local assetCache = require("asset_cache")
+local AssetCache = require("asset_cache")
 local log = require("logging")
 local mainFont = require("font")
-local setting = require("setting")
-local util = require("util")
-local audioManager = require("audio_manager")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
+local Setting = require("setting")
+local Util = require("util")
+local AudioManager = require("audio_manager")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
 local render = require("render")
-local vires = require("vires")
+local Vires = require("vires")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
 local beatmapList = require("game.beatmap.list")
 local backgroundLoader = require("game.background_loader")
@@ -33,7 +33,7 @@ local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 local beatmapRandomizer = require("game.live.randomizer3")
 
-local DEPLS = gamestate.create {
+local DEPLS = Gamestate.create {
 	fonts = {},
 	images = {
 		note = {"noteImage:assets/image/tap_circle/notes.png", {mipmaps = true}},
@@ -79,8 +79,8 @@ end
 local function pickLowestJudgement(j1, j2)
 	if j1 and j2 then
 		return validJudgement[math.max(
-			assert(util.isValueInArray(validJudgement, j1)),
-			assert(util.isValueInArray(validJudgement, j2))
+			assert(Util.isValueInArray(validJudgement, j1)),
+			assert(Util.isValueInArray(validJudgement, j2))
 		)]
 	else
 		return j1 or j2
@@ -104,14 +104,14 @@ local function playTapSFXSound(tapSFX, name, nsAccumulation)
 	if list.alreadyPlayed == false then
 		-- first element should be the least played
 		local audio
-		if audioManager.isPlaying(list[1]) then
+		if AudioManager.isPlaying(list[1]) then
 			-- ok no more space
-			audio = audioManager.clone(tapSFX[name])
+			audio = AudioManager.clone(tapSFX[name])
 		else
 			audio = table.remove(list, 1)
 		end
 
-		audioManager.play(audio)
+		AudioManager.play(audio)
 		list[#list + 1] = audio
 
 		if nsAccumulation then
@@ -166,7 +166,7 @@ local function liveClearCallback(self)
 		events = replay.getEventData(),
 	}
 
-	gamestate.replace(nil, "result", {
+	Gamestate.replace(nil, "result", {
 		name = self.persist.beatmapName,
 		summary = self.persist.summary,
 		replay = replayData,
@@ -183,8 +183,8 @@ local function safeAreaScaling(self)
 	-- iOS and Android always runs game in fullscreen
 	-- regardless of t.window.width and t.window.height
 	-- specified
-	local scale = vires.getScaling()
-	local vYOffset = scale * select(2, vires.getOffset())
+	local scale = Vires.getScaling()
+	local vYOffset = scale * select(2, Vires.getOffset())
 	local gameHeight = 640 * scale + vYOffset
 	local safeHeight
 
@@ -214,7 +214,7 @@ local function safeAreaReposition(scale)
 end
 
 function DEPLS:load(arg)
-	glow.clear()
+	Glow.clear()
 
 	-- sanity check
 	assert(arg.summary, "summary data missing")
@@ -235,7 +235,7 @@ function DEPLS:load(arg)
 	if arg.replay then
 		autoplay = false
 	elseif arg.autoplay == nil then
-		autoplay = setting.get("AUTOPLAY") == 1
+		autoplay = Setting.get("AUTOPLAY") == 1
 	else
 		autoplay = not(not(arg.autoplay))
 	end
@@ -255,34 +255,34 @@ function DEPLS:load(arg)
 	if arg.replay then
 		vanishType = self.persist.replayMode.vanish
 	else
-		vanishType = assert(tonumber(setting.get("VANISH_TYPE")), "invalid vanish setting")
+		vanishType = assert(tonumber(Setting.get("VANISH_TYPE")), "invalid vanish setting")
 	end
 	self.persist.vanishType = vanishType
 
 	-- dim delay
-	self.persist.liveDelay = math.max(setting.get("LIVESIM_DELAY") * 0.001, 1)
+	self.persist.liveDelay = math.max(Setting.get("LIVESIM_DELAY") * 0.001, 1)
 	self.persist.liveDelayCounter = self.persist.liveDelay
-	self.persist.dimValue = util.clamp(setting.get("LIVESIM_DIM") * 0.01, 0, 1)
+	self.persist.dimValue = Util.clamp(Setting.get("LIVESIM_DIM") * 0.01, 0, 1)
 
 	-- score and stamina
 	self.persist.tapScore = arg.replay and self.persist.replayMode.scorePerTap or arg.summary.scorePerTap or 0
 	if self.persist.tapScore == 0 then
-		self.persist.tapScore = setting.get("SCORE_ADD_NOTE")
+		self.persist.tapScore = Setting.get("SCORE_ADD_NOTE")
 	end
 	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
 	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or arg.summary.stamina or 0
 	if self.persist.stamina == 0 then
-		self.persist.stamina = setting.get("STAMINA_DISPLAY")
+		self.persist.stamina = Setting.get("STAMINA_DISPLAY")
 	end
-	self.persist.noFail = setting.get("STAMINA_FUNCTIONAL") == 0
+	self.persist.noFail = Setting.get("STAMINA_FUNCTIONAL") == 0
 
 	-- load live UI
-	local currentLiveUI = setting.get("PLAY_UI")
-	self.data.liveUI = liveUI.newLiveUI(currentLiveUI, autoplay, setting.get("MINIMAL_EFFECT") == 1)
+	local currentLiveUI = Setting.get("PLAY_UI")
+	self.data.liveUI = liveUI.newLiveUI(currentLiveUI, autoplay, Setting.get("MINIMAL_EFFECT") == 1)
 	self.data.liveUI:setMaxStamina(self.persist.stamina)
-	self.data.liveUI:setTextScaling(setting.get("TEXT_SCALING"))
+	self.data.liveUI:setTextScaling(Setting.get("TEXT_SCALING"))
 	if arg.summary.liveClear then
-		self.data.liveUI:setLiveClearVoice(audioManager.newAudioDirect(arg.summary.liveClear, "voice"))
+		self.data.liveUI:setLiveClearVoice(AudioManager.newAudioDirect(arg.summary.liveClear, "voice"))
 	end
 
 	-- Lane definition
@@ -316,15 +316,15 @@ function DEPLS:load(arg)
 		lane = self.persist.lane,
 		-- DEBUG v4.0.0-beta3
 		accuracy = {
-			tonumber(setting.get("PERFECT_ACCURACY")),
-			tonumber(setting.get("GREAT_ACCURACY")),
-			tonumber(setting.get("GOOD_ACCURACY")),
-			tonumber(setting.get("BAD_ACCURACY")),
+			tonumber(Setting.get("PERFECT_ACCURACY")),
+			tonumber(Setting.get("GREAT_ACCURACY")),
+			tonumber(Setting.get("GOOD_ACCURACY")),
+			tonumber(Setting.get("BAD_ACCURACY")),
 			128
 		},
 		autoplay = autoplay,
-		timingOffset = -setting.get("TIMING_OFFSET"), -- inverted for some reason
-		beatmapOffset = setting.get("GLOBAL_OFFSET") * 0.001,
+		timingOffset = -Setting.get("TIMING_OFFSET"), -- inverted for some reason
+		beatmapOffset = Setting.get("GLOBAL_OFFSET") * 0.001,
 		vanish = vanishType,
 		spawn = function()
 			return self.data.skill:noteSpawnCallback()
@@ -445,19 +445,19 @@ function DEPLS:load(arg)
 	end
 
 	-- background
-	local loadBackground = setting.get("AUTO_BACKGROUND") == 1
+	local loadBackground = Setting.get("AUTO_BACKGROUND") == 1
 	-- custom unit
 	local loadCustomUnit
 	if self.persist.replayMode then
 		loadCustomUnit = self.persist.replayMode.customUnitLoaded
 	else
-		loadCustomUnit = setting.get("CBF_UNIT_LOAD") == 1
+		loadCustomUnit = Setting.get("CBF_UNIT_LOAD") == 1
 	end
 	self.persist.customUnitLoaded = loadCustomUnit
 	-- video
 	local loadVideo = arg.videoBG
 	if loadVideo == nil then
-		loadVideo = setting.get("VIDEOBG") == 1
+		loadVideo = Setting.get("VIDEOBG") == 1
 	end
 
 	-- Beatmap loading variables
@@ -592,22 +592,22 @@ function DEPLS:load(arg)
 
 	-- load tap SFX
 	self.data.tapSFX = {accumulateTracking = {}}
-	local tapSoundIndex = assert(tapSound[tonumber(setting.get("TAP_SOUND"))], "invalid tap sound")
+	local tapSoundIndex = assert(tapSound[tonumber(Setting.get("TAP_SOUND"))], "invalid tap sound")
 	for k, v in pairs(tapSoundIndex) do
 		if k ~= "name" and type(v) == "string" then
-			local audio = audioManager.newAudio(v, "se")
-			audioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
+			local audio = AudioManager.newAudio(v, "se")
+			AudioManager.setVolume(audio, tapSoundIndex.volumeMultipler)
 			self.data.tapSFX[k] = audio
 
 			local list = {
 				alreadyPlayed = false, -- for note sound accumulation
-				audioManager.clone(audio)
+				AudioManager.clone(audio)
 			} -- cloned things
 			self.data.tapSFX[audio] = list
 			self.data.tapSFX.accumulateTracking[#self.data.tapSFX.accumulateTracking + 1] = list
 		end
 	end
-	self.data.tapNoteAccumulation = assert(tonumber(setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
+	self.data.tapNoteAccumulation = assert(tonumber(Setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
 
 	-- load pause system
 	self.data.pauseObject = pause({
@@ -616,7 +616,7 @@ function DEPLS:load(arg)
 				-- assume replay data is used to fill information
 				liveClearCallback(self)
 			else
-				gamestate.leave(loadingInstance.getInstance())
+				Gamestate.leave(LoadingInstance.getInstance())
 			end
 		end,
 		resume = function()
@@ -639,7 +639,7 @@ function DEPLS:load(arg)
 			end
 		end,
 		restart = function()
-			gamestate.replace(loadingInstance.getInstance(), "livesim2", arg)
+			Gamestate.replace(LoadingInstance.getInstance(), "livesim2", arg)
 		end,
 		failAnimation = self.data.liveUI:getFailAnimation(),
 	}, nil, self.persist.replayMode and tostring(self.persist.replayMode.filename))
@@ -649,7 +649,7 @@ function DEPLS:load(arg)
 		local keymap = {}
 		local i = 9
 
-		for w in setting.get("IDOL_KEYS"):gmatch("[^\t]+") do
+		for w in Setting.get("IDOL_KEYS"):gmatch("[^\t]+") do
 			-- keymap is leftmost, but sif is rightmost
 			log.debugf("livesim2", "keymap: %q, lane: %d", w, i)
 			keymap[w] = i
@@ -703,8 +703,8 @@ function DEPLS:load(arg)
 	-- if there's no background, load default
 	if not(self.data.background) then
 		local num = self.persist.beatmapRandomized and arg.summary.randomStar or arg.summary.star
-		self.data.background = backgroundLoader.load(util.clamp(
-			(loadBackground and num > 0) and num or assert(tonumber(setting.get("BACKGROUND_IMAGE"))),
+		self.data.background = backgroundLoader.load(Util.clamp(
+			(loadBackground and num > 0) and num or assert(tonumber(Setting.get("BACKGROUND_IMAGE"))),
 			1, 12
 		))
 	end
@@ -736,7 +736,7 @@ function DEPLS:load(arg)
 	self.data.unitIcons = {}
 	local unitDefaultName = {}
 	local unitImageCache = {}
-	local idolName = setting.get("IDOL_IMAGE")
+	local idolName = Setting.get("IDOL_IMAGE")
 	log.debug("livesim2", "default idol name: "..string.gsub(idolName, "\t", "\\t"))
 	for w in string.gmatch(idolName, "[^\t]+") do
 		unitDefaultName[#unitDefaultName + 1] = w
@@ -761,8 +761,8 @@ function DEPLS:load(arg)
 					image = assert(self.assets.images.dummyUnit)
 				else
 					local file = "unit_icon/"..unitDefaultName[10 - i]
-					if util.fileExists(file) then
-						image = assetCache.loadImage("unit_icon/"..unitDefaultName[10 - i])
+					if Util.fileExists(file) then
+						image = AssetCache.loadImage("unit_icon/"..unitDefaultName[10 - i])
 					else
 						image = assert(self.assets.images.dummyUnit)
 					end
@@ -785,7 +785,7 @@ function DEPLS:load(arg)
 
 	-- Initialize skill system
 	self.data.skill = skill(
-		setting.get("SKILL_POPUP") == 1,
+		Setting.get("SKILL_POPUP") == 1,
 		self.data.liveUI,
 		self.data.noteManager,
 		self.persist.randomGeneratedSeed
@@ -857,7 +857,7 @@ function DEPLS:start(arg)
 
 	self.persist.startTimestamp = os.time()
 	self.persist.render = arg.render
-	self.persist.averageNoteDelta = assert(tonumber(setting.get("IMPROVED_SYNC"))) == 1
+	self.persist.averageNoteDelta = assert(tonumber(Setting.get("IMPROVED_SYNC"))) == 1
 	self.persist.audioNoteTimer = 0
 
 	-- window dimensions
@@ -1227,10 +1227,10 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 			if self.persist.liveDelayCounter <= 0 and not(isPaused) then
 				return pauseGame(self)
 			elseif isLiveClear(self) then
-				return gamestate.leave(loadingInstance.getInstance())
+				return Gamestate.leave(LoadingInstance.getInstance())
 			end
 		else
-			return gamestate.leave(loadingInstance.getInstance())
+			return Gamestate.leave(LoadingInstance.getInstance())
 		end
 	elseif key == "pause" then
 		if isPaused then
@@ -1277,7 +1277,7 @@ DEPLS:registerEvent("touchmoved", livesimInputMoved)
 DEPLS:registerEvent("touchreleased", livesimInputReleased)
 
 DEPLS:registerEvent("focus", function(self)
-	if util.isMobile() then
+	if Util.isMobile() then
 		pauseGame(self)
 	end
 

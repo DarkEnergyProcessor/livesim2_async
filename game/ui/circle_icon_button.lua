@@ -6,12 +6,12 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
 
-local ciButton = Luaoop.class("Livesim2.CircleIconButton", glow.element)
+local ciButton = Luaoop.class("Livesim2.CircleIconButton", Glow.Element)
 
 local function createCircleMesh(r1, r2, segment)
 	segment = segment or (360 * math.max(360 / r1, 1))
@@ -95,7 +95,7 @@ function ciButton:setShadow(r2, angle, offset)
 end
 
 function ciButton:_pressed(_, x, y)
-	if util.distance(x, y, self.radius, self.radius) <= self.radius then
+	if Util.distance(x, y, self.radius, self.radius) <= self.radius then
 		self.isPressed = true
 		self.ripple:pressed(x, y)
 		return false

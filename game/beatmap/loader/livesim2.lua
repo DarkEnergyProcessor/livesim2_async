@@ -6,7 +6,7 @@ local bit = require("bit")
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local ls2 = require("libs.ls2")
-local util = require("util")
+local Util = require("util")
 local log = require("logging")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
@@ -257,8 +257,8 @@ function ls2Loader:getAudioPathList()
 	local paths = {nil, nil}
 
 	if metadata.song_file then
-		paths[1] = util.removeExtension("audio/"..metadata.song_file)
-		paths[2] = util.removeExtension(metadata.song_file)
+		paths[1] = Util.removeExtension("audio/"..metadata.song_file)
+		paths[2] = Util.removeExtension(metadata.song_file)
 	end
 
 	return paths
@@ -399,7 +399,7 @@ function ls2Loader:getLiveClearVoice()
 		local fdata = love.filesystem.newFileData(data, "_."..ext)
 
 		-- May not supported
-		local s, msg = pcall(util.newDecoder, fdata)
+		local s, msg = pcall(Util.newDecoder, fdata)
 		if s then
 			return msg
 		else
@@ -422,7 +422,7 @@ function ls2Loader:getLyrics()
 			if name == "lyrics.srt" then
 				return love.filesystem.newFileData(cont, "lyrics.srt")
 			elseif name == "lyrics.srt.gz" then
-				return util.decompressToData(cont, "gzip")
+				return Util.decompressToData(cont, "gzip")
 			end
 		end
 	end

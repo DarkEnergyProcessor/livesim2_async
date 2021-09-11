@@ -5,14 +5,14 @@
 local lsr = require("libs.lsr")
 
 local async = require("async")
-local setting = require("setting")
-local gamestate = require("gamestate")
+local Setting = require("setting")
+local Gamestate = require("gamestate")
 local render = require("render")
 
 local beatmapList = require("game.beatmap.list")
-local loadingInstance = require("loading_instance")
+local LoadingInstance = require("loading_instance")
 
-local playPreloader = gamestate.create {
+local playPreloader = Gamestate.create {
 	fonts = {},
 	images = {},
 	audios = {}
@@ -58,7 +58,7 @@ function playPreloader:load(arg)
 		self.persist.alreadyLoaded = true
 		self.persist.autoplayMode = arg.autoplay
 		if arg.storyboard == nil then
-			self.persist.storyboardMode = setting.get("STORYBOARD") == 1
+			self.persist.storyboardMode = Setting.get("STORYBOARD") == 1
 		else
 			self.persist.storyboardMode = arg.storyboard
 		end
@@ -71,7 +71,7 @@ function playPreloader:start(arg)
 		render.initialize(arg.render)
 		r = true
 	end
-	gamestate.replace(loadingInstance.getInstance(), "livesim2", {
+	Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
 		beatmapName = self.data.beatmapName,
 		summary = self.data.beatmapData,
 		autoplay = self.persist.autoplayMode,
@@ -85,7 +85,7 @@ function playPreloader:start(arg)
 end
 
 function playPreloader.resume()
-	gamestate.leave(loadingInstance.getInstance())
+	Gamestate.leave(LoadingInstance.getInstance())
 end
 
 return playPreloader

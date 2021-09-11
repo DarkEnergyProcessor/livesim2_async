@@ -5,7 +5,7 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local assetCache = require("asset_cache")
+local AssetCache = require("asset_cache")
 local mainFont = require("font")
 local color = require("color")
 
@@ -14,7 +14,7 @@ local backNavigation = Luaoop.class("Livesim2.BackNavigation", imageButtonUI)
 
 function backNavigation:new(name)
 	local font = mainFont.get(22)
-	local images = assetCache.loadMultipleImages({
+	local images = AssetCache.loadMultipleImages({
 		"assets/image/ui/com_button_01.png",
 		"assets/image/ui/com_button_01se.png",
 		"assets/image/ui/com_win_02.png"

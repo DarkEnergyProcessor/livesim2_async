@@ -6,11 +6,11 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local Yohane = require("libs.Yohane")
 
-local assetCache = require("asset_cache")
-local audioManager = require("audio_manager")
+local AssetCache = require("asset_cache")
+local AudioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 
 local note = require("game.live.note")
 local liveUIBase = require("game.live.uibase")
@@ -108,7 +108,7 @@ function skill:__construct(fullNavi, liveUI, noteManager, seed)
 	self.liveUI = liveUI
 	self.unitPosition = liveUI:getLanePosition()
 	self.noteManager = noteManager
-	self.images = assetCache.loadMultipleImages({
+	self.images = AssetCache.loadMultipleImages({
 		"assets/image/live/skill_text.png",
 		"assets/image/live/unit_skill_icon.png"
 	}, {mipmaps = true})
@@ -147,7 +147,7 @@ function skill:register(data, condition)
 
 	local obj = {
 		image = assert(skill.list[data.type], "invalid skill type"),
-		chance = util.clamp(data.chance, 0, 1),
+		chance = Util.clamp(data.chance, 0, 1),
 		rarity = assert(skill.rarity[data.rarity:lower()], "invalid skill rarity"),
 		callback = skill.callbackSkill[data.type],
 		navi = data.image,
@@ -182,8 +182,8 @@ function skill:_triggerSkill(v)
 
 		if v.audio then
 			log.debugf("skill", "play skill audio %s", tostring(v.audio))
-			audioManager.stop(v.audio)
-			audioManager.play(v.audio)
+			AudioManager.stop(v.audio)
+			AudioManager.play(v.audio)
 		end
 	end
 
@@ -249,7 +249,7 @@ function skill:update(dt, paused)
 end
 
 function skill:noteCallback(judgement, token, star)
-	assert(util.isValueInArray(validCondition, judgement), "invalid judgement")
+	assert(Util.isValueInArray(validCondition, judgement), "invalid judgement")
 
 	for _, v in ipairs(self.skillCondition[judgement]) do
 		self:_handleSkill(v, 1)

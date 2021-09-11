@@ -6,12 +6,12 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local util = require("util")
+local Util = require("util")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local colorTheme = require("game.color_theme")
 
-local ProgressBar = Luaoop.class("Livesim2.ProgressBar", glow.element)
+local ProgressBar = Luaoop.class("Livesim2.ProgressBar", Glow.Element)
 
 ---@param width number
 ---@param height number
@@ -19,7 +19,7 @@ local ProgressBar = Luaoop.class("Livesim2.ProgressBar", glow.element)
 ---@param value number
 function ProgressBar:new(width, height, maxvalue, value)
 	if ProgressBar.emptyCanvas == nil then
-		ProgressBar.emptyCanvas = util.newCanvas(128, 128)
+		ProgressBar.emptyCanvas = Util.newCanvas(128, 128)
 		ProgressBar.emptyCanvas:setWrap("repeat", "repeat")
 	end
 
@@ -58,7 +58,7 @@ function ProgressBar:render(x, y)
 	if math.abs(self.value) == math.huge then
 		self.usedColor = self.foregroundColor
 	else
-		v = util.clamp(self.value, 0, self.maxValue)
+		v = Util.clamp(self.value, 0, self.maxValue)
 	end
 
 	love.graphics.setShader(ProgressBar.shader)

@@ -7,7 +7,7 @@ local yaml = require("libs.tinyyaml")
 
 local log = require("logging")
 local love = require("love")
-local util = require("util")
+local Util = require("util")
 local beatmap = require("beatmap")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
@@ -65,10 +65,10 @@ function deplsLoader:getCustomUnitInformation()
 		if beatmapUnitInfo[i] then
 			res[i] = beatmapUnitInfo[i]
 		else
-			local filename = util.substituteExtension(internal.path.."unit_pos_"..i, customUnitPossibleExt)
+			local filename = Util.substituteExtension(internal.path.."unit_pos_"..i, customUnitPossibleExt)
 
 			if filename then
-				if util.getExtension(filename) == "txt" then
+				if Util.getExtension(filename) == "txt" then
 					local imageFile = love.filesystem.read(filename)
 
 					if not(imageCache[imageFile]) then
@@ -109,9 +109,9 @@ function deplsLoader:getCoverArt(noimage)
 		return coverInfo
 	else
 		local coverName = internal.path.."cover.txt"
-		local coverImage = util.substituteExtension(internal.path.."cover", coverArtExtensions)
+		local coverImage = Util.substituteExtension(internal.path.."cover", coverArtExtensions)
 
-		if util.fileExists(coverName) and coverImage then
+		if Util.fileExists(coverName) and coverImage then
 			local cover = {}
 			local lineIter = love.filesystem.lines(coverName)
 
@@ -143,7 +143,7 @@ function deplsLoader:getAudio()
 	end
 end
 
-local VIDEO_EXTENSION = util.hasExtendedVideoSupport() and
+local VIDEO_EXTENSION = Util.hasExtendedVideoSupport() and
 	{".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or
 	{".ogg", ".ogv"}
 
@@ -155,14 +155,14 @@ function deplsLoader:getBackground(video)
 	local videoObj
 
 	if video then
-		local f = util.substituteExtension(internal.path.."video_background", VIDEO_EXTENSION)
+		local f = Util.substituteExtension(internal.path.."video_background", VIDEO_EXTENSION)
 		if f then
-			videoObj = util.newVideoStream(f)
+			videoObj = Util.newVideoStream(f)
 		end
 	end
 
 	if mode == nil or mode == 0 then
-		local bgfile = util.substituteExtension(internal.path.."background", coverArtExtensions)
+		local bgfile = Util.substituteExtension(internal.path.."background", coverArtExtensions)
 		if bgfile then
 			local mode = {1}
 			local backgrounds = {}
@@ -171,7 +171,7 @@ function deplsLoader:getBackground(video)
 			mode[#mode + 1] = image
 
 			for i = 1, 4 do
-				bgfile = util.substituteExtension(internal.path.."background-"..i, coverArtExtensions)
+				bgfile = Util.substituteExtension(internal.path.."background-"..i, coverArtExtensions)
 				if bgfile then
 					backgrounds[i] = love.image.newImageData(bgfile)
 				end
@@ -284,7 +284,7 @@ function deplsLoader:getBackground(video)
 			end
 
 			return mode
-		elseif util.fileExists(internal.path.."background.txt") then
+		elseif Util.fileExists(internal.path.."background.txt") then
 			-- love.filesystem.read returns 2 values, and it can be problem
 			-- for background ID 10 and 11, so pass "nil" as 2nd argument of tonumber
 			local n = tonumber(love.filesystem.read(internal.path.."background.txt"), nil)
@@ -315,7 +315,7 @@ function deplsLoader:getStoryboardData()
 		embeddedStory.path = internal.path
 		return embeddedStory
 	end
-	local file = util.substituteExtension(internal.path.."storyboard", {".yaml", ".yml"}, false)
+	local file = Util.substituteExtension(internal.path.."storyboard", {".yaml", ".yml"}, false)
 
 	if file then
 		return {
@@ -326,7 +326,7 @@ function deplsLoader:getStoryboardData()
 	end
 
 	file = internal.path.."storyboard.lua"
-	if util.fileExists(file) then
+	if Util.fileExists(file) then
 		local script = love.filesystem.read(file)
 		-- Do not load bytecode
 		if script:find("\27", 1, true) == nil and loadstring(script) then
@@ -346,9 +346,9 @@ function deplsLoader:getLiveClearVoice()
 	local audio = internal.beatmap:getLiveClearVoice()
 
 	if not(audio) then
-		local file = util.substituteExtension(internal.path.."live_clear", util.getNativeAudioExtensions())
+		local file = Util.substituteExtension(internal.path.."live_clear", Util.getNativeAudioExtensions())
 		if file then
-			local s, msg = pcall(util.newDecoder, file)
+			local s, msg = pcall(Util.newDecoder, file)
 			if s then
 				audio = msg
 			else
@@ -377,11 +377,11 @@ function deplsLoader:getLyrics()
 	local lyrics = internal.beatmap:getLyrics()
 
 	if not(lyrics) then
-		if util.fileExists(internal.path.."lyrics.srt") then
+		if Util.fileExists(internal.path.."lyrics.srt") then
 			lyrics = love.filesystem.newFileData(internal.path.."lyrics.srt")
-		elseif util.fileExists(internal.path.."lyrics.srt.gz") then
+		elseif Util.fileExists(internal.path.."lyrics.srt.gz") then
 			local temp = love.filesystem.newFileData(internal.path.."lyrics.srt")
-			lyrics = util.decompressToData(temp, "gzip")
+			lyrics = Util.decompressToData(temp, "gzip")
 		end
 	end
 
@@ -390,7 +390,7 @@ end
 
 return function(path)
 	-- if there's beatmaplist.yml then use that
-	if util.fileExists(path.."beatmaplist.yml") then
+	if Util.fileExists(path.."beatmaplist.yml") then
 		-- multi-beatmap
 		local beatmaps = yaml.parse((love.filesystem.read(path.."beatmaplist.yml")))
 		local tempt = {}
@@ -430,7 +430,7 @@ return function(path)
 		-- get list of files named "beatmap"
 		local possibleBeatmapCandidate = {}
 		for _, file in ipairs(love.filesystem.getDirectoryItems(path)) do
-			if util.removeExtension(file) == "beatmap" then
+			if Util.removeExtension(file) == "beatmap" then
 				possibleBeatmapCandidate[#possibleBeatmapCandidate + 1] = path..file
 			end
 		end
@@ -441,14 +441,14 @@ return function(path)
 
 		-- make sure beatmap.json has highest priority, then ls2
 		for i = 1, #possibleBeatmapCandidate do
-			if util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
+			if Util.getExtension(possibleBeatmapCandidate[i]):lower() == "ls2" then
 				table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
 				break
 			end
 		end
 
 		for i = 1, #possibleBeatmapCandidate do
-			if util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
+			if Util.getExtension(possibleBeatmapCandidate[i]):lower() == "json" then
 				table.insert(possibleBeatmapCandidate, 1, table.remove(possibleBeatmapCandidate, i))
 				break
 			end

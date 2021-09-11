@@ -8,9 +8,9 @@ local Yohane = require("libs.Yohane")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local assetCache = require("asset_cache")
-local setting = require("setting")
-local util = require("util")
+local AssetCache = require("asset_cache")
+local Setting = require("setting")
+local Util = require("util")
 
 local note = {}
 
@@ -159,7 +159,7 @@ function noteManager:__construct(param)
 	-- long note trail image
 	self.lnTrailImage = param.trailImage
 	-- note speed
-	self.noteSpeed = param.noteSpeed or setting.get("NOTE_SPEED") * 0.001
+	self.noteSpeed = param.noteSpeed or Setting.get("NOTE_SPEED") * 0.001
 	-- list of notes
 	self.notesList = {}
 	-- list of notes, ordered by event handling
@@ -246,7 +246,7 @@ function noteManager:__construct(param)
 	-- autoplay flag
 	self.autoplay = not(not(param.autoplay))
 	-- timing window image
-	self.timingImage = assetCache.loadImage("assets/image/live/skill_icon.png", {mipmaps = true})
+	self.timingImage = AssetCache.loadImage("assets/image/live/skill_icon.png", {mipmaps = true})
 	-- timing window++ parameters
 	self.redTimingWindow = {duration = 0, rotation = 0}
 	-- timing window+ parameters
@@ -256,7 +256,7 @@ function noteManager:__construct(param)
 
 	-- Workaround color clamping in LOVE 11.0
 	-- https://github.com/MikuAuahDark/livesim2/issues/22
-	if util.compareLOVEVersion(11, 0) >= 0 then
+	if Util.compareLOVEVersion(11, 0) >= 0 then
 		self.workaroundColor = love.graphics.newShader([[
 			vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
 			{
@@ -268,7 +268,7 @@ function noteManager:__construct(param)
 	end
 
 	-- Note style needs additional parsing
-	local noteStyle = setting.get("NOTE_STYLE")
+	local noteStyle = Setting.get("NOTE_STYLE")
 	-- bit pattern for note style: 00000000 iiiiiiss ssssffff ffpppppp
 	--
 	-- Any values there range from 1-63 (0 is invalid)
@@ -610,10 +610,10 @@ function normalMovingNote:update(dt)
 	if self.vanishType > 0 then
 		if self.vanishType == 1 then
 			-- Hidden note
-			self.opacity = util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) / self.noteSpeed * 5, 0, 1)
+			self.opacity = Util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) / self.noteSpeed * 5, 0, 1)
 		elseif self.vanishType == 2 then
 			-- Sudden note
-			self.opacity = util.clamp((self.elapsedTime - self.noteSpeed * 0.4) / self.noteSpeed * 5, 0, 1)
+			self.opacity = Util.clamp((self.elapsedTime - self.noteSpeed * 0.4) / self.noteSpeed * 5, 0, 1)
 		end
 	end
 
@@ -766,12 +766,12 @@ function longMovingNote:update(dt)
 		local x = self.elapsedTime - self.lnSpawnTime
 		if self.vanishType == 1 then
 			-- Hidden note
-			self.opacity = util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) * 5, 0, 1)
-			self.lnOpacity = util.clamp((self.noteSpeed * 2/3 - x) * 5, 0, 1)
+			self.opacity = Util.clamp((self.noteSpeed * 2/3 - self.elapsedTime) * 5, 0, 1)
+			self.lnOpacity = Util.clamp((self.noteSpeed * 2/3 - x) * 5, 0, 1)
 		elseif self.vanishType == 2 then
 			-- Sudden note
-			self.opacity = util.clamp((self.elapsedTime - self.noteSpeed * 0.4) * 5, 0, 1)
-			self.lnOpacity = util.clamp((x - self.noteSpeed * 0.4) * 5, 0, 1)
+			self.opacity = Util.clamp((self.elapsedTime - self.noteSpeed * 0.4) * 5, 0, 1)
+			self.lnOpacity = Util.clamp((x - self.noteSpeed * 0.4) * 5, 0, 1)
 		end
 	end
 

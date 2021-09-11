@@ -6,9 +6,9 @@ local Luaoop = require("libs.Luaoop")
 local utf8V = require("libs.utf8_validator")
 local love = require("love")
 local bit = require("bit")
-local util = require("util")
+local Util = require("util")
 local log = require("logging")
-local setting = require("setting")
+local Setting = require("setting")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
@@ -286,7 +286,7 @@ local cbfLoader = Luaoop.class("beatmap.CBF", baseLoader)
 function cbfLoader:__construct(path)
 	local internal = Luaoop.class.data(self)
 
-	if util.fileExists(path.."projectConfig.txt") and util.fileExists(path.."beatmap.txt") then
+	if Util.fileExists(path.."projectConfig.txt") and Util.fileExists(path.."beatmap.txt") then
 		-- load conf
 		local conf = {}
 		for key, value in love.filesystem.read(path.."projectConfig.txt"):gmatch("%[([^%]]+)%];([^;]+);") do
@@ -298,15 +298,15 @@ function cbfLoader:__construct(path)
 
 		-- check for unit icon loading strategy
 		internal.loadUnitMethods = {}
-		internal.loadUnitMethods[1] = util.directoryExist(path.."Cards")
-		if util.directoryExist(path.."Custom Cards") and util.fileExists(path.."Custom Cards/list.txt") then
+		internal.loadUnitMethods[1] = Util.directoryExist(path.."Cards")
+		if Util.directoryExist(path.."Custom Cards") and Util.fileExists(path.."Custom Cards/list.txt") then
 			local out = {}
 
 			for line in love.filesystem.lines(path.."Custom Cards/list.txt") do
 				if #line > 0 then
 					local idx, name = line:match("([^/]+)/([^;]+)")
 
-					if util.fileExists(path.."Custom Cards/"..idx..".png") then
+					if Util.fileExists(path.."Custom Cards/"..idx..".png") then
 						out[tostring(idx)] = name
 					end
 				end
@@ -360,7 +360,7 @@ function cbfLoader:getNotesList()
 	elseif internal.config.SONG_ATTRIBUTE == "Cool" then
 		attribute = 3
 	else
-		attribute = setting.get("LLP_SIFT_DEFATTR")
+		attribute = Setting.get("LLP_SIFT_DEFATTR")
 	end
 
 	local readNotesData = {}
@@ -456,7 +456,7 @@ end
 local supportedImages = {".png", ".jpg", ".jpeg", ".bmp"}
 function cbfLoader:getCoverArt()
 	local internal = Luaoop.class.data(self)
-	local file = util.substituteExtension(internal.path.."cover", supportedImages)
+	local file = Util.substituteExtension(internal.path.."cover", supportedImages)
 
 	if file then
 		return {
@@ -490,7 +490,7 @@ local function getUnitByID(id, path, s1, s2)
 	-- Try stategy 1: look at "Cards" folder for custom cards
 	if s1 then
 		local a = path.."Cards/"..id..".png"
-		if util.fileExists(a) then
+		if Util.fileExists(a) then
 			return love.image.newImageData(a)
 		end
 	end
@@ -499,7 +499,7 @@ local function getUnitByID(id, path, s1, s2)
 	if s2 then
 		if s2[id] then
 			local a = path.."Custom Cards/"..id..".png"
-			if util.fileExists(a) then
+			if Util.fileExists(a) then
 				return love.image.newImageData(a)
 			end
 		end
@@ -507,13 +507,13 @@ local function getUnitByID(id, path, s1, s2)
 
 	-- Try current beatmap directory
 	local a = path..id..".png"
-	if util.fileExists(a) then
+	if Util.fileExists(a) then
 		return love.image.newImageData(a)
 	end
 
 	-- Try "unit_icon" directory
 	a = "unit_icon/"..id..".png"
-	if util.fileExists(a) then
+	if Util.fileExists(a) then
 		return love.image.newImageData(a)
 	end
 
@@ -549,7 +549,7 @@ function cbfLoader:getCustomUnitInformation()
 	local internal = Luaoop.class.data(self)
 	local unitData = {}
 
-	if util.fileExists(internal.path.."characterPositions.txt") then
+	if Util.fileExists(internal.path.."characterPositions.txt") then
 		local compositionCache = {}
 
 		for line in love.filesystem.lines(internal.path.."characterPositions.txt") do
@@ -576,7 +576,7 @@ end
 
 function cbfLoader:getLiveClearVoice()
 	local internal = Luaoop.class.data(self)
-	local file = util.substituteExtension(internal.path.."liveShowClearSFX", util.getNativeAudioExtensions())
+	local file = Util.substituteExtension(internal.path.."liveShowClearSFX", Util.getNativeAudioExtensions())
 	if file then
 		local s, msg = pcall(love.sound.newDecoder, file)
 		if s then
@@ -593,7 +593,7 @@ local ASPECT_RATIO = {16/9, 16/10, 3/2, 4/3}
 
 function cbfLoader:getBackground()
 	local internal = Luaoop.class.data(self)
-	local background = util.substituteExtension(internal.path.."background", supportedImages)
+	local background = Util.substituteExtension(internal.path.."background", supportedImages)
 
 	if background then
 		local image = love.image.newImageData(background)

@@ -4,14 +4,14 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local assetCache = require("asset_cache")
-local glow = require("game.afterglow")
+local AssetCache = require("asset_cache")
+local Glow = require("game.afterglow")
 
-local checkbox = Luaoop.class("Livesim2.CheckboxUI", glow.element)
+local checkbox = Luaoop.class("Livesim2.CheckboxUI", Glow.Element)
 
 function checkbox:new(checked, scale)
 	if not(checkbox.images) then
-		checkbox.images = assetCache.loadMultipleImages({
+		checkbox.images = AssetCache.loadMultipleImages({
 			"assets/image/ui/com_etc_292.png",
 			"assets/image/ui/com_etc_293.png"
 		}, {mipmaps = true})

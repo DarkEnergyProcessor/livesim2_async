@@ -8,7 +8,7 @@ local Luaoop = require("libs.Luaoop")
 local nbt = require("libs.nbt")
 
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 
 local md5 = require("game.md5")
 
@@ -45,7 +45,7 @@ local function readByte(f)
 end
 
 local function seek(f, pos)
-	if f.typeOf or util.isFileWrapped(f) then
+	if f.typeOf or Util.isFileWrapped(f) then
 		f:seek(pos)
 	else
 		f:seek("set", pos)
@@ -85,9 +85,9 @@ function beatmap.load(file)
 		assert(compressedSize == uncompressedSize, "beatmap data size mismatch")
 		beatmapDataString = file:read(uncompressedSize)
 	elseif compressionType == 1 then
-		beatmapDataString = util.decompressToString(file:read(compressedSize), "gzip")
+		beatmapDataString = Util.decompressToString(file:read(compressedSize), "gzip")
 	elseif compressionType == 2 then
-		beatmapDataString = util.decompressToString(file:read(compressedSize), "zlib")
+		beatmapDataString = Util.decompressToString(file:read(compressedSize), "zlib")
 	else
 		error("unsupported compression mode")
 	end

@@ -9,24 +9,24 @@ local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
 local mainFont = require("font")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
-local util = require("util")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
+local Util = require("util")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 -- UI stuff
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
 
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
 -- because they're not reusable
-local playButton = Luaoop.class("Livesim2.MainMenu.PlayButton", glow.element)
-local changeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", glow.element)
-local settingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", glow.element)
+local PlayButton = Luaoop.class("Livesim2.MainMenu.PlayButton", Glow.Element)
+local ChangeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", Glow.Element)
+local SettingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", Glow.Element)
 
-function playButton:new(state)
+function PlayButton:new(state)
 	local text = L"menu:play"
 	self.image = state.assets.images.play
 	self.playText = love.graphics.newText(state.data.playFont)
@@ -39,31 +39,31 @@ function playButton:new(state)
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
 
-	self:addEventListener("mousepressed", playButton._pressed)
-	self:addEventListener("mousereleased", playButton._released)
-	self:addEventListener("mousecanceled", playButton._released)
+	self:addEventListener("mousepressed", PlayButton._pressed)
+	self:addEventListener("mousereleased", PlayButton._released)
+	self:addEventListener("mousecanceled", PlayButton._released)
 end
 
-function playButton:update(dt)
+function PlayButton:update(dt)
 	self.ripple:update(dt)
 end
 
-function playButton:_pressed(_, x, y)
+function PlayButton:_pressed(_, x, y)
 	self.isPressed = true
 	self.ripple:pressed(x, y)
 end
 
-function playButton:_released(_)
+function PlayButton:_released(_)
 	self.isPressed = false
 	self.ripple:released()
 end
 
-function playButton:render(x, y)
+function PlayButton:render(x, y)
 	self.x, self.y = x, y
 	love.graphics.setColor(color.hex55CAFD)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	util.drawText(self.playText, x + 218, y + 212)
+	Util.drawText(self.playText, x + 218, y + 212)
 	love.graphics.rectangle("fill", x + 6, y, 34, self.height)
 	love.graphics.rectangle("fill", x + 50, y, 34, self.height)
 	love.graphics.circle("fill", x + 146, y + 114, 35)
@@ -82,7 +82,7 @@ function playButton:render(x, y)
 	end
 end
 
-function changeUnitsButton:new(state)
+function ChangeUnitsButton:new(state)
 	local text = L"menu:changeUnits"
 	self.image = state.assets.images.changeUnits
 	self.text = love.graphics.newText(state.data.titleFont)
@@ -95,31 +95,31 @@ function changeUnitsButton:new(state)
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
 
-	self:addEventListener("mousepressed", changeUnitsButton._pressed)
-	self:addEventListener("mousereleased", changeUnitsButton._released)
-	self:addEventListener("mousecanceled", changeUnitsButton._released)
+	self:addEventListener("mousepressed", ChangeUnitsButton._pressed)
+	self:addEventListener("mousereleased", ChangeUnitsButton._released)
+	self:addEventListener("mousecanceled", ChangeUnitsButton._released)
 end
 
-function changeUnitsButton:update(dt)
+function ChangeUnitsButton:update(dt)
 	self.ripple:update(dt)
 end
 
-function changeUnitsButton:_pressed(_, x, y)
+function ChangeUnitsButton:_pressed(_, x, y)
 	self.isPressed = true
 	self.ripple:pressed(x, y)
 end
 
-function changeUnitsButton:_released(_)
+function ChangeUnitsButton:_released(_)
 	self.isPressed = false
 	self.ripple:released()
 end
 
-function changeUnitsButton:render(x, y)
+function ChangeUnitsButton:render(x, y)
 	self.x, self.y = x, y
 	love.graphics.setColor(color.hexFF4FAE)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	util.drawText(self.text, x + 395, y + 100)
+	Util.drawText(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 11, y + 22, 0, 0.32, 0.32)
 
 	if self.ripple:isActive() then
@@ -131,7 +131,7 @@ function changeUnitsButton:render(x, y)
 	end
 end
 
-function settingsButton:new(state)
+function SettingsButton:new(state)
 	local text = L"menu:settings"
 	self.image = state.assets.images.settingsDualGear
 	self.text = love.graphics.newText(state.data.titleFont)
@@ -144,31 +144,31 @@ function settingsButton:new(state)
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
 
-	self:addEventListener("mousepressed", settingsButton._pressed)
-	self:addEventListener("mousereleased", settingsButton._released)
-	self:addEventListener("mousecanceled", settingsButton._released)
+	self:addEventListener("mousepressed", SettingsButton._pressed)
+	self:addEventListener("mousereleased", SettingsButton._released)
+	self:addEventListener("mousecanceled", SettingsButton._released)
 end
 
-function settingsButton:update(dt)
+function SettingsButton:update(dt)
 	self.ripple:update(dt)
 end
 
-function settingsButton:_pressed(_, x, y)
+function SettingsButton:_pressed(_, x, y)
 	self.isPressed = true
 	self.ripple:pressed(x, y)
 end
 
-function settingsButton:_released(_)
+function SettingsButton:_released(_)
 	self.isPressed = false
 	self.ripple:released()
 end
 
-function settingsButton:render(x, y)
+function SettingsButton:render(x, y)
 	self.x, self.y = x, y
 	love.graphics.setColor(color.hexFF6854)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(color.white)
-	util.drawText(self.text, x + 395, y + 100)
+	Util.drawText(self.text, x + 395, y + 100)
 	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.32, 0.32)
 
 	if self.ripple:isActive() then
@@ -185,17 +185,17 @@ end
 local function makeEnterGamestateFunction(name, noloading)
 	if noloading then
 		return function()
-			return gamestate.enter(nil, name)
+			return Gamestate.enter(nil, name)
 		end
 	else
 		return function()
-			return gamestate.enter(loadingInstance.getInstance(), name)
+			return Gamestate.enter(LoadingInstance.getInstance(), name)
 		end
 	end
 end
 
 local mipmaps = {mipmaps = true}
-local mainMenu = gamestate.create {
+local mainMenu = Gamestate.create {
 	fonts = {},
 	images = {
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
@@ -205,7 +205,7 @@ local mainMenu = gamestate.create {
 }
 
 function mainMenu:load()
-	glow.clear()
+	Glow.clear()
 
 	if not(self.data.playFont) then
 		self.data.playFont = mainFont.get(92)
@@ -245,29 +245,29 @@ function mainMenu:load()
 	end
 
 	if not(self.data.playButton) then
-		self.data.playButton = playButton(self)
+		self.data.playButton = PlayButton(self)
 		self.data.playButton:addEventListener("mousereleased", makeEnterGamestateFunction("beatmapSelect"))
 	end
-	glow.addElement(self.data.playButton, 46, 28)
+	Glow.addElement(self.data.playButton, 46, 28)
 
 	if not(self.data.changeUnitsButton) then
-		self.data.changeUnitsButton = changeUnitsButton(self)
+		self.data.changeUnitsButton = ChangeUnitsButton(self)
 		self.data.changeUnitsButton:addEventListener("mousereleased", makeEnterGamestateFunction("changeUnits"))
 	end
-	glow.addElement(self.data.changeUnitsButton, 497, 29)
+	Glow.addElement(self.data.changeUnitsButton, 497, 29)
 
 	if not(self.data.settingsButton) then
-		self.data.settingsButton = settingsButton(self)
+		self.data.settingsButton = SettingsButton(self)
 		self.data.settingsButton:addEventListener("mousereleased", makeEnterGamestateFunction("settings"))
 	end
-	glow.addElement(self.data.settingsButton, 497, 207)
+	Glow.addElement(self.data.settingsButton, 497, 207)
 
 	if not(self.data.background) then
 		self.data.background = backgroundLoader.load(2)
 	end
 
 	if not(self.data.grayGradient) then
-		self.data.grayGradient = util.gradient("vertical", color.transparent, color.hex6A6767F0)
+		self.data.grayGradient = Util.gradient("vertical", color.transparent, color.hex6A6767F0)
 	end
 end
 
@@ -279,10 +279,10 @@ function mainMenu:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	love.graphics.draw(self.data.grayGradient, -90, 576, 0, 1140, 64, 0, 0)
-	util.drawText(self.data.titleText, 38, 584)
-	util.drawText(self.data.verSemText, 921, 578)
-	util.drawText(self.data.verCodeText, 923, 604)
-	return glow.draw()
+	Util.drawText(self.data.titleText, 38, 584)
+	Util.drawText(self.data.verSemText, 921, 578)
+	Util.drawText(self.data.verCodeText, 923, 604)
+	return Glow.draw()
 end
 
 mainMenu:registerEvent("keyreleased", function(_, key)

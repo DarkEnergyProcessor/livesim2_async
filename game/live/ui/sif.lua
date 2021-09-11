@@ -10,8 +10,8 @@ local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 local vector = require("libs.nvec")
 
-local assetCache = require("asset_cache")
-local audioManager = require("audio_manager")
+local AssetCache = require("asset_cache")
+local AudioManager = require("audio_manager")
 local cache = require("cache")
 local async = require("async")
 local color = require("color")
@@ -61,7 +61,7 @@ function sifui:__construct(_, mineff)
 		{lily.newImageData, "assets/image/live/hp_num.png"}
 	})
 	self.timer = timer.new()
-	self.images = assetCache.loadMultipleImages({
+	self.images = AssetCache.loadMultipleImages({
 		-- live header
 		"assets/image/live/top.png", -- 1
 		-- effects
@@ -113,7 +113,7 @@ function sifui:__construct(_, mineff)
 		self.comboCheerAnim = cache.get("live_combo_cheer")
 		if not(self.comboCheerAnim) then
 			self.comboCheerAnim = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh")
-			local img = assetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
+			local img = AssetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
 			-- THIS VIOLATES YOHANE API FOR PERFORMANCE OPTIMIZATIONS
 			local function flashSetImage(flash, name, image)
 				local this = getmetatable(flash)
@@ -385,7 +385,7 @@ function sifui:update(dt, paused)
 		end
 		local flash = self.liveClearTime > 5 and self.fullComboAnim or self.liveClearAnim
 		if self.liveClearVoice and not(self.liveClearVoicePlayed) and flash == self.liveClearAnim then
-			audioManager.play(self.liveClearVoice)
+			AudioManager.play(self.liveClearVoice)
 			self.liveClearVoicePlayed = true
 		end
 		flash:update(dt * 1000)

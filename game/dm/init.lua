@@ -7,7 +7,7 @@ local TAG = "download"
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local log = require("logging")
-local postExit = require("post_exit")
+local PostExit = require("post_exit")
 local downloadObject = Luaoop.class("Livesim2.Download")
 local download = {list = {}}
 
@@ -164,7 +164,7 @@ love.handlers[TAG] = function(input, message, a, b, c)
 	end
 end
 
-postExit.add(function()
+PostExit.add(function()
 	local threadList = {}
 	for _, v in pairs(download.list) do
 		local internal = Luaoop.class.data(v)

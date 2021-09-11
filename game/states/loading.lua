@@ -17,12 +17,12 @@
 -- luacheck: read_globals DEPLS_VERSION
 
 local love = require("love")
-local gamestate = require("gamestate")
-local assetCache = require("asset_cache")
+local Gamestate = require("gamestate")
+local AssetCache = require("asset_cache")
 local color = require("color")
 local mainFont = require("font")
 
-local loading = gamestate.create {
+local loading = Gamestate.create {
 	-- Note that for loading screen gamestate
 	-- the contents of these 2 tables are ignored,
 	-- but the table itself must be exist.
@@ -66,9 +66,9 @@ function loading:start()
 	self.data.font = mainFont.get(24)
 	self.data.text = love.graphics.newText(self.data.font)
 	self.data.icon = {
-		assetCache.loadImage("new_icon1:assets/image/icon/new_icon_1024x1024_trim_1.png", temp),
-		assetCache.loadImage("new_icon2:assets/image/icon/new_icon_1024x1024_trim_2.png", temp),
-		assetCache.loadImage("new_icon3:assets/image/icon/new_icon_1024x1024_trim_3.png", temp)
+		AssetCache.loadImage("new_icon1:assets/image/icon/new_icon_1024x1024_trim_1.png", temp),
+		AssetCache.loadImage("new_icon2:assets/image/icon/new_icon_1024x1024_trim_2.png", temp),
+		AssetCache.loadImage("new_icon3:assets/image/icon/new_icon_1024x1024_trim_3.png", temp)
 	}
 	-- peak at 0.25
 	self.persist.time = {0.25, 0, 0.75, 0.5}

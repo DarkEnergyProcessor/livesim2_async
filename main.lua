@@ -38,17 +38,17 @@ local JSON = require("libs.JSON")
 local ls2 = require("libs.ls2")
 local lsr = require("libs.lsr")
 
-local assetCache = require("asset_cache")
-local vires = require("vires")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
-local postExit = require("post_exit")
-local language = require("language")
-local util = require("util")
-local setting = require("setting")
+local AssetCache = require("asset_cache")
+local Vires = require("vires")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
+local PostExit = require("post_exit")
+local Language = require("language")
+local Util = require("util")
+local Setting = require("setting")
 local log = require("logging")
-local volume = require("volume")
-local audioManager = require("audio_manager")
+local Volume = require("volume")
+local AudioManager = require("audio_manager")
 
 local colorTheme = require("game.color_theme")
 local beatmapList = require("game.beatmap.list")
@@ -58,7 +58,7 @@ local function initWindow(w, h, f, v, m)
 	local vsync
 	local android = love._os == "Android"
 
-	if util.compareLOVEVersion(11, 0) >= 0 then
+	if Util.compareLOVEVersion(11, 0) >= 0 then
 		vsync = v and -1 or 0
 	else
 		vsync = v
@@ -89,40 +89,40 @@ local function initWindow(w, h, f, v, m)
 	love.window.setIcon(icon)
 	-- Initialize virtual resolution
 	log.debug("main", "initializing virtual resolution")
-	vires.init(960, 640)
+	Vires.init(960, 640)
 	-- Update virtual resolution but using love.graphics.getDimensions value
 	-- because we can't be sure that 960x640 is supported in mobile or
 	-- in lower resolutions.
-	vires.update(love.graphics.getDimensions())
+	Vires.update(love.graphics.getDimensions())
 end
 
 local function registerGamestates()
 	log.debug("main", "loading gamestates")
 
 	-- Loading screen singleton init (enable sync asset loading for loading screen)
-	assetCache.enableSync = true
-	loadingInstance.set(gamestate.newLoadingScreen(require("game.states.loading")))
-	assetCache.enableSync = false
-	postExit.add(loadingInstance.exit)
+	AssetCache.enableSync = true
+	LoadingInstance.set(Gamestate.newLoadingScreen(require("game.states.loading")))
+	AssetCache.enableSync = false
+	PostExit.add(LoadingInstance.exit)
 
 	-- Load all gamestates.
-	gamestate.register("beatmapDownload", require("game.states.download_list"))
-	gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
-	gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
-	gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
-	gamestate.register("changeUnits", require("game.states.change_units"))
-	gamestate.register("dummy", require("game.states.dummy"))
-	gamestate.register("language", require("game.states.gamelang"))
-	gamestate.register("livesim2", require("game.states.livesim2"))
-	gamestate.register("livesim2Preload", require("game.states.play_preloader"))
-	gamestate.register("mainMenu", require("game.states.main_menu_v31"))
-	gamestate.register("result", require("game.states.result_summary"))
-	gamestate.register("selectUnits", require("game.states.select_units"))
-	gamestate.register("settings", require("game.states.gamesetting"))
-	gamestate.register("splash", require("game.states.splash"))
+	Gamestate.register("beatmapDownload", require("game.states.download_list"))
+	Gamestate.register("beatmapInfoDL", require("game.states.download_beatmap"))
+	Gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
+	Gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
+	Gamestate.register("changeUnits", require("game.states.change_units"))
+	Gamestate.register("dummy", require("game.states.dummy"))
+	Gamestate.register("language", require("game.states.gamelang"))
+	Gamestate.register("livesim2", require("game.states.livesim2"))
+	Gamestate.register("livesim2Preload", require("game.states.play_preloader"))
+	Gamestate.register("mainMenu", require("game.states.main_menu_v31"))
+	Gamestate.register("result", require("game.states.result_summary"))
+	Gamestate.register("selectUnits", require("game.states.select_units"))
+	Gamestate.register("settings", require("game.states.gamesetting"))
+	Gamestate.register("splash", require("game.states.splash"))
 end
 
-local settingsList = {
+local SETTING_LIST = {
 	AUTOPLAY = 0,
 	AUTO_BACKGROUND = 1,
 	BACKGROUND_IMAGE = 10,
@@ -148,7 +148,7 @@ local settingsList = {
 	SONG_VOLUME = 80,
 	STAMINA_DISPLAY = 32,
 	STAMINA_FUNCTIONAL = 0,
-	STORYBOARD = util.isMobile() and 0 or 1,
+	STORYBOARD = Util.isMobile() and 0 or 1,
 	TAP_SOUND = 1,
 	TEXT_SCALING = 1,
 	TIMING_OFFSET = 0,
@@ -165,8 +165,8 @@ local settingsList = {
 
 local function initializeSetting()
 	log.debug("main", "initializing settings")
-	for k, v in pairs(settingsList) do
-		setting.define(k, v)
+	for k, v in pairs(SETTING_LIST) do
+		Setting.define(k, v)
 	end
 end
 
@@ -191,13 +191,13 @@ local function initializeYohane()
 	log.debug("main", "initializing Yohane")
 
 	function Yohane.Platform.ResolveImage(path)
-		return assetCache.loadImage(path, {mipmaps = true})
+		return AssetCache.loadImage(path, {mipmaps = true})
 	end
 
 	function Yohane.Platform.ResolveAudio(path)
-		local v = util.substituteExtension(path, util.getNativeAudioExtensions())
+		local v = Util.substituteExtension(path, Util.getNativeAudioExtensions())
 		if v then
-			return audioManager.newAudio(v, "se")
+			return AudioManager.newAudio(v, "se")
 		end
 
 		return nil
@@ -209,7 +209,7 @@ local function initializeYohane()
 
 	function Yohane.Platform.CloneAudio(audio)
 		if audio then
-			return audioManager.clone(audio)
+			return AudioManager.clone(audio)
 		end
 
 		return nil
@@ -217,8 +217,8 @@ local function initializeYohane()
 
 	function Yohane.Platform.PlayAudio(audio)
 		if audio then
-			audioManager.stop(audio)
-			audioManager.play(audio)
+			AudioManager.stop(audio)
+			AudioManager.play(audio)
 		end
 	end
 
@@ -297,10 +297,10 @@ end
 
 local function initVolume()
 	love.audio.setVolume(1)
-	volume.set("master", setting.get("MASTER_VOLUME") * 0.01)
-	volume.define("se", setting.get("SE_VOLUME") * 0.01)
-	volume.define("music", setting.get("SONG_VOLUME") * 0.01)
-	volume.define("voice", setting.get("VOICE_VOLUME") * 0.01)
+	Volume.set("master", Setting.get("MASTER_VOLUME") * 0.01)
+	Volume.define("se", Setting.get("SE_VOLUME") * 0.01)
+	Volume.define("music", Setting.get("SONG_VOLUME") * 0.01)
+	Volume.define("voice", Setting.get("VOICE_VOLUME") * 0.01)
 end
 
 local usage = [[
@@ -403,7 +403,7 @@ freely, subject to the following restrictions:
 ]]
 
 function love.load(argv, gameargv)
-	if util.compareLOVEVersion(11, 0) < 0 then
+	if Util.compareLOVEVersion(11, 0) < 0 then
 		log.warn("main", "LOVE 0.10.x support for Live Simulator: 2 has been deprecated!")
 	end
 
@@ -421,11 +421,11 @@ function love.load(argv, gameargv)
 	initializeSetting()
 	initLS2()
 	initLSR()
-	language.init()
-	colorTheme.init(assert(tonumber(setting.get("COLOR_THEME"))))
-	language.set(setting.get("LANGUAGE"))
+	Language.init()
+	colorTheme.init(assert(tonumber(Setting.get("COLOR_THEME"))))
+	Language.set(Setting.get("LANGUAGE"))
 	-- Try to load command line
-	if (love._os == "Android" or love._os == "iOS") and util.fileExists("commandline.txt") then
+	if (love._os == "Android" or love._os == "iOS") and Util.fileExists("commandline.txt") then
 		argv = {}
 		for line in love.filesystem.lines("commandline.txt") do
 			argv[#argv + 1] = line
@@ -714,8 +714,8 @@ function love.load(argv, gameargv)
 				return true
 			end)
 		elseif listingMode == "settings" then
-			for k, _ in pairs(settingsList) do
-				print(k.."="..setting.get(k))
+			for k, _ in pairs(SETTING_LIST) do
+				print(k.."="..Setting.get(k))
 			end
 			love.event.quit()
 		end
@@ -762,7 +762,7 @@ function love.load(argv, gameargv)
 
 		if playBeatmapName then
 			-- Play beatmap directly
-			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
+			Gamestate.enter(LoadingInstance.getInstance(), "livesim2Preload", {
 				playBeatmapName,
 				false,
 
@@ -776,7 +776,7 @@ function love.load(argv, gameargv)
 			})
 		elseif absolutePlayBeatmapName then
 			-- Play beatmap from specified path
-			gamestate.enter(loadingInstance.getInstance(), "livesim2Preload", {
+			Gamestate.enter(LoadingInstance.getInstance(), "livesim2Preload", {
 				absolutePlayBeatmapName,
 				true,
 
@@ -789,9 +789,9 @@ function love.load(argv, gameargv)
 		else
 			-- Jump to default game state
 			if love.filesystem.isFused() or alwaysSplash then
-				gamestate.enter(nil, "splash")
+				Gamestate.enter(nil, "splash")
 			else
-				gamestate.enter(loadingInstance.getInstance(), "mainMenu")
+				Gamestate.enter(LoadingInstance.getInstance(), "mainMenu")
 			end
 		end
 	end

@@ -5,11 +5,11 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local setting = require("setting")
+local Setting = require("setting")
 local color = require("color")
 local mainFont = require("font")
-local util = require("util")
-local assetCache = require("asset_cache")
+local Util = require("util")
+local AssetCache = require("asset_cache")
 
 local ciButton = require("game.ui.circle_icon_button")
 local colorTheme = require("game.color_theme")
@@ -24,7 +24,7 @@ end
 local function makePressed(obj, dir)
 	return function()
 		local internal = Luaoop.class.data(obj)
-		local value = util.clamp(internal.value + internal.snap * dir, internal.range.min, internal.range.max)
+		local value = Util.clamp(internal.value + internal.snap * dir, internal.range.min, internal.range.max)
 		if value ~= internal.value then
 			internal.value = snapAt(value, internal.snap)
 			internal.holdDelay = 0
@@ -43,12 +43,12 @@ function numberSetting:__construct(frame, name, settingName, opts)
 	local internal = Luaoop.class.data(self)
 	baseSetting.__construct(self, name)
 
-	local img = assetCache.loadImage("assets/image/ui/over_the_rainbow/navigate_back.png", {mipmaps = true})
+	local img = AssetCache.loadImage("assets/image/ui/over_the_rainbow/navigate_back.png", {mipmaps = true})
 	internal.holdDelay = -math.huge
 	internal.updateDirection = 0
 	internal.range = opts
 	internal.div = opts.div or 1
-	internal.value = util.clamp((opts.value or setting.get(settingName)) * internal.div, opts.min, opts.max)
+	internal.value = Util.clamp((opts.value or Setting.get(settingName)) * internal.div, opts.min, opts.max)
 	internal.font = mainFont.get(22)
 	internal.valueDisplay = love.graphics.newText(internal.font)
 	internal.snap = opts.snap or 1
@@ -58,7 +58,7 @@ function numberSetting:__construct(frame, name, settingName, opts)
 	local function released()
 		internal.holdDelay = -math.huge
 		internal.updateDirection = 0
-		if settingName then setting.set(settingName, internal.value / internal.div) end
+		if settingName then Setting.set(settingName, internal.value / internal.div) end
 	end
 
 	internal.increaseButton = ciButton(color.transparent, 18, img, 0.24, colorTheme.get(), math.pi)
@@ -70,12 +70,12 @@ function numberSetting:__construct(frame, name, settingName, opts)
 	internal.decreaseButton:addEventListener("mousereleased", released)
 	frame:addElement(internal.decreaseButton, self.x + DECREASE_X, self.y + DECREASE_Y)
 	if opts.default then
-		local reload = assetCache.loadImage("assets/image/ui/over_the_rainbow/reload.png", {mipmaps = true})
+		local reload = AssetCache.loadImage("assets/image/ui/over_the_rainbow/reload.png", {mipmaps = true})
 		internal.resetButton = ciButton(color.transparent, 18, reload, 0.32, colorTheme.get())
 		internal.resetButton:addEventListener("mousereleased", function()
 			if internal.value ~= opts.default then
 				internal.value = opts.default
-				if settingName then setting.set(settingName, opts.default / internal.div) end
+				if settingName then Setting.set(settingName, opts.default / internal.div) end
 				self:_updateValueDisplay()
 				self:_emitChangedCallback(opts.default)
 			end
@@ -120,7 +120,7 @@ function numberSetting:update(dt)
 
 	internal.holdDelay = internal.holdDelay + dt * 2
 	if internal.holdDelay >= 1 then
-		local value = util.clamp(
+		local value = Util.clamp(
 			internal.value + internal.snap * math.floor(internal.holdDelay) * internal.updateDirection,
 			internal.range.min,
 			internal.range.max
@@ -142,7 +142,7 @@ function numberSetting:setValue(v)
 	local internal = Luaoop.class.data(self)
 
 	assert(type(v) == "number", "invalid value")
-	v = util.clamp(v, internal.range.min, internal.range.max)
+	v = Util.clamp(v, internal.range.min, internal.range.max)
 	if v ~= internal.value then
 		internal.value = snapAt(v * internal.div, internal.snap)
 		self:_updateValueDisplay()
@@ -155,7 +155,7 @@ function numberSetting:draw()
 	baseSetting.draw(self)
 	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("line", self.x + 420 + 246, self.y + 86, 160, 36, 18, 18)
-	util.drawText(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
+	Util.drawText(internal.valueDisplay, self.x + 500 + 246, self.y + 5 + 86)
 end
 
 return numberSetting

@@ -8,17 +8,17 @@ local lsr = require("libs.lsr")
 
 local color = require("color")
 local mainFont = require("font")
-local setting = require("setting")
+local Setting = require("setting")
 local fileDialog = require("file_dialog")
 local log = require("logging")
-local util = require("util")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
+local Util = require("util")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
 local L = require("language")
 
 local beatmapList = require("game.beatmap.list")
 local colorTheme = require("game.color_theme")
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ripple = require("game.ui.ripple")
 local ciButton = require("game.ui.circle_icon_button")
 
@@ -26,12 +26,12 @@ local mipmaps = {mipmaps = true}
 
 -- One shot usage, no need to have it in different file
 -- 451x94
-local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.BeatmapSelectButton", glow.element)
-local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButton", glow.element)
-local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", glow.element)
-local diffDropdown = Luaoop.class("Livesim2.BeatmapSelect.DifficultyDropdown", glow.element)
-local diffText = Luaoop.class("Livesim2.BeatmapSelect.DifficultySelect", glow.element)
-local replayButton = Luaoop.class("Livesim2.BeatmapSelect.ReplayButton", glow.element)
+local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.BeatmapSelectButton", Glow.Element)
+local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButton", Glow.Element)
+local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", Glow.Element)
+local diffDropdown = Luaoop.class("Livesim2.BeatmapSelect.DifficultyDropdown", Glow.Element)
+local diffText = Luaoop.class("Livesim2.BeatmapSelect.DifficultySelect", Glow.Element)
+local replayButton = Luaoop.class("Livesim2.BeatmapSelect.ReplayButton", Glow.Element)
 
 do
 	local coverShader
@@ -86,7 +86,7 @@ do
 
 		love.graphics.setColor(self.selected and colorTheme.get() or color.hex434242)
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setShader(util.drawText.workaroundShader)
+		love.graphics.setShader(Util.drawText.workaroundShader)
 		love.graphics.setColor(color.white)
 		love.graphics.draw(self.name, x + 110, y + 20)
 		love.graphics.draw(self.format, x + 110, y + 60)
@@ -129,7 +129,7 @@ do
 		end
 		self.isPressed = false
 		self.checked = not(not(checked))
-		self.blurIcon = util.drawBlur(120, 98, 2, optionToggleButton._renderIcon, self, color.white, 0, 0)
+		self.blurIcon = Util.drawBlur(120, 98, 2, optionToggleButton._renderIcon, self, color.white, 0, 0)
 		self:addEventListener("mousepressed", commonPressed)
 		self:addEventListener("mousereleased", optionToggleButton._released)
 		self:addEventListener("mousecanceled", commonReleased)
@@ -149,7 +149,7 @@ do
 			self.imageS, self.imageS,
 			self.imageW * 0.5, self.imageH * 0.5
 		)
-		util.drawText(self.description, x + 60, y + self.descriptionY)
+		Util.drawText(self.description, x + 60, y + self.descriptionY)
 	end
 
 	function optionToggleButton:update(dt)
@@ -205,9 +205,9 @@ do
 			-- Square
 			(x >= 20 and y >= 0 and x < self.width - 20 and y < 40) or
 			-- Circle left
-			util.distance(x, y, 20, 20) <= 20 or
+			Util.distance(x, y, 20, 20) <= 20 or
 			-- Circle right
-			util.distance(x, y, self.width - 20, 20) <= 20
+			Util.distance(x, y, self.width - 20, 20) <= 20
 		then
 			self.isPressed = true
 			self.ripple:pressed(x, y)
@@ -228,7 +228,7 @@ do
 		love.graphics.rectangle("line", x, y, self.width, self.height, 20, 20)
 		love.graphics.setColor(color.white)
 		love.graphics.draw(self.image, x + 12, y + 7, 0, 0.32)
-		util.drawText(self.text, x + 37, y + 12)
+		Util.drawText(self.text, x + 37, y + 12)
 
 		if self.ripple:isActive() then
 			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
@@ -342,7 +342,7 @@ do
 			love.graphics.rectangle("line", x, y + (i - 1) * 26, 150, 26)
 		end
 		love.graphics.setColor(color.white)
-		util.drawText(self.optionText, x, y)
+		Util.drawText(self.optionText, x, y)
 	end
 
 	function diffText:new(font, img)
@@ -363,7 +363,7 @@ do
 		love.graphics.rectangle("fill", x, y, 150, 26, 13, 13)
 		love.graphics.rectangle("line", x, y, 150, 26, 13, 13)
 		love.graphics.setColor(color.white)
-		util.drawText(self.text, x + 18, y + 4)
+		Util.drawText(self.text, x + 18, y + 4)
 		if self.showImage then
 			love.graphics.draw(self.image, x + 120, y + 2, 0, 0.32)
 		end
@@ -401,7 +401,7 @@ do
 		self.x, self.y = x, y
 
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setShader(util.drawText.workaroundShader)
+		love.graphics.setShader(Util.drawText.workaroundShader)
 		love.graphics.setColor(color.black)
 		love.graphics.draw(self.name, x + 16, y + 28)
 		love.graphics.setColor(colorTheme.get())
@@ -418,7 +418,7 @@ do
 end
 
 local function leave()
-	return gamestate.leave(loadingInstance.getInstance())
+	return Gamestate.leave(LoadingInstance.getInstance())
 end
 
 local function setStatusText(self, text, blink)
@@ -431,9 +431,9 @@ local function setStatusText(self, text, blink)
 end
 
 local function createOptionToggleSetting(settingName, image, imageS, imageY, font, text, textY)
-	local x = optionToggleButton(setting.get(settingName) == 1, image, imageS, imageY, font, text, textY)
+	local x = optionToggleButton(Setting.get(settingName) == 1, image, imageS, imageY, font, text, textY)
 	x:addEventListener("changed", function(_, _, value)
-		setting.set(settingName, value and 1 or 0)
+		Setting.set(settingName, value and 1 or 0)
 	end)
 	return x
 end
@@ -446,7 +446,7 @@ local function startPlayBeatmap(_, self)
 			target = target.beatmaps[target.selected]
 		end
 
-		gamestate.enter(loadingInstance.getInstance(), "livesim2", {
+		Gamestate.enter(LoadingInstance.getInstance(), "livesim2", {
 			summary = self.persist.beatmapSummary,
 			beatmapName = target.id,
 			random = self.data.randomToggle.checked,
@@ -457,7 +457,7 @@ local function startPlayBeatmap(_, self)
 end
 
 local function resizeImage(img, w, h)
-	local canvas = util.newCanvas(w, h, nil, true)
+	local canvas = Util.newCanvas(w, h, nil, true)
 	local iw, ih = img:getDimensions()
 	love.graphics.push("all")
 	love.graphics.reset()
@@ -520,7 +520,7 @@ local function updateBeatmapList(self)
 	end
 end
 
-local beatmapSelect = gamestate.create {
+local beatmapSelect = Gamestate.create {
 	images = {
 		add = {"assets/image/ui/over_the_rainbow/add_icon.png", mipmaps},
 		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
@@ -544,13 +544,13 @@ local beatmapSelect = gamestate.create {
 }
 
 function beatmapSelect:load()
-	glow.clear()
+	Glow.clear()
 
 	---@type Font
 	self.data.mainFont, self.data.mainFont2 = mainFont.get(44, 16)
 
 	if self.data.shadowGradient == nil then
-		self.data.shadowGradient = util.gradient("vertical", color.black75PT, color.transparent)
+		self.data.shadowGradient = Util.gradient("vertical", color.black75PT, color.transparent)
 	end
 
 	if self.data.coverMaskShader == nil then
@@ -584,7 +584,7 @@ function beatmapSelect:load()
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 32, 4)
 
 	if self.data.search == nil then
 		self.data.search = ciButton(color.hex333131, 36, self.assets.images.search, 0.64, colorTheme.get())
@@ -593,7 +593,7 @@ function beatmapSelect:load()
 			love.keyboard.setTextInput(not(love.keyboard.hasTextInput()))
 		end)
 	end
-	glow.addFixedElement(self.data.search, 112, 4)
+	Glow.addFixedElement(self.data.search, 112, 4)
 
 	if self.data.searchText == nil then
 		self.data.searchText = love.graphics.newText(self.data.mainFont)
@@ -611,16 +611,16 @@ function beatmapSelect:load()
 		end)
 		self.data.openDirectory:setData("file://"..love.filesystem.getSaveDirectory().."/beatmap")
 	end
-	glow.addFixedElement(self.data.openDirectory, 856, 4)
+	Glow.addFixedElement(self.data.openDirectory, 856, 4)
 
 	if self.data.downloadBeatmap == nil then
 		self.data.downloadBeatmap = ciButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.64, colorTheme.get())
 		self.data.downloadBeatmap:addEventListener("mousereleased", function()
-			gamestate.enter(loadingInstance.getInstance(), "beatmapDownload")
+			Gamestate.enter(LoadingInstance.getInstance(), "beatmapDownload")
 		end)
 		self.data.downloadBeatmap:setData(self)
 	end
-	glow.addFixedElement(self.data.downloadBeatmap, 776, 4)
+	Glow.addFixedElement(self.data.downloadBeatmap, 776, 4)
 
 	if fileDialog.isSupported() then
 		if self.data.addBeatmap == nil then
@@ -634,7 +634,7 @@ function beatmapSelect:load()
 			end)
 		end
 
-		glow.addFixedElement(self.data.addBeatmap, 696, 4)
+		Glow.addFixedElement(self.data.addBeatmap, 696, 4)
 	end
 
 	if self.data.deleteBeatmap == nil then
@@ -676,7 +676,7 @@ function beatmapSelect:load()
 				self.persist.selectedBeatmap = nil
 				self.persist.replaysFrame:clear()
 				self.data.difficultyDropdown:hide()
-				glow.removeElement(self.data.deleteBeatmap)
+				Glow.removeElement(self.data.deleteBeatmap)
 
 				-- Move element
 				for i = index, #self.persist.beatmaps do
@@ -704,7 +704,7 @@ function beatmapSelect:load()
 			self.data.mainFont2, L"beatmapSelect:optionAutoplay", 60
 		)
 	end
-	glow.addFixedElement(self.data.autoplayToggle, 480, 248)
+	Glow.addFixedElement(self.data.autoplayToggle, 480, 248)
 
 	if self.data.randomToggle == nil then
 		self.data.randomToggle = optionToggleButton(
@@ -713,7 +713,7 @@ function beatmapSelect:load()
 			self.data.mainFont2, L"beatmapSelect:optionRandom", 60
 		)
 	end
-	glow.addFixedElement(self.data.randomToggle, 600, 248)
+	Glow.addFixedElement(self.data.randomToggle, 600, 248)
 
 	if self.data.storyToggle == nil then
 		self.data.storyToggle = createOptionToggleSetting(
@@ -722,7 +722,7 @@ function beatmapSelect:load()
 			self.data.mainFont2, L"beatmapSelect:optionStoryboard", 60
 		)
 	end
-	glow.addFixedElement(self.data.storyToggle, 720, 248)
+	Glow.addFixedElement(self.data.storyToggle, 720, 248)
 
 	if self.data.videoToggle == nil then
 		self.data.videoToggle = createOptionToggleSetting(
@@ -731,7 +731,7 @@ function beatmapSelect:load()
 			self.data.mainFont2, L"beatmapSelect:optionVideo", 60
 		)
 	end
-	glow.addFixedElement(self.data.videoToggle, 840, 248)
+	Glow.addFixedElement(self.data.videoToggle, 840, 248)
 
 	if self.data.playButton == nil then
 		self.data.playButton = playButton(self.data.mainFont2, self.assets.images.play)
@@ -741,7 +741,7 @@ function beatmapSelect:load()
 	do
 		local width = self.data.playButton.width
 		-- Place in between "Random" and "Storyboard" text
-		glow.addFixedElement(self.data.playButton, 720 - width * 0.5, 336)
+		Glow.addFixedElement(self.data.playButton, 720 - width * 0.5, 336)
 	end
 
 	if self.data.difficultyButton == nil then
@@ -772,7 +772,7 @@ function beatmapSelect:load()
 
 		self.data.difficultyButton = b
 	end
-	glow.addFixedElement(self.data.difficultyButton, 508, 206)
+	Glow.addFixedElement(self.data.difficultyButton, 508, 206)
 
 	if self.data.difficultyDropdown == nil then
 		self.data.difficultyDropdown = diffDropdown(self.data.mainFont2)
@@ -786,9 +786,9 @@ function beatmapSelect:load()
 end
 
 function beatmapSelect:start()
-	self.persist.beatmapFrame = glow.frame(0, 152, 480, 488)
-	self.persist.replaysFrame = glow.frame(480, 398, 480, 242)
-	self.persist.dropdownFrame = glow.frame(0, 0, 960, 640)
+	self.persist.beatmapFrame = Glow.Frame(0, 152, 480, 488)
+	self.persist.replaysFrame = Glow.Frame(480, 398, 480, 242)
+	self.persist.dropdownFrame = Glow.Frame(0, 0, 960, 640)
 	self.persist.beatmaps = {sorted = false}
 	self.persist.selectedBeatmap = nil
 	self.persist.beatmapSummary = nil
@@ -850,7 +850,7 @@ function beatmapSelect:start()
 					}
 				end
 
-				gamestate.enter(loadingInstance.getInstance(), "result", {
+				Gamestate.enter(LoadingInstance.getInstance(), "result", {
 					name = targetBeatmap.id,
 					summary = summary,
 					replay = replay,
@@ -871,8 +871,8 @@ function beatmapSelect:start()
 			self.persist.emptyReplays = true
 		end
 
-		glow.removeElement(self.data.deleteBeatmap)
-		glow.addElement(self.data.deleteBeatmap, 742, 198)
+		Glow.removeElement(self.data.deleteBeatmap)
+		Glow.addElement(self.data.deleteBeatmap, 742, 198)
 	end
 
 	local function beatmapSelected(_, index)
@@ -939,13 +939,13 @@ function beatmapSelect:start()
 							if has then
 								local image = love.graphics.newImage(img, mipmaps)
 								local w, h = image:getDimensions()
-								util.releaseObject(img)
+								Util.releaseObject(img)
 								targetGroup.coverArtImage = image
 								targetGroup.info = info
 
 								if w > 128 or h > 128 then
 									imageCover = resizeImage(image, 128, 128)
-									util.releaseObject(image)
+									Util.releaseObject(image)
 								else
 									imageCover = image
 								end
@@ -971,13 +971,13 @@ function beatmapSelect:start()
 							if has then
 								local image = love.graphics.newImage(img, mipmaps)
 								local w, h = image:getDimensions()
-								util.releaseObject(img)
+								Util.releaseObject(img)
 								v.coverArtImage = image
 								v.info = info
 
 								if w > 128 or h > 128 then
 									imageCover = resizeImage(image, 128, 128)
-									util.releaseObject(image)
+									Util.releaseObject(image)
 								else
 									imageCover = image
 								end
@@ -1023,9 +1023,9 @@ function beatmapSelect:start()
 		return true
 	end)
 
-	glow.addFrame(self.persist.beatmapFrame)
-	glow.addFrame(self.persist.replaysFrame)
-	glow.addFrame(self.persist.dropdownFrame)
+	Glow.addFrame(self.persist.beatmapFrame)
+	Glow.addFrame(self.persist.replaysFrame)
+	Glow.addFrame(self.persist.dropdownFrame)
 	setStatusText(self, L"beatmapSelect:loading", true)
 end
 
@@ -1041,12 +1041,12 @@ function beatmapSelect:resumed()
 	end
 
 	if self.persist.selectedBeatmap then
-		glow.addElement(self.data.deleteBeatmap, 742, 198)
+		Glow.addElement(self.data.deleteBeatmap, 742, 198)
 	end
 
-	glow.addFrame(self.persist.replaysFrame)
-	glow.addFrame(self.persist.beatmapFrame)
-	glow.addFrame(self.persist.dropdownFrame)
+	Glow.addFrame(self.persist.replaysFrame)
+	Glow.addFrame(self.persist.beatmapFrame)
+	Glow.addFrame(self.persist.dropdownFrame)
 end
 
 function beatmapSelect:paused()
@@ -1055,7 +1055,7 @@ end
 
 function beatmapSelect:update(dt)
 	if self.persist.beatmapUpdate then
-		gamestate.replace(nil, "beatmapInsert", self.persist.beatmapUpdate)
+		Gamestate.replace(nil, "beatmapInsert", self.persist.beatmapUpdate)
 		self.persist.beatmapUpdate = nil
 	end
 
@@ -1075,7 +1075,7 @@ function beatmapSelect:draw()
 	love.graphics.rectangle("fill", 480, 10, 480, 673)
 
 	local shader = love.graphics.getShader()
-	love.graphics.setShader(util.drawText.workaroundShader)
+	love.graphics.setShader(Util.drawText.workaroundShader)
 	love.graphics.setColor(color.white)
 	love.graphics.rectangle("fill", 484, 346, 472, 294)
 	love.graphics.draw(self.persist.beatmapText, 30, 93)
@@ -1122,15 +1122,15 @@ function beatmapSelect:draw()
 	love.graphics.setColor(color.hex333131)
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(#self.persist.searchQuery > 0 and color.white or color.hexC0C0C0)
-	util.drawText(self.data.searchText, 192, 24)
+	Util.drawText(self.data.searchText, 192, 24)
 
 	if self.persist.emptyReplays then
 		love.graphics.setColor(color.hex8B8B8B)
 		love.graphics.draw(self.assets.images.poll, 720, 488, 0, 0.32, 0.32, 46, 46)
-		util.drawText(self.data.emptyReplaysText, 720, 500)
+		Util.drawText(self.data.emptyReplaysText, 720, 500)
 	end
 
-	glow.draw()
+	Glow.draw()
 	self.persist.beatmapFrame:draw()
 	self.persist.replaysFrame:draw()
 	self.persist.dropdownFrame:draw()

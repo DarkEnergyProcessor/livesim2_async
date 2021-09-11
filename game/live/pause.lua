@@ -7,7 +7,7 @@ local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
 local mainFont = require("font")
-local util = require("util")
+local Util = require("util")
 local L = require("language")
 
 local pause = Luaoop.class("livesim2.Pause")
@@ -25,7 +25,7 @@ function pause:__construct(callbacks, opaque, replay)
 	self.failedTimer = 3
 
 	if replay then
-		self.replayString = L("livesim2:pause:replay", {name = util.basename(replay)})
+		self.replayString = L("livesim2:pause:replay", {name = Util.basename(replay)})
 	else
 		self.replayString = ""
 	end

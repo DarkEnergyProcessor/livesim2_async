@@ -3,10 +3,10 @@
 -- See copyright notice in main.lua
 
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 local lily
 
-if util.compareLOVEVersion(11, 0) >= 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 then
 	lily = require("libs.lily_single_v3")
 	log.debugf("lily", "using version 3 (%s)", lily._VERSION)
 else

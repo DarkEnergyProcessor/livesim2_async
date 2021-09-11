@@ -3,9 +3,9 @@
 -- See copyright notice in main.lua
 
 local Luaoop = require("libs.Luaoop")
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 
-local invisibleButton = Luaoop.class("Livesim2.InvisibleButtonUI", glow.element)
+local invisibleButton = Luaoop.class("Livesim2.InvisibleButtonUI", Glow.Element)
 
 function invisibleButton:new(w, h)
 	self.width, self.height = w, h

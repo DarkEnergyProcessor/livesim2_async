@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
-local util = require("util")
+local Util = require("util")
 local Luaoop = require("libs.Luaoop")
 local log = require("logging")
 local uibase = require("game.live.uibase")
@@ -33,7 +33,7 @@ end
 
 for _, dirs in ipairs(love.filesystem.getDirectoryItems("game/live/ui")) do
 	local name = "game/live/ui/"..dirs
-	if util.fileExists(name) and dirs:sub(-4) == ".lua" then
+	if Util.fileExists(name) and dirs:sub(-4) == ".lua" then
 		log.debug("live.ui", "loading ui "..dirs)
 		local s, msg = love.filesystem.load(name)
 		if s then

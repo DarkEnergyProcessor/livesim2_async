@@ -4,7 +4,7 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local util = require("util")
+local Util = require("util")
 
 local ls2ovrBeatmap = require("game.ls2ovr.beatmap")
 local baseLoader = require("game.beatmap.base")
@@ -180,7 +180,7 @@ function ls2ovrLoader:getStoryboardData()
 
 		if f then
 			-- gzip compressed storyboard data
-			storyData = util.decompressToString(f, "gzip")
+			storyData = Util.decompressToString(f, "gzip")
 			storyType = "yaml"
 		else
 			f = beatmapObject:getFile("storyboard"..yaml)
@@ -327,7 +327,7 @@ function ls2ovrLoader:getLyrics()
 	local f = beatmapObject:getFile("lyrics.srt.gz")
 
 	if f then
-		return util.decompressToData(f, "gzip")
+		return Util.decompressToData(f, "gzip")
 	else
 		f = beatmapObject:getFile("lyrics.srt")
 

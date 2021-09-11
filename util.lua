@@ -13,13 +13,13 @@ if hasLVEP then
 	lvep = require("lvep")
 end
 
-local util = {}
+local Util = {}
 
 ---@param maj number
 ---@param min number
 ---@param rev number
 ---@return "-1" | "0" | "1"
-function util.compareLOVEVersion(maj, min, rev)
+function Util.compareLOVEVersion(maj, min, rev)
 	if love._version_major > maj then
 		return 1
 	elseif love._version_major < maj then
@@ -41,16 +41,16 @@ function util.compareLOVEVersion(maj, min, rev)
 	return 0
 end
 
-local version11 = util.compareLOVEVersion(11, 0) >= 0
+local version11 = Util.compareLOVEVersion(11, 0) >= 0
 
 ---@param file string
-function util.basename(file)
+function Util.basename(file)
 	if not(file) then return end
 	local x = file:reverse()
 	return x:sub(1, (x:find("/") or x:find("\\") or #x + 1) - 1):reverse()
 end
 
-function util.fileExists(path)
+function Util.fileExists(path)
 	if version11 then
 		return not(not(love.filesystem.getInfo(path, "file")))
 	else
@@ -58,7 +58,7 @@ function util.fileExists(path)
 	end
 end
 
-function util.directoryExist(path)
+function Util.directoryExist(path)
 	if version11 then
 		return not(not(love.filesystem.getInfo(path, "directory")))
 	else
@@ -67,29 +67,29 @@ function util.directoryExist(path)
 end
 
 ---@param file string
-function util.removeExtension(file)
+function Util.removeExtension(file)
 	return file:sub(1, -(file:reverse():find(".", 1, true) or 0) - 1)
 end
 
-function util.getExtension(file)
+function Util.getExtension(file)
 	local pos = file:reverse():find(".", 1, true)
 	if not(pos) then return ""
 	else return file:sub(-pos + 1):lower() end
 end
 
 -- ext nust contain dot
-function util.substituteExtension(file, ext, hasext)
+function Util.substituteExtension(file, ext, hasext)
 	if hasext then
-		if util.fileExists(file) then
+		if Util.fileExists(file) then
 			return file
 		else
-			file = util.removeExtension(file)
+			file = Util.removeExtension(file)
 		end
 	end
 
 	for _, v in ipairs(ext) do
 		local a = file..v
-		if util.fileExists(a) then
+		if Util.fileExists(a) then
 			return a
 		end
 	end
@@ -98,18 +98,18 @@ function util.substituteExtension(file, ext, hasext)
 end
 
 local SUPPORTED_AUDIO_EXT = {".wav", ".ogg", ".mp3"} -- in order
-function util.getNativeAudioExtensions()
+function Util.getNativeAudioExtensions()
 	return SUPPORTED_AUDIO_EXT
 end
 
 ---@param value number
 ---@param min number
 ---@param max number
-function util.clamp(value, min, max)
+function Util.clamp(value, min, max)
 	return math.max(math.min(value, max), min)
 end
 
-function util.isCursorSupported()
+function Util.isCursorSupported()
 	if version11 then
 		return love.mouse.isCursorSupported()
 	else
@@ -118,13 +118,13 @@ function util.isCursorSupported()
 end
 
 ---@param obj love.Object
-function util.releaseObject(obj)
+function Util.releaseObject(obj)
 	if version11 then return obj:release() end
 	return false
 end
 
 ---@param sounddata love.SoundData
-function util.getChannelCount(sounddata)
+function Util.getChannelCount(sounddata)
 	if version11 then return sounddata:getChannelCount()
 	else return sounddata:getChannels() end
 end
@@ -180,13 +180,13 @@ end
 ---@param mode openmode
 ---@return util.FileWrapper?
 ---@return string?
-function util.newFileWrapper(path, mode)
+function Util.newFileWrapper(path, mode)
 	local file, msg = io.open(path, mode)
 	if not(file) then return nil, msg end
 	return FileWrapClass(path, file)
 end
 
-function util.isFileWrapped(f)
+function Util.isFileWrapped(f)
 	return Luaoop.class.is(f, FileWrapClass)
 end
 
@@ -195,7 +195,7 @@ end
 ---@param x number
 ---@param y number
 ---@param intensity number
-function util.addTextWithShadow(text, str, x, y, intensity)
+function Util.addTextWithShadow(text, str, x, y, intensity)
 	x = x or 0 y = y or 0
 	intensity = intensity or 1
 	text:add({color.black, str}, x-intensity, y-intensity)
@@ -208,7 +208,7 @@ end
 ---@param t number
 ---@return number
 ---@overload fun(a: NVec, b: NVec, t: number): NVec
-function util.lerp(a, b, t)
+function Util.lerp(a, b, t)
 	return a * (1 - t) + b * t
 end
 
@@ -218,7 +218,7 @@ end
 ---@param y2 number
 ---@param squared boolean
 ---@return number
-function util.distance(x1, y1, x2, y2, squared)
+function Util.distance(x1, y1, x2, y2, squared)
 	local value = (x2 - x1)^2 + (y2 - y1)^2
 	if squared then
 		return value
@@ -229,17 +229,17 @@ end
 
 ---@param n number
 ---@return "-1" | "0" | "1"
-function util.sign(n)
+function Util.sign(n)
 	return n > 0 and 1 or (n < 0 and -1 or 0)
 end
 
 ---@param num number
 ---@param numDecimalPlaces number
 ---@return number
-function util.round(num, numDecimalPlaces)
+function Util.round(num, numDecimalPlaces)
 	local mult = 10^(numDecimalPlaces or 0)
 	local x = num * mult
-	if util.sign(x) >= 0 then
+	if Util.sign(x) >= 0 then
 		return math.floor(x + 0.5) / mult
 	else
 		return math.ceil(x - 0.5) / mult
@@ -249,11 +249,11 @@ end
 ---@generic T: table
 ---@param orig T
 ---@return T
-function util.deepCopy(orig)
+function Util.deepCopy(orig)
 	if type(orig) == 'table' then
 		local copy = {}
 		for orig_key, orig_value in next, orig, nil do
-			copy[orig_key] = util.deepCopy(orig_value)
+			copy[orig_key] = Util.deepCopy(orig_value)
 		end
 		return copy
 	else -- number, string, boolean, etc
@@ -261,7 +261,7 @@ function util.deepCopy(orig)
 	end
 end
 
-function util.isValueInArray(array, value)
+function Util.isValueInArray(array, value)
 	for i = 1, #array do
 		if array[i] == value then
 			return i
@@ -271,11 +271,11 @@ function util.isValueInArray(array, value)
 	return nil
 end
 
-function util.isMobile()
+function Util.isMobile()
 	return love._os == "iOS" or love._os == "Android"
 end
 
-function util.newDecoder(path)
+function Util.newDecoder(path)
 	if hasLVEP then
 		local s, v = pcall(love.sound.newDecoder, path)
 		if not(s) then
@@ -288,7 +288,7 @@ function util.newDecoder(path)
 	end
 end
 
-function util.newVideoStream(path)
+function Util.newVideoStream(path)
 	if hasLVEP then
 		local s, v = pcall(love.video.newStream, path)
 		if not(s) then
@@ -301,14 +301,14 @@ function util.newVideoStream(path)
 	end
 end
 
-function util.hasExtendedVideoSupport()
+function Util.hasExtendedVideoSupport()
 	return hasLVEP
 end
 
 ---@param data string|love.Data
 ---@param algo love.CompressedDataFormat
 ---@return love.Data
-function util.decompressToData(data, algo)
+function Util.decompressToData(data, algo)
 	if version11 then
 		return love.data.decompress("data", algo, data)
 	else
@@ -319,7 +319,7 @@ end
 ---@param data string|love.Data
 ---@param algo love.CompressedDataFormat
 ---@return string
-function util.decompressToString(data, algo)
+function Util.decompressToString(data, algo)
 	if version11 then
 		return love.data.decompress("string", algo, data)
 	else
@@ -328,12 +328,12 @@ function util.decompressToString(data, algo)
 end
 
 do
-	local COLOR_MUL = util.compareLOVEVersion(11, 0) >= 0 and 1 or 255
+	local COLOR_MUL = Util.compareLOVEVersion(11, 0) >= 0 and 1 or 255
 
 	---@param dir '"horizontal"' | '"vertical"'
 	---@vararg number[]
 	---@return love.Mesh
-	function util.gradient(dir, ...)
+	function Util.gradient(dir, ...)
 		-- Check for direction
 		local isHorizontal = true
 		if dir == "vertical" then
@@ -373,13 +373,13 @@ do
 	end
 end
 
-if util.compareLOVEVersion(11, 0) >= 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 then
 	---@param w number
 	---@param h number
 	---@param f love.PixelFormat
 	---@param m boolean
 	---@return love.Canvas
-	function util.newCanvas(w, h, f, m)
+	function Util.newCanvas(w, h, f, m)
 		return love.graphics.newCanvas(w, h, {dpiscale = 1, format = f or "normal", mipmaps = m and "auto" or "none"})
 	end
 else
@@ -387,25 +387,25 @@ else
 	---@param h number
 	---@param f love.PixelFormat
 	---@return love.Canvas
-	function util.newCanvas(w, h, f)
+	function Util.newCanvas(w, h, f)
 		-- No mipmap support
 		return love.graphics.newCanvas(w, h, f or "normal")
 	end
 end
 
 -- Draw text without black fringes
-if util.compareLOVEVersion(11, 3) >= 0 then
+if Util.compareLOVEVersion(11, 3) >= 0 then
 	-- https://github.com/love2d/love/commit/02fa8b0
 	-- As of that commit, workaround shader to prevent black
 	-- fringes is no longer necessary. For compatibility with
 	-- previous LOVE versions, this function does nothing.
 	---@type fun(text: love.Text, ...)
-	util.drawText = setmetatable({}, {__call = function(self, ...)
+	Util.drawText = setmetatable({}, {__call = function(self, ...)
 		return love.graphics.draw(...)
 	end})
 else
 	---@type fun(text: love.Text, ...)
-	util.drawText = setmetatable({workaroundShader = nil}, {
+	Util.drawText = setmetatable({workaroundShader = nil}, {
 		__call = function(self, text, ...)
 			local shader = love.graphics.getShader()
 			love.graphics.setShader(self.workaroundShader)
@@ -426,7 +426,7 @@ end
 
 -- Blur drawing
 ---@type fun(w: number, h: number, s: number, func: fun(...), ...)
-util.drawBlur = setmetatable({shader = nil}, {
+Util.drawBlur = setmetatable({shader = nil}, {
 	__call = function(self, w, h, s, func, ...)
 		local canvas1 = love.graphics.newCanvas(w, h)
 		local canvas2 = love.graphics.newCanvas(w, h)
@@ -454,7 +454,7 @@ util.drawBlur = setmetatable({shader = nil}, {
 		end
 
 		love.graphics.pop()
-		util.releaseObject(canvas2)
+		Util.releaseObject(canvas2)
 		return canvas1
 	end,
 	__index = function(self, var)
@@ -468,7 +468,7 @@ util.drawBlur = setmetatable({shader = nil}, {
 	end
 })
 
-function util.stringToHex(str)
+function Util.stringToHex(str)
 	local a = {}
 	for i = 1, #str do
 		a[#a + 1] = string.format("%02x", str:sub(i, i):byte())
@@ -480,7 +480,7 @@ end
 ---@param delim string
 ---@param removeempty boolean
 ---@return string[]
-function util.split(text, delim, removeempty)
+function Util.split(text, delim, removeempty)
 	local t = {}
 
 	local b = 0
@@ -508,20 +508,20 @@ if version11 then
 	local fontDPIScale = 1
 
 	---@return number
-	function util.getFontDPIScale()
+	function Util.getFontDPIScale()
 		local dpi = love.window and love.window.getDPIScale() or 1
 		return dpi > 1 and dpi or (fontDPIScale + 1)
 	end
 
-	function util.setDefaultFontDPIScale(scale)
+	function Util.setDefaultFontDPIScale(scale)
 		fontDPIScale = math.max(math.ceil(scale), 1)
 	end
 else
-	function util.getFontDPIScale()
+	function Util.getFontDPIScale()
 		return 1
 	end
 
-	function util.setDefaultFontDPIScale(scale)
+	function Util.setDefaultFontDPIScale(scale)
 	end
 end
 ---@generic T: table, V
@@ -529,8 +529,8 @@ end
 ---@return fun(table: V[], i?: integer):integer, V
 ---@return T
 ---@return integer i
-function util.ipairsi(t, i)
+function Util.ipairsi(t, i)
 	return ipairs(t), t, i - 1
 end
 
-return util
+return Util

@@ -8,8 +8,8 @@ local lily = require("lily")
 local async = require("async")
 local cache = require("cache")
 local log = require("logging")
-local setting = require("setting")
-local gamestate = {
+local Setting = require("setting")
+local Gamestate = {
 	list = {}, -- list of registered gamestate
 	internal = {}, -- internal functions
 	stack = {}, -- the active one is always gamestate.stack[#gamestate.stack]
@@ -97,7 +97,7 @@ end
 -- Internal function is procedural --
 -------------------------------------
 
-function gamestate.internal.makeWeak(game)
+function Gamestate.internal.makeWeak(game)
 	local state = Luaoop.class.data(game)
 	-- Expensive. Use sparingly!
 	for k in pairs(state.data) do
@@ -112,7 +112,7 @@ function gamestate.internal.makeWeak(game)
 	state.weak = true
 end
 
-function gamestate.internal.makeStrong(game)
+function Gamestate.internal.makeStrong(game)
 	local state = Luaoop.class.data(game)
 	-- Expensive. Use sparingly!
 	for k, v in pairs(game.data) do
@@ -161,13 +161,13 @@ local function gamestateHandleMultiLily(udata, index, value)
 end
 
 -- Called in async.runFunction
-function gamestate.internal.initialize(game, arg)
+function Gamestate.internal.initialize(game, arg)
 	async.wait()
-	gamestate.internal.loadAssets(game)
+	Gamestate.internal.loadAssets(game)
 	game:load(arg)
 end
 
-function gamestate.internal.loadAssets(game)
+function Gamestate.internal.loadAssets(game)
 	local state = Luaoop.class.data(game)
 	local loadedAssetList = {}
 	local assetUdata = {}
@@ -210,47 +210,47 @@ function gamestate.internal.loadAssets(game)
 	end
 end
 
-function gamestate.internal.initPreparation(name, game, arg, mode)
+function Gamestate.internal.initPreparation(name, game, arg, mode)
 	local t = {
 		name = name,
 		game = game,
 		arg = arg,
-		coro = coroutine.create(gamestate.internal.initialize),
+		coro = coroutine.create(Gamestate.internal.initialize),
 		mode = mode,
 	}
 	coroutine.resume(t.coro, game, arg)
 	return t
 end
 
-function gamestate.internal.loop()
-	local prep = gamestate.preparedGamestate
+function Gamestate.internal.loop()
+	local prep = Gamestate.preparedGamestate
 	local current = nil
-	if gamestate.loadingState and not(gamestate.loadingStateResumed) then
-		gamestate.loadingStateResumed = true
-		gamestate.loadingState:resumed()
+	if Gamestate.loadingState and not(Gamestate.loadingStateResumed) then
+		Gamestate.loadingStateResumed = true
+		Gamestate.loadingState:resumed()
 	end
-	if gamestate.preparedGamestate then
-		local coro = gamestate.preparedGamestate.coro
+	if Gamestate.preparedGamestate then
+		local coro = Gamestate.preparedGamestate.coro
 		if coroutine.status(coro) == "dead" then
 			-- Assume it's already done, but it may be dead because lua error
 			if prep.mode == "replace" then
-				current = gamestate.stack[#gamestate.stack]
-				gamestate.stack[#gamestate.stack] = {
-					name = gamestate.preparedGamestate.name,
-					game = gamestate.preparedGamestate.game
+				current = Gamestate.stack[#Gamestate.stack]
+				Gamestate.stack[#Gamestate.stack] = {
+					name = Gamestate.preparedGamestate.name,
+					game = Gamestate.preparedGamestate.game
 				}
 			elseif prep.mode == "leave" then
-				current = table.remove(gamestate.stack, #gamestate.stack)
+				current = table.remove(Gamestate.stack, #Gamestate.stack)
 			elseif prep.mode == "enter" then
-				current = gamestate.stack[#gamestate.stack]
-				gamestate.stack[#gamestate.stack + 1] = {
-					name = gamestate.preparedGamestate.name,
-					game = gamestate.preparedGamestate.game
+				current = Gamestate.stack[#Gamestate.stack]
+				Gamestate.stack[#Gamestate.stack + 1] = {
+					name = Gamestate.preparedGamestate.name,
+					game = Gamestate.preparedGamestate.game
 				}
 			end
 
-			gamestate.preparedGamestate = nil
-			gamestate.loadingState = nil
+			Gamestate.preparedGamestate = nil
+			Gamestate.loadingState = nil
 
 			if current then
 				if prep.mode == "enter" then
@@ -265,22 +265,22 @@ function gamestate.internal.loop()
 					prep.game:resumed()
 				end
 
-				gamestate.internal.makeWeak(current.game)
+				Gamestate.internal.makeWeak(current.game)
 			else
 				prep.game:start(prep.arg)
 			end
 
-			if gamestate.loadingState and gamestate.loadingStateResumed then
-				gamestate.loadingStateResumed = false
-				gamestate.loadingState:paused()
-				gamestate.loadingState = nil
+			if Gamestate.loadingState and Gamestate.loadingStateResumed then
+				Gamestate.loadingStateResumed = false
+				Gamestate.loadingState:paused()
+				Gamestate.loadingState = nil
 			end
 		end
 	end
 end
 
-function gamestate.internal.handleEvents(name, ...)
-	local current = gamestate.stack[#gamestate.stack]
+function Gamestate.internal.handleEvents(name, ...)
+	local current = Gamestate.stack[#Gamestate.stack]
 	if not(current) then return false end
 
 	local constructor = Luaoop.class.data(current.game).constructor
@@ -291,12 +291,12 @@ function gamestate.internal.handleEvents(name, ...)
 	return false
 end
 
-function gamestate.internal.getActive()
-	if gamestate.preparedGamestate and gamestate.loadingState then
-		return gamestate.loadingState
+function Gamestate.internal.getActive()
+	if Gamestate.preparedGamestate and Gamestate.loadingState then
+		return Gamestate.loadingState
 	end
 
-	local game = gamestate.stack[#gamestate.stack]
+	local game = Gamestate.stack[#Gamestate.stack]
 	if game then
 		return game.game
 	end
@@ -304,10 +304,10 @@ function gamestate.internal.getActive()
 	return nil
 end
 
-function gamestate.internal.quit()
-	for i = #gamestate.stack, 1, -1 do
-		local game = gamestate.stack[i]
-		gamestate.stack[i] = nil
+function Gamestate.internal.quit()
+	for i = #Gamestate.stack, 1, -1 do
+		local game = Gamestate.stack[i]
+		Gamestate.stack[i] = nil
 		local s, msg = pcall(game.game.exit, game.game)
 		if s == false then
 			log.errorf("gamestate", "cleanup stack #%d failed: %s", i, msg)
@@ -319,75 +319,75 @@ end
 -- Public functions --
 ----------------------
 
-function gamestate.create(info)
+function Gamestate.create(info)
 	return gamestateConstructorObject(info)
 end
 
-function gamestate.newLoadingScreen(info)
+function Gamestate.newLoadingScreen(info)
 	local game = info:new()
-	gamestate.internal.makeStrong(game)
+	Gamestate.internal.makeStrong(game)
 	game:start()
 	return game
 end
 
-function gamestate.register(name, obj)
-	if gamestate.list[name] then
+function Gamestate.register(name, obj)
+	if Gamestate.list[name] then
 		error("gamestate with name '"..name.."' already exist", 2)
 	end
 
 	assert(Luaoop.class.is(obj, gamestateConstructorObject), "invalid gamestate object passed")
-	gamestate.list[name] = obj
+	Gamestate.list[name] = obj
 end
 
-function gamestate.enter(loading, name, arg)
-	if gamestate.preparedGamestate then
+function Gamestate.enter(loading, name, arg)
+	if Gamestate.preparedGamestate then
 		log.warn("gamestate", "attempt to enter new gamestate but one is in progress")
 		return
 	end
 
-	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
+	local game = assert(Gamestate.list[name], "invalid gamestate name"):new()
 	log.infof("gamestate", "entering gamestate: %s", name)
-	gamestate.internal.makeStrong(game)
-	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "enter")
-	gamestate.loadingState = loading
-	gamestate.loadingStateResumed = false
-	setting.update()
+	Gamestate.internal.makeStrong(game)
+	Gamestate.preparedGamestate = Gamestate.internal.initPreparation(name, game, arg, "enter")
+	Gamestate.loadingState = loading
+	Gamestate.loadingStateResumed = false
+	Setting.update()
 end
 
-function gamestate.leave(loading)
+function Gamestate.leave(loading)
 	-- If it's the last game state, just send love.event.quit
-	if #gamestate.stack == 1 then
+	if #Gamestate.stack == 1 then
 		love.event.quit()
 		return
 	end
 
-	if gamestate.preparedGamestate then
+	if Gamestate.preparedGamestate then
 		log.warn("gamestate", "attempt to enter leave gamestate but one is in progress")
 		return
 	end
 
-	local game = gamestate.stack[#gamestate.stack - 1]
+	local game = Gamestate.stack[#Gamestate.stack - 1]
 	log.infof("gamestate", "leaving gamestate")
-	gamestate.internal.makeStrong(game.game)
-	gamestate.preparedGamestate = gamestate.internal.initPreparation(game.name, game.game, nil, "leave")
-	gamestate.loadingState = loading
-	gamestate.loadingStateResumed = false
-	setting.update()
+	Gamestate.internal.makeStrong(game.game)
+	Gamestate.preparedGamestate = Gamestate.internal.initPreparation(game.name, game.game, nil, "leave")
+	Gamestate.loadingState = loading
+	Gamestate.loadingStateResumed = false
+	Setting.update()
 end
 
-function gamestate.replace(loading, name, arg)
-	if gamestate.preparedGamestate then
+function Gamestate.replace(loading, name, arg)
+	if Gamestate.preparedGamestate then
 		log.warn("gamestate", "attempt to enter new gamestate but one is in progress")
 		return
 	end
 
-	local game = assert(gamestate.list[name], "invalid gamestate name"):new()
+	local game = assert(Gamestate.list[name], "invalid gamestate name"):new()
 	log.infof("gamestate", "replace current gamestate: %s", name)
-	gamestate.internal.makeStrong(game)
-	gamestate.preparedGamestate = gamestate.internal.initPreparation(name, game, arg, "replace")
-	gamestate.loadingState = loading
-	gamestate.loadingStateResumed = false
-	setting.update()
+	Gamestate.internal.makeStrong(game)
+	Gamestate.preparedGamestate = Gamestate.internal.initPreparation(name, game, arg, "replace")
+	Gamestate.loadingState = loading
+	Gamestate.loadingStateResumed = false
+	Setting.update()
 end
 
-return gamestate
+return Gamestate

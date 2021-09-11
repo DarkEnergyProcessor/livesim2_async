@@ -9,19 +9,19 @@ local Luaoop = require("libs.Luaoop")
 
 local async = require("async")
 local color = require("color")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
 local mainFont = require("font")
-local util = require("util")
-local volume = require("volume")
-local setting = require("setting")
+local Util = require("util")
+local Volume = require("volume")
+local Setting = require("setting")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 local tapSound = require("game.tap_sound")
 local colorTheme = require("game.color_theme")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 local ripple = require("game.ui.ripple")
 local invisibleUI = require("game.ui.invisible")
@@ -63,9 +63,9 @@ And other people who contributed to the codebase
 ]], DEPLS_VERSION):gsub("\r\n", "\n")
 
 local function leave(_, self)
-	local ct = assert(tonumber(setting.get("COLOR_THEME")))
+	local ct = assert(tonumber(Setting.get("COLOR_THEME")))
 	if
-		util.compareLOVEVersion(0, 10, 2) >= 0 and
+		Util.compareLOVEVersion(0, 10, 2) >= 0 and
 		(
 			self.persist.currentLanguage ~= self.persist.previousLanguage or
 			self.persist.currentTheme ~= ct
@@ -79,11 +79,11 @@ local function leave(_, self)
 		love.event.quit("restart")
 	end
 
-	return gamestate.leave(loadingInstance.getInstance())
+	return Gamestate.leave(LoadingInstance.getInstance())
 end
 
 local function setVolumeSetting(name, value)
-	return volume.set(name, value * 0.01)
+	return Volume.set(name, value * 0.01)
 end
 
 local function changeBackgroundAsync(self, v)
@@ -110,7 +110,7 @@ local function updateStyleData(self)
 	end
 
 	-- calculate note style value
-	setting.set("NOTE_STYLE", 63 +
+	Setting.set("NOTE_STYLE", 63 +
 		self.persist.styleData.noteStyleFrame * 64 +
 		self.persist.styleData.noteStyleSwing * 4096 +
 		self.persist.styleData.noteStyleSimul * 262144
@@ -128,10 +128,10 @@ local function drawLayerAt(styleData, layer, x, y)
 end
 
 local function newSettingFrame()
-	return glow.frame(246, 86, 714, 548)
+	return Glow.Frame(246, 86, 714, 548)
 end
 
-local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", glow.element)
+local categorySelect = Luaoop.class("Livesim2.Settings.CategorySelectUI", Glow.Element)
 
 function categorySelect:new(font, icon, name)
 	self.width, self.height = 240, 48
@@ -179,7 +179,7 @@ function categorySelect:render(x, y)
 	end
 	love.graphics.setColor(self.active and color.white or color.black)
 	love.graphics.draw(self.icon, x + 24, y + 24, 0, 0.32, 0.32, self.iconW * 0.5, self.iconH * 0.5)
-	util.drawText(self.text, x + 48, y)
+	Util.drawText(self.text, x + 48, y)
 
 	if self.ripple:isActive() then
 		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
@@ -189,7 +189,7 @@ function categorySelect:render(x, y)
 	end
 end
 
-local longSelect = Luaoop.class("Livesim2.Settings.LongSelectUI", glow.element)
+local longSelect = Luaoop.class("Livesim2.Settings.LongSelectUI", Glow.Element)
 
 function longSelect:new(font, name)
 	self.width, self.height = 710, 60
@@ -222,7 +222,7 @@ function longSelect:render(x, y)
 	love.graphics.setColor(self.active and colorTheme.get() or color.white75PT)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(self.active and color.white or color.black)
-	util.drawText(self.text, x, y)
+	Util.drawText(self.text, x, y)
 
 	if self.ripple:isActive() then
 		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
@@ -242,12 +242,12 @@ end
 
 function textUI:render(x, y)
 	love.graphics.setColor(color.white)
-	util.drawText(self.text, x, y)
+	Util.drawText(self.text, x, y)
 end
 
 -- Setting section frame size is 868x426+50+184
 -- Tab selection is 868x62+50+162
-local gameSetting = gamestate.create {
+local gameSetting = Gamestate.create {
 	images = {
 		aspectRatio = {"assets/image/ui/over_the_rainbow/aspect_ratio.png"},
 		contacts = {"assets/image/ui/over_the_rainbow/contacts.png"},
@@ -266,16 +266,16 @@ local gameSetting = gamestate.create {
 }
 
 function gameSetting:load()
-	glow.clear()
+	Glow.clear()
 	self.data = self.data or {} -- for sake of LCA
 	local font31, font26, font22, font16 = mainFont.get(31, 26, 22, 16)
 
 	if self.persist.background == nil then
-		self.persist.background = backgroundLoader.load(tonumber(setting.get("BACKGROUND_IMAGE")))
+		self.persist.background = backgroundLoader.load(tonumber(Setting.get("BACKGROUND_IMAGE")))
 	end
 
 	if self.data.shadowGradient == nil then
-		self.data.shadowGradient = util.gradient("vertical", color.black75PT, color.transparent)
+		self.data.shadowGradient = Util.gradient("vertical", color.black75PT, color.transparent)
 	end
 
 	if self.data.titleText == nil then
@@ -290,7 +290,7 @@ function gameSetting:load()
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 32, 4)
 
 	-- General settings
 	if self.persist.generalSetting == nil then
@@ -342,7 +342,7 @@ function gameSetting:load()
 				:setPosition(0, 448+12)
 		}
 	end
-	glow.addFrame(self.persist.generalFrame)
+	Glow.addFrame(self.persist.generalFrame)
 
 	-- Volume settings
 	if self.persist.volumeSetting == nil then
@@ -460,11 +460,11 @@ function gameSetting:load()
 	-- Live UI settings
 	if self.persist.liveUIFrame == nil then
 		local frame = newSettingFrame()
-		local playUI = setting.get("PLAY_UI")
+		local playUI = Setting.get("PLAY_UI")
 		local elements = {}
 
 		local function setPlayUI(_, value)
-			setting.set("PLAY_UI", value.real)
+			Setting.set("PLAY_UI", value.real)
 
 			for i, v in ipairs(elements) do
 				if i == value.index then
@@ -540,7 +540,7 @@ function gameSetting:load()
 
 	-- Setting selection cateogry
 	if self.persist.categoryFrame == nil then
-		self.persist.categoryFrame = glow.frame(0, 86, 240, 548)
+		self.persist.categoryFrame = Glow.Frame(0, 86, 240, 548)
 		self.persist.settings = {
 			{L"setting:general", self.persist.generalFrame, self.persist.generalSetting, nil, "settings"},
 			{L"setting:volume", self.persist.volumeFrame, self.persist.volumeSetting, nil, "volume"},
@@ -558,10 +558,10 @@ function gameSetting:load()
 			for i, v in ipairs(self.persist.settings) do
 				if i == value then
 					v[4]:setActive(true)
-					glow.addFrame(v[2])
+					Glow.addFrame(v[2])
 				else
 					v[4]:setActive(false)
-					glow.removeFrame(v[2])
+					Glow.removeFrame(v[2])
 				end
 			end
 
@@ -581,7 +581,7 @@ function gameSetting:load()
 		self.persist.categoryFrame:setElementPosition(self.persist.settings[9][4], 0, 452)
 		self.persist.categoryFrame:setElementPosition(self.persist.settings[10][4], 0, 500)
 	end
-	glow.addFrame(self.persist.categoryFrame)
+	Glow.addFrame(self.persist.categoryFrame)
 end
 
 function gameSetting:start()
@@ -590,13 +590,13 @@ function gameSetting:start()
 	self.persist.whiteOverlay = 1
 
 	-- General settings
-	self.persist.currentTheme = setting.get("COLOR_THEME")
+	self.persist.currentTheme = Setting.get("COLOR_THEME")
 
 	-- Background settings
-	self.persist.backgroundDim = setting.get("LIVESIM_DIM") / 100
+	self.persist.backgroundDim = Setting.get("LIVESIM_DIM") / 100
 
 	-- Note style settings
-	local noteStyle = setting.get("NOTE_STYLE")
+	local noteStyle = Setting.get("NOTE_STYLE")
 	local styleData = {
 		opacity = 1,
 		noteImage = self.assets.images.note
@@ -674,7 +674,7 @@ function gameSetting:draw()
 	love.graphics.setColor(colorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
-	util.drawText(self.data.titleText, 480, 24)
+	Util.drawText(self.data.titleText, 480, 24)
 
 	-- Note style-specific setting
 	if self.persist.selectedSetting == 4 then
@@ -718,7 +718,7 @@ function gameSetting:draw()
 		drawLayerAt(self.persist.styleData, self.persist.styleLayer[3], 888, 560)
 	end
 
-	glow.draw()
+	Glow.draw()
 	self.persist.categoryFrame:draw()
 
 	if set then

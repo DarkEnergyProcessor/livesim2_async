@@ -7,10 +7,10 @@ local yaml = require("libs.tinyyaml")
 local Luaoop = require("libs.Luaoop")
 local timer = require("libs.hump.timer")
 
-local audioManager = require("audio_manager")
+local AudioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 
 local baseStoryboard = require("game.storyboard.base")
 
@@ -166,7 +166,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 		for _, v in ipairs(storyData.skill) do
 			local skillData = {
 				type = v.type,
-				chance = util.clamp(v.chance, 0, 1),
+				chance = Util.clamp(v.chance, 0, 1),
 				rarity = v.rarity:lower(),
 				value = v.value,
 				unit = v.index
@@ -223,7 +223,7 @@ function yamlStoryboard:__construct(storyboardData, info)
 		end
 
 		-- Add
-		local t = util.deepCopy(v)
+		local t = Util.deepCopy(v)
 		counter = counter + 1
 		t.index = counter
 		t.time = time
@@ -302,8 +302,8 @@ function yamlStoryboard:handleEvent(ev)
 		-- This codepath should be taken for "set" mode
 		-- ("draw" and "undraw" also use "set" mode)
 		for k, v in pairs(ev) do
-			if k ~= "type" and k ~= "time" and k ~= "target" and util.isValueInArray(changeableValue, k) then
-				if tostring(v):find("tween", 1, true) and util.isValueInArray(tweenableValue, k) then
+			if k ~= "type" and k ~= "time" and k ~= "target" and Util.isValueInArray(changeableValue, k) then
+				if tostring(v):find("tween", 1, true) and Util.isValueInArray(tweenableValue, k) then
 					-- The format is "tween %d+ in %d+ seconds|ms"
 					local ok = true
 					local dest, duration, unit = tostring(v):match("tween (%d+) in (%d+) ([ms|seconds]+)")
@@ -343,10 +343,10 @@ function yamlStoryboard:loadAudio(path, kind)
 	if path == nil then return nil end
 
 	if self.data[path] then
-		return audioManager.newAudioDirect(love.sound.newDecoder(self.data[path]), kind)
+		return AudioManager.newAudioDirect(love.sound.newDecoder(self.data[path]), kind)
 	elseif self.path then
-		if util.fileExists(self.path..path) then
-			return audioManager.newAudio(self.path..path, kind)
+		if Util.fileExists(self.path..path) then
+			return AudioManager.newAudio(self.path..path, kind)
 		end
 	end
 

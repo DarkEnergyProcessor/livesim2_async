@@ -8,9 +8,9 @@ local lily = require("lily")
 local async = require("async")
 local cache = require("cache")
 local log = require("logging")
-local util = require("util")
+local Util = require("util")
 
-local assetCache = {enableSync = false}
+local AssetCache = {enableSync = false}
 
 local function getCacheByParam(a, b, nob)
 	local s, e = a:find(":", 1, true)
@@ -34,16 +34,16 @@ local function getCacheByParam(a, b, nob)
 	end
 end
 
-function assetCache.loadImage(name, settings, errhand)
+function AssetCache.loadImage(name, settings, errhand)
 	local s, a, b = getCacheByParam(name, settings, true)
 
 	if s then
 		return a
 	else
 		local image
-		if assetCache.enableSync then
+		if AssetCache.enableSync then
 			-- Run synchronously (discouraged)
-			assert(assetCache.enableSync, "synchronous mode is not allowed")
+			assert(AssetCache.enableSync, "synchronous mode is not allowed")
 			image = love.graphics.newImage(b, settings)
 		elseif coroutine.running() then
 			-- Run asynchronously
@@ -63,7 +63,7 @@ local function setMultipleLilyCallback(udata, index, value)
 	udata.avail[udata.need[index]] = value
 end
 
-function assetCache.loadMultipleImages(images, settings)
+function AssetCache.loadMultipleImages(images, settings)
 	local available = {}
 	local needed = {}
 	local cachenames = {}
@@ -81,7 +81,7 @@ function assetCache.loadMultipleImages(images, settings)
 	end
 
 	if #needed > 0 then
-		if assetCache.enableSync then
+		if AssetCache.enableSync then
 			-- Run synchronously
 			for i = 1, #lilyload do
 				local img = love.graphics.newImage(lilyload[i][2], lilyload[i][3])
@@ -105,22 +105,22 @@ function assetCache.loadMultipleImages(images, settings)
 	return available
 end
 
-function assetCache.loadFont(name, settings, hinting, dpi)
+function AssetCache.loadFont(name, settings, hinting, dpi)
 	hinting = hinting or "normal"
-	dpi = dpi or util.getFontDPIScale()
+	dpi = dpi or Util.getFontDPIScale()
 	local s, a, b = getCacheByParam(name, tostring(settings)..hinting..dpi)
 
 	if s then
 		return a
 	else
 		local image
-		if assetCache.enableSync then
+		if AssetCache.enableSync then
 			-- Run synchronously (discouraged)
-			assert(assetCache.enableSync, "synchronous mode is not allowed")
-			image = love.graphics.newFont(b, settings, hinting, util.getFontDPIScale())
+			assert(AssetCache.enableSync, "synchronous mode is not allowed")
+			image = love.graphics.newFont(b, settings, hinting, Util.getFontDPIScale())
 		elseif coroutine.running() then
 			-- Run asynchronously
-			local c = async.loadFont(b, settings, hinting, util.getFontDPIScale())
+			local c = async.loadFont(b, settings, hinting, Util.getFontDPIScale())
 			image = c:getValues()
 		else
 			error("synchronous mode is not allowed", 2)
@@ -131,14 +131,14 @@ function assetCache.loadFont(name, settings, hinting, dpi)
 	end
 end
 
-function assetCache.loadMultipleFonts(fonts)
+function AssetCache.loadMultipleFonts(fonts)
 	local available = {}
 	local needed = {}
 	local cachenames = {}
 	local lilyload = {}
 
 	for i = 1, #fonts do
-		local dpi = fonts[i][4] or util.getFontDPIScale()
+		local dpi = fonts[i][4] or Util.getFontDPIScale()
 		local hint = fonts[i][3] or "normal"
 		local s, a, b = getCacheByParam(fonts[i][1], tostring(fonts[i][2])..hint..dpi)
 
@@ -151,9 +151,9 @@ function assetCache.loadMultipleFonts(fonts)
 		end
 	end
 
-	if assetCache.enableSync then
+	if AssetCache.enableSync then
 		-- Run synchronously
-		assert(assetCache.enableSync, "synchronous mode is not allowed")
+		assert(AssetCache.enableSync, "synchronous mode is not allowed")
 		for i = 1, #lilyload do
 			local img = love.graphics.newFont(lilyload[i][2], lilyload[i][3], lilyload[i][4], lilyload[i][5])
 			available[needed[i]] = img
@@ -180,4 +180,4 @@ function assetCache.loadMultipleFonts(fonts)
 	return available
 end
 
-return assetCache
+return AssetCache

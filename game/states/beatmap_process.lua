@@ -4,13 +4,13 @@
 
 local love = require("love")
 
-local gamestate = require("gamestate")
-local util = require("util")
+local Gamestate = require("gamestate")
+local Util = require("util")
 local L = require("language")
 
 local beatmapProbe = require("game.beatmap.probe")
 
-local beatmapProcess = gamestate.create {
+local beatmapProcess = Gamestate.create {
 	images = {}, fonts = {}
 }
 
@@ -27,16 +27,16 @@ function beatmapProcess.start(_, list)
 	for i = 1, #list do
 		local f
 		if type(list[i]) == "string" then
-			f = util.newFileWrapper(list[i], "rb")
+			f = Util.newFileWrapper(list[i], "rb")
 		elseif list[i]:open("r") then
 			f = list[i]
 		end
 
 		if f then
-			local filename = util.basename(f:getFilename())
+			local filename = Util.basename(f:getFilename())
 
 			if beatmapProbe(f) then
-				local there = util.fileExists("beatmap/"..filename)
+				local there = Util.fileExists("beatmap/"..filename)
 				if there and askOverwrite(filename) or not(there) then
 					local fout = love.filesystem.newFile("beatmap/"..filename, "w")
 					if fout then
@@ -55,7 +55,7 @@ function beatmapProcess.start(_, list)
 		end
 	end
 
-	gamestate.replace(nil, "beatmapSelect")
+	Gamestate.replace(nil, "beatmapSelect")
 end
 
 return beatmapProcess

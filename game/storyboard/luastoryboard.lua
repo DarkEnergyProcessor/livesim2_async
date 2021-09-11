@@ -8,12 +8,12 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local audioManager = require("audio_manager")
+local AudioManager = require("audio_manager")
 local color = require("color")
 local log = require("logging")
 local mainFont = require("font")
 local sandbox = require("sandbox")
-local util = require("util")
+local Util = require("util")
 
 local baseStoryboard = require("game.storyboard.base")
 local luaStoryboard = Luaoop.class("Livesim2.Storyboard.Lua", baseStoryboard)
@@ -25,7 +25,7 @@ local function falseret() return false end
 -- LOVE 0.10.0 and LOVE 11.0 has some parameter incompatibilities
 -- to tell it not to load audio.
 local loadVideoOnly, canvas3rdArg
-if util.compareLOVEVersion(11, 0) >= 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 then
 	loadVideoOnly = function(path)
 		return love.graphics.newVideo(path, {audio = false})
 	end
@@ -191,11 +191,11 @@ function luaStoryboard:setupMainEnv()
 	end
 	-- IsDesktopSystem function
 	function self.mainEnv.isDesktop()
-		return not(util.isMobile())
+		return not(Util.isMobile())
 	end
 	-- IsRenderMode function
 	function self.mainEnv.isRendering()
-		return audioManager.renderRate > 0
+		return AudioManager.renderRate > 0
 	end
 end
 
@@ -223,11 +223,11 @@ function luaStoryboard:setupV2Sandbox()
 		local s, audio
 
 		if self.beatmapData[path] then
-			s, audio = pcall(audioManager.newAudioDirect, self.beatmapData[path], "voice")
+			s, audio = pcall(AudioManager.newAudioDirect, self.beatmapData[path], "voice")
 		end
 
 		if not(s) and self.beatmapPath then
-			s, audio = pcall(audioManager.newAudio, self.beatmapPath..path, "voice")
+			s, audio = pcall(AudioManager.newAudio, self.beatmapPath..path, "voice")
 		end
 
 		if s then

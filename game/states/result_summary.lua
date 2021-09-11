@@ -8,14 +8,14 @@ local cubicBezier = require("libs.cubic_bezier")
 
 local mainFont = require("font")
 local color = require("color")
-local setting = require("setting")
-local gamestate = require("gamestate")
-local loadingInstance = require("loading_instance")
-local util = require("util")
+local Setting = require("setting")
+local Gamestate = require("gamestate")
+local LoadingInstance = require("loading_instance")
+local Util = require("util")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local ciButton = require("game.ui.circle_icon_button")
 
 local interpolation = cubicBezier(0.4, 0, 0.2, 1):getFunction()
@@ -29,7 +29,7 @@ local accuracyColorMap = {
 }
 local rankingQuad
 
-local resultScreen = gamestate.create {
+local resultScreen = Gamestate.create {
 	fonts = {},
 	images = {
 		arrowBack = {"assets/image/ui/over_the_rainbow/arrow_back.png", mipmaps},
@@ -53,7 +53,7 @@ local function PV(v, i)
 end
 
 local function leave()
-	gamestate.leave(loadingInstance.getInstance())
+	Gamestate.leave(LoadingInstance.getInstance())
 end
 
 function resultScreen:load(arg)
@@ -67,7 +67,7 @@ function resultScreen:load(arg)
 	-- * autoplay - Is result from autoplay?
 	-- * comboRange - Score and combo range
 	-- * background - Beatmap background
-	glow.clear()
+	Glow.clear()
 
 	rankingQuad = {
 		love.graphics.newQuad(0, 2, 620, 150, 620, 604),
@@ -77,7 +77,7 @@ function resultScreen:load(arg)
 	}
 	local saveAllowed = arg.allowSave and not(arg.autoplay)
 
-	self.data.background = arg.background or backgroundLoader.load(setting.get("BACKGROUND_IMAGE"))
+	self.data.background = arg.background or backgroundLoader.load(Setting.get("BACKGROUND_IMAGE"))
 
 	if self.data.mainFont == nil then
 		self.data.mainFont = mainFont.get(32)
@@ -99,14 +99,14 @@ function resultScreen:load(arg)
 		self.data.back = ciButton(color.transparent, 36, self.assets.images.arrowBack, 0.32)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 32, 4)
 
 	do
 		if self.data.showReplay == nil then
 			self.data.showReplay = ciButton(color.hexFFDF35, 43, self.assets.images.videocam, 0.32)
 			self.data.showReplay:addEventListener("mousereleased", function()
 				if not(arg.autoplay) then
-					gamestate.replace(loadingInstance.getInstance(), "livesim2", {
+					Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
 						summary = arg.summary,
 						beatmapName = arg.name,
 						replay = arg.replay,
@@ -127,7 +127,7 @@ function resultScreen:load(arg)
 				end
 				newArg.replay = nil
 
-				return gamestate.replace(loadingInstance.getInstance(), "livesim2", newArg)
+				return Gamestate.replace(LoadingInstance.getInstance(), "livesim2", newArg)
 			end)
 		end
 
@@ -146,7 +146,7 @@ function resultScreen:load(arg)
 				end
 
 				name = "replays/"..arg.name.."/"..arg.replay.timestamp..".lsr"
-				if util.fileExists(name) then
+				if Util.fileExists(name) then
 					showText(self, L"livesim2:replay:errorAlreadySaved")
 					return
 				end
@@ -169,15 +169,15 @@ function resultScreen:load(arg)
 
 		local addX = 840
 		if self.data.reloadLive then
-			glow.addFixedElement(self.data.reloadLive, addX, 176)
+			Glow.addFixedElement(self.data.reloadLive, addX, 176)
 			addX = addX - 96
 		end
 
-		glow.addFixedElement(self.data.showReplay, addX, 176)
+		Glow.addFixedElement(self.data.showReplay, addX, 176)
 		addX = addX - 96
 
 		if self.data.saveReplay then
-			glow.addFixedElement(self.data.saveReplay, addX, 176)
+			Glow.addFixedElement(self.data.saveReplay, addX, 176)
 		end
 	end
 end
@@ -239,7 +239,7 @@ function resultScreen:start(arg)
 	do
 		local accuracyData = arg.replay.accuracy
 		local lines = {}
-		self.persist.graphCanvas = util.newCanvas(900, 132, nil, true)
+		self.persist.graphCanvas = Util.newCanvas(900, 132, nil, true)
 		self.persist.graphTimer = 0 -- up to 3 seconds
 		self.persist.graphShader = love.graphics.newShader([[
 			extern number p;
@@ -359,7 +359,7 @@ function resultScreen:draw()
 	end
 
 	love.graphics.rectangle("fill", -88, 231, 1136, 452)
-	love.graphics.setShader(util.drawText.workaroundShader)
+	love.graphics.setShader(Util.drawText.workaroundShader)
 	love.graphics.draw(self.persist.nameText, 214, 100)
 	local c = love.graphics.getCanvas()
 	love.graphics.draw(self.persist.indicatorText)
@@ -390,7 +390,7 @@ function resultScreen:draw()
 		end
 	end
 
-	return glow.draw()
+	return Glow.draw()
 end
 
 resultScreen:registerEvent("keyreleased", function(_, key)

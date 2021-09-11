@@ -10,10 +10,10 @@ local Luaoop = require("libs.Luaoop")
 -- implement functions below marked as pure virtual
 -- method.
 
-local element = Luaoop.class("Afterglow.Element")
+local Element = Luaoop.class("Afterglow.Element")
 
 -- Create new element (internal)
-function element:__construct(...)
+function Element:__construct(...)
 	local internal = Luaoop.class.data(self)
 	internal.events = {}
 
@@ -23,7 +23,7 @@ function element:__construct(...)
 end
 
 -- Create new element (user override)
-function element:new(...)
+function Element:new(...)
 	error("pure virtual method 'new'")
 end
 
@@ -31,22 +31,22 @@ end
 --! @param x Absolute X position
 --! @param y Absolute Y position
 --! @note This is meant to be called by frame
-function element:render(x, y)
+function Element:render(x, y)
 	error("pure virtual method 'render'")
 end
 
-function element:update(dt)
+function Element:update(dt)
 end
 
-function element:setData(data)
+function Element:setData(data)
 	Luaoop.class.data(self).opaque = data
 end
 
-function element:getData()
+function Element:getData()
 	return Luaoop.class.data(self).opaque
 end
 
-function element:addEventListener(eventname, handler)
+function Element:addEventListener(eventname, handler)
 	local internal = Luaoop.class.data(self)
 
 	if internal.events[eventname] == nil then
@@ -56,7 +56,7 @@ function element:addEventListener(eventname, handler)
 	end
 end
 
-function element:removeEventListener(eventname, handler)
+function Element:removeEventListener(eventname, handler)
 	local internal = Luaoop.class.data(self)
 
 	if internal.events[eventname] then
@@ -68,7 +68,7 @@ function element:removeEventListener(eventname, handler)
 	end
 end
 
-function element:triggerEvent(eventname, ...)
+function Element:triggerEvent(eventname, ...)
 	local internal = Luaoop.class.data(self)
 
 	if internal.events[eventname] then
@@ -80,8 +80,8 @@ function element:triggerEvent(eventname, ...)
 	end
 end
 
-function element:getDimensions()
+function Element:getDimensions()
 	return self.width, self.height
 end
 
-return element
+return Element

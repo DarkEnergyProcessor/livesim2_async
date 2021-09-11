@@ -6,12 +6,13 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local color = require("color")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local colorTheme = require("game.color_theme")
 
-local StripeText = Luaoop.class("Livesim2.StripeText", glow.element)
+---@class Livesim2.StripeText: Glow.Element
+local StripeText = Luaoop.class("Livesim2.StripeText", Glow.Element)
 
----@param font Font
+---@param font love.Font
 function StripeText:new(font, text, padding, width)
 	self.height = font:getHeight() + padding * 2
 	self.width = width or font:getWidth(text) + padding * 2

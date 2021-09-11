@@ -12,8 +12,8 @@ local love = require("love")
 local bit = require("bit")
 local Luaoop = require("libs.Luaoop")
 local log = require("logging")
-local setting = require("setting")
-local util = require("util")
+local Setting = require("setting")
+local Util = require("util")
 local md5 = require("game.md5")
 local baseLoader = require("game.beatmap.base")
 
@@ -126,7 +126,7 @@ function osuLoader:__construct(f, dir)
 			-- Background
 			local path = line:match("^0,0,(%b\"\")")
 			if path == nil then
-				local splitted = util.split(line, ",")
+				local splitted = Util.split(line, ",")
 				path = assert(splitted[3], "background path not found")
 			else
 				path = path:sub(2, -2)
@@ -137,7 +137,7 @@ function osuLoader:__construct(f, dir)
 			-- Video
 			local path = line:match(",0,(%b\"\")")
 			if path == nil then
-				local splitted = util.split(line, ",")
+				local splitted = Util.split(line, ",")
 				path = assert(splitted[3], "video path not found")
 			else
 				path = path:sub(2, -2)
@@ -193,14 +193,14 @@ function osuLoader:getNotesList()
 	local beatmap = {}
 	local offset = -(internal.general.AudioLeanIn or 0)
 	local nkeys = internal.difficulty.CircleSize
-	local attribute = setting.get("LLP_SIFT_DEFATTR")
+	local attribute = Setting.get("LLP_SIFT_DEFATTR")
 
 	if internal.general.Mode == 3 then
 		-- Beatmap is osu!mania, only need to convert representation
 		for _, v in ipairs(internal.beatmapData) do
-			local hitObject = util.split(v, ",")
+			local hitObject = Util.split(v, ",")
 
-			local positionMania = util.clamp(math.floor(assert(tonumber(hitObject[1])) * nkeys / 512), 0, nkeys - 1)
+			local positionMania = Util.clamp(math.floor(assert(tonumber(hitObject[1])) * nkeys / 512), 0, nkeys - 1)
 			local position = assert(positionMapping[nkeys][positionMania + 1])
 			local objectType = assert(tonumber(hitObject[4]), "invalid object type")
 
@@ -248,9 +248,9 @@ function osuLoader:getAudioPathList()
 	local internal = Luaoop.class.data(self)
 
 	if internal.path then
-		return {internal.path..util.removeExtension(internal.general.AudioFilename)}
+		return {internal.path..Util.removeExtension(internal.general.AudioFilename)}
 	else
-		local file = util.stringToHex(md5(internal.metadata.Artist..internal.metadata.Title..internal.general.AudioFilename))
+		local file = Util.stringToHex(md5(internal.metadata.Artist..internal.metadata.Title..internal.general.AudioFilename))
 
 		log.debugf(
 			"noteloader.osu", "%s - %s (%s) = %s",
@@ -267,7 +267,7 @@ function osuLoader:getName()
 	return Luaoop.class.data(self).metadata.Title
 end
 
-local videoExtension = util.hasExtendedVideoSupport() and
+local videoExtension = Util.hasExtendedVideoSupport() and
 	{".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or
 	{".ogg", ".ogv"}
 
@@ -327,11 +327,11 @@ function osuLoader:getBackground()
 		-- Try to load video file
 		local videoFile
 		if internal.video then
-			local ext = util.getExtension(internal.video)
+			local ext = Util.getExtension(internal.video)
 
-			if util.isValueInArray("."..ext, videoExtension) then
+			if Util.isValueInArray("."..ext, videoExtension) then
 				local status
-				status, videoFile = pcall(util.newVideoStream, internal.path..internal.video)
+				status, videoFile = pcall(Util.newVideoStream, internal.path..internal.video)
 
 				if status == false then
 					videoFile = nil

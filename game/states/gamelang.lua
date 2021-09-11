@@ -5,18 +5,18 @@
 local love = require("love")
 
 local color = require("color")
-local gamestate = require("gamestate")
+local Gamestate = require("gamestate")
 local mainFont = require("font")
-local util = require("util")
+local Util = require("util")
 local L = require("language")
 
 local backgroundLoader = require("game.background_loader")
 
-local glow = require("game.afterglow")
+local Glow = require("game.afterglow")
 local backNavigation = require("game.ui.back_navigation")
 local longButtonUI = require("game.ui.long_button")
 
-local gameLang = gamestate.create {
+local gameLang = Gamestate.create {
 	fonts = {},
 	images = {},
 }
@@ -25,7 +25,7 @@ local restartButton = {"Yes", "No", enterbutton = 1, escapebutton = 2}
 
 local function updateLanguagString(text, lang)
 	text:clear()
-	util.addTextWithShadow(text, L("setting:language:current", lang), 0, 0)
+	Util.addTextWithShadow(text, L("setting:language:current", lang), 0, 0)
 end
 
 local function setLanguage(_, value)
@@ -35,18 +35,18 @@ local function setLanguage(_, value)
 end
 
 local function leave()
-	return gamestate.leave(nil)
+	return Gamestate.leave(nil)
 end
 
 function gameLang:load()
-	glow.clear()
+	Glow.clear()
 
 	if self.persist.languageText == nil then
 		self.persist.languageText = love.graphics.newText(mainFont.get(26))
 	end
 
 	if self.data.buttonFrame == nil then
-		local frame = glow.frame(101, 50, 800, 546)
+		local frame = Glow.Frame(101, 50, 800, 546)
 		for i, v in ipairs(L.enum()) do
 			local elem = longButtonUI(v.name)
 			elem:addEventListener("mousereleased", setLanguage)
@@ -55,7 +55,7 @@ function gameLang:load()
 		end
 		self.data.buttonFrame = frame
 	end
-	glow.addFrame(self.data.buttonFrame)
+	Glow.addFrame(self.data.buttonFrame)
 
 	if self.data.background == nil then
 		self.data.background = backgroundLoader.load(14)
@@ -66,7 +66,7 @@ function gameLang:load()
 		self.data.back:addEventListener("mousereleased", function()
 			if
 				self.persist.currentLanguage ~= self.persist.previousLanguage and
-				util.compareLOVEVersion(0, 10, 2) >= 0 and
+				Util.compareLOVEVersion(0, 10, 2) >= 0 and
 				love.window.showMessageBox("Restart", L"setting:language:restart", restartButton, "info") == 1
 			then
 				love.event.quit("restart")
@@ -75,7 +75,7 @@ function gameLang:load()
 			return leave()
 		end)
 	end
-	glow.addFixedElement(self.data.back, 0, 0)
+	Glow.addFixedElement(self.data.back, 0, 0)
 end
 
 function gameLang:start()
@@ -98,7 +98,7 @@ function gameLang:draw()
 	love.graphics.draw(self.persist.languageText, 480, 8)
 
 	self.data.buttonFrame:draw()
-	glow.draw()
+	Glow.draw()
 end
 
 gameLang:registerEvent("keyreleased", function(_, key)
