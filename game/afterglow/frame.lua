@@ -7,20 +7,22 @@ local Luaoop = require("libs.Luaoop")
 local color = require("color")
 local Util = require("util")
 local ColorTheme = require("game.color_theme")
-local slider = require("game.afterglow.slider")
+local Slider = require("game.afterglow.slider")
 
 -- You definely need a "Frame" object to store all your GUIs
 -- because Frame is responsible of rendering it.
 -- Frane also responsible of handling the position
 
-local frame = Luaoop.class("Afterglow.Frame")
+---@class Glow.Frame
+local Frame = Luaoop.class("Glow.Frame")
 
---! Create new frame
---! @param x position
---! @param y position
---! @param w viewport width
---! @param h viewport height
-function frame:__construct(x, y, w, h)
+-- Create new frame
+---@param x number position
+---@param y number position
+---@param w number viewport width
+---@param h number viewport height
+function Frame:__construct(x, y, w, h)
+	---@class Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 
 	self.width, self.height = assert(w), assert(h)
@@ -46,12 +48,14 @@ function frame:__construct(x, y, w, h)
 	internal.fixedElementList = {}
 end
 
---! Add new element to frame
---! @param element Element constructor function
---! @param x element x position
---! @param y element y position
---! @return Created element
-function frame:addElement(element, x, y, ...)
+-- Add new element to frame
+---@generic T: Glow.Element
+---@param element T|fun(...):T Element constructor function
+---@param x number element x position
+---@param y number element y position
+---@return T @Created element
+function Frame:addElement(element, x, y, ...)
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 	local elem
 	if Luaoop.class.type(element) then
@@ -63,19 +67,22 @@ function frame:addElement(element, x, y, ...)
 	internal.elementList[#internal.elementList + 1] = {
 		element = elem,
 		x = assert(x),
-		y = assert(y)
+		y = assert(y),
+		fixed = false
 	}
 	return elem
 end
 
---! Add new fixed element
---!
---! Fixed element doesn't affected by scroll
---! @param element Element constructor function
---! @param x element x position
---! @param y element y position
---! @return Created element
-function frame:addFixedElement(element, x, y, ...)
+-- Add new fixed element
+--
+-- Fixed element doesn't affected by scroll
+---@generic T: Glow.Element
+---@param element T|fun(...):T Element constructor function
+---@param x number element x position
+---@param y number element y position
+---@return T @Created element
+function Frame:addFixedElement(element, x, y, ...)
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 	local elem
 	if Luaoop.class.type(element) then
@@ -93,11 +100,12 @@ function frame:addFixedElement(element, x, y, ...)
 	return elem
 end
 
---! Set element position
---! @param element Existing element
---! @param x New X position
---! @param y New Y position
-function frame:setElementPosition(element, x, y)
+-- Set element position
+---@param element Glow.Element Existing element
+---@param x number New X position
+---@param y number New Y position
+function Frame:setElementPosition(element, x, y)
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 
 	for i = 1, #internal.fixedElementList do
@@ -119,18 +127,20 @@ function frame:setElementPosition(element, x, y)
 	return false
 end
 
-function frame:getPosition()
+function Frame:getPosition()
 	return self.x, self.y
 end
 
-function frame:setPosition(x, y)
+---@param x number
+---@param y number
+function Frame:setPosition(x, y)
 	self.x = assert(x)
 	self.y = assert(y)
 end
 
---! Remove element from frame
---! @param element Element object
-function frame:removeElement(element)
+-- Remove element from frame
+---@param element Glow.Element Element object
+function Frame:removeElement(element)
 	local internal = Luaoop.class.data(self)
 
 	for i = 1, #internal.elementList do
@@ -160,6 +170,9 @@ function frame:removeElement(element)
 	end
 end
 
+---@param self Glow.Frame
+---@param internal Glow.FrameInternal
+---@param info table
 local function checkMousepressed(self, internal, info, a, b)
 	local w, h = info.element:getDimensions()
 	local c, d = a - self.x, b - self.y
@@ -184,10 +197,10 @@ local function checkMousepressed(self, internal, info, a, b)
 	return false
 end
 
---! Handle frame events
---! @param name Event name
---! @param ... event params
-function frame:handleEvents(name, a, b, c, d, e, f)
+-- Handle frame events
+---@param name string Event name
+function Frame:handleEvents(name, a, b, c, d, e, f)
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 
 	if name == "mousepressed" and internal.mouseBuffer.pressed == false then
@@ -330,8 +343,9 @@ function frame:handleEvents(name, a, b, c, d, e, f)
 	return false
 end
 
---! Removes all elements, effectively clear it
-function frame:clear()
+-- Removes all elements, effectively clear it
+function Frame:clear()
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 
 	for i = math.max(#internal.elementList, #internal.fixedElementList), 1, -1 do
@@ -344,13 +358,17 @@ function frame:clear()
 	end
 end
 
---! Resize frame size
-function frame:resize(w, h)
+-- Resize frame size
+---@param w number
+---@param h number
+function Frame:resize(w, h)
 	self.width, self.height = w, h
 end
 
---! Update elements
-function frame:update(dt)
+-- Update elements
+---@param dt number
+function Frame:update(dt)
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 	local maxX, maxY = 0, 0
 	for _, v in ipairs(internal.fixedElementList) do
@@ -370,7 +388,7 @@ function frame:update(dt)
 	if maxX > self.width - sliderOffCompX then
 		if not(self.sliderH) then
 			self.sliderH = {
-				element = slider("horizontal", self.width - 30, maxX - self.width + sliderOffCompX),
+				element = Slider("horizontal", self.width - 30, maxX - self.width + sliderOffCompX),
 				x = 0,
 				y = self.height - 30,
 				fixed = true
@@ -390,7 +408,7 @@ function frame:update(dt)
 	if maxY > self.height - sliderOffCompY then
 		if not(self.sliderV) then
 			self.sliderV = {
-				element = slider("vertical", self.height - 30, maxY - self.height + sliderOffCompY),
+				element = Slider("vertical", self.height - 30, maxY - self.height + sliderOffCompY),
 				x = self.sliderLeft and 0 or (self.width - 30),
 				y = 0,
 				fixed = true
@@ -426,8 +444,9 @@ local function frameViewportDraw()
 	return love.graphics.rectangle("fill", singleton.x, singleton.y, singleton.width, singleton.height)
 end
 
---! Draw elemenets
-function frame:draw()
+-- Draw elemenets
+function Frame:draw()
+	---@type Glow.FrameInternal
 	local internal = Luaoop.class.data(self)
 
 	singleton = self
@@ -466,7 +485,7 @@ function frame:draw()
 	end
 end
 
-function frame:setVerticalSliderPosition(pos)
+function Frame:setVerticalSliderPosition(pos)
 	if pos == "left" then
 		self.sliderLeft = true
 	elseif pos == "right" then
@@ -476,7 +495,7 @@ function frame:setVerticalSliderPosition(pos)
 	end
 end
 
-function frame:setSliderColor(col)
+function Frame:setSliderColor(col)
 	self.sliderColor = col
 
 	if self.sliderH then
@@ -488,7 +507,7 @@ function frame:setSliderColor(col)
 	end
 end
 
-function frame:setSliderHandleColor(col)
+function Frame:setSliderHandleColor(col)
 	self.sliderHandleColor = col
 
 	if self.sliderH then
@@ -500,4 +519,4 @@ function frame:setSliderHandleColor(col)
 	end
 end
 
-return frame
+return Frame

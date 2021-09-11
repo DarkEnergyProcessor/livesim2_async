@@ -8,12 +8,16 @@ local Luaoop = require("libs.Luaoop")
 local color = require("color")
 local Util = require("util")
 local ColorTheme = require("game.color_theme")
-local element = require("game.afterglow.element")
+local Element = require("game.afterglow.element")
 
-local slider = Luaoop.class("Afterglow.Slider", element)
+---@class Glow.Slider: Glow.Element
+local Slider = Luaoop.class("Glow.Slider", Element)
 local desiredType = {horizontal = "horizontal", vertical = "vertical"}
 
-function slider:new(type, length, maxValue)
+---@param type '"horizontal"' | '"vertical"'
+---@param length number
+---@param maxValue number
+function Slider:new(type, length, maxValue)
 	self.sliderType = assert(desiredType[type], "invalid type")
 	self.sliderLength = length
 	self.sliderMaxValue = maxValue
@@ -27,11 +31,11 @@ function slider:new(type, length, maxValue)
 		self.width, self.height = 30, length
 	end
 
-	self:addEventListener("mousepressed", slider._pressed)
-	self:addEventListener("mousemoved", slider._pressed)
+	self:addEventListener("mousepressed", Slider._pressed)
+	self:addEventListener("mousemoved", Slider._pressed)
 end
 
-function slider:_pressed(_, x, y)
+function Slider:_pressed(_, x, y)
 	local pos = -36
 
 	if self.sliderType == "horizontal" then
@@ -43,7 +47,7 @@ function slider:_pressed(_, x, y)
 	self.sliderValue = Util.clamp(pos / (self.sliderLength - 72), 0, 1) * self.sliderMaxValue
 end
 
-function slider:render(x, y)
+function Slider:render(x, y)
 	local percentage = self.sliderValue / self.sliderMaxValue
 	-- slider thickness is 30
 	-- slider handle thickness is 24 with length of 72
@@ -64,25 +68,25 @@ function slider:render(x, y)
 	end
 end
 
-function slider:setMaxValue(maxval)
+function Slider:setMaxValue(maxval)
 	self.sliderMaxValue = maxval
 	self.sliderValue = math.min(self.sliderValue, maxval)
 end
 
-function slider:setValue(value)
+function Slider:setValue(value)
 	self.sliderValue = Util.clamp(value, 0, self.sliderMaxValue)
 end
 
-function slider:getValue()
+function Slider:getValue()
 	return self.sliderValue
 end
 
-function slider:setSliderColor(col)
+function Slider:setSliderColor(col)
 	self.sliderColor = assert(col)
 end
 
-function slider:setHandleColor(col)
+function Slider:setHandleColor(col)
 	self.sliderHandleColor = assert(col)
 end
 
-return slider
+return Slider
