@@ -33,13 +33,17 @@ local bit = require("bit")
 ---------------------------------------------------
 -- File reading/writing wrapper, for consistency --
 ---------------------------------------------------
+---@type file*
 local fileptr = getmetatable(io.stdout)
+
+---@class ls2.FileStreamWrapper
 local fsw = {
 	read = fileptr.read,
 	write = fileptr.write,
 	seek = fileptr.seek,
 }
 
+---@param list ls2.FileStreamWrapper
 function ls2.setstreamwrapper(list)
 	fsw.read = assert(list.read)
 	fsw.write = assert(list.write)
@@ -51,6 +55,7 @@ end
 ---------------
 
 -- String to little endian dword (signed)
+---@param str string
 local function string2dword(str)
 	return bit.bor(
 		str:byte(),
@@ -61,11 +66,13 @@ local function string2dword(str)
 end
 
 -- String to little endian dword (unsigned)
+---@param str string
 local function string2dwordu(str)
 	return string2dword(str) % 4294967296
 end
 
 -- Double word to little-endian string (unsigned)
+---@param num number
 local function dwordu2string(num)
 	local b = {}
 	b[1] = string.char(bit.band(num, 0xFF))
@@ -77,22 +84,26 @@ local function dwordu2string(num)
 end
 
 -- Double word to little-endian string (signed)
+---@param num number
 local function dword2string(num)
 	return dwordu2string(num % 4294967296)
 end
 
 -- String to little endian word (unsigned)
+---@param str string
 local function string2wordu(str)
 	return bit.bor(str:byte(), bit.lshift(str:sub(2,2):byte(), 8))
 end
 
 -- String to little endian word (signed)
+---@param str string
 local function string2word(str)
 	local x = string2dwordu(str)
 
 	return x > 32767 and x - 65536 or x
 end
 
+---@param num number
 local function wordu2string(num)
 	local b = {}
 	b[1] = string.char(bit.band(num, 0xFF))
@@ -102,6 +113,7 @@ local function wordu2string(num)
 end
 
 -- String read datatype
+---@return string
 local function readstring(stream)
 	return fsw.read(stream, string2dwordu(fsw.read(stream, 4)))
 end
@@ -115,10 +127,9 @@ end
 -- Section processors functions (decoder) --
 --------------------------------------------
 
---! @brief Metadata parser (v2.0, optional in v1.x)
---! @param stream The file stream
---! @returns Metadata in table
+-- Metadata parser (v2.0, optional in v1.x)
 local function process_MTDT(stream)
+	---@class ls2.Chunk_MTDT
 	local out = {}
 
 	local has_info = fsw.read(stream, 1):byte()
@@ -177,11 +188,11 @@ local function skip_MTDT(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) + 32)
 end
 
---! @brief Beatmap Millisecond parser
---! @param stream The file stream
---! @param v2 use v2.0 parsing method?
---! @returns SIF-compilant beatmap
+-- Beatmap Millisecond parser
+---@param v2 boolean use v2.0 parsing method?
+---@return ls2.SIFBeatmapData[] @SIF-compilant beatmap
 local function process_BMPM(stream, v2)
+	---@type ls2.SIFBeatmapData[]
 	local sif_notes = {}
 	local amount_notes = string2dwordu(fsw.read(stream, 4))
 
@@ -228,7 +239,8 @@ local function process_BMPM(stream, v2)
 			end
 		end
 
-		sif_notes[#sif_notes + 1] = {
+		---@class ls2.SIFBeatmapData
+		local t = {
 			timing_sec = timing_sec,
 			notes_attribute = attribute,
 			notes_level = notes_level,
@@ -236,6 +248,7 @@ local function process_BMPM(stream, v2)
 			effect_value = effect_new_val,
 			position = position
 		}
+		sif_notes[#sif_notes + 1] = t
 	end
 
 	table.sort(sif_notes, function(a, b) return a.timing_sec < b.timing_sec end)
@@ -246,11 +259,11 @@ local function skip_BMPM(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) * 12)
 end
 
---! @brief Beatmap Tick parser
---! @param stream The file stream
---! @param v2 use v2.0 parsing method?
---! @returns SIF-compilant beatmap
+-- Beatmap Tick parser
+---@param v2 boolean use v2.0 parsing method?
+---@return ls2.SIFBeatmapData[] @SIF-compilant beatmap
 local function process_BMPT(stream, v2)
+	---@type ls2.SIFBeatmapData[]
 	local sif_notes = {}
 	local ppqn = string2word(fsw.read(stream, 2))
 	local bpm = string2word(fsw.read(stream, 2)) / 1000
@@ -394,25 +407,29 @@ local function skip_BMPT(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)) * 12)
 end
 
---! @brief Score value section processing (v1.x only, ignored in v2.0)
---! @param stream The file stream
---! @returns Table containing the score requirements for C, B, A and S score
+-- Score value section processing (v1.x only, ignored in v2.0)
+---@return ls2.Chunk_SCRI @Table containing the score requirements for C, B, A and S score
 local function process_SCRI(stream)
-	return {
+	---@class ls2.Chunk_SCRI
+	---@field public [1] number
+	---@field public [2] number
+	---@field public [3] number
+	---@field public [4] number
+	local t = {
 		string2dword(fsw.read(stream, 4)),
 		string2dword(fsw.read(stream, 4)),
 		string2dword(fsw.read(stream, 4)),
 		string2dword(fsw.read(stream, 4))
 	}
+	return t
 end
 
 local function skip_SCRI(stream)
 	fsw.seek(stream, "cur", 16)
 end
 
---! @brief Lua storyboard section
---! @param stream The file stream
---! @returns Storyboard Lua script (possibly compressed)
+-- Lua storyboard section
+---@return string @Storyboard Lua script (possibly compressed)
 local function process_SRYL(stream)
 	return readstring(stream)
 end
@@ -421,9 +438,8 @@ local function skip_SRYL(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
---! @brief Custom unit image section
---! @param stream The file stream
---! @returns Unit image index and unit image PNG string
+-- Custom unit image section
+---@return number,string @Unit image index and unit image PNG string
 local function process_UIMG(stream)
 	return fsw.read(stream, 1):byte(), readstring(stream)
 end
@@ -433,9 +449,8 @@ local function skip_UIMG(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
---! @brief Custom unit position mapping
---! @param stream The file stream
---! @returns Mapping of custom unit image position
+-- Custom unit position mapping
+---@return number[][] @Mapping of custom unit image position
 local function process_UNIT(stream)
 	local list = {}
 	for i = 1, fsw.read(stream, 1):byte() do
@@ -449,9 +464,9 @@ local function skip_UNIT(stream)
 	fsw.seek(stream, "cur", fsw.read(stream, 1):byte() * 2)
 end
 
---! @brief Process additional data
---! @param stream The file stream
---! @returns Filename and the file contents (2 values)
+-- Process additional embedded data
+---@return string @Filename
+---@return string @File contents
 local function process_DATA(stream)
 	return readstring(stream), readstring(stream)
 end
@@ -461,9 +476,10 @@ local function skip_DATA(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
---! @brief Returns audio from ADIO section
---! @param stream The file stream
---! @returns Extension, audio object, and if FFmpeg extension is needed (bool)
+-- Returns audio data from ADIO section
+---@return string @Extension
+---@return string @Audio data
+---@return boolean @Need FFmpeg extension?
 local function process_ADIO(stream)
 	local extension = {[0] = "wav", "ogg", "mp3"}
 	local ext = fsw.read(stream, 1):byte()
@@ -479,7 +495,7 @@ local function process_ADIO(stream)
 			assert(false, "File not supported")
 		end
 	elseif ext_low < 3 then
-		return extension[ext], readstring(stream)
+		return extension[ext], readstring(stream), false
 	end
 end
 
@@ -488,9 +504,9 @@ local function skip_ADIO(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
---! @brief Loads cover information
---! @param stream The file stream
---! @param v2 use v2.0 parsing method?
+-- Load cover information
+---@param v2 boolean use v2.0 parsing method?
+---@return ls2.Chunk_COVR
 local function process_COVR(stream, v2)
 	local img, title, arr
 
@@ -508,6 +524,7 @@ local function process_COVR(stream, v2)
 	if #arr == 0 then arr = nil end
 	assert(#img > 0)
 
+	---@class ls2.Chunk_COVR
 	return {
 		title = title,
 		arrangement = arr,
@@ -521,6 +538,12 @@ local function skip_COVR(stream)
 	fsw.seek(stream, "cur", string2dwordu(fsw.read(stream, 4)))
 end
 
+---@alias ls2.Chunk '"ADIO"' | '"BIMG"' | '"BMPM"' | '"BMPT"' | '"COVR"' | '"DATA"' | '"LCLR"' | '"MTDT"' | '"SCRI"' | '"SRYL"' | '"UIMG"' | '"UNIT"'
+---@class ls2.SectionProcessor
+---@field public [1] fun(stream: any, ...): any
+---@field public [2] fun(stream: any)
+
+---@type table<string|ls2.Chunk, ls2.SectionProcessor>
 ls2.section_processor = {
 	ADIO = {process_ADIO, skip_ADIO},
 	BIMG = {process_UIMG, skip_UIMG},
@@ -537,6 +560,7 @@ ls2.section_processor = {
 }
 
 function ls2.loadstream(stream)
+	---@class ls2.LS2
 	local this = {}
 	assert(fsw.read(stream, 8) == "livesim2", "Invalid signature. Expected \"livesim2\"")
 
@@ -583,9 +607,12 @@ end
 ------------------------------------------------
 -- LS2 Encoder. Creates LS2 v2.0 beatmap file --
 ------------------------------------------------
+
+---@class ls2.LS2Writer
 local ls2enc = {}
 local ls2enc_index = {__index = ls2enc}
 
+---@param metadata ls2.Chunk_MTDT
 local function write_MTDT(stream, metadata)
 	local n = 0
 	local starinfo = 0
@@ -621,6 +648,7 @@ local function write_MTDT(stream, metadata)
 	end
 end
 
+---@param sif_beatmap ls2.SIFBeatmapData[]
 local function write_BMPM(stream, sif_beatmap)
 	fsw.write(stream, dwordu2string(#sif_beatmap))
 
@@ -705,6 +733,8 @@ ls2enc.section_processor = {
 	LCLR = write_ADIO
 }
 
+---@param metadata ls2.Chunk_MTDT
+---@return ls2.LS2Writer
 function ls2enc.new(dest, metadata)
 	local this = setmetatable({}, ls2enc_index)
 
@@ -720,6 +750,7 @@ function ls2enc.new(dest, metadata)
 	return this:_add_section("MTDT", assert(metadata, "Beatmap metadata missing"))
 end
 
+---@param this ls2.LS2Writer
 function ls2enc._add_section(this, name, contents)
 	local s = {}
 	local stype = this.sections_list_by_type[name]
@@ -737,6 +768,7 @@ function ls2enc._add_section(this, name, contents)
 	return this
 end
 
+---@param this ls2.LS2Writer
 function ls2enc._count_section(this, name)
 	if not(name) then
 		return #this.sections_list
@@ -745,6 +777,8 @@ function ls2enc._count_section(this, name)
 	end
 end
 
+---@param this ls2.LS2Writer
+---@param id number
 function ls2enc.set_background_id(this, id)
 	local new_id = id == nil and 0 or id
 	assert(new_id >= 0 and new_id <= 15, "Background ID out of range")
@@ -753,6 +787,8 @@ function ls2enc.set_background_id(this, id)
 	return this
 end
 
+---@param this ls2.LS2Writer
+---@param style '"none"' | "0" | '"old"' | "1" | '"v5"' | "2"
 function ls2enc.set_notes_style(this, style)
 	if style == nil or style == "none" then
 		this.note_style = 0
@@ -767,6 +803,8 @@ function ls2enc.set_notes_style(this, style)
 	return this
 end
 
+---@param this ls2.LS2Writer
+---@param stamina number
 function ls2enc.set_stamina(this, stamina)
 	local new_st = (stamina == 0 or stamina == nil) and 255 or stamina
 	assert((new_st > 0 and new_st < 100) or new_st == 255, "Invalid stamina value")
@@ -775,6 +813,8 @@ function ls2enc.set_stamina(this, stamina)
 	return this
 end
 
+---@param this ls2.LS2Writer
+---@param score number
 function ls2enc.set_score(this, score)
 	if score == nil then
 		this.score = 0
@@ -786,10 +826,13 @@ function ls2enc.set_score(this, score)
 	return this
 end
 
+---@param this ls2.LS2Writer
+---@param sif_beatmap ls2.SIFBeatmapData[]
 function ls2enc.add_beatmap(this, sif_beatmap)
 	return this:_add_section("BMPM", sif_beatmap)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_storyboard(this, storyboard)
 	assert(this:_count_section("SRYL") == 0, "Storyboard already added")
 
@@ -801,6 +844,7 @@ function ls2enc.add_storyboard(this, storyboard)
 	return this:_add_section("SRYL", storyboard)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_unit_image_list(this, unit_image)
 	for i = 1, #unit_image do
 		this:_add_section("UIMG", unit_image[i])
@@ -809,18 +853,22 @@ function ls2enc.add_unit_image_list(this, unit_image)
 	return this
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_unit_image(this, unit_image)
 	return this:_add_section("UIMG", unit_image)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_unit_info_list(this, unit)
 	return this:_add_section("UNIT", unit)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_unit_info(this, unit)
 	return this:_add_section("UNIT", {unit})
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_custom_background(this, background, index)
 	local bimg = {}
 	bimg.index = index or 0
@@ -829,6 +877,7 @@ function ls2enc.add_custom_background(this, background, index)
 	return this:_add_section("BIMG", bimg)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_storyboard_data(this, filename, contents)
 	local data = {}
 	data.filename = assert(filename, "Filename missing")
@@ -837,6 +886,7 @@ function ls2enc.add_storyboard_data(this, filename, contents)
 	return this:_add_section("DATA", data)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc._internal_add_audio(this, section, audio_type, audio_data, failmsg)
 	assert(this:_count_section(section) == 0, failmsg)
 	local audio = {}
@@ -864,19 +914,24 @@ function ls2enc._internal_add_audio(this, section, audio_type, audio_data, failm
 	return this:_add_section(section, audio)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_audio(this, at, ad)
 	return this:_internal_add_audio("ADIO", at, ad, "Beatmap audio already added")
 end
 
+---@param this ls2.LS2Writer
+---@param cover ls2.Chunk_COVR
 function ls2enc.add_cover_art(this, cover)
 	assert(this:_count_section("COVR") == 0, "Cover art already added")
 	return this:_add_section("COVR", cover)
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.add_live_clear_voice(this, at, ad)
 	return this:_internal_add_audio("LCLR", at, ad, "Live clear voice already added")
 end
 
+---@param this ls2.LS2Writer
 function ls2enc.write(this)
 	local stream = this.stream
 	fsw.seek(stream, "set")
