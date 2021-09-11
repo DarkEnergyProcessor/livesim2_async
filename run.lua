@@ -121,7 +121,7 @@ function love.run()
 	-- We have to delay-load any script that depends on Lily
 	-- because Lily checks the loaded library
 	-- and doesn't require them.
-	local async = require("async")
+	local Async = require("async")
 	local lily = require("lily")
 	local Gamestate = require("gamestate")
 	-- delay-load setting library also
@@ -160,7 +160,7 @@ function love.run()
 		local dt = love.timer.getDelta()
 		Gamestate.internal.loop()
 		timer.update(dt)
-		async.loop(dt)
+		Async.loop(dt)
 		-- Process events.
 		love.event.pump()
 		for name, a, b, c, d, e, f, g, h, i, j in love.event.poll() do

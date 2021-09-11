@@ -2,22 +2,22 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local cache = {
+local Cache = {
 	list = setmetatable({}, {__mode = "kv"})
 }
 
 --- Get value from cache
 -- @tparam string name Cache name
 -- @return Cached value, or nil
-function cache.get(name)
-	return cache.list[name]
+function Cache.get(name)
+	return Cache.list[name]
 end
 
 --- Set cached value by name
 -- @tparam string name Cache name
 -- @param value Value to be cached
-function cache.set(name, value)
-	cache.list[name] = value
+function Cache.set(name, value)
+	Cache.list[name] = value
 end
 
-return cache
+return Cache

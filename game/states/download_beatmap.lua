@@ -6,25 +6,25 @@ local love = require("love")
 local JSON = require("libs.JSON")
 local ls2 = require("libs.ls2")
 
-local async = require("async")
+local Async = require("async")
 local AssetCache = require("asset_cache")
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
 local log = require("logging")
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Setting = require("setting")
 local Util = require("util")
 local md5 = require("game.md5")
 local L = require("language")
 
 local Glow = require("game.afterglow")
-local backgroundLoader = require("game.background_loader")
-local backNavigation = require("game.ui.back_navigation")
-local selectButton = require("game.ui.select_button")
-local checkbox = require("game.ui.checkbox")
+local BackgroundLoader = require("game.background_loader")
+local BackNavigation = require("game.ui.back_navigation")
+local SelectButton = require("game.ui.select_button")
+local Checkbox = require("game.ui.checkbox")
 
-local beatmapList = require("game.beatmap.list")
+local BeatmapList = require("game.beatmap.list")
 
 local beatmapInfoDL = Gamestate.create {
 	images = {
@@ -143,7 +143,7 @@ local function initializeDifficultyButton(self)
 		for i = 1, #difficultyString do
 			local diff = difficultyString[i]
 			if self.persist.trackData.live[diff] then
-				local elem = selectButton(string.format("%s (%d\226\152\134)", diff, self.persist.trackData.live[diff].star))
+				local elem = SelectButton(string.format("%s (%d\226\152\134)", diff, self.persist.trackData.live[diff].star))
 				elem:addEventListener("mousereleased", setBeatmapInfo)
 				elem:setData({self, diff})
 				diffData[#diffData + 1] = elem
@@ -218,7 +218,7 @@ local function downloadCoverArt(self)
 	:setFinishCallback(function(_)
 		if self.persist.isCoverDownloading then
 			file:close()
-			async.runFunction(function()
+			Async.runFunction(function()
 				self.data.coverArt = AssetCache.loadImage(coverPath, {mipmaps = true})
 			end):run()
 			setStatusText(self, L"beatmapSelect:download:ready")
@@ -363,7 +363,7 @@ local function selectPlayButton(_, data)
 
 	-- Okay play beatmap
 	self.persist.gamestateEntering = true
-	beatmapList.registerRelative(beatmapName, function(name, summary)
+	BeatmapList.registerRelative(beatmapName, function(name, summary)
 		if data[3] then
 			Gamestate.enter(nil, "viewReplay", {
 				name = name,
@@ -385,17 +385,17 @@ end
 
 function beatmapInfoDL:load()
 	Glow.clear()
-	local font22 = mainFont.get(22)
+	local font22 = MainFont.get(22)
 
 	if self.data.titleText == nil then
-		self.data.titleText = love.graphics.newText(mainFont.get(36))
+		self.data.titleText = love.graphics.newText(MainFont.get(36))
 		if self.persist.trackData then
 			setTitle(self, self.persist.trackData.name)
 		end
 	end
 
 	if self.data.diffText == nil then
-		self.data.diffText = love.graphics.newText(mainFont.get(32))
+		self.data.diffText = love.graphics.newText(MainFont.get(32))
 	end
 
 	if self.data.goalsText == nil then
@@ -409,7 +409,7 @@ function beatmapInfoDL:load()
 	Glow.addFrame(self.data.diffFrame)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(13)
+		self.data.background = BackgroundLoader.load(13)
 	end
 
 	if self.data.gradient == nil then
@@ -417,13 +417,13 @@ function beatmapInfoDL:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation(L"beatmapSelect:download:view")
+		self.data.back = BackNavigation(L"beatmapSelect:download:view")
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	Glow.addFixedElement(self.data.back, 0, 0)
 
 	if self.data.autoplayCheck == nil then
-		self.data.autoplayCheck = checkbox(Setting.get("AUTOPLAY") == 1)
+		self.data.autoplayCheck = Checkbox(Setting.get("AUTOPLAY") == 1)
 		self.data.autoplayCheck:addEventListener("changed", function(_, _, value)
 			Setting.set("AUTOPLAY", value and 1 or 0)
 		end)
@@ -431,19 +431,19 @@ function beatmapInfoDL:load()
 	Glow.addElement(self.data.autoplayCheck, 24, 524)
 
 	if self.data.randomCheck == nil then
-		self.data.randomCheck = checkbox(false)
+		self.data.randomCheck = Checkbox(false)
 	end
 	Glow.addElement(self.data.randomCheck, 24, 582)
 
 	if self.data.viewReplay == nil then
-		self.data.viewReplay = selectButton(L"beatmapSelect:viewReplay")
+		self.data.viewReplay = SelectButton(L"beatmapSelect:viewReplay")
 		self.data.viewReplay:addEventListener("mousereleased", selectPlayButton)
 		self.data.viewReplay:setData({self, nil, true})
 	end
 	Glow.addElement(self.data.viewReplay, 710, 302)
 
 	if self.data.playButton == nil then
-		self.data.playButton = selectButton(L"beatmapSelect:play")
+		self.data.playButton = SelectButton(L"beatmapSelect:play")
 		self.data.playButton:addEventListener("mousereleased", selectPlayButton)
 		self.data.playButton:setData({self, nil, false})
 	end
@@ -475,7 +475,7 @@ end
 function beatmapInfoDL:start(arg)
 	-- arg[1] is download object
 	-- arg[2] is selected beatmap track data
-	beatmapList.push()
+	BeatmapList.push()
 	self.persist.isCoverDownloading = false
 	self.persist.isAudioDownloading = false
 	self.persist.isBeatmapDownloading = false
@@ -486,7 +486,7 @@ function beatmapInfoDL:start(arg)
 	if self.data.coverArt == nil then
 		local name = getLiveIconPath(self)
 		if Util.fileExists(name) then
-			async.runFunction(function()
+			Async.runFunction(function()
 				-- TODO: Review a better option for this case
 				self.data.coverArt = AssetCache.loadImage(name, {mipmaps = true}, function(_, msg)
 					love.filesystem.remove(name)
@@ -503,7 +503,7 @@ function beatmapInfoDL:start(arg)
 	-- Set title
 	setTitle(self, self.persist.trackData.name)
 	-- List difficulty
-	async.runFunction(initializeDifficultyButton):run(self)
+	Async.runFunction(initializeDifficultyButton):run(self)
 end
 
 function beatmapInfoDL:draw()
@@ -534,7 +534,7 @@ function beatmapInfoDL:draw()
 end
 
 function beatmapInfoDL:exit()
-	beatmapList.pop()
+	BeatmapList.pop()
 	self.persist.download:cancel()
 end
 

@@ -5,8 +5,8 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local lily = require("lily")
-local async = require("async")
-local cache = require("cache")
+local Async = require("async")
+local Cache = require("cache")
 local log = require("logging")
 local Setting = require("setting")
 local Gamestate = {
@@ -140,7 +140,7 @@ local function getCacheByValue(v)
 		assetName = v[1]
 	end
 
-	local object = cache.get(cacheName)
+	local object = Cache.get(cacheName)
 	if object then
 		return true, object
 	else
@@ -157,12 +157,12 @@ local function gamestateHandleMultiLily(udata, index, value)
 	log.debugf("gamestate", "asset loaded: %s", assetUdata[index][2])
 	internal.assets[assetType][assetUdata[index][2]] = value
 	game.assets[assetType][assetUdata[index][2]] = value
-	cache.set(assetUdata[index][3], value)
+	Cache.set(assetUdata[index][3], value)
 end
 
 -- Called in async.runFunction
 function Gamestate.internal.initialize(game, arg)
-	async.wait()
+	Async.wait()
 	Gamestate.internal.loadAssets(game)
 	game:load(arg)
 end
@@ -205,7 +205,7 @@ function Gamestate.internal.loadAssets(game)
 			:onLoaded(gamestateHandleMultiLily)
 		-- Wait
 		while multi:isComplete() == false do
-			async.wait()
+			Async.wait()
 		end
 	end
 end

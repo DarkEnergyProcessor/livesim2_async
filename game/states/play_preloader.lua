@@ -4,12 +4,12 @@
 
 local lsr = require("libs.lsr")
 
-local async = require("async")
+local Async = require("async")
 local Setting = require("setting")
 local Gamestate = require("gamestate")
 local render = require("render")
 
-local beatmapList = require("game.beatmap.list")
+local BeatmapList = require("game.beatmap.list")
 local LoadingInstance = require("loading_instance")
 
 local playPreloader = Gamestate.create {
@@ -22,19 +22,19 @@ function playPreloader:load(arg)
 	-- arg[1] is the beatmap name
 	-- arg[2] is the absolute/relative mode
 	if not(self.persist.alreadyLoaded) then
-		beatmapList.push()
+		BeatmapList.push()
 
 		self.data.beatmapData = nil
 		self.data.beatmapName = nil
 
 		if arg[2] then
-			beatmapList.registerAbsolute(arg[1], function(name, summary)
+			BeatmapList.registerAbsolute(arg[1], function(name, summary)
 				self.data.beatmapName = name
 				self.data.beatmapData = summary
 				self.persist.directLoad = true
 			end)
 		else
-			beatmapList.registerRelative(arg[1], function(name, summary)
+			BeatmapList.registerRelative(arg[1], function(name, summary)
 				self.data.beatmapData = summary
 				self.data.beatmapName = name
 				self.persist.directLoad = false
@@ -52,7 +52,7 @@ function playPreloader:load(arg)
 		end
 
 		while self.data.beatmapData == nil do
-			async.wait()
+			Async.wait()
 		end
 
 		self.persist.alreadyLoaded = true

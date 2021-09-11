@@ -4,11 +4,11 @@
 
 local love = require("love")
 local timer = require("libs.hump.timer")
-local cubicBezier = require("libs.cubic_bezier")
+local CubicBezier = require("libs.cubic_bezier")
 
-local async = require("async")
+local Async = require("async")
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local lily = require("lily")
 local Setting = require("setting")
 local Util = require("util")
@@ -17,15 +17,15 @@ local L = require("language")
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
 
-local backgroundLoader = require("game.background_loader")
-local colorTheme = require("game.color_theme")
+local BackgroundLoader = require("game.background_loader")
+local ColorTheme = require("game.color_theme")
 
 local Glow = require("game.afterglow")
-local ciButton = require("game.ui.circle_icon_button")
-local stripeText = require("game.ui.stripe_text")
+local CircleIconButton = require("game.ui.circle_icon_button")
+local StripeText = require("game.ui.stripe_text")
 
 local mipmap = {mipmaps = true}
-local materialInterpolation = cubicBezier(0.4, 0.0, 0.2, 1):getFunction()
+local materialInterpolation = CubicBezier(0.4, 0.0, 0.2, 1):getFunction()
 
 local changeUnits = Gamestate.create {
 	images = {
@@ -331,7 +331,7 @@ function changeUnits:load()
 
 	local function loadCenteredInfoFont()
 		if not(centeredInfoFont) then
-			centeredInfoFont = mainFont.get(18)
+			centeredInfoFont = MainFont.get(18)
 		end
 	end
 
@@ -345,7 +345,7 @@ function changeUnits:load()
 	end
 
 	if self.data.titleText == nil then
-		local f = mainFont.get(31)
+		local f = MainFont.get(31)
 		local t = love.graphics.newText(f)
 		local l = L"menu:changeUnits"
 		t:add(l, -0.5 * f:getWidth(l), 0)
@@ -353,7 +353,7 @@ function changeUnits:load()
 	end
 
 	if self.data.keymapTitleText == nil then
-		local f = mainFont.get(31)
+		local f = MainFont.get(31)
 		local t = love.graphics.newText(f)
 		local l = L"changeUnits:keymapTitle"
 		t:add(l, -0.5 * f:getWidth(l), 0)
@@ -361,7 +361,7 @@ function changeUnits:load()
 	end
 
 	if self.data.keymapFont == nil then
-		self.data.keymapFont = mainFont.get(18)
+		self.data.keymapFont = MainFont.get(18)
 	end
 
 	if self.data.changeUnitText == nil then
@@ -370,8 +370,8 @@ function changeUnits:load()
 	end
 
 	if self.data.selectUnitsText == nil then
-		self.data.selectUnitsText = love.graphics.newText(mainFont.get(31))
-		self.data.selectUnitsText:add({colorTheme.get(), L"changeUnits:selectUnits"})
+		self.data.selectUnitsText = love.graphics.newText(MainFont.get(31))
+		self.data.selectUnitsText:add({ColorTheme.get(), L"changeUnits:selectUnits"})
 	end
 
 	if self.data.keymapText == nil then
@@ -390,14 +390,14 @@ function changeUnits:load()
 	end
 
 	if self.data.modeButton == nil then
-		self.data.modeButton = ciButton(colorTheme.get(), 36)
+		self.data.modeButton = CircleIconButton(ColorTheme.get(), 36)
 		self.data.modeButton:addEventListener("mousereleased", setMode)
 		self.data.modeButton:setData(self)
 	end
 	Glow.addFixedElement(self.data.modeButton, 700, 4)
 
 	if self.data.saveButton == nil then
-		self.data.saveButton = ciButton(color.hexFF4FAE, 45, self.assets.images.save, 0.32)
+		self.data.saveButton = CircleIconButton(color.hexFF4FAE, 45, self.assets.images.save, 0.32)
 		self.data.saveButton:setShadow(32, math.pi, 6)
 		self.data.saveButton:addEventListener("mousereleased", applySetting)
 		self.data.saveButton:setData(self)
@@ -405,7 +405,7 @@ function changeUnits:load()
 	Glow.addFixedElement(self.data.saveButton, 731, 524)
 
 	if self.data.revertButton == nil then
-		self.data.revertButton = ciButton(color.hexFF6854, 45, self.assets.images.revert, 0.32)
+		self.data.revertButton = CircleIconButton(color.hexFF6854, 45, self.assets.images.revert, 0.32)
 		self.data.revertButton:setShadow(32, math.pi, 6)
 		self.data.revertButton:addEventListener("mousereleased", revertSetting)
 		self.data.revertButton:setData(self)
@@ -413,22 +413,22 @@ function changeUnits:load()
 	Glow.addFixedElement(self.data.revertButton, 827, 524)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(5)
+		self.data.background = BackgroundLoader.load(5)
 	end
 
 	-- Setup unit formation
 	if self.data.dummyButtons == nil then
 		local dummy = self.assets.images.dummyUnit
 		self.data.dummyButtons = {
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy),
-			ciButton(color.transparent, 64, dummy)
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy),
+			CircleIconButton(color.transparent, 64, dummy)
 		}
 	end
 	for i = 1, 9 do
@@ -451,7 +451,7 @@ function changeUnits:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(colorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
+		self.data.back = CircleIconButton(ColorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", tryLeave)
 	end
@@ -489,7 +489,7 @@ function changeUnits:load()
 
 		-- load (cannot use assetCache because it caches the image)
 		local unitImage = lily.loadMulti(unitLoad)
-		async.syncLily(unitImage):sync()
+		Async.syncLily(unitImage):sync()
 
 		for i = 1, #unitFilename do
 			local img = unitImage:getValues(i)
@@ -582,7 +582,7 @@ function changeUnits:start()
 	local ytrack = 0
 	for i, v in ipairs(unitSelectCategory) do
 		if v.name ~= "" then
-			local sep = stripeText(self.data.keymapFont, v.name, 4, 819)
+			local sep = StripeText(self.data.keymapFont, v.name, 4, 819)
 			frame:addElement(sep, 0, ytrack)
 			ytrack = ytrack + 8 + select(2, sep:getDimensions())
 			v.y = ytrack
@@ -591,7 +591,7 @@ function changeUnits:start()
 		for k, v2 in ipairs(v.items) do
 			local x = (k - 1) % 7
 			local y = math.floor((k - 1) / 7)
-			local button = ciButton(color.transparent, 54, v2[3], 108/128)
+			local button = CircleIconButton(color.transparent, 54, v2[3], 108/128)
 			button:setData({self, v, k})
 			button:addEventListener("mousereleased", selectedNewUnit)
 			frame:addElement(button, x * 117, y * 117 + ytrack)
@@ -632,7 +632,7 @@ function changeUnits:draw()
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.background)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.setColor(colorTheme.get())
+	love.graphics.setColor(ColorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	love.graphics.setShader(self.data.textShader)

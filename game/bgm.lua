@@ -4,8 +4,6 @@
 
 local Luaoop = require("libs.Luaoop")
 
-local async = require("async")
-local lily = require("lily")
 local AudioManager = require("audio_manager")
 local Util = require("util")
 

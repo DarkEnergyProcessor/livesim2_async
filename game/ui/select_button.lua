@@ -2,34 +2,34 @@
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
-local love = love or require("love")
+local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local mainFont = require("font")
+local MainFont = require("main_font")
 local color = require("color")
 
-local imageButtonUI = require("game.ui.image_button")
+local ImageButton = require("game.ui.image_button")
 
-local selectButton = Luaoop.class("Livesim2.SelectButtonUI", imageButtonUI)
+local SelectButton = Luaoop.class("Livesim2.SelectButtonUI", ImageButton)
 
-function selectButton:new(text)
-	local font = mainFont.get(16)
+function SelectButton:new(text)
+	local font = MainFont.get(16)
 	local h = font:getHeight()
 
-	imageButtonUI.new(self, "assets/image/ui/s_button_03", 0.5)
+	ImageButton.new(self, "assets/image/ui/s_button_03", 0.5)
 	self.text = love.graphics.newText(font)
 	self.text:add({color.white, text}, 8, 16 - 0.5 * h)
 end
 
-function selectButton:setText(text)
+function SelectButton:setText(text)
 	local h = self.text:getFont():getHeight()
 	self.text:clear()
 	self.text:add({color.white, text}, 8, 16 - 0.5 * h)
 end
 
-function selectButton:render(x, y)
-	imageButtonUI.render(self, x, y)
+function SelectButton:render(x, y)
+	ImageButton.render(self, x, y)
 	love.graphics.draw(self.text, x, y)
 end
 
-return selectButton
+return SelectButton

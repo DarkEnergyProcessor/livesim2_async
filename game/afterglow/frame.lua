@@ -6,7 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local color = require("color")
 local Util = require("util")
-local colorTheme = require("game.color_theme")
+local ColorTheme = require("game.color_theme")
 local slider = require("game.afterglow.slider")
 
 -- You definely need a "Frame" object to store all your GUIs
@@ -28,7 +28,7 @@ function frame:__construct(x, y, w, h)
 	self.offsetX, self.offsetY = 0, 0
 	self.sliderH, self.sliderV = nil, nil
 	self.sliderLeft = false
-	self.sliderColor = colorTheme.get()
+	self.sliderColor = ColorTheme.get()
 	self.sliderHandleColor = color.white
 
 	internal.mouseBuffer = {

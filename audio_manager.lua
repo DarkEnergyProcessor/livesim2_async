@@ -13,8 +13,8 @@ local ls2x = require("libs.ls2x")
 
 local lily = require("lily")
 local log = require("logging")
-local cache = require("cache")
-local async = require("async")
+local Cache = require("cache")
+local Async = require("async")
 local Util = require("util")
 local Volume = require("volume")
 
@@ -107,11 +107,11 @@ end
 function AudioManager.newAudio(path, kind)
 	if type(path) == "string" then
 		log.debugf("audioManager", "loading audio %s", path)
-		local sd = cache.get(path)
+		local sd = Cache.get(path)
 		if not(sd) then
-			local sdAsync = async.syncLily(lily.newSoundData(path))
+			local sdAsync = Async.syncLily(lily.newSoundData(path))
 			sd = sdAsync:getValues() -- automatically sync
-			cache.set(path, sd)
+			Cache.set(path, sd)
 		end
 
 		return AudioManager.newAudioDirect(sd, kind)
@@ -138,7 +138,7 @@ function AudioManager.newAudioDirect(data, kind)
 	if AudioManager.renderRate > 0 then
 		-- render mode requires 48000Hz
 		if type(data) == "userdata" and not(data:typeOf("SoundData")) then
-			local sdAsync = async.syncLily(lily.newSoundData(data))
+			local sdAsync = Async.syncLily(lily.newSoundData(data))
 			data = sdAsync:getValues() -- automatically sync
 		end
 

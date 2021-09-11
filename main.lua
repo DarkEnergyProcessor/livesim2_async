@@ -50,9 +50,9 @@ local log = require("logging")
 local Volume = require("volume")
 local AudioManager = require("audio_manager")
 
-local colorTheme = require("game.color_theme")
-local beatmapList = require("game.beatmap.list")
-local beatmapRandomizer = require("game.live.randomizer3")
+local ColorTheme = require("game.color_theme")
+local BeatmapList = require("game.beatmap.list")
+local BeatmapRandomizer = require("game.live.randomizer3")
 
 local function initWindow(w, h, f, v, m)
 	local vsync
@@ -422,7 +422,7 @@ function love.load(argv, gameargv)
 	initLS2()
 	initLSR()
 	Language.init()
-	colorTheme.init(assert(tonumber(Setting.get("COLOR_THEME"))))
+	ColorTheme.init(assert(tonumber(Setting.get("COLOR_THEME"))))
 	Language.set(Setting.get("LANGUAGE"))
 	-- Try to load command line
 	if (love._os == "Android" or love._os == "iOS") and Util.fileExists("commandline.txt") then
@@ -600,9 +600,9 @@ function love.load(argv, gameargv)
 				if randomizeBeatmap then
 					local rndout
 					if randomSeed then
-						rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
+						rndout = BeatmapRandomizer(data, randomSeed[1], randomSeed[2])
 					else
-						rndout = beatmapRandomizer(data)
+						rndout = BeatmapRandomizer(data)
 					end
 
 					if rndout then
@@ -634,9 +634,9 @@ function love.load(argv, gameargv)
 				if randomizeBeatmap then
 					local rndout
 					if randomSeed then
-						rndout = beatmapRandomizer(data, randomSeed[1], randomSeed[2])
+						rndout = BeatmapRandomizer(data, randomSeed[1], randomSeed[2])
 					else
-						rndout = beatmapRandomizer(data)
+						rndout = BeatmapRandomizer(data)
 					end
 
 					if rndout then
@@ -679,21 +679,21 @@ function love.load(argv, gameargv)
 			error("invalid dump format")
 		end
 
-		beatmapList.push()
+		BeatmapList.push()
 		if playBeatmapName then
-			beatmapList.registerRelative(playBeatmapName, function(id)
-				beatmapList.getNotes(id, dumpFunc)
+			BeatmapList.registerRelative(playBeatmapName, function(id)
+				BeatmapList.getNotes(id, dumpFunc)
 			end)
 		else
-			beatmapList.registerAbsolute(absolutePlayBeatmapName, function(id)
-				beatmapList.getNotes(id, dumpFunc)
+			BeatmapList.registerAbsolute(absolutePlayBeatmapName, function(id)
+				BeatmapList.getNotes(id, dumpFunc)
 			end)
 		end
 	elseif listingMode then
-		beatmapList.push()
+		BeatmapList.push()
 
 		if listingMode == "beatmaps" then
-			beatmapList.enumerate(function(bname, name, fmt, diff, fmtInt)
+			BeatmapList.enumerate(function(bname, name, fmt, diff, fmtInt)
 				if bname == "" then
 					love.event.quit()
 					return false
@@ -705,7 +705,7 @@ function love.load(argv, gameargv)
 				return true
 			end)
 		elseif listingMode == "loaders" then
-			beatmapList.enumerateLoaders(function(name, type)
+			BeatmapList.enumerateLoaders(function(name, type)
 				if name == "" then
 					love.event.quit()
 					return false

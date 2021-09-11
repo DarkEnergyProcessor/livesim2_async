@@ -11,19 +11,19 @@ local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
 local lily = require("lily")
 local log = require("logging")
-local async = require("async")
+local Async = require("async")
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Util = require("util")
 local L = require("language")
 
-local colorTheme = require("game.color_theme")
+local ColorTheme = require("game.color_theme")
 local download = require("game.dm")
 local md5 = require("game.md5")
 
 local Glow = require("game.afterglow")
-local ripple = require("game.ui.ripple")
-local ciButton = require("game.ui.circle_icon_button")
+local Ripple = require("game.ui.ripple")
+local CircleIconButton = require("game.ui.circle_icon_button")
 local ProgressBar = require("game.ui.progress")
 
 local SERVER_ADDRESS = require("game.beatmap.download_address")
@@ -49,7 +49,7 @@ do
 		coverShader = coverShader or state.data.coverMaskShader
 
 		-- Color from type ID
-		local col = colorTheme[typeID] and colorTheme[typeID].currentColor or defaultColor
+		local col = ColorTheme[typeID] and ColorTheme[typeID].currentColor or defaultColor
 		self.typeColor = col
 		self.name = love.graphics.newText(state.data.statusFont)
 		self.name:addf({col[4], name}, 310, "left")
@@ -57,7 +57,7 @@ do
 
 		self.width, self.height = 420, 94
 		self.x, self.y = 0, 0
-		self.ripple = ripple(460.691871)
+		self.ripple = Ripple(460.691871)
 		self.stencilFunc = function()
 			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 		end
@@ -158,13 +158,13 @@ end
 local function initializeBeatmapList(self, mapdata, etag)
 	if not(mapdata) then
 		-- Load maps.json
-		local sync = async.syncLily(lily.decompress("zlib", love.filesystem.newFileData("maps.json")))
+		local sync = Async.syncLily(lily.decompress("zlib", love.filesystem.newFileData("maps.json")))
 		sync:sync()
 		mapdata = JSON:decode(sync:getValues())
 	elseif etag then
 		-- Save maps.json
 		local mapString = love.filesystem.newFileData(mapdata, "")
-		local sync = async.syncLily(lily.compress("zlib", mapString, 9))
+		local sync = Async.syncLily(lily.compress("zlib", mapString, 9))
 		love.filesystem.write("maps.json.etag", etag)
 		sync:sync()
 		love.filesystem.write("maps.json", sync:getValues())
@@ -248,7 +248,7 @@ local function initializeBeatmapList(self, mapdata, etag)
 
 		local coverPath = getLiveIconPath(track.icon)
 		if Util.fileExists(coverPath) then
-			async.runFunction(loadCoverImage):run(elem, coverPath)
+			Async.runFunction(loadCoverImage):run(elem, coverPath)
 		end
 	end
 end
@@ -273,7 +273,7 @@ local function downloadResponseCallback(self, statusCode, headers, length)
 		Glow.removeElement(self.data.progress)
 		setStatusText(self)
 		-- Load local copy using async system
-		async.runFunction(initializeBeatmapList):run(self)
+		Async.runFunction(initializeBeatmapList):run(self)
 	elseif statusCode == 200 then
 		self.persist.downloadData = {
 			data = {},
@@ -312,7 +312,7 @@ local function downloadFinishCallback(self)
 	if dldata then
 		local mapData = table.concat(dldata.data)
 		-- Save map data and initialize
-		async.runFunction(initializeBeatmapList):run(self, mapData, dldata.header.etag)
+		Async.runFunction(initializeBeatmapList):run(self, mapData, dldata.header.etag)
 		self.persist.downloadData = nil
 		setStatusText(self)
 		Glow.removeElement(self.data.progress)
@@ -335,10 +335,10 @@ local beatmapDownload = Gamestate.create {
 function beatmapDownload:load()
 	Glow.clear()
 
-	self.data.titleFont, self.data.statusFont = mainFont.get(31, 24)
+	self.data.titleFont, self.data.statusFont = MainFont.get(31, 24)
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, colorTheme.get())
+		self.data.back = CircleIconButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, ColorTheme.get())
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
@@ -370,7 +370,7 @@ end
 function beatmapDownload:start()
 	self.persist.frame = Glow.Frame(0, 80, 960, 560)
 	self.persist.frame:setSliderColor(color.hex434242)
-	self.persist.frame:setSliderHandleColor(colorTheme.get())
+	self.persist.frame:setSliderHandleColor(ColorTheme.get())
 	Glow.addFrame(self.persist.frame)
 
 	self.persist.statusText = love.graphics.newText(self.data.statusFont)
@@ -435,7 +435,7 @@ function beatmapDownload:resumed()
 	if self.persist.selectedIndex then
 		-- Try to set the cover art
 		local i = self.persist.selectedIndex
-		async.runFunction(function()
+		Async.runFunction(function()
 			local track = self.persist.beatmapListGroup[i]
 			local coverPath = getLiveIconPath(track.icon)
 			if Util.fileExists(coverPath) then

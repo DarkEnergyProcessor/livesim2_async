@@ -20,7 +20,7 @@ local love = require("love")
 local Gamestate = require("gamestate")
 local AssetCache = require("asset_cache")
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 
 local loading = Gamestate.create {
 	-- Note that for loading screen gamestate
@@ -63,7 +63,7 @@ end
 function loading:start()
 	local temp = {mipmaps = true}
 	-- Loading screen startup is synchronous operation
-	self.data.font = mainFont.get(24)
+	self.data.font = MainFont.get(24)
 	self.data.text = love.graphics.newText(self.data.font)
 	self.data.icon = {
 		AssetCache.loadImage("new_icon1:assets/image/icon/new_icon_1024x1024_trim_1.png", temp),

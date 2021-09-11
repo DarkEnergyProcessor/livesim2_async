@@ -9,9 +9,9 @@ local color = require("color")
 local Util = require("util")
 
 local Glow = require("game.afterglow")
-local ripple = require("game.ui.ripple")
+local Ripple = require("game.ui.ripple")
 
-local ciButton = Luaoop.class("Livesim2.CircleIconButton", Glow.Element)
+local CircleIconButton = Luaoop.class("Livesim2.CircleIconButton", Glow.Element)
 
 local function createCircleMesh(r1, r2, segment)
 	segment = segment or (360 * math.max(360 / r1, 1))
@@ -45,25 +45,25 @@ local function createCircleMesh(r1, r2, segment)
 	return mesh
 end
 
-function ciButton:new(cc, r, i, is, ic, ir)
+function CircleIconButton:new(cc, r, i, is, ic, ir)
 	self.color = cc
 	self:setImage(i, is, ic)
 	self.radius = r
 	self.rotation = ir or 0
 	self.width, self.height = 2 * r, 2 * r
 	self.isPressed = false
-	self.ripple = ripple(2 * r)
+	self.ripple = Ripple(2 * r)
 	self.x, self.y = 0, 0
 	self.stencilFunc = function()
 		return love.graphics.circle("fill", self.x + self.radius, self.y + self.radius, self.radius)
 	end
 
-	self:addEventListener("mousepressed", ciButton._pressed)
-	self:addEventListener("mousereleased", ciButton._released)
-	self:addEventListener("mousecanceled", ciButton._released)
+	self:addEventListener("mousepressed", CircleIconButton._pressed)
+	self:addEventListener("mousereleased", CircleIconButton._released)
+	self:addEventListener("mousecanceled", CircleIconButton._released)
 end
 
-function ciButton:setImage(i, is, ic)
+function CircleIconButton:setImage(i, is, ic)
 	if i then
 		self.image = i
 		self.imageScale = is or 1
@@ -77,12 +77,12 @@ function ciButton:setImage(i, is, ic)
 	end
 end
 
-function ciButton:update(dt)
+function CircleIconButton:update(dt)
 	self.ripple:update(dt)
 end
 
 -- angle 0...2pi -> up, right, bottom, left
-function ciButton:setShadow(r2, angle, offset)
+function CircleIconButton:setShadow(r2, angle, offset)
 	if r2 == nil then
 		self.shadow = nil
 	else
@@ -94,7 +94,7 @@ function ciButton:setShadow(r2, angle, offset)
 	end
 end
 
-function ciButton:_pressed(_, x, y)
+function CircleIconButton:_pressed(_, x, y)
 	if Util.distance(x, y, self.radius, self.radius) <= self.radius then
 		self.isPressed = true
 		self.ripple:pressed(x, y)
@@ -104,7 +104,7 @@ function ciButton:_pressed(_, x, y)
 	end
 end
 
-function ciButton:_released(_)
+function CircleIconButton:_released(_)
 	if self.isPressed then
 		self.isPressed = false
 		self.ripple:released()
@@ -113,7 +113,7 @@ function ciButton:_released(_)
 	end
 end
 
-function ciButton:render(x, y)
+function CircleIconButton:render(x, y)
 	x, y = x or 0, y or 0
 	self.x, self.y = x, y
 
@@ -145,4 +145,4 @@ function ciButton:render(x, y)
 	end
 end
 
-return ciButton
+return CircleIconButton

@@ -7,7 +7,7 @@ local Luaoop = require("libs.Luaoop")
 local color = require("color")
 
 local Glow = require("game.afterglow")
-local colorTheme = require("game.color_theme")
+local ColorTheme = require("game.color_theme")
 
 ---@class Livesim2.StripeText: Glow.Element
 local StripeText = Luaoop.class("Livesim2.StripeText", Glow.Element)
@@ -17,7 +17,7 @@ function StripeText:new(font, text, padding, width)
 	self.height = font:getHeight() + padding * 2
 	self.width = width or font:getWidth(text) + padding * 2
 
-	self.color = colorTheme.get()
+	self.color = ColorTheme.get()
 	self.text = love.graphics.newText(font)
 	self.text:add({color.white, text}, padding, padding)
 end

@@ -4,17 +4,17 @@
 
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
-local cubicBezier = require("libs.cubic_bezier")
+local CubicBezier = require("libs.cubic_bezier")
 
 local color = require("color")
 
-local ripple = Luaoop.class("Livesim2.RippleEffect")
-local interpolation = cubicBezier(0.4, 0, 0.2, 1):getFunction()
+local Ripple = Luaoop.class("Livesim2.RippleEffect")
+local interpolation = CubicBezier(0.4, 0, 0.2, 1):getFunction()
 
 local TIMEOUT = 0.35
 local TIME_MULTIPLER = 1 / TIMEOUT
 
-function ripple:__construct(radius)
+function Ripple:__construct(radius)
 	self.radius = radius
 	self.timeIn = TIMEOUT
 	self.timeOut = TIMEOUT
@@ -23,7 +23,7 @@ function ripple:__construct(radius)
 	self.pressedFlag = false
 end
 
-function ripple:update(dt)
+function Ripple:update(dt)
 	if self.timeIn < TIMEOUT then
 		self.timeIn = self.timeIn + dt
 	end
@@ -33,28 +33,28 @@ function ripple:update(dt)
 	end
 end
 
-function ripple:pressed(x, y)
+function Ripple:pressed(x, y)
 	self.x, self.y = assert(x), assert(y)
 	self.timeIn, self.timeOut = 0, 0
 	self.pressedFlag = true
 end
 
-function ripple:released()
+function Ripple:released()
 	self.pressedFlag = false
 end
 
-function ripple:reset()
+function Ripple:reset()
 	self.timeIn, self.timeOut = TIMEOUT, TIMEOUT
 	self.pressedFlag = false
 end
 
-function ripple:isActive()
+function Ripple:isActive()
 	return self.timeOut < TIMEOUT
 end
 
 -- User must setup the stencil buffer for this operation.
 -- Otherwise the circle can go out of control
-function ripple:draw(r, g, b, x, y)
+function Ripple:draw(r, g, b, x, y)
 	if self.timeOut < TIMEOUT then
 		local opacity = interpolation(1 - self.timeOut * TIME_MULTIPLER)
 		local radius = interpolation(self.timeIn * TIME_MULTIPLER) * self.radius
@@ -65,4 +65,4 @@ function ripple:draw(r, g, b, x, y)
 	end
 end
 
-return ripple
+return Ripple

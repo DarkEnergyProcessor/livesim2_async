@@ -6,10 +6,10 @@ local love = require("love")
 local timer = require("libs.hump.timer")
 
 local color = require("color")
-local async = require("async")
+local Async = require("async")
 local AssetCache = require("asset_cache")
 local log = require("logging")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Setting = require("setting")
 local Util = require("util")
 local AudioManager = require("audio_manager")
@@ -20,8 +20,8 @@ local Vires = require("vires")
 
 local Glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
-local beatmapList = require("game.beatmap.list")
-local backgroundLoader = require("game.background_loader")
+local BeatmapList = require("game.beatmap.list")
+local BackgroundLoader = require("game.background_loader")
 local srtParse = require("game.srt")
 local storyLoader = require("game.storyboard.loader")
 local note = require("game.live.note")
@@ -31,7 +31,7 @@ local liveUI = require("game.live.ui")
 local skill = require("game.live.skill")
 local replay = require("game.live.replay")
 local BGM = require("game.bgm")
-local beatmapRandomizer = require("game.live.randomizer3")
+local BeatmapRandomizer = require("game.live.randomizer3")
 
 local DEPLS = Gamestate.create {
 	fonts = {},
@@ -225,7 +225,7 @@ function DEPLS:load(arg)
 	self.persist.arg = arg
 	self.persist.directLoad = arg.direct
 
-	self.data.infoArtFont, self.data.titleArtFont = mainFont.get(16, 40)
+	self.data.infoArtFont, self.data.titleArtFont = MainFont.get(16, 40)
 
 	-- safe area
 	safeAreaScaling(self)
@@ -473,11 +473,11 @@ function DEPLS:load(arg)
 		desiredBeatmapInit = desiredBeatmapInit + 1
 	end
 	-- Load notes data
-	beatmapList.getNotes(arg.beatmapName, function(notes)
+	BeatmapList.getNotes(arg.beatmapName, function(notes)
 		local fullScore = 0
 
 		if self.persist.beatmapRandomized then
-			local newnotes = beatmapRandomizer(notes, self.persist.randomGeneratedSeed[1], self.persist.randomGeneratedSeed[2])
+			local newnotes = BeatmapRandomizer(notes, self.persist.randomGeneratedSeed[1], self.persist.randomGeneratedSeed[2])
 			if newnotes then
 				self.persist.noteRandomized = true
 				notes = newnotes
@@ -520,7 +520,7 @@ function DEPLS:load(arg)
 	if loadBackground then
 		-- need to wrap in coroutine because
 		-- there's no async access in the callback
-		beatmapList.getBackground(arg.beatmapName, loadVideo, coroutine.wrap(function(value)
+		BeatmapList.getBackground(arg.beatmapName, loadVideo, coroutine.wrap(function(value)
 			log.debug("livesim2", "received background data")
 
 			local tval = type(value)
@@ -547,7 +547,7 @@ function DEPLS:load(arg)
 					-- number
 					m = table.remove(value, 2)
 					if m > 0 then
-						self.data.background = backgroundLoader.load(m)
+						self.data.background = BackgroundLoader.load(m)
 					end
 				end
 
@@ -562,17 +562,17 @@ function DEPLS:load(arg)
 				end
 
 				if not(self.data.background) and type(m) == "userdata" then
-					self.data.background = backgroundLoader.compose(m, l, r, t, b)
+					self.data.background = BackgroundLoader.compose(m, l, r, t, b)
 				end
 			elseif tval == "number" and value > 0 then
-				self.data.background = backgroundLoader.load(value)
+				self.data.background = BackgroundLoader.load(value)
 			end
 			isBeatmapInit = isBeatmapInit + 1
 		end))
 	end
 	if loadCustomUnit then
 		-- Load unit data too
-		beatmapList.getCustomUnit(arg.beatmapName, function(unitData)
+		BeatmapList.getCustomUnit(arg.beatmapName, function(unitData)
 			self.data.customUnit = unitData
 			log.debug("livesim2", "received unit data")
 			isBeatmapInit = isBeatmapInit + 1
@@ -580,7 +580,7 @@ function DEPLS:load(arg)
 	end
 	if loadStoryboard then
 		-- Load storyboard
-		beatmapList.getStoryboard(arg.beatmapName, function(story)
+		BeatmapList.getStoryboard(arg.beatmapName, function(story)
 			-- Story can be nil
 			if story then
 				-- Parsed later
@@ -696,14 +696,14 @@ function DEPLS:load(arg)
 
 	-- wait until notes are loaded
 	while isBeatmapInit < desiredBeatmapInit do
-		async.wait()
+		Async.wait()
 	end
 	log.debug("livesim2", "beatmap init wait done")
 
 	-- if there's no background, load default
 	if not(self.data.background) then
 		local num = self.persist.beatmapRandomized and arg.summary.randomStar or arg.summary.star
-		self.data.background = backgroundLoader.load(Util.clamp(
+		self.data.background = BackgroundLoader.load(Util.clamp(
 			(loadBackground and num > 0) and num or assert(tonumber(Setting.get("BACKGROUND_IMAGE"))),
 			1, 12
 		))
@@ -834,7 +834,7 @@ function DEPLS:load(arg)
 		self.data.lyrics = lyrics(srtParse(str:gmatch("([^\n]*)\n?")))
 	end
 
-	async.wait()
+	Async.wait()
 	log.debug("livesim2", "ready")
 end
 

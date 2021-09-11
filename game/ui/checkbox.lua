@@ -7,41 +7,41 @@ local Luaoop = require("libs.Luaoop")
 local AssetCache = require("asset_cache")
 local Glow = require("game.afterglow")
 
-local checkbox = Luaoop.class("Livesim2.CheckboxUI", Glow.Element)
+local Checkbox = Luaoop.class("Livesim2.CheckboxUI", Glow.Element)
 
-function checkbox:new(checked, scale)
-	if not(checkbox.images) then
-		checkbox.images = AssetCache.loadMultipleImages({
+function Checkbox:new(checked, scale)
+	if not(Checkbox.images) then
+		Checkbox.images = AssetCache.loadMultipleImages({
 			"assets/image/ui/com_etc_292.png",
 			"assets/image/ui/com_etc_293.png"
 		}, {mipmaps = true})
-		checkbox.imageWidth, checkbox.imageHeight = checkbox.images[1]:getDimensions()
+		Checkbox.imageWidth, Checkbox.imageHeight = Checkbox.images[1]:getDimensions()
 	end
 
 	self.checked = not(not(checked))
 	self.scale = scale or 1
-	self.width, self.height = checkbox.imageWidth * self.scale, checkbox.imageHeight * self.scale
-	self:addEventListener("mousereleased", checkbox._released)
+	self.width, self.height = Checkbox.imageWidth * self.scale, Checkbox.imageHeight * self.scale
+	self:addEventListener("mousereleased", Checkbox._released)
 end
 
-function checkbox:_released()
+function Checkbox:_released()
 	self.checked = not(self.checked)
 	self:triggerEvent("changed", self.checked)
 end
 
-function checkbox:isChecked()
+function Checkbox:isChecked()
 	return self.checked
 end
 
-function checkbox:setChecked(checked)
+function Checkbox:setChecked(checked)
 	self.checked = not(not(checked))
 end
 
-function checkbox:render(x, y)
-	love.graphics.draw(checkbox.images[1], x, y, 0, self.scale)
+function Checkbox:render(x, y)
+	love.graphics.draw(Checkbox.images[1], x, y, 0, self.scale)
 	if self.checked then
-		love.graphics.draw(checkbox.images[2], x, y, 0, self.scale, self.scale, 4, 0)
+		love.graphics.draw(Checkbox.images[2], x, y, 0, self.scale, self.scale, 4, 0)
 	end
 end
 
-return checkbox
+return Checkbox

@@ -8,9 +8,9 @@ local color = require("color")
 local AssetCache = require("asset_cache")
 local Glow = require("game.afterglow")
 
-local imageButton = Luaoop.class("Livesim2.ImageButtonUI", Glow.Element)
+local ImageButton = Luaoop.class("Livesim2.ImageButtonUI", Glow.Element)
 
-function imageButton:new(name, scale)
+function ImageButton:new(name, scale)
 	-- name..".png"
 	-- name.."se.png"
 	local images
@@ -31,22 +31,22 @@ function imageButton:new(name, scale)
 	self.imagePressed = assert(images[2])
 	self.isPressed = false
 
-	self:addEventListener("mousepressed", imageButton._pressed)
-	self:addEventListener("mousereleased", imageButton._released)
-	self:addEventListener("mousecanceled", imageButton._released)
+	self:addEventListener("mousepressed", ImageButton._pressed)
+	self:addEventListener("mousereleased", ImageButton._released)
+	self:addEventListener("mousecanceled", ImageButton._released)
 end
 
-function imageButton:_pressed(_)
+function ImageButton:_pressed(_)
 	self.isPressed = true
 end
 
-function imageButton:_released(_)
+function ImageButton:_released(_)
 	self.isPressed = false
 end
 
-function imageButton:render(x, y)
+function ImageButton:render(x, y)
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.isPressed and self.imagePressed or self.imageNormal, x, y, 0, self.scale)
 end
 
-return imageButton
+return ImageButton

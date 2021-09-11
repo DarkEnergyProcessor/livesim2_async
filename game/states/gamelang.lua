@@ -6,14 +6,14 @@ local love = require("love")
 
 local color = require("color")
 local Gamestate = require("gamestate")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Util = require("util")
 local L = require("language")
 
-local backgroundLoader = require("game.background_loader")
+local BackgroundLoader = require("game.background_loader")
 
 local Glow = require("game.afterglow")
-local backNavigation = require("game.ui.back_navigation")
+local BackNavigation = require("game.ui.back_navigation")
 local longButtonUI = require("game.ui.long_button")
 
 local gameLang = Gamestate.create {
@@ -42,7 +42,7 @@ function gameLang:load()
 	Glow.clear()
 
 	if self.persist.languageText == nil then
-		self.persist.languageText = love.graphics.newText(mainFont.get(26))
+		self.persist.languageText = love.graphics.newText(MainFont.get(26))
 	end
 
 	if self.data.buttonFrame == nil then
@@ -58,11 +58,11 @@ function gameLang:load()
 	Glow.addFrame(self.data.buttonFrame)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(14)
+		self.data.background = BackgroundLoader.load(14)
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation(L"setting:language")
+		self.data.back = BackNavigation(L"setting:language")
 		self.data.back:addEventListener("mousereleased", function()
 			if
 				self.persist.currentLanguage ~= self.persist.previousLanguage and

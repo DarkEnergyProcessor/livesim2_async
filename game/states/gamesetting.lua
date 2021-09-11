@@ -7,23 +7,23 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local async = require("async")
+local Async = require("async")
 local color = require("color")
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Util = require("util")
 local Volume = require("volume")
 local Setting = require("setting")
 local L = require("language")
 
-local backgroundLoader = require("game.background_loader")
+local BackgroundLoader = require("game.background_loader")
 local tapSound = require("game.tap_sound")
-local colorTheme = require("game.color_theme")
+local ColorTheme = require("game.color_theme")
 
 local Glow = require("game.afterglow")
-local ciButton = require("game.ui.circle_icon_button")
-local ripple = require("game.ui.ripple")
+local CircleIconButton = require("game.ui.circle_icon_button")
+local Ripple = require("game.ui.ripple")
 local invisibleUI = require("game.ui.invisible")
 
 local numberSetting = require("game.settings.number")
@@ -87,11 +87,11 @@ local function setVolumeSetting(name, value)
 end
 
 local function changeBackgroundAsync(self, v)
-	self.persist.background = backgroundLoader.load(v)
+	self.persist.background = BackgroundLoader.load(v)
 end
 
 local function startChangeBackground(self, v)
-	return async.runFunction(changeBackgroundAsync):run(self, v)
+	return Async.runFunction(changeBackgroundAsync):run(self, v)
 end
 
 local function setBackgroundDim(self, v)
@@ -137,7 +137,7 @@ function categorySelect:new(font, icon, name)
 	self.width, self.height = 240, 48
 	self.x, self.y = 0, 0
 	self.active = false
-	self.ripple = ripple(242.12393520674489483506979278946)
+	self.ripple = Ripple(242.12393520674489483506979278946)
 	self.isPressed = false
 	self.textHeight = font:getHeight()
 	self.text = love.graphics.newText(font)
@@ -174,7 +174,7 @@ end
 function categorySelect:render(x, y)
 	self.x, self.y = x, y
 	if self.active then
-		love.graphics.setColor(colorTheme.get())
+		love.graphics.setColor(ColorTheme.get())
 		love.graphics.rectangle("fill", x, y, self.width, self.height)
 	end
 	love.graphics.setColor(self.active and color.white or color.black)
@@ -195,7 +195,7 @@ function longSelect:new(font, name)
 	self.width, self.height = 710, 60
 	self.x, self.y = 0, 0
 	self.active = false
-	self.ripple = ripple(712.53070109294238045145069048472)
+	self.ripple = Ripple(712.53070109294238045145069048472)
 	self.isPressed = false
 	self.textHeight = font:getHeight()
 	self.text = love.graphics.newText(font)
@@ -219,7 +219,7 @@ end
 
 function longSelect:render(x, y)
 	self.x, self.y = x, y
-	love.graphics.setColor(self.active and colorTheme.get() or color.white75PT)
+	love.graphics.setColor(self.active and ColorTheme.get() or color.white75PT)
 	love.graphics.rectangle("fill", x, y, self.width, self.height)
 	love.graphics.setColor(self.active and color.white or color.black)
 	Util.drawText(self.text, x, y)
@@ -268,10 +268,10 @@ local gameSetting = Gamestate.create {
 function gameSetting:load()
 	Glow.clear()
 	self.data = self.data or {} -- for sake of LCA
-	local font31, font26, font22, font16 = mainFont.get(31, 26, 22, 16)
+	local font31, font26, font22, font16 = MainFont.get(31, 26, 22, 16)
 
 	if self.persist.background == nil then
-		self.persist.background = backgroundLoader.load(tonumber(Setting.get("BACKGROUND_IMAGE")))
+		self.persist.background = BackgroundLoader.load(tonumber(Setting.get("BACKGROUND_IMAGE")))
 	end
 
 	if self.data.shadowGradient == nil then
@@ -286,7 +286,7 @@ function gameSetting:load()
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(colorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
+		self.data.back = CircleIconButton(ColorTheme.get(), 36, self.assets.images.navigateBack, 0.48)
 		self.data.back:setData(self)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
@@ -663,7 +663,7 @@ function gameSetting:draw()
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
 
 		if set then
-			local theme = colorTheme.get()
+			local theme = ColorTheme.get()
 			love.graphics.setColor(theme[1], theme[2], theme[3], select(4, color.compat(0, 0, 0, opacity)))
 			love.graphics.rectangle("fill", 240, 86, 6, 597)
 		end
@@ -671,7 +671,7 @@ function gameSetting:draw()
 
 	love.graphics.setColor(color.white)
 	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.setColor(colorTheme.get())
+	love.graphics.setColor(ColorTheme.get())
 	love.graphics.rectangle("fill", -88, 0, 1136, 80)
 	love.graphics.setColor(color.white)
 	Util.drawText(self.data.titleText, 480, 24)

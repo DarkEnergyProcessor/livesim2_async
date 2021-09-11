@@ -3,7 +3,7 @@
 -- See copyright notice in main.lua
 
 local color = require("color")
-local colorTheme = {
+local ColorTheme = {
 	[1] = {
 		-- ff4fae
 		currentColor = {0xff, 0x4f, 0xae, color.hexFF4FAE},
@@ -41,22 +41,22 @@ local colorTheme = {
 local currentColor, currentColorDark, currentColorDarker
 
 -- colid: 1 = μ's, 2 = Aqours, 3 = NijiGaku
-function colorTheme.init(colid)
+function ColorTheme.init(colid)
 	if currentColor then return end
-	return colorTheme.set(colid)
+	return ColorTheme.set(colid)
 end
 
-function colorTheme.set(colid)
-	if colorTheme[colid] == nil then
+function ColorTheme.set(colid)
+	if ColorTheme[colid] == nil then
 		error("unknown color id "..colid)
 	end
 
-	currentColor = colorTheme[colid].currentColor
-	currentColorDark = colorTheme[colid].currentColorDark
-	currentColorDarker = colorTheme[colid].currentColorDarker
+	currentColor = ColorTheme[colid].currentColor
+	currentColorDark = ColorTheme[colid].currentColorDark
+	currentColorDarker = ColorTheme[colid].currentColorDarker
 end
 
-function colorTheme.get(opacity)
+function ColorTheme.get(opacity)
 	assert(currentColor, "forgot to call colorTheme.init()")
 	if opacity then
 		return color.compat(currentColor[1], currentColor[2], currentColor[3], opacity)
@@ -65,7 +65,7 @@ function colorTheme.get(opacity)
 	end
 end
 
-function colorTheme.getDark(opacity)
+function ColorTheme.getDark(opacity)
 	assert(currentColorDark, "forgot to call colorTheme.init()")
 	if opacity then
 		return color.compat(currentColorDark[1], currentColorDark[2], currentColorDark[3], opacity)
@@ -75,7 +75,7 @@ function colorTheme.getDark(opacity)
 end
 
 
-function colorTheme.getDarker(opacity)
+function ColorTheme.getDarker(opacity)
 	assert(currentColorDarker, "forgot to call colorTheme.init()")
 	if opacity then
 		return color.compat(currentColorDarker[1], currentColorDarker[2], currentColorDarker[3], opacity)
@@ -84,4 +84,4 @@ function colorTheme.getDarker(opacity)
 	end
 end
 
-return colorTheme
+return ColorTheme

@@ -27,7 +27,7 @@ processed (parsed) in another thread.
 
 local love = require("love")
 local PostExit = require("post_exit")
-local beatmapList = {
+local BeatmapList = {
 	count = 0,
 	thread = nil,
 	channel = nil,
@@ -44,7 +44,7 @@ local function registerRequestID(callback)
 	end
 
 	local id = table.concat(t)
-	beatmapList.callback[id] = callback
+	BeatmapList.callback[id] = callback
 	return id
 end
 
@@ -60,25 +60,25 @@ end
 
 function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 	if name == "error" then
-		beatmapList.callback[id] = nil
+		BeatmapList.callback[id] = nil
 		error(a)
-	elseif beatmapList.callback[id] then
+	elseif BeatmapList.callback[id] then
 		if name == "loaders" then
-			local cb = beatmapList.callback[id]
+			local cb = BeatmapList.callback[id]
 			if a == "" then
-				beatmapList.callback[id] = nil
+				BeatmapList.callback[id] = nil
 			end
 			if not(cb(a, b, c, d)) then
-				beatmapList.callback[id] = nil
+				BeatmapList.callback[id] = nil
 			end
 		elseif name == "enum" then
-			local cb = beatmapList.callback[id]
+			local cb = BeatmapList.callback[id]
 			c = c or {}
 			if a == "" then
-				beatmapList.callback[id] = nil
+				BeatmapList.callback[id] = nil
 			end
 			if not(cb(a, b, c[2], d, c[1], e)) then
-				beatmapList.callback[id] = nil
+				BeatmapList.callback[id] = nil
 			end
 		elseif name == "notes" then
 			local notes = {}
@@ -94,24 +94,24 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 				a:pop()
 				notes[#notes + 1] = t
 			end
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 			cb(notes)
 		elseif name == "unitinfo" then
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 			cb(channelToTable(a))
 		elseif name == "summary" then
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 			cb(channelToTable(a))
 		elseif name == "load" then
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 			cb(a, channelToTable(b))
 		elseif name == "story" then
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 
 			if a then
 				local type = a:pop()
@@ -144,24 +144,24 @@ function love.handlers.beatmapresponse(name, id, a, b, c, d, e)
 				cb(nil)
 			end
 		else
-			local cb = beatmapList.callback[id]
-			beatmapList.callback[id] = nil
+			local cb = BeatmapList.callback[id]
+			BeatmapList.callback[id] = nil
 			cb(a, b, c, d)
 		end
 	end
 end
 
-function beatmapList.push()
-	assert(beatmapList.hasQuit == false, "beatmap list is already uninitialized")
-	if beatmapList.count == 0 then
-		if beatmapList.thread and beatmapList.thread:isRunning() then
-			beatmapList.thread:wait()
+function BeatmapList.push()
+	assert(BeatmapList.hasQuit == false, "beatmap list is already uninitialized")
+	if BeatmapList.count == 0 then
+		if BeatmapList.thread and BeatmapList.thread:isRunning() then
+			BeatmapList.thread:wait()
 		end
-		beatmapList.thread = love.thread.newThread("game/beatmap/thread.lua")
-		beatmapList.channel = love.thread.newChannel()
-		beatmapList.thread:start(beatmapList.channel)
+		BeatmapList.thread = love.thread.newThread("game/beatmap/thread.lua")
+		BeatmapList.channel = love.thread.newChannel()
+		BeatmapList.thread:start(BeatmapList.channel)
 	end
-	beatmapList.count = beatmapList.count + 1
+	BeatmapList.count = BeatmapList.count + 1
 end
 
 local function sendData(chan, name, arg)
@@ -169,100 +169,100 @@ local function sendData(chan, name, arg)
 	chan:push(arg)
 end
 
-function beatmapList.pop(wait)
-	if beatmapList.hasQuit then return end
-	assert(beatmapList.count > 0, "unable to pop")
+function BeatmapList.pop(wait)
+	if BeatmapList.hasQuit then return end
+	assert(BeatmapList.count > 0, "unable to pop")
 
-	beatmapList.count = beatmapList.count - 1
-	if beatmapList.count == 0 then
-		beatmapList.channel:performAtomic(sendData, "quit", {})
-		beatmapList.channel = nil
+	BeatmapList.count = BeatmapList.count - 1
+	if BeatmapList.count == 0 then
+		BeatmapList.channel:performAtomic(sendData, "quit", {})
+		BeatmapList.channel = nil
 
 		if wait then
-			beatmapList.thread:wait()
+			BeatmapList.thread:wait()
 		end
 	end
 end
 
 -- callback: summary
-function beatmapList.getSummary(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "summary", {registerRequestID(callback), name})
+function BeatmapList.getSummary(name, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "summary", {registerRequestID(callback), name})
 end
 
 -- callback: notesList channel
-function beatmapList.getNotes(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "notes", {registerRequestID(callback), name})
+function BeatmapList.getNotes(name, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "notes", {registerRequestID(callback), name})
 end
 
 -- callback: backgrounds channel
-function beatmapList.getBackground(name, video, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name, video})
+function BeatmapList.getBackground(name, video, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "background", {registerRequestID(callback), name, video})
 end
 
 -- callback: unit list channel
-function beatmapList.getCustomUnit(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "unitinfo", {registerRequestID(callback), name})
+function BeatmapList.getCustomUnit(name, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "unitinfo", {registerRequestID(callback), name})
 end
 
-function beatmapList.getStoryboard(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
+function BeatmapList.getStoryboard(name, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "story", {registerRequestID(callback), name})
 end
 
-function beatmapList.getCoverArt(name, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "cover", {registerRequestID(callback), name})
+function BeatmapList.getCoverArt(name, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "cover", {registerRequestID(callback), name})
 end
 
-function beatmapList.enumerate(callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
+function BeatmapList.enumerate(callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "enum", {registerRequestID(callback)})
 end
 
-function beatmapList.enumerateLoaders(callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "loaders", {registerRequestID(callback)})
+function BeatmapList.enumerateLoaders(callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "loaders", {registerRequestID(callback)})
 end
 
 -- callback: id (may print unprintable char), summary
-function beatmapList.registerAbsolute(path, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "load", {registerRequestID(callback), path})
+function BeatmapList.registerAbsolute(path, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "load", {registerRequestID(callback), path})
 end
 
-function beatmapList.registerRelative(path, callback)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "loadrel", {registerRequestID(callback), path})
+function BeatmapList.registerRelative(path, callback)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "loadrel", {registerRequestID(callback), path})
 end
 
 -- For grouped beatmap, all difficulty will be deleted!
-function beatmapList.deleteBeatmap(name)
-	assert(beatmapList.count > 0, "beatmap list not initialized")
-	beatmapList.channel:performAtomic(sendData, "rm", {registerRequestID(), name})
+function BeatmapList.deleteBeatmap(name)
+	assert(BeatmapList.count > 0, "beatmap list not initialized")
+	BeatmapList.channel:performAtomic(sendData, "rm", {registerRequestID(), name})
 end
 
-function beatmapList.isActive()
-	return beatmapList.count > 0
+function BeatmapList.isActive()
+	return BeatmapList.count > 0
 end
 
 PostExit.add(function()
-	if beatmapList.count > 0 then
-		beatmapList.channel:performAtomic(sendData, "quit", {})
-		if beatmapList.thread and beatmapList.thread:isRunning() then
-			beatmapList.thread:wait()
+	if BeatmapList.count > 0 then
+		BeatmapList.channel:performAtomic(sendData, "quit", {})
+		if BeatmapList.thread and BeatmapList.thread:isRunning() then
+			BeatmapList.thread:wait()
 		end
-		beatmapList.count = 0
-	elseif beatmapList.thread and beatmapList.thread:isRunning() then
-		beatmapList.thread:wait()
+		BeatmapList.count = 0
+	elseif BeatmapList.thread and BeatmapList.thread:isRunning() then
+		BeatmapList.thread:wait()
 	end
 
-	beatmapList.thread = nil
-	beatmapList.channel = nil
-	beatmapList.hasQuit = true
+	BeatmapList.thread = nil
+	BeatmapList.channel = nil
+	BeatmapList.hasQuit = true
 end)
 
-return beatmapList
+return BeatmapList

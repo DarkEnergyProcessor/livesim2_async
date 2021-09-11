@@ -7,14 +7,14 @@ local utf8 = require("utf8")
 local Luaoop = require("libs.Luaoop")
 
 local Gamestate = require("gamestate")
-local async = require("async")
+local Async = require("async")
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local L = require("language")
 
 local Glow = require("game.afterglow")
-local backgroundLoader = require("game.background_loader")
-local backNavigation = require("game.ui.back_navigation")
+local BackgroundLoader = require("game.background_loader")
+local BackNavigation = require("game.ui.back_navigation")
 
 local selectUnits = Gamestate.create {
 	images = {}, fonts = {}
@@ -23,7 +23,7 @@ local selectUnits = Gamestate.create {
 local unitButton = Luaoop.class("Livesim2.UnitSelectButtonUI", Glow.Element)
 
 function unitButton:new(image, name)
-	local font = mainFont.get(22)
+	local font = MainFont.get(22)
 	local textBuilder = {}
 
 	-- break text
@@ -95,11 +95,11 @@ function selectUnits:load()
 	Glow.addFrame(self.data.frame)
 
 	if self.data.background == nil then
-		self.data.background = backgroundLoader.load(5)
+		self.data.background = BackgroundLoader.load(5)
 	end
 
 	if self.data.back == nil then
-		self.data.back = backNavigation(L"changeUnits:selectUnits")
+		self.data.back = BackNavigation(L"changeUnits:selectUnits")
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	Glow.addFixedElement(self.data.back, 0, 0)
@@ -131,7 +131,7 @@ function selectUnits:start(arg)
 		return a.name < b.name
 	end)
 
-	async.runFunction(generateFrame):run(self, arg[2], unitListTemp)
+	Async.runFunction(generateFrame):run(self, arg[2], unitListTemp)
 end
 
 function selectUnits:update(dt)

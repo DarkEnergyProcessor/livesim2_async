@@ -6,7 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 
 local baseSettingItem = Luaoop.class("Livesim2.SettingItem.Base")
 
@@ -17,7 +17,7 @@ function baseSettingItem:__construct(name)
 	assert(coroutine.running(), "must be called from async function")
 
 	local internal = Luaoop.class.data(self)
-	local font = mainFont.get(22)
+	local font = MainFont.get(22)
 	internal.title = love.graphics.newText(font)
 	internal.title:add({color.black, name})
 

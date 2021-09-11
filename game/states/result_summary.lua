@@ -4,9 +4,9 @@
 
 local love = require("love")
 local lsr = require("libs.lsr")
-local cubicBezier = require("libs.cubic_bezier")
+local CubicBezier = require("libs.cubic_bezier")
 
-local mainFont = require("font")
+local MainFont = require("main_font")
 local color = require("color")
 local Setting = require("setting")
 local Gamestate = require("gamestate")
@@ -14,11 +14,11 @@ local LoadingInstance = require("loading_instance")
 local Util = require("util")
 local L = require("language")
 
-local backgroundLoader = require("game.background_loader")
+local BackgroundLoader = require("game.background_loader")
 local Glow = require("game.afterglow")
-local ciButton = require("game.ui.circle_icon_button")
+local CircleIconButton = require("game.ui.circle_icon_button")
 
-local interpolation = cubicBezier(0.4, 0, 0.2, 1):getFunction()
+local interpolation = CubicBezier(0.4, 0, 0.2, 1):getFunction()
 local mipmaps = {mipmaps = true}
 local accuracyColorMap = {
 	{color.hexFF0AD8, "PERFECT"},
@@ -77,10 +77,10 @@ function resultScreen:load(arg)
 	}
 	local saveAllowed = arg.allowSave and not(arg.autoplay)
 
-	self.data.background = arg.background or backgroundLoader.load(Setting.get("BACKGROUND_IMAGE"))
+	self.data.background = arg.background or BackgroundLoader.load(Setting.get("BACKGROUND_IMAGE"))
 
 	if self.data.mainFont == nil then
-		self.data.mainFont = mainFont.get(32)
+		self.data.mainFont = MainFont.get(32)
 	end
 
 	if self.data.coverMaskShader == nil then
@@ -96,14 +96,14 @@ function resultScreen:load(arg)
 	end
 
 	if self.data.back == nil then
-		self.data.back = ciButton(color.transparent, 36, self.assets.images.arrowBack, 0.32)
+		self.data.back = CircleIconButton(color.transparent, 36, self.assets.images.arrowBack, 0.32)
 		self.data.back:addEventListener("mousereleased", leave)
 	end
 	Glow.addFixedElement(self.data.back, 32, 4)
 
 	do
 		if self.data.showReplay == nil then
-			self.data.showReplay = ciButton(color.hexFFDF35, 43, self.assets.images.videocam, 0.32)
+			self.data.showReplay = CircleIconButton(color.hexFFDF35, 43, self.assets.images.videocam, 0.32)
 			self.data.showReplay:addEventListener("mousereleased", function()
 				if not(arg.autoplay) then
 					Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
@@ -117,7 +117,7 @@ function resultScreen:load(arg)
 		end
 
 		if arg.allowRetry and self.data.reloadLive == nil then
-			self.data.reloadLive = ciButton(color.hex1CA0FF, 43, self.assets.images.reload, 0.32)
+			self.data.reloadLive = CircleIconButton(color.hex1CA0FF, 43, self.assets.images.reload, 0.32)
 			self.data.reloadLive:addEventListener("mousereleased", function()
 				-- It may contain replay data, but the table may used somewhere
 				-- so clone it first.
@@ -132,7 +132,7 @@ function resultScreen:load(arg)
 		end
 
 		if saveAllowed and self.data.saveReplay == nil then
-			self.data.saveReplay = ciButton(color.hexFF4FAE, 43, self.assets.images.save, 0.32)
+			self.data.saveReplay = CircleIconButton(color.hexFF4FAE, 43, self.assets.images.save, 0.32)
 			self.data.saveReplay:addEventListener("mousereleased", function()
 				local name
 				if not(love.filesystem.createDirectory("replays/"..arg.name)) then

@@ -6,7 +6,7 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Util = require("util")
 local L = require("language")
 
@@ -15,7 +15,7 @@ local pause = Luaoop.class("livesim2.Pause")
 -- must be in async
 -- callbacks must be table: resume, quit, restart
 function pause:__construct(callbacks, opaque, replay)
-	self.font, self.mainCounterFont = mainFont.get(36, 72)
+	self.font, self.mainCounterFont = MainFont.get(36, 72)
 	self.timer = math.huge
 	self.paused = false
 	self.callback = callbacks

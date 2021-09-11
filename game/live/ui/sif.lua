@@ -12,8 +12,8 @@ local vector = require("libs.nvec")
 
 local AssetCache = require("asset_cache")
 local AudioManager = require("audio_manager")
-local cache = require("cache")
-local async = require("async")
+local Cache = require("cache")
+local Async = require("async")
 local color = require("color")
 local lily = require("lily")
 
@@ -87,7 +87,7 @@ function sifui:__construct(_, mineff)
 		"assets/image/live/combo/10.png",
 	}, {mipmaps = true})
 	while fontImageDataList:isComplete() == false do
-		async.wait()
+		Async.wait()
 	end
 	-- fonts
 	self.scoreFont = love.graphics.newImageFont(fontImageDataList:getValues(1), "0123456789", -4)
@@ -110,7 +110,7 @@ function sifui:__construct(_, mineff)
 	-- combo cheer
 	self.comboCheer = true
 	if not(mineff) then
-		self.comboCheerAnim = cache.get("live_combo_cheer")
+		self.comboCheerAnim = Cache.get("live_combo_cheer")
 		if not(self.comboCheerAnim) then
 			self.comboCheerAnim = Yohane.newFlashFromFilename("flash/live_combo_cheer.flsh")
 			local img = AssetCache.loadImage("assets/flash/ui/live/img/ef_350.png")
@@ -224,15 +224,15 @@ function sifui:__construct(_, mineff)
 	-- live clear
 	self.liveClearVoice = nil
 	self.liveClearVoicePlayed = false
-	self.fullComboAnim = cache.get("live_fullcombo")
+	self.fullComboAnim = Cache.get("live_fullcombo")
 	if not(self.fullComboAnim) then
 		self.fullComboAnim = Yohane.newFlashFromFilename("flash/live_fullcombo.flsh")
-		cache.set("live_fullcombo", self.fullComboAnim)
+		Cache.set("live_fullcombo", self.fullComboAnim)
 	end
-	self.liveClearAnim = cache.get("live_clear")
+	self.liveClearAnim = Cache.get("live_clear")
 	if not(self.liveClearAnim) then
 		self.liveClearAnim = Yohane.newFlashFromFilename("flash/live_clear.flsh")
-		cache.set("live_clear", self.liveClearAnim)
+		Cache.set("live_clear", self.liveClearAnim)
 	end
 	self.fullComboAnim = self.fullComboAnim:clone()
 	self.liveClearAnim = self.liveClearAnim:clone()

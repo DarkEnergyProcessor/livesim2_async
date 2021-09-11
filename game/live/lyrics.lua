@@ -6,13 +6,13 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 
 local lyrics = Luaoop.class("Livesim2.Lyrics")
 local perZeroThree = 1/0.3
 
 function lyrics:__construct(srt)
-	local font1, font2 = mainFont.get(24, 16)
+	local font1, font2 = MainFont.get(24, 16)
 	local timings = {}
 
 	self.timings = timings

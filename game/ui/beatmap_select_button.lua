@@ -5,15 +5,15 @@
 local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
-local mainFont = require("font")
+local MainFont = require("main_font")
 local color = require("color")
 
-local imageButtonUI = require("game.ui.image_button")
-local beatmapSelButton = Luaoop.class("Livesim2.BeatmapSelectButtonUI", imageButtonUI)
+local ImageButton = require("game.ui.image_button")
+local beatmapSelButton = Luaoop.class("Livesim2.BeatmapSelectButtonUI", ImageButton)
 
 function beatmapSelButton:new(name, format, difficulty)
-	imageButtonUI.new(self, "assets/image/ui/s_button_03", 0.75)
-	local fmtfont, difffont, namefont = mainFont.get(11, 14, 20)
+	ImageButton.new(self, "assets/image/ui/s_button_03", 0.75)
+	local fmtfont, difffont, namefont = MainFont.get(11, 14, 20)
 
 	self.formatText = love.graphics.newText(fmtfont)
 	self.formatText:add({color.black, format}, 6, 41)
@@ -27,7 +27,7 @@ function beatmapSelButton:new(name, format, difficulty)
 end
 
 function beatmapSelButton:render(x, y)
-	imageButtonUI.render(self, x, y)
+	ImageButton.render(self, x, y)
 	love.graphics.draw(self.nameText, x, y)
 	love.graphics.draw(self.formatText, x, y)
 	if self.difficultyText then

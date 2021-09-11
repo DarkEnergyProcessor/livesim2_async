@@ -41,9 +41,9 @@ os.exit(os.execute(table.concat(cmd, " ")))
 ]]
 
 local love = require("love")
-local async = require("async")
-local cache = require("cache")
-local backgroundLoader = {}
+local Async = require("async")
+local Cache = require("cache")
+local BackgroundLoader = {}
 
 local function quadToTriangle(pos)
 	local triangle = {}
@@ -67,7 +67,7 @@ local function mergeTable(...)
 	return res
 end
 
-backgroundLoader.meshData = mergeTable(
+BackgroundLoader.meshData = mergeTable(
 	-- Main background
 	quadToTriangle {
 		{0, 0, 0, 43},
@@ -108,36 +108,36 @@ backgroundLoader.meshData = mergeTable(
 local loadDirectType = {
 	-- async
 	[true] = function(id)
-		local image = async.loadImage(string.format("assets/image/background/%d.png", id), {mipmaps = true})
-		local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
+		local image = Async.loadImage(string.format("assets/image/background/%d.png", id), {mipmaps = true})
+		local mesh = love.graphics.newMesh(BackgroundLoader.meshData, "triangles", "static")
 		mesh:setTexture(image:getValues())
 		return mesh
 	end,
 	-- sync
 	[false] = function(id)
 		local img = love.graphics.newImage(string.format("assets/image/background/%d.png", id), {mipmaps = true})
-		local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
+		local mesh = love.graphics.newMesh(BackgroundLoader.meshData, "triangles", "static")
 		mesh:setTexture(img)
 		return mesh
 	end
 }
 
-function backgroundLoader.loadDirect(id)
+function BackgroundLoader.loadDirect(id)
 	return loadDirectType[coroutine.running() ~= nil](id)
 end
 
-function backgroundLoader.load(id)
+function BackgroundLoader.load(id)
 	local cacheName = string.format("background_loader__%d", id)
-	local v = cache.get(cacheName)
+	local v = Cache.get(cacheName)
 	if not(v) then
-		v = backgroundLoader.loadDirect(id)
-		cache.set(cacheName, v)
+		v = BackgroundLoader.loadDirect(id)
+		Cache.set(cacheName, v)
 	end
 
 	return v
 end
 
-function backgroundLoader.compose(main, left, right, top, bottom)
+function BackgroundLoader.compose(main, left, right, top, bottom)
 	local framebuffer = love.graphics.newCanvas(1024, 1024)
 
 	love.graphics.push("all")
@@ -154,9 +154,9 @@ function backgroundLoader.compose(main, left, right, top, bottom)
 	if bottom then love.graphics.draw(bottom, 0, 683, 0, 960 / bottom:getWidth(), 43 / bottom:getHeight()) end
 	love.graphics.pop()
 
-	local mesh = love.graphics.newMesh(backgroundLoader.meshData, "triangles", "static")
+	local mesh = love.graphics.newMesh(BackgroundLoader.meshData, "triangles", "static")
 	mesh:setTexture(framebuffer)
 	return mesh
 end
 
-return backgroundLoader
+return BackgroundLoader

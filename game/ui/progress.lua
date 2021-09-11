@@ -9,7 +9,7 @@ local color = require("color")
 local Util = require("util")
 
 local Glow = require("game.afterglow")
-local colorTheme = require("game.color_theme")
+local ColorTheme = require("game.color_theme")
 
 local ProgressBar = Luaoop.class("Livesim2.ProgressBar", Glow.Element)
 
@@ -27,8 +27,8 @@ function ProgressBar:new(width, height, maxvalue, value)
 		ProgressBar.shader = love.graphics.newShader("assets/shader/progress.fs")
 	end
 
-	self.backgroundColor = colorTheme.getDarker()
-	self.foregroundColor = colorTheme.get()
+	self.backgroundColor = ColorTheme.getDarker()
+	self.foregroundColor = ColorTheme.get()
 
 	local a, b, c = color.compat(255, 255, 255)
 	self.mesh = love.graphics.newMesh({

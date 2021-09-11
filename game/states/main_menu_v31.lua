@@ -8,16 +8,16 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 
 local color = require("color")
-local mainFont = require("font")
+local MainFont = require("main_font")
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
 local Util = require("util")
 local L = require("language")
 
-local backgroundLoader = require("game.background_loader")
+local BackgroundLoader = require("game.background_loader")
 -- UI stuff
 local Glow = require("game.afterglow")
-local ripple = require("game.ui.ripple")
+local Ripple = require("game.ui.ripple")
 
 -- These UIs are declared directly here because
 -- they're one-specific use. It's not worth to have it in separate file
@@ -34,7 +34,7 @@ function PlayButton:new(state)
 	self.width, self.height = 404, 512
 	self.isPressed = false
 	self.x, self.y = 0, 0
-	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.ripple = Ripple(math.sqrt(self.width * self.width + self.height * self.height))
 	self.stencilFunc = function()
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
@@ -90,7 +90,7 @@ function ChangeUnitsButton:new(state)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
-	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.ripple = Ripple(math.sqrt(self.width * self.width + self.height * self.height))
 	self.stencilFunc = function()
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
@@ -139,7 +139,7 @@ function SettingsButton:new(state)
 	self.width, self.height = 404, 156
 	self.isPressed = false
 	self.x, self.y = 0, 0
-	self.ripple = ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.ripple = Ripple(math.sqrt(self.width * self.width + self.height * self.height))
 	self.stencilFunc = function()
 		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	end
@@ -208,11 +208,11 @@ function mainMenu:load()
 	Glow.clear()
 
 	if not(self.data.playFont) then
-		self.data.playFont = mainFont.get(92)
+		self.data.playFont = MainFont.get(92)
 	end
 
 	if not(self.data.titleFont) then
-		self.data.titleFont = mainFont.get(46)
+		self.data.titleFont = MainFont.get(46)
 	end
 
 	if not(self.data.titleText) then
@@ -224,7 +224,7 @@ function mainMenu:load()
 	end
 
 	if not(self.data.verSemFont) then
-		self.data.verSemFont = love.graphics.newFont(mainFont.notoSansCJK, 23)
+		self.data.verSemFont = love.graphics.newFont(MainFont.notoSansCJK, 23)
 	end
 
 	if not(self.data.verSemText) then
@@ -263,7 +263,7 @@ function mainMenu:load()
 	Glow.addElement(self.data.settingsButton, 497, 207)
 
 	if not(self.data.background) then
-		self.data.background = backgroundLoader.load(2)
+		self.data.background = BackgroundLoader.load(2)
 	end
 
 	if not(self.data.grayGradient) then
