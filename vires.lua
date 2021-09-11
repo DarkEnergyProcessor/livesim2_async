@@ -3,6 +3,7 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local NLay = require("libs.nlay")
 
 local vires = {
 	data = {
@@ -62,6 +63,8 @@ function vires.init(width, height)
 		vires.spriteBatch:add(patternMyus, 704, 640 + i * 128)
 		vires.spriteBatch:add(patternMyus, 832, 640 + i * 128)
 	end
+
+	NLay.update(0, 0, vires.data.virtualW, vires.data.virtualH)
 end
 
 function vires.update(nw, nh)
