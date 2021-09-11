@@ -23,7 +23,9 @@
 
 local abs = math.abs
 
-local cubicBezier = {}
+---@class CubicBezier
+local CubicBezier = {}
+
 local cubicBezier_t = nil
 local ffi = nil
 
@@ -37,7 +39,7 @@ if rawget(_G, "jit") and jit.status() and package.preload.ffi then
 	}]])
 end
 
-function cubicBezier:__init(p0, p1, p2, p3)
+function CubicBezier:__init(p0, p1, p2, p3)
 	self.cx = 3.0 * p0
 	self.bx = 3.0 * (p2 - p0) - self.cx
 	self.ax = 1.0 - self.cx -self.bx
@@ -46,19 +48,19 @@ function cubicBezier:__init(p0, p1, p2, p3)
 	self.ay = 1.0 - self.cy - self.by
 end
 
-function cubicBezier:_sx(t)
+function CubicBezier:_sx(t)
 	return ((self.ax * t + self.bx) * t + self.cx) * t
 end
 
-function cubicBezier:_sdx(t)
+function CubicBezier:_sdx(t)
 	return (3 * self.ax * t + 2 * self.bx) * t + self.cx
 end
 
-function cubicBezier:_sy(t)
+function CubicBezier:_sy(t)
 	return ((self.ay * t + self.by) * t + self.cy) * t
 end
 
-function cubicBezier:_scx(x)
+function CubicBezier:_scx(x)
 	-- Try Newton's method
 	local t2 = x
 	for _ = 1, 10 do
@@ -93,47 +95,60 @@ function cubicBezier:_scx(x)
 		t2 = (t1 - t0) * 0.5 + t0
 	end
 
-	-- I'm done
+	-- I give up
 	return t2
 end
 
-function cubicBezier:evaluate(x)
+---@param x number
+---@return number
+function CubicBezier:evaluate(x)
 	return self:_sy(self:_scx(x))
 end
 
 -- Useful for hump.timer which accepts function as interpolator
-function cubicBezier:getFunction()
+function CubicBezier:getFunction()
 	local bez = self
 
+	---@param t number
+	---@return number
 	return function(t)
 		return bez:evaluate(t)
 	end
 end
 
-cubicBezier.__call = cubicBezier.evaluate
-cubicBezier.__index = cubicBezier
+CubicBezier.__call = CubicBezier.evaluate
+CubicBezier.__index = CubicBezier
 
 local __construct
 
 if cubicBezier_t then
+	---@param p0 number
+	---@param p1 number
+	---@param p2 number
+	---@param p3 number
 	function __construct(p0, p1, p2, p3)
+		---@type CubicBezier
 		local v = ffi.new(cubicBezier_t)
 		v:__init(p0, p1, p2, p3)
 		return v
 	end
 
-	ffi.metatype(cubicBezier_t, cubicBezier)
+	ffi.metatype(cubicBezier_t, CubicBezier)
 else
+	---@param p0 number
+	---@param p1 number
+	---@param p2 number
+	---@param p3 number
 	function __construct(p0, p1, p2, p3)
-		local v = setmetatable({}, cubicBezier)
+		local v = setmetatable({}, CubicBezier)
 		v:__init(p0, p1, p2, p3)
 		return v
 	end
 end
 
-cubicBezier.new = __construct
-setmetatable(cubicBezier, {__call = function(_, p0, p1, p2, p3)
+CubicBezier.new = __construct
+setmetatable(CubicBezier, {__call = function(_, p0, p1, p2, p3)
 	return __construct(p0, p1, p2, p3)
 end})
 
-return cubicBezier
+return CubicBezier
