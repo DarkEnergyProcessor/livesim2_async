@@ -15,6 +15,10 @@ end
 
 local util = {}
 
+---@param maj number
+---@param min number
+---@param rev number
+---@return "-1" | "0" | "1"
 function util.compareLOVEVersion(maj, min, rev)
 	if love._version_major > maj then
 		return 1
@@ -39,6 +43,7 @@ end
 
 local version11 = util.compareLOVEVersion(11, 0) >= 0
 
+---@param file string
 function util.basename(file)
 	if not(file) then return end
 	local x = file:reverse()
@@ -61,6 +66,7 @@ function util.directoryExist(path)
 	end
 end
 
+---@param file string
 function util.removeExtension(file)
 	return file:sub(1, -(file:reverse():find(".", 1, true) or 0) - 1)
 end
@@ -91,11 +97,14 @@ function util.substituteExtension(file, ext, hasext)
 	return nil
 end
 
-local supportedAudioExtensions = {".wav", ".ogg", ".mp3"} -- in order
+local SUPPORTED_AUDIO_EXT = {".wav", ".ogg", ".mp3"} -- in order
 function util.getNativeAudioExtensions()
-	return supportedAudioExtensions
+	return SUPPORTED_AUDIO_EXT
 end
 
+---@param value number
+---@param min number
+---@param max number
 function util.clamp(value, min, max)
 	return math.max(math.min(value, max), min)
 end
@@ -108,32 +117,40 @@ function util.isCursorSupported()
 	end
 end
 
+---@param obj love.Object
 function util.releaseObject(obj)
 	if version11 then return obj:release() end
+	return false
 end
 
+---@param sounddata love.SoundData
 function util.getChannelCount(sounddata)
 	if version11 then return sounddata:getChannelCount()
 	else return sounddata:getChannels() end
 end
 
 -- Class for wrapping Lua io file to LOVE file compatible
-local fileWrapClass = Luaoop.class("util.FileWrapper")
+---@class util.FileWrapper: love.File
+local FileWrapClass = Luaoop.class("util.FileWrapper")
 
-function fileWrapClass:__construct(path, file)
+---@param path string
+---@param file file*
+function FileWrapClass:__construct(path, file)
 	self.file = file
 	self.path = path
 end
 
-function fileWrapClass:__destruct()
+function FileWrapClass:__destruct()
 	if self.file then self.file:close() end
 end
 
-function fileWrapClass:read(n)
+function FileWrapClass:read(n)
 	return self.file:read(tonumber(n) or "*a")
 end
 
-function fileWrapClass:write(str, size)
+---@param str string|love.Data
+---@param size number
+function FileWrapClass:write(str, size)
 	if type(str) == "userdata" and str:typeOf("Data") then
 		str = str:getString()
 	end
@@ -141,33 +158,43 @@ function fileWrapClass:write(str, size)
 	return self.file:write(tostring(str):sub(1, size))
 end
 
-function fileWrapClass:seek(offset)
+---@param offset number
+function FileWrapClass:seek(offset)
 	return self.file:seek("set", offset)
 end
 
-function fileWrapClass:tell()
+function FileWrapClass:tell()
 	return self.file:seek("cur")
 end
 
-function fileWrapClass:close()
+function FileWrapClass:close()
 	self.file:close()
 	self.file = nil
 end
 
-function fileWrapClass:getFilename()
+function FileWrapClass:getFilename()
 	return self.path
 end
 
+---@param path string
+---@param mode openmode
+---@return util.FileWrapper?
+---@return string?
 function util.newFileWrapper(path, mode)
 	local file, msg = io.open(path, mode)
 	if not(file) then return nil, msg end
-	return fileWrapClass(path, file)
+	return FileWrapClass(path, file)
 end
 
 function util.isFileWrapped(f)
-	return Luaoop.class.is(f, fileWrapClass)
+	return Luaoop.class.is(f, FileWrapClass)
 end
 
+---@param text love.Text
+---@param str string
+---@param x number
+---@param y number
+---@param intensity number
 function util.addTextWithShadow(text, str, x, y, intensity)
 	x = x or 0 y = y or 0
 	intensity = intensity or 1
@@ -176,10 +203,21 @@ function util.addTextWithShadow(text, str, x, y, intensity)
 	text:add({color.white, str}, x, y)
 end
 
+---@param a number
+---@param b number
+---@param t number
+---@return number
+---@overload fun(a: NVec, b: NVec, t: number): NVec
 function util.lerp(a, b, t)
 	return a * (1 - t) + b * t
 end
 
+---@param x1 number
+---@param y1 number
+---@param x2 number
+---@param y2 number
+---@param squared boolean
+---@return number
 function util.distance(x1, y1, x2, y2, squared)
 	local value = (x2 - x1)^2 + (y2 - y1)^2
 	if squared then
@@ -189,10 +227,15 @@ function util.distance(x1, y1, x2, y2, squared)
 	end
 end
 
+---@param n number
+---@return "-1" | "0" | "1"
 function util.sign(n)
 	return n > 0 and 1 or (n < 0 and -1 or 0)
 end
 
+---@param num number
+---@param numDecimalPlaces number
+---@return number
 function util.round(num, numDecimalPlaces)
 	local mult = 10^(numDecimalPlaces or 0)
 	local x = num * mult
@@ -203,6 +246,9 @@ function util.round(num, numDecimalPlaces)
 	end
 end
 
+---@generic T: table
+---@param orig T
+---@return T
 function util.deepCopy(orig)
 	if type(orig) == 'table' then
 		local copy = {}
@@ -259,6 +305,9 @@ function util.hasExtendedVideoSupport()
 	return hasLVEP
 end
 
+---@param data string|love.Data
+---@param algo love.CompressedDataFormat
+---@return love.Data
 function util.decompressToData(data, algo)
 	if version11 then
 		return love.data.decompress("data", algo, data)
@@ -267,6 +316,9 @@ function util.decompressToData(data, algo)
 	end
 end
 
+---@param data string|love.Data
+---@param algo love.CompressedDataFormat
+---@return string
 function util.decompressToString(data, algo)
 	if version11 then
 		return love.data.decompress("string", algo, data)
@@ -278,6 +330,9 @@ end
 do
 	local COLOR_MUL = util.compareLOVEVersion(11, 0) >= 0 and 1 or 255
 
+	---@param dir '"horizontal"' | '"vertical"'
+	---@vararg number[]
+	---@return love.Mesh
 	function util.gradient(dir, ...)
 		-- Check for direction
 		local isHorizontal = true
@@ -321,33 +376,35 @@ end
 if util.compareLOVEVersion(11, 0) >= 0 then
 	---@param w number
 	---@param h number
-	---@param f PixelFormat
+	---@param f love.PixelFormat
 	---@param m boolean
-	---@return Canvas
+	---@return love.Canvas
 	function util.newCanvas(w, h, f, m)
 		return love.graphics.newCanvas(w, h, {dpiscale = 1, format = f or "normal", mipmaps = m and "auto" or "none"})
 	end
 else
 	---@param w number
 	---@param h number
-	---@param f PixelFormat
-	---@return Canvas
+	---@param f love.PixelFormat
+	---@return love.Canvas
 	function util.newCanvas(w, h, f)
 		-- No mipmap support
 		return love.graphics.newCanvas(w, h, f or "normal")
 	end
 end
 
--- Draw text without unintended "black" border
+-- Draw text without black fringes
 if util.compareLOVEVersion(11, 3) >= 0 then
-	-- https://bitbucket.org/rude/love/commits/f704dd9
+	-- https://github.com/love2d/love/commit/02fa8b0
 	-- As of that commit, workaround shader to prevent black
-	-- fridges is no longer necessary. For compatibility of
+	-- fringes is no longer necessary. For compatibility with
 	-- previous LOVE versions, this function does nothing.
+	---@type fun(text: love.Text, ...)
 	util.drawText = setmetatable({}, {__call = function(self, ...)
 		return love.graphics.draw(...)
 	end})
 else
+	---@type fun(text: love.Text, ...)
 	util.drawText = setmetatable({workaroundShader = nil}, {
 		__call = function(self, text, ...)
 			local shader = love.graphics.getShader()
@@ -368,6 +425,7 @@ else
 end
 
 -- Blur drawing
+---@type fun(w: number, h: number, s: number, func: fun(...), ...)
 util.drawBlur = setmetatable({shader = nil}, {
 	__call = function(self, w, h, s, func, ...)
 		local canvas1 = love.graphics.newCanvas(w, h)
@@ -418,6 +476,10 @@ function util.stringToHex(str)
 	return table.concat(a)
 end
 
+---@param text string
+---@param delim string
+---@param removeempty boolean
+---@return string[]
 function util.split(text, delim, removeempty)
 	local t = {}
 
@@ -441,9 +503,11 @@ function util.split(text, delim, removeempty)
 	return t
 end
 
-local fontDPIScale = 1
 
 if version11 then
+	local fontDPIScale = 1
+
+	---@return number
 	function util.getFontDPIScale()
 		local dpi = love.window and love.window.getDPIScale() or 1
 		return dpi > 1 and dpi or (fontDPIScale + 1)
@@ -457,10 +521,14 @@ else
 		return 1
 	end
 
-	function util.setDefaultFontDPIScale()
+	function util.setDefaultFontDPIScale(scale)
 	end
 end
-
+---@generic T: table, V
+---@param t T
+---@return fun(table: V[], i?: integer):integer, V
+---@return T
+---@return integer i
 function util.ipairsi(t, i)
 	return ipairs(t), t, i - 1
 end
