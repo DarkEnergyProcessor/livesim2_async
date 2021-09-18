@@ -3,10 +3,12 @@
 -- See copyright notice in main.lua
 
 local love = require("love")
+local AssetCache = require("asset_cache")
 local Async = require("async")
 local Cache = require("cache")
 local lily = require("lily")
 local log = require("logging")
+local SyncHelper = require("synchelper")
 local Util = require("util")
 
 local MainFont = {}
@@ -22,13 +24,12 @@ function MainFont.get(...)
 	local isNull = {}
 	local fontsQueue = {}
 	local j = 1
-	local inSync = not(coroutine.running())
 
 	for i = 1, #arg do
 		local p = Cache.get("MainFont"..arg[i])
 
 		if not(p) then
-			if inSync then
+			if AssetCache.enableSync then
 				p = love.graphics.newFont(MainFont.roboto, arg[i], "normal", MainFont.dpiScale)
 				p:setFallbacks(
 					love.graphics.newFont(MainFont.notoSansCJK, arg[i], "normal", MainFont.dpiScale),

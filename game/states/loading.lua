@@ -41,7 +41,8 @@ local loadingText = {
 	"Now comes with multiple languages",
 	"MissingNo",
 	"LÖVE "..love._version..": "..love._version_codename,
-	"Re-designing the user interface..."
+	"Re-designing the user interface...",
+	"Neverending beta release :)"
 }
 
 local function getScale(value)
