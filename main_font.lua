@@ -8,7 +8,6 @@ local Async = require("async")
 local Cache = require("cache")
 local lily = require("lily")
 local log = require("logging")
-local SyncHelper = require("synchelper")
 local Util = require("util")
 
 local MainFont = {}
