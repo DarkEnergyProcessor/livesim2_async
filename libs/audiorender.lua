@@ -123,7 +123,11 @@ function CodeJumper.init()
 				return addr
 			end
 
-			return ffi.cast("void*", mem + PAGE_SIZE - remainder)
+			return ffi.cast("void*", mem - remainder)
+		end
+
+		local function nearestMultipleOfPage(n)
+			return math.ceil(n / PAGE_SIZE) * PAGE_SIZE
 		end
 
 		function CodeJumper.patch(addr, newaddr)
@@ -131,23 +135,24 @@ function CodeJumper.init()
 			local aligned = alignMemory(addr)
 			local mem = ffi.cast("void*", aligned)
 			local instruction = CodeJumper.encodeJump(newaddr)
+			local patchLen = nearestMultipleOfPage(#instruction)
 
-			if ffi.C.mprotect(mem, PAGE_SIZE, 0x1 + 0x2) == 0 then
+			if ffi.C.mprotect(mem, patchLen, 0x1 + 0x2) == 0 then
 				local old = ffi.string(addr, #instruction)
 				ffi.copy(addr, instruction, #instruction)
 				-- FIXME: Probably use PAGE_EXEC only in Android?
-				assert(ffi.C.mprotect(mem, PAGE_SIZE, 0x1 + 0x4) == 0)
+				assert(ffi.C.mprotect(mem, patchLen, 0x1 + 0x4) == 0)
 
-				return {base = mem, address = addr, old = old}
+				return {base = mem, address = addr, old = old, size = patchLen}
 			end
 
 			return nil
 		end
 
 		function CodeJumper.unpatch(obj)
-			assert(ffi.C.mprotect(obj.base, PAGE_SIZE, 0x1 + 0x2) == 0)
+			assert(ffi.C.mprotect(obj.base, obj.size, 0x1 + 0x2) == 0)
 			ffi.copy(obj.address, obj.old, #obj.old)
-			assert(ffi.C.mprotect(obj.base, PAGE_SIZE, 0x1 + 0x4) == 0)
+			assert(ffi.C.mprotect(obj.base, obj.size, 0x1 + 0x4) == 0)
 		end
 	else
 		error("unsupported platform")
