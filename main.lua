@@ -33,6 +33,7 @@ DEPLS_VERSION_NUMBER = 03020201
 DEPLS_VERSION_CODENAME = "Over the Rainbow"
 
 local love = require("love")
+local AudioRender = require("libs.audiorender")
 local Yohane = require("libs.Yohane")
 local JSON = require("libs.JSON")
 local ls2 = require("libs.ls2")
@@ -359,6 +360,10 @@ Options:
 * -renderfxaa                Apply Fast Approximate Anti-Aliasing to the whole
                              screen while rendering to video file.
 
+* -rendersrate <rate>        Set audio sample rate for rendering. Default to
+                             48000 Hz if not specified. Must be at least
+                             8000 Hz if one is specified.
+
 * -renderheight <height>     Set video rendering height. Defaults to window
                              height if not specified.
 
@@ -514,7 +519,6 @@ function love.load(argv, gameargv)
 				i = i + 2
 			elseif arg == "-renderfps" then
 				local fps = assert(tonumber(argv[i+1]), "please specify valid FPS")
-				assert(48000 / fps % 1 == 0, "FPS must be divisible by 48000")
 
 				if render then
 					render.fps = fps
@@ -523,6 +527,9 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-renderfxaa" and render then
 				render.fxaa = true
+			elseif arg == "-rendersrate" and render then
+				render.rate = assert(tonumber(argv[i+1]), "please specify valid rate")
+				assert(render.rate >= 8000, "please specify valid rate")
 			elseif arg == "-renderwidth" then
 				local width = assert(tonumber(argv[i+1]), "please specify correct width")
 
@@ -746,11 +753,24 @@ function love.load(argv, gameargv)
 			render.width = render.width or windowWidth
 			render.height = render.height or windowHeight
 			render.fps = render.fps or 60
+			render.rate = render.rate or 48000
+			render.audioRenderOk, render.audioRenderMsg = AudioRender.push(render.rate, "stereo", "short")
 			autoplayMode = true
 		end
 
 		-- Initialize audio module
 		require("love.audio")
+
+		if render then
+			if render.audioRenderOk then
+				AudioRender.pop()
+				log.info("main", "Using OpenAL-soft audio loopback")
+			else
+				log.errorf("main", "AudioRender: %s", render.audioRenderMsg)
+				assert(48000 / render.fps % 1 == 0, "FPS must be divisible by 48000")
+			end
+		end
+
 		-- Initialize volume
 		initVolume()
 		-- Initialize window

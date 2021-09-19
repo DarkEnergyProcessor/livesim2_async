@@ -4,6 +4,7 @@
 
 local love = require("love")
 local hasffi, ffi = pcall(require, "ffi")
+local AudioRender = require("libs.audiorender")
 local ls2x = require("libs.ls2x")
 
 local AudioManager = require("audio_manager")
@@ -11,7 +12,7 @@ local log = require("logging")
 local Util = require("util")
 local Vires = require("vires")
 
-local render = {
+local Render = {
 	width = 0, height = 0,
 	framerate = 60,
 	step = 1/60,
@@ -169,7 +170,16 @@ local function newFBO(w, h, f)
 	end
 end
 
-function render.initialize(renderObj)
+local function dw2strle(n)
+	return string.char(
+		n % 256,
+		math.floor(n / 256) % 256,
+		math.floor(n / 65536) % 256,
+		math.floor(n / 16777216) % 256
+	)
+end
+
+function Render.initialize(renderObj)
 	assert(hasffi, "FFI functionality needed to render")
 	assert(ls2x.libav, "libav functionality missing")
 
@@ -181,40 +191,50 @@ function render.initialize(renderObj)
 	log.debugf("render", "video=%s audio=%s", renderObj.output, renderObj.audio)
 	Util.setDefaultFontDPIScale(dpi)
 	assert(ls2x.libav.startEncodingSession(renderObj.output, width, height, fps), "failed to start encoding session")
-	AudioManager.setRenderFramerate(fps)
 
-	render.audio = assert(io.open(renderObj.audio, "wb"))
-	render.audioLen = 0
+	if renderObj.audioRenderOk then
+		Render.audioUpdateNumerator = 0
+		Render.audioUpdateDenominator = fps
+		Render.audioRate = renderObj.rate
+	else
+		log.warnf("render", "forcing 48KHz and inferior audio mixing technique!")
+		AudioManager.setRenderFramerate(fps)
+		Render.audioRate = 48000
+	end
 
-	render.width, render.height = width, height
-	render.step = 1/fps
-	render.scaleOverall = math.min(width / Vires.data.virtualW, height / Vires.data.virtualH)
-	render.offX = (width - render.scaleOverall * Vires.data.virtualW) / 2
-	render.offY = (height - render.scaleOverall * Vires.data.virtualH) / 2
-	render.image = love.image.newImageData(width, height, "rgba8")
-	render.imagePointer = ffi.cast("uint8_t*", render.image:getPointer())
-	render.framebuffer = newFBO(width, height, fmt)
+	Render.useAudioRender = renderObj.audioRenderOk
+	Render.audio = assert(io.open(renderObj.audio, "wb"))
+	Render.audioLen = 0
+
+	Render.width, Render.height = width, height
+	Render.step = 1/fps
+	Render.scaleOverall = math.min(width / Vires.data.virtualW, height / Vires.data.virtualH)
+	Render.offX = (width - Render.scaleOverall * Vires.data.virtualW) / 2
+	Render.offY = (height - Render.scaleOverall * Vires.data.virtualH) / 2
+	Render.image = love.image.newImageData(width, height, "rgba8")
+	Render.imagePointer = ffi.cast("uint8_t*", Render.image:getPointer())
+	Render.framebuffer = newFBO(width, height, fmt)
 
 	if Util.compareLOVEVersion(11, 0) then
-		render.MUL = 255
+		Render.MUL = 255
 	else
-		render.MUL = 1
+		Render.MUL = 1
 	end
 
 	if renderObj.fxaa then
-		render.fxaa = love.graphics.newShader(fxaaShader)
-		render.fxaaFramebuffer = newFBO(width, height, fmt)
+		Render.fxaa = love.graphics.newShader(fxaaShader)
+		Render.fxaaFramebuffer = newFBO(width, height, fmt)
 	end
 
-	render.audio:write(
+	Render.audio:write(
 		"RIFF",         -- Header
 		"\0\0\0\0",     -- size
 		"WAVEfmt ",     -- WAVE + format
 		"\16\0\0\0",    -- Size of "fmt " chunk
 		"\1\0",         -- Audio format (PCM)
 		"\2\0",         -- Number of channels, stereo
-		"\128\187\0\0", -- Sample rate (48000)
-		"\0\238\2\0",   -- SampleRate * NumChannels * BytesPerSample = 48000*2*2
+		dw2strle(Render.audioRate),
+		dw2strle(Render.audioRate * 2 --[[nchannel]] * 2 --[[sizeof(int16_t)]]),
 		"\4\0",         -- NumChannels * BytesPerSample = 2*2
 		"\16\0",        -- Bits per sample (16bits)
 		"data",         -- data format
@@ -223,71 +243,83 @@ function render.initialize(renderObj)
 end
 
 local temp = {stencil = true}
-function render.begin()
-	if not(render.framebuffer) then return end
+function Render.begin()
+	if not(Render.framebuffer) then return end
 
 	love.graphics.push("all")
-	temp[1] = render.framebuffer
+	temp[1] = Render.framebuffer
 	love.graphics.setCanvas(temp)
 	love.graphics.clear()
 	love.graphics.origin()
-	love.graphics.translate(render.offX, render.offY)
-	love.graphics.scale(render.scaleOverall)
+	love.graphics.translate(Render.offX, Render.offY)
+	love.graphics.scale(Render.scaleOverall)
 end
 
-function render.mapPixel(x, y, r, g, b, a)
+function Render.mapPixel(x, y, r, g, b, a)
 	if a > 0 then
-		local index = y * render.width + x
+		local index = y * Render.width + x
 		-- Since it's premultipled alpha, we have to divide
 		-- all color component by alpha value
-		local alpha = a * render.MUL
-		render.imagePointer[index * 4 + 0] = Util.clamp((r * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 1] = Util.clamp((g * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 2] = Util.clamp((b * render.MUL) / alpha * 255 + 0.5, 0, 255)
-		render.imagePointer[index * 4 + 3] = Util.clamp(alpha + 0.5, 0, 255)
+		local alpha = a * Render.MUL
+		Render.imagePointer[index * 4 + 0] = Util.clamp((r * Render.MUL) / alpha * 255 + 0.5, 0, 255)
+		Render.imagePointer[index * 4 + 1] = Util.clamp((g * Render.MUL) / alpha * 255 + 0.5, 0, 255)
+		Render.imagePointer[index * 4 + 2] = Util.clamp((b * Render.MUL) / alpha * 255 + 0.5, 0, 255)
+		Render.imagePointer[index * 4 + 3] = Util.clamp(alpha + 0.5, 0, 255)
 	end
 
 	return r, g, b, a
 end
 
-function render.commit()
-	if not(render.framebuffer) then return end
+function Render.commit()
+	if not(Render.framebuffer) then return end
 	love.graphics.pop()
 
 	-- apply fxaa
-	if render.fxaa then
+	if Render.fxaa then
 		love.graphics.push("all")
 		love.graphics.setBlendMode("alpha", "premultiplied")
-		love.graphics.setShader(render.fxaa)
-		love.graphics.setCanvas(render.fxaaFramebuffer)
+		love.graphics.setShader(Render.fxaa)
+		love.graphics.setCanvas(Render.fxaaFramebuffer)
 		love.graphics.clear()
 		love.graphics.origin()
-		love.graphics.draw(render.framebuffer)
+		love.graphics.draw(Render.framebuffer)
 		love.graphics.pop()
-		render.framebuffer, render.fxaaFramebuffer = render.fxaaFramebuffer, render.framebuffer
+		Render.framebuffer, Render.fxaaFramebuffer = Render.fxaaFramebuffer, Render.framebuffer
 	end
 
-	local id = render.framebuffer:newImageData()
-	id:mapPixel(render.mapPixel)
+	local id = Render.framebuffer:newImageData()
+	id:mapPixel(Render.mapPixel)
 	Util.releaseObject(id)
-	ls2x.libav.supplyVideoEncoder(render.imagePointer)
-	local sd = AudioManager.updateRender()
-	render.audio:write(sd:getString())
-	render.audioLen = render.audioLen + sd:getSampleCount()
+	ls2x.libav.supplyVideoEncoder(Render.imagePointer)
+
+	if Render.useAudioRender then
+		-- Count audio update step
+		Render.audioUpdateNumerator = Render.audioUpdateNumerator + Render.audioRate
+		local smp = math.floor(Render.audioUpdateNumerator / Render.audioUpdateDenominator)
+		Render.audioUpdateNumerator = Render.audioUpdateNumerator % Render.audioUpdateDenominator
+
+		local sound = AudioRender.update(smp)
+		Render.audio:write(sound)
+		Render.audioLen = Render.audioLen + #sound / 2 / 2
+	else
+		local sd = AudioManager.updateRender()
+		Render.audio:write(sd:getString())
+		Render.audioLen = Render.audioLen + sd:getSampleCount()
+	end
 
 	-- draw
-	local s = math.max(960 / render.width, 640 / render.height)
+	local s = math.max(960 / Render.width, 640 / Render.height)
 	love.graphics.setBlendMode("alpha", "premultiplied")
-	love.graphics.draw(render.framebuffer, 480, 320, 0, s, s, render.width * 0.5, render.height * 0.5)
+	love.graphics.draw(Render.framebuffer, 480, 320, 0, s, s, Render.width * 0.5, Render.height * 0.5)
 	love.graphics.setBlendMode("alpha", "alphamultiply")
 end
 
-function render.getStep()
-	return render.step
+function Render.getStep()
+	return Render.step
 end
 
-function render.getDimensions()
-	return render.width, render.height
+function Render.getDimensions()
+	return Render.width, Render.height
 end
 
 local function dwordu2string(num)
@@ -300,24 +332,24 @@ local function dwordu2string(num)
 	)
 end
 
-function render.done()
-	if not(render.framebuffer) then return end
+function Render.done()
+	if not(Render.framebuffer) then return end
 
 	-- done encoding
 	ls2x.libav.endEncodingSession()
 	AudioManager.setRenderFramerate(0)
 	-- finalize audio
-	local cur = render.audio:seek("cur")
-	render.audio:seek("set", 4)
-	render.audio:write(dwordu2string(cur - 4))
-	render.audio:seek("set", 40)
-	render.audio:write(dwordu2string(render.audioLen * 4))
-	render.audio:close()
+	local cur = Render.audio:seek("cur")
+	Render.audio:seek("set", 4)
+	Render.audio:write(dwordu2string(cur - 4))
+	Render.audio:seek("set", 40)
+	Render.audio:write(dwordu2string(Render.audioLen * 4))
+	Render.audio:close()
 
-	render.audio = nil
-	render.framebuffer = nil
-	render.imagePointer = nil
-	render.image = nil
+	Render.audio = nil
+	Render.framebuffer = nil
+	Render.imagePointer = nil
+	Render.image = nil
 end
 
-return render
+return Render

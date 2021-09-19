@@ -7,7 +7,7 @@ local lsr = require("libs.lsr")
 local Async = require("async")
 local Setting = require("setting")
 local Gamestate = require("gamestate")
-local render = require("render")
+local Render = require("render")
 
 local BeatmapList = require("game.beatmap.list")
 local LoadingInstance = require("loading_instance")
@@ -68,7 +68,7 @@ end
 function playPreloader:start(arg)
 	local r = false
 	if arg.render then
-		render.initialize(arg.render)
+		Render.initialize(arg.render)
 		r = true
 	end
 	Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
