@@ -40,11 +40,11 @@ do
 		ffi.cdef[[
 		typedef struct livesim2Win_osVersionInfoExW
 		{
-			uint32_t  dwOSVersionInfoSize;
-			uint32_t  dwMajorVersion;
-			uint32_t  dwMinorVersion;
-			uint32_t  dwBuildNumber;
-			uint32_t  dwPlatformId;
+			uint32_t dwOSVersionInfoSize;
+			uint32_t dwMajorVersion;
+			uint32_t dwMinorVersion;
+			uint32_t dwBuildNumber;
+			uint32_t dwPlatformId;
 			int16_t  szCSDVersion[128];
 			uint16_t wServicePackMajor;
 			uint16_t wServicePackMinor;
@@ -55,27 +55,35 @@ do
 		int32_t __stdcall RtlGetVersion(livesim2Win_osVersionInfoExW *);
 		]]
 
+		---@class OsVersionInfo
+		---@field dwMajorVersion integer
+		---@field dwMinorVersion integer
+		---@field dwBuildNumber integer
 		local ver = ffi.new("livesim2Win_osVersionInfoExW")
 		if ntdll.RtlGetVersion(ver) == 0 then
 			local build = string.format("%d.%d.%d", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber)
 
 			-- List of hardcoded Windows version strings :P
 			if ver.dwMajorVersion == 10 then
-				local relidf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ReleaseId")
-				local buildf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v UBR")
-				local release = tonumber(relidf:read("*a"):match("ReleaseId%s+REG_SZ%s+(%d+)"))
-				local ubr = tonumber(buildf:read("*a"):match("0x%x+"))
-				buildf:close()
-				relidf:close()
-
-				if release then
-					if ubr then
-						osVersionString = string.format("OS: Windows 10 %d (%s.%d)", release, build, ubr)
-					else
-						osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
-					end
+				if ver.dwBuildNumber >= 22000 then
+					osVersionString = string.format("OS: Windows 11 (%s)", build)
 				else
-					osVersionString = string.format("OS: Windows 10 (%s)", build)
+					local relidf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ReleaseId")
+					local buildf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v UBR")
+					local release = tonumber(relidf:read("*a"):match("ReleaseId%s+REG_SZ%s+(%d+)"))
+					local ubr = tonumber(buildf:read("*a"):match("0x%x+"))
+					buildf:close()
+					relidf:close()
+
+					if release then
+						if ubr then
+							osVersionString = string.format("OS: Windows 10 %d (%s.%d)", release, build, ubr)
+						else
+							osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
+						end
+					else
+						osVersionString = string.format("OS: Windows 10 (%s)", build)
+					end
 				end
 			elseif ver.dwMajorVersion == 6 then
 				if ver.dwMinorVersion == 3 then
