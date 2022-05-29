@@ -11,7 +11,7 @@ if not(haslib) then
 	return ls2x
 end
 
-assert(lib._VERSION >= "1.0", "incompatible ls2xlib loaded")
+assert(lib._VERSION >= "1.0.1", "incompatible ls2xlib loaded")
 
 local ffi = require("ffi")
 
@@ -39,6 +39,8 @@ if lib.features.fft then
 	ffi.cdef("typedef "..scalarType.." kiss_fft_scalar;")
 	fft.fftr1 = loadFunc("void(*)(const short *, kiss_fft_scalar *, kiss_fft_scalar *, size_t)", lib.rawptr.fftr1)
 	fft.fftr2 = loadFunc("void(*)(const short *, kiss_fft_scalar *, size_t, bool)", lib.rawptr.fftr2)
+	fft.fftr3 = loadFunc("void(*)(const kiss_fft_scalar *, kiss_fft_scalar *, kiss_fft_scalar *, size_t)", lib.rawptr.fftr3)
+	fft.fftr4 = loadFunc("void(*)(const kiss_fft_scalar *, kiss_fft_scalar *, size_t, bool)", lib.rawptr.fftr4)
 end
 
 -- libav
