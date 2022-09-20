@@ -277,9 +277,12 @@ if util.compareLOVEVersion(12, 0) >= 0 then
 			love.graphics.setStencilMode()
 		end
 	end
+
+	util.newFileCompat = love.filesystem.openFile
 else
 	util.stencil11 = love.graphics.stencil
 	util.setStencilTest11 = love.graphics.setStencilTest
+	util.newFileCompat = love.filesystem.newFile
 end
 
 return util

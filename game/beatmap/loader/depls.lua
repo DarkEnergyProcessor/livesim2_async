@@ -48,7 +48,7 @@ function deplsLoader:__construct(path)
 
 	-- test all file candidates
 	for i = 1, #possibleBeatmapCandidate do
-		local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
+		local file = util.newFileCompat(possibleBeatmapCandidate[i], "r")
 		if file then
 			for j = 1, #beatmap.fileLoader do
 				file:seek(0)

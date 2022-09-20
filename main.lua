@@ -237,7 +237,7 @@ local function initializeYohane()
 	end
 
 	function Yohane.Platform.OpenReadFile(fn)
-		return assert(love.filesystem.newFile(fn, "r"))
+		return assert(util.newFileCompat(fn, "r"))
 	end
 
 	Yohane.Init(love.filesystem.load, "libs")
@@ -245,11 +245,11 @@ end
 
 local function initLSR()
 	function lsr.file.openRead(path)
-		return love.filesystem.newFile(path, "r")
+		return util.newFileCompat(path, "r")
 	end
 
 	function lsr.file.openWrite(path)
-		return love.filesystem.newFile(path, "w")
+		return util.newFileCompat(path, "w")
 	end
 
 	function lsr.file.read(file, n)

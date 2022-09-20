@@ -38,7 +38,7 @@ function beatmapProcess.start(_, list)
 			if beatmapProbe(f) then
 				local there = util.fileExists("beatmap/"..filename)
 				if there and askOverwrite(filename) or not(there) then
-					local fout = love.filesystem.newFile("beatmap/"..filename, "w")
+					local fout = util.newFileCompat("beatmap/"..filename, "w")
 					if fout then
 						f:seek(0)
 						fout:write(f:read())
