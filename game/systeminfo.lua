@@ -6,6 +6,21 @@
 
 local love = require("love")
 local ls2x = require("libs.ls2x")
+local Util = require("util")
+
+local getImageFormats, getCanvasFormats
+if Util.compareLOVEVersion(12, 0) >= 0 then
+	function getImageFormats()
+		return love.graphics.getTextureFormats({canvas = false})
+	end
+
+	function getCanvasFormats()
+		return love.graphics.getTextureFormats({canvas = true})
+	end
+else
+	getImageFormats = love.graphics.getImageFormats or love.graphics.getCompressedImageFormats
+	getCanvasFormats = love.graphics.getCanvasFormats
+end
 
 local androidCodenames = setmetatable({
 	-- LOVE only supports Android 4.0 and later
@@ -169,15 +184,14 @@ local function buildTextString()
 		local fbos = {}
 		local syslim = {}
 		local gftr = {}
-		local func = love.graphics.getImageFormats or love.graphics.getCompressedImageFormats
 
-		for k, v in pairs(func()) do
+		for k, v in pairs(getImageFormats()) do
 			if v then
 				fmts[#fmts + 1] = k
 			end
 		end
 
-		for k, v in pairs(love.graphics.getCanvasFormats()) do
+		for k, v in pairs(getCanvasFormats()) do
 			if v then
 				fbos[#fbos + 1] = k
 			end
