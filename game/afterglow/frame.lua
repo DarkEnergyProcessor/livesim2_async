@@ -414,8 +414,8 @@ function frame:draw()
 
 	singleton = self
 	love.graphics.push("all")
-	love.graphics.setStencilTest("greater", 0)
-	love.graphics.stencil(frameViewportDraw, "replace", 1)
+	util.setStencilTest11("greater", 0)
+	util.stencil11(frameViewportDraw, "replace", 1)
 
 	for _, v in ipairs(internal.elementList) do
 		-- Only render elements that are in screen using AABB
