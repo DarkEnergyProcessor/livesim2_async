@@ -14,6 +14,8 @@ local color = require("color")
 -- LOVE 11.0 argument parsing --
 --------------------------------
 
+if love.getVersion() < 11 then
+
 love.arg.options = {
 	console = { a = 0 },
 	fused = {a = 0 },
@@ -102,6 +104,8 @@ end
 -- LOVE 0.10.0 backward compatibility
 love.arg.parse_option = love.arg.parseOption
 love.arg.parse_options = love.arg.parseOptions
+
+end -- love.getVersion() < 11
 
 ---------------
 -- Game loop --
