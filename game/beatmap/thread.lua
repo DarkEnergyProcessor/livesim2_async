@@ -51,7 +51,7 @@ end
 
 -- Beatmap-related code
 function beatmap.findSuitableForFile(filename)
-	local file, msg = love.filesystem.newFile(filename, "r")
+	local file, msg = util.newFileCompat(filename, "r")
 	if not(file) then
 		return nil, msg
 	end

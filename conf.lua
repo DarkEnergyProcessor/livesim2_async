@@ -23,7 +23,7 @@ love._version = love._version or love.getVersion()
 love.filesystem.setIdentity("DEPLS", true)
 
 -- Fix MRT in LOVE 11.0-11.2
-if Util.compareLOVEVersion(11, 0) >= 0 then
+if util.compareLOVEVersion(11, 0) >= 0 and util.compareLOVEVersion(11, 3) < 0 then
 	love.filesystem.load("fixmrt.lua")()
 end
 
@@ -52,6 +52,7 @@ function love.conf(t)
 	t.accelerometerjoystick = false     -- Enable accelerometer on iOS and Android as a Joystick (boolean)
 	t.externalstorage = true            -- True to use external storage on Android (boolean)
 	t.gammacorrect = false              -- Enable gamma-correct rendering, when supported by the system (boolean)
+	t.highdpi = true                    -- Enable high-dpi mode for the window on a Retina display (boolean)
 	t.window = false                    -- Defer window creation
 	t.modules.audio = false             -- Delay audio module
 	t.modules.joystick = false          -- Enable the joystick module (boolean)

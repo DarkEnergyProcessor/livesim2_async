@@ -14,6 +14,8 @@ local color = require("color")
 -- LOVE 11.0 argument parsing --
 --------------------------------
 
+if love.getVersion() < 11 then
+
 love.arg.options = {
 	console = { a = 0 },
 	fused = {a = 0 },
@@ -102,6 +104,73 @@ end
 -- LOVE 0.10.0 backward compatibility
 love.arg.parse_option = love.arg.parseOption
 love.arg.parse_options = love.arg.parseOptions
+
+end -- love.getVersion() < 11
+
+-------------------
+-- Debug Display --
+-------------------
+
+local getDebugDisplayText
+
+if Util.compareLOVEVersion(12, 0) >= 0 then
+	function getDebugDisplayText(dt, stats)
+		return string.format([[
+%d FPS (%.2fms update)
+LOVE %s: %s
+DRAWCALLS = %d (BATCHED %d)
+LUAMEMORY = %.2f MB
+TEXTUREMEMORY = %d Bytes
+LOADED_TEXTURES = %d
+CANVAS_SWITCHES = %d
+LOADED_FONTS = %d]],
+			love.timer.getFPS(),
+			dt*1000,
+			love._version,
+			love._version_codename,
+			stats.drawcalls,
+			stats.drawcallsbatched,
+			collectgarbage("count") / 1024,
+			stats.texturememory,
+			stats.textures,
+			stats.canvasswitches,
+			stats.fonts
+		)
+	end
+else
+	local hasBatch = Util.compareLOVEVersion(11, 0) >= 0
+
+	function getDebugDisplayText(dt, stats)
+		local batchstr = "NO AUTOBATCH"
+
+		if hasBatch then
+			batchstr = string.format("BATCHED %d", stats.drawcallsbatched)
+		end
+
+		return string.format([[
+%d FPS (%.2fms update)
+LOVE %s: %s
+DRAWCALLS = %d (%s)
+LUAMEMORY = %.2f MB
+TEXTUREMEMORY = %d Bytes
+LOADED_IMAGES = %d
+LOADED_CANVAS = %d (SWITCHES = %d)
+LOADED_FONTS = %d]],
+			love.timer.getFPS(),
+			dt*1000,
+			love._version,
+			love._version_codename,
+			stats.drawcalls,
+			batchstr,
+			collectgarbage("count") / 1024,
+			stats.texturememory,
+			stats.images,
+			stats.canvases,
+			stats.canvasswitches,
+			stats.fonts
+		)
+	end
+end
 
 ---------------
 -- Game loop --
@@ -251,25 +320,8 @@ function love.run()
 			if currentGame then currentGame:draw() end
 			if showDebugInfo then
 				local stats = love.graphics.getStats()
-				local batchstr = "NO AUTOBATCH"
-				if love._version >= "11.0" then
-					batchstr = string.format("BATCHED %d", stats.drawcallsbatched)
-				end
-				local text = string.format([[
-%d FPS (%.2fms update)
-LOVE %s: %s
-DRAWCALLS = %d (%s)
-LUAMEMORY = %.2f MB
-TEXTUREMEMORY = %d Bytes
-LOADED_IMAGES = %d
-LOADED_CANVAS = %d (SWITCHES = %d)
-LOADED_FONTS = %d]],
-					love.timer.getFPS(), dt*1000, love._version, love._version_codename, stats.drawcalls,
-					batchstr, collectgarbage("count")/1024, stats.texturememory, stats.images, stats.canvases,
-					stats.canvasswitches, stats.fonts
-				)
 				defaultText:clear()
-				Util.addTextWithShadow(defaultText, text, 0, 0, 0.7)
+				Util.addTextWithShadow(defaultText, getDebugDisplayText(dt, stats), 0, 0, 0.7)
 				love.graphics.setColor(color.white)
 				love.graphics.draw(defaultText)
 			end

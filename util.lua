@@ -316,6 +316,33 @@ function Util.decompressToData(data, algo)
 	end
 end
 
+if Util.compareLOVEVersion(12, 0) >= 0 then
+	function Util.stencil11(fn, action, value, keepvalue)
+		love.graphics.setColorMask(false)
+		love.graphics.setStencilMode(action, "always", value)
+		if not keepvalue then
+			love.graphics.clear(false, true, false)
+		end
+		fn()
+		love.graphics.setStencilMode();
+		love.graphics.setColorMask(true)
+	end
+
+	function Util.setStencilTest11(cmp, val)
+		if cmp then
+			love.graphics.setStencilMode("keep", cmp, val)
+		else
+			love.graphics.setStencilMode()
+		end
+	end
+
+	Util.newFileCompat = love.filesystem.openFile
+else
+	Util.stencil11 = love.graphics.stencil
+	Util.setStencilTest11 = love.graphics.setStencilTest
+	Util.newFileCompat = love.filesystem.newFile
+end
+
 ---@param data string|love.Data
 ---@param algo love.CompressedDataFormat
 ---@return string

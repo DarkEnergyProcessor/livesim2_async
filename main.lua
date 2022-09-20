@@ -56,7 +56,12 @@ local BeatmapList = require("game.beatmap.list")
 local BeatmapRandomizer = require("game.live.randomizer3")
 
 local function initWindow(w, h, f, v, m)
-	local vsync
+	local vsync, highdpi
+
+	if Util.compareLOVEVersion(12, 0) < 0 then
+		highdpi = true
+	end
+
 	local android = love._os == "Android"
 
 	if Util.compareLOVEVersion(11, 0) >= 0 then
@@ -71,7 +76,7 @@ local function initWindow(w, h, f, v, m)
 		resizable = not android, -- do not allow freely-set orientation
 		minwidth = 320,
 		minheight = 240,
-		highdpi = true,
+		highdpi = highdpi,
 		msaa = m,
 		-- RayFirefist: Please make iOS fullscreen so the status bar is not shown.
 		-- Marty: having fullscreen true in conf.lua make sure the soft buttons not appear
@@ -242,7 +247,7 @@ local function initializeYohane()
 	end
 
 	function Yohane.Platform.OpenReadFile(fn)
-		return assert(love.filesystem.newFile(fn, "r"))
+		return assert(Util.newFileCompat(fn, "r"))
 	end
 
 	Yohane.Init(love.filesystem.load, "libs")
@@ -250,11 +255,11 @@ end
 
 local function initLSR()
 	function lsr.file.openRead(path)
-		return love.filesystem.newFile(path, "r")
+		return Util.newFileCompat(path, "r")
 	end
 
 	function lsr.file.openWrite(path)
-		return love.filesystem.newFile(path, "w")
+		return Util.newFileCompat(path, "w")
 	end
 
 	function lsr.file.read(file, n)
