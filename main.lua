@@ -86,6 +86,7 @@ local function initWindow(w, h, f, v, m)
 		-- Use adaptive vsync (driver dependent)
 		vsync = vsync,
 	})
+	love.window.setTitle("Live Simulator: 2 ("..love.graphics.getRendererInfo()..")")
 	local icon
 	if love._os == "OS X" then
 		icon = love.image.newImageData("assets/image/icon/new_icon_1024x1024_macos.png")

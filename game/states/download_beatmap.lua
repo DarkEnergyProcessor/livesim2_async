@@ -200,7 +200,7 @@ local function downloadCoverArt(self)
 	:setResponseCallback(function(_, statusCode, _, length)
 		if statusCode == 200 then
 			coverLength = length
-			file = util.newFileCompat(coverPath, "w")
+			file = Util.newFileCompat(coverPath, "w")
 		else
 			self.persist.isCoverDownloading = false
 			setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
@@ -265,7 +265,7 @@ local function downloadBeatmap(self, infodata, dest)
 	:setFinishCallback(function(_)
 		if self.persist.isBeatmapDownloading then
 			self.persist.isBeatmapDownloading = false
-			beatmapToLS2(self, util.newFileCompat(dest, "w"), infodata, JSON:decode(table.concat(jsonData)))
+			beatmapToLS2(self, Util.newFileCompat(dest, "w"), infodata, JSON:decode(table.concat(jsonData)))
 			setStatusText(self, L"beatmapSelect:download:ready")
 		end
 	end)
@@ -290,7 +290,7 @@ local function downloadAudio(self, infodata, dest)
 	:setResponseCallback(function(_, statusCode, _, len)
 		if statusCode == 200 then
 			length = len
-			file = util.newFileCompat(dest, "w")
+			file = Util.newFileCompat(dest, "w")
 		else
 			self.persist.isAudioDownloading = false
 			setStatusText(self, L("beatmapSelect:download:errorStatusCode", {code = statusCode}))
