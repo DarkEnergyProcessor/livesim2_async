@@ -402,7 +402,7 @@ return function(path)
 		table.sort(tempt, function(a, b) return a[1] < b[1] end)
 
 		for _, v in ipairs(tempt) do
-			local file = love.filesystem.newFile(v[2], "r")
+			local file = Util.newFileCompat(v[2], "r")
 			if file then
 				for j = 1, #beatmap.fileLoader do
 					file:seek(0)
@@ -455,7 +455,7 @@ return function(path)
 		end
 		-- test all file candidates
 		for i = 1, #possibleBeatmapCandidate do
-			local file = love.filesystem.newFile(possibleBeatmapCandidate[i], "r")
+			local file = Util.newFileCompat(possibleBeatmapCandidate[i], "r")
 			if file then
 				for j = 1, #beatmap.fileLoader do
 					file:seek(0)

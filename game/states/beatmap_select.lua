@@ -104,10 +104,10 @@ do
 		love.graphics.setShader(shader)
 
 		if self.ripple:isActive() then
-			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-			love.graphics.setStencilTest("equal", 1)
+			Util.stencil11(self.stencilFunc, "replace", 1, false)
+			Util.setStencilTest11("equal", 1)
 			self.ripple:draw(255, 255, 255, x, y)
-			love.graphics.setStencilTest()
+			Util.setStencilTest11()
 		end
 	end
 
@@ -173,10 +173,10 @@ do
 		end
 
 		if self.ripple:isActive() then
-			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-			love.graphics.setStencilTest("equal", 1)
+			Util.stencil11(self.stencilFunc, "replace", 1, false)
+			Util.setStencilTest11("equal", 1)
 			self.ripple:draw(255, 255, 255, x, y)
-			love.graphics.setStencilTest()
+			Util.setStencilTest11()
 		end
 	end
 
@@ -231,10 +231,10 @@ do
 		Util.drawText(self.text, x + 37, y + 12)
 
 		if self.ripple:isActive() then
-			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-			love.graphics.setStencilTest("equal", 1)
+			Util.stencil11(self.stencilFunc, "replace", 1, false)
+			Util.setStencilTest11("equal", 1)
 			self.ripple:draw(255, 255, 255, x, y)
-			love.graphics.setStencilTest()
+			Util.setStencilTest11()
 		end
 	end
 
@@ -409,10 +409,10 @@ do
 		love.graphics.setShader(shader)
 
 		if self.ripple:isActive() then
-			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-			love.graphics.setStencilTest("equal", 1)
+			Util.stencil11(self.stencilFunc, "replace", 1, false)
+			Util.setStencilTest11("equal", 1)
 			self.ripple:draw(255, 79, 174, x, y)
-			love.graphics.setStencilTest()
+			Util.setStencilTest11()
 		end
 	end
 end

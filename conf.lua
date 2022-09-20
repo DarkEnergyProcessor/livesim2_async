@@ -23,7 +23,7 @@ love._version = love._version or love.getVersion()
 love.filesystem.setIdentity("DEPLS", true)
 
 -- Fix MRT in LOVE 11.0-11.2
-if util.compareLOVEVersion(11, 0) >= 0 and util.compareLOVEVersion(11, 3) < 0 then
+if Util.compareLOVEVersion(11, 0) >= 0 and Util.compareLOVEVersion(11, 3) < 0 then
 	love.filesystem.load("fixmrt.lua")()
 end
 

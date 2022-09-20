@@ -182,10 +182,10 @@ function categorySelect:render(x, y)
 	Util.drawText(self.text, x + 48, y)
 
 	if self.ripple:isActive() then
-		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
-		love.graphics.setStencilTest("equal", 3)
+		Util.stencil11(self.stencilFunc, "replace", 3, false)
+		Util.setStencilTest11("equal", 3)
 		self.ripple:draw(255, 255, 255, x, y)
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 	end
 end
 
@@ -225,10 +225,10 @@ function longSelect:render(x, y)
 	Util.drawText(self.text, x, y)
 
 	if self.ripple:isActive() then
-		love.graphics.stencil(self.stencilFunc, "replace", 3, false)
-		love.graphics.setStencilTest("equal", 3)
+		Util.stencil11(self.stencilFunc, "replace", 3, false)
+		Util.setStencilTest11("equal", 3)
 		self.ripple:draw(255, 255, 255, x, y)
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 	end
 end
 

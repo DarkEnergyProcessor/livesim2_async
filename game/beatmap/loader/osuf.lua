@@ -20,7 +20,7 @@ return function(path)
 	-- Load all of files
 	local ret = {}
 	for i = 1, #files do
-		local file = love.filesystem.newFile(files[i], "r")
+		local file = Util.newFileCompat(files[i], "r")
 		if file then
 			local status, beatmap = pcall(osuLoader, file, path)
 

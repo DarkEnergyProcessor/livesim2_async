@@ -104,10 +104,10 @@ do
 		love.graphics.setShader(shader)
 
 		if self.ripple:isActive() then
-			love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-			love.graphics.setStencilTest("equal", 1)
+			Util.stencil11(self.stencilFunc, "replace", 1, false)
+			Util.setStencilTest11("equal", 1)
 			self.ripple:draw(self.typeColor[1], self.typeColor[2], self.typeColor[3], x, y)
-			love.graphics.setStencilTest()
+			Util.setStencilTest11()
 		end
 	end
 end

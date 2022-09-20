@@ -75,10 +75,10 @@ function PlayButton:render(x, y)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
-		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-		love.graphics.setStencilTest("equal", 1)
+		Util.stencil11(self.stencilFunc, "replace", 1, false)
+		Util.setStencilTest11("equal", 1)
 		self.ripple:draw(255, 255, 255, x, y)
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 	end
 end
 
@@ -124,10 +124,10 @@ function ChangeUnitsButton:render(x, y)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
-		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-		love.graphics.setStencilTest("equal", 1)
+		Util.stencil11(self.stencilFunc, "replace", 1, false)
+		Util.setStencilTest11("equal", 1)
 		self.ripple:draw(255, 255, 255, x, y)
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 	end
 end
 
@@ -173,10 +173,10 @@ function SettingsButton:render(x, y)
 
 	if self.ripple:isActive() then
 		-- Setup stencil buffer
-		love.graphics.stencil(self.stencilFunc, "replace", 1, false)
-		love.graphics.setStencilTest("equal", 1)
+		Util.stencil11(self.stencilFunc, "replace", 1, false)
+		Util.setStencilTest11("equal", 1)
 		self.ripple:draw(255, 255, 255, x, y)
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 	end
 end
 

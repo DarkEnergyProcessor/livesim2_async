@@ -303,7 +303,7 @@ local function isImageFitInUnitIconCriteria(path)
 	if not(Util.fileExists(path)) then return false end
 
 	-- Other issue should be reported to user immediately!
-	local f = assert(love.filesystem.newFile(path, "r"))
+	local f = assert(Util.newFileCompat(path, "r"))
 
 	-- Not PNG? ignore
 	if f:read(16) ~= "\137PNG\r\n\26\n\0\0\0\13IHDR" then
@@ -708,11 +708,11 @@ function changeUnits:draw()
 
 	if self.persist.keymapOverlayOpacity < 1 then
 		love.graphics.setColor(color.white)
-		love.graphics.stencil(stencilTextPlacement, "replace", 2, true)
-		love.graphics.setStencilTest("equal", 2)
+		Util.stencil11(stencilTextPlacement, "replace", 2, true)
+		Util.setStencilTest11("equal", 2)
 		love.graphics.draw(self.data.blurFramebuffer, 0, 0, 0, 2, 2)
 		love.graphics.setColor(color.compat(53, 53, 53, 0.5 + self.persist.keymapOverlayOpacity * 0.5))
-		love.graphics.setStencilTest()
+		Util.setStencilTest11()
 		stencilTextPlacement()
 	else
 		love.graphics.setColor(color.hex353535)
