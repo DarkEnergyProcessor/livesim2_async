@@ -338,8 +338,14 @@ if Util.compareLOVEVersion(12, 0) >= 0 then
 
 	Util.newFileCompat = love.filesystem.openFile
 else
-	Util.stencil11 = love.graphics.stencil
-	Util.setStencilTest11 = love.graphics.setStencilTest
+	function Util.stencil11(fn, action, value, keepvalue)
+		return love.graphics.stencil(fn, action, value, keepvalue)
+	end
+
+	function Util.setStencilTest11(cmp, val)
+		return love.graphics.setStencilTest(cmp, val)
+	end
+
 	Util.newFileCompat = love.filesystem.newFile
 end
 
