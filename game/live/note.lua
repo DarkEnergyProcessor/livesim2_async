@@ -255,7 +255,7 @@ function noteManager:__construct(param)
 	self.timingWindowRotation = math.random(0, 11)
 
 	-- Workaround color clamping in LOVE 11.0
-	-- https://github.com/MikuAuahDark/livesim2/issues/22
+	-- https://github.com/DarkEnergyProcessor/livesim2/issues/22
 	if Util.compareLOVEVersion(11, 0) >= 0 then
 		self.workaroundColor = love.graphics.newShader([[
 			vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)

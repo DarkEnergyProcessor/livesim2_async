@@ -30,7 +30,7 @@ local loading = Gamestate.create {
 }
 
 local loadingText = {
-	"https://github.com/MikuAuahDark/livesim2",
+	"https://github.com/DarkEnergyProcessor/livesim2",
 	"Oh oh... Time Lapse Memories",
 	"Oh oh... Time Lapse Starry Sky",
 	"The game logic is written with Lua",

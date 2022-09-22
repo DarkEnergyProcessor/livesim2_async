@@ -32,7 +32,7 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [Luaoop](https://github.com/ImagicTheCat/Luaoop)
 
-* [Yohane Playground Flash Abstraction](https://github.com/MikuAuahDark/Yohane)
+* [Yohane Playground Flash Abstraction](https://github.com/DarkEnergyProcessor/Yohane)
 
 * [tween.lua](https://github.com/kikito/tween.lua)
 
@@ -42,7 +42,7 @@ Live Simulator: 2 uses these external libraries to run:
 
 * [hump.timer](https://github.com/vrld/hump)
 
-* [LS2X](https://github.com/MikuAuahDark/ls2x)
+* [LS2X](https://github.com/DarkEnergyProcessor/ls2x)
 
 * [i18n](https://github.com/kikito/i18n.lua)
 
