@@ -360,7 +360,7 @@ Options:
                              libraries must be installed to use this feature!
 
 * -renderfps <fps>           Set the render frames per second. FPS must be
-							 able to divide 48000 as whole integer. Default
+                             able to divide 48000 as whole integer. Default
                              is 60.
 
 * -renderfxaa                Apply Fast Approximate Anti-Aliasing to the whole

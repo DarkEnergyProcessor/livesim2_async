@@ -58,6 +58,7 @@ Special thanks to:
 * RayFirefist - macOS app, iOS maintainer, Italian translation.
 * jwun & TheNozomi - Spanish translation.
 * Salaron & Nick "Zorb" Cage - Russian translation.
+* LovelyA72 - Traditional Chinese translation.
 
 And other people who contributed to the codebase
 ]], DEPLS_VERSION):gsub("\r\n", "\n")
