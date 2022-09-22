@@ -210,7 +210,7 @@ local function buildTextString()
 		local dpiScale = love.graphics.getDPIScale and love.graphics.getDPIScale() or 1
 		local orientation = love.window.getDisplayOrientation and love.window.getDisplayOrientation()
 		local w, h = love.graphics.getDimensions()
-		sb[#sb + 1] = string.format("Graphics Dimensions: %dx%d (DPI Scale %d)", w, h, dpiScale)
+		sb[#sb + 1] = string.format("Graphics Dimensions: %dx%d (DPI Scale %.14g)", w, h, dpiScale)
 		sb[#sb + 1] = string.format("Window Dimensions: %dx%d", love.window.getMode())..
 					  string.format(" Orientation: %s", orientation or "unknown")
 		if love.window.getSafeArea then
