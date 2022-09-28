@@ -80,25 +80,28 @@ do
 
 			-- List of hardcoded Windows version strings :P
 			if ver.dwMajorVersion == 10 then
-				if ver.dwBuildNumber >= 22000 then
-					osVersionString = string.format("OS: Windows 11 (%s)", build)
-				else
-					local relidf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ReleaseId")
-					local buildf = io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v UBR")
-					local release = tonumber(relidf:read("*a"):match("ReleaseId%s+REG_SZ%s+(%d+)"))
-					local ubr = tonumber(buildf:read("*a"):match("0x%x+"))
-					buildf:close()
-					relidf:close()
+				local windowsVer = ver.dwBuildNumber >= 22000 and 11 or 10
+				local relidf = assert(io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v DisplayVersion"))
+				local buildf = assert(io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v UBR"))
+				local release = relidf:read("*a"):match("DisplayVersion%s+REG_SZ%s+(%S+)")
+				local ubr = tonumber(buildf:read("*a"):match("0x%x+"))
+				buildf:close()
+				relidf:close()
 
-					if release then
-						if ubr then
-							osVersionString = string.format("OS: Windows 10 %d (%s.%d)", release, build, ubr)
-						else
-							osVersionString = string.format("OS: Windows 10 %d (%s)", release, build)
-						end
+				if not(release) then
+					relidf = assert(io.popen("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ReleaseId"))
+					release = relidf:read("*a"):match("ReleaseId%s+REG_SZ%s+(%S+)")
+					relidf:close()
+				end
+
+				if release then
+					if ubr then
+						osVersionString = string.format("OS: Windows %d %s (%s.%d)", windowsVer, release, build, ubr)
 					else
-						osVersionString = string.format("OS: Windows 10 (%s)", build)
+						osVersionString = string.format("OS: Windows %d %s (%s)", windowsVer, release, build)
 					end
+				else
+					osVersionString = string.format("OS: Windows %d (%s)", windowsVer, build)
 				end
 			elseif ver.dwMajorVersion == 6 then
 				if ver.dwMinorVersion == 3 then
