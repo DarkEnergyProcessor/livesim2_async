@@ -90,7 +90,9 @@ local function initWindow(w, h, f, v, m)
 	love.window.setIcon(icon)
 	-- Detect bad AMD driver
 	local version, vendor = select(2, love.graphics.getRendererInfo())
-	if love._os == "Windows" and vendor == "ATI Technologies Inc." and version:find("22.7.1", 1, true) then
+	if
+		love._os == "Windows" and vendor == "ATI Technologies Inc." and
+		(version:find("22.7.1", 1, true) or version:find("2207", 1, true)) then
 		love.window.showMessageBox(
 			"AMD driver 22.7.1 detected",
 			"AMD driver 22.7.1 is known to have problems with running LÖVE (this includes Live Simulator: 2). If the game fails to render its visuals, it is recommended to upgrade or downgrade your AMD GPU drivers.",
