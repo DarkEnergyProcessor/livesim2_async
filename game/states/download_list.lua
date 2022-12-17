@@ -296,7 +296,7 @@ local function downloadReceiveCallback(self, data)
 	dldata.data[#dldata.data + 1] = data
 	dldata.bytesWritten = dldata.bytesWritten + #data
 
-	if dldata.length then
+	if dldata and dldata.length then
 		self.data.progress:setValue(dldata.bytesWritten)
 		setStatusText(self, L("beatmapSelect:download:downloadingBytesProgress", {
 			a = dldata.bytesWritten,
@@ -308,7 +308,7 @@ end
 local function downloadFinishCallback(self)
 	local dldata = self.persist.downloadData
 
-	-- If dldata is nil, that means it's loaded in responseCallback
+	-- If dldata is nil, that means it's loaded in responseCallback or not found.
 	if dldata then
 		local mapData = table.concat(dldata.data)
 		-- Save map data and initialize
