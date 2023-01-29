@@ -61,14 +61,19 @@ end
 
 local open = io.open
 
-function io.open(path, mode)
-	local pathw = toWideChar(path)
+---@param filename string
+---@param mode?    openmode
+---@return file*?
+---@return string? errmsg
+---@nodiscard
+function io.open(filename, mode)
+	local pathw = toWideChar(filename)
 	local modew = toWideChar(mode)
 
 	local file = assert(open("nul", "rb"))
 	if ffi.C._wfreopen(pathw, modew, file) == nil then
 		local msg, errno = select(2, file:close())
-		return nil, path..": "..msg, errno
+		return nil, filename..": "..msg, errno
 	end
 
 	return file

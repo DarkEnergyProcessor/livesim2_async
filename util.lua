@@ -16,23 +16,24 @@ end
 local Util = {}
 
 ---@param maj number
----@param min number
----@param rev number
----@return "-1" | "0" | "1"
+---@param min number?
+---@param rev number?
+---@return -1 | 0 | 1
 function Util.compareLOVEVersion(maj, min, rev)
-	if love._version_major > maj then
+	local major, minor, revision = love.getVersion()
+	if major > maj then
 		return 1
-	elseif love._version_major < maj then
+	elseif major < maj then
 		return -1
 	elseif min then
-		if love._version_minor > min then
+		if minor > min then
 			return 1
-		elseif love._version_minor < min then
+		elseif minor < min then
 			return -1
 		elseif rev then
-			if love._version_revision > rev then
+			if revision > rev then
 				return 1
-			elseif love._version_revision < rev then
+			elseif revision < rev then
 				return -1
 			end
 		end
@@ -42,6 +43,7 @@ function Util.compareLOVEVersion(maj, min, rev)
 end
 
 local version11 = Util.compareLOVEVersion(11, 0) >= 0
+local version12 = Util.compareLOVEVersion(12, 0) >= 0
 
 ---@param file string
 function Util.basename(file)
@@ -290,7 +292,7 @@ end
 
 function Util.newVideoStream(path)
 	if hasLVEP then
-		local s, v = pcall(love.video.newStream, path)
+		local s, v = pcall(lvep.newStream, path)
 		if not(s) then
 			return lvep.newVideoStream(path)
 		else
@@ -316,7 +318,7 @@ function Util.decompressToData(data, algo)
 	end
 end
 
-if Util.compareLOVEVersion(12, 0) >= 0 then
+if version12 then
 	function Util.stencil11(fn, action, value, keepvalue)
 		love.graphics.setColorMask(false)
 		love.graphics.setStencilMode(action, "always", value)

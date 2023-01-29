@@ -8,10 +8,11 @@ local Luaoop = require("libs.Luaoop")
 local color = require("color")
 local MainFont = require("main_font")
 
-local lyrics = Luaoop.class("Livesim2.Lyrics")
+---@class Livesim2.Lyrics
+local Lyrics = Luaoop.class("Livesim2.Lyrics")
 local perZeroThree = 1/0.3
 
-function lyrics:__construct(srt)
+function Lyrics:__construct(srt)
 	local font1, font2 = MainFont.get(24, 16)
 	local timings = {}
 
@@ -41,7 +42,8 @@ function lyrics:__construct(srt)
 	end
 end
 
-function lyrics:update(dt)
+---@param dt number
+function Lyrics:update(dt)
 	self.elapsedTime = self.elapsedTime + dt
 
 	local lyr = self.timings[1]
@@ -67,7 +69,7 @@ function lyrics:update(dt)
 	end
 end
 
-function lyrics:draw()
+function Lyrics:draw()
 	if self.active then
 		love.graphics.setColor(color.compat(255, 255, 255, self.opacity * perZeroThree))
 		love.graphics.draw(self.active[3], 6, 590)
@@ -77,4 +79,5 @@ function lyrics:draw()
 	end
 end
 
-return lyrics
+---@cast Lyrics +fun(srt):Livesim2.Lyrics
+return Lyrics
