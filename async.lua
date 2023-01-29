@@ -27,6 +27,7 @@ end
 -----------------------------
 -- Base async object class --
 -----------------------------
+---@class Async.Base
 local AsyncObject = Luaoop.class("async.Base")
 
 function AsyncObject.__construct()
@@ -40,8 +41,10 @@ end
 -------------------------------------
 -- Lily wrapper async object class --
 -------------------------------------
+---@class Async.Lily: Async.Base
 local LilyWrapperAsync = Luaoop.class("async.Lily", AsyncObject)
 
+---@cast 
 function LilyWrapperAsync:__construct(lobj)
 	self.lily = lobj
 end
@@ -73,6 +76,7 @@ end
 -- Function async class --
 --------------------------
 
+---@class Async.Function: Async.Base
 local FuncAsync = Luaoop.class("async.Function", AsyncObject)
 
 function FuncAsync:__construct(func)
@@ -105,10 +109,11 @@ end
 -- Async functions --
 ---------------------
 
+
 --- Sends control back to async scheduler
--- @param dt Time to wait
--- @return Time since the last update in seconds, or none if dt is specified.
-function Async.wait(dt) end
+---@param dt number? Time to wait
+---@return number|nil Time since the last update in seconds, or none if dt is specified.
+---@type fun(dt:number?):(number|nil)
 Async.wait = asyncFunc(function(dt)
 	if dt and dt > 0 then
 		while dt > 0 do
@@ -124,9 +129,8 @@ Async.wait = asyncFunc(function(dt)
 	end
 end)
 
--- luacheck: no unused args
---- Calls pending asynchronous task.
--- @param dt Time since the last update in seconds.
+---Calls pending asynchronous task.
+---@param dt number Time since the last update in seconds.
 function Async.loop(dt)
 	Async.backEvents, Async.events = Async.events, Async.backEvents
 	for i = #Async.backEvents, 1, -1 do

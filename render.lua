@@ -162,6 +162,10 @@ vec4 position(mat4 clipSpaceFromLocal, vec4 localPosition) {
 #endif
 ]]
 
+---@param w integer
+---@param h integer
+---@param f love.PixelFormat
+---@return love.Canvas
 local function newFBO(w, h, f)
 	if Util.compareLOVEVersion(11, 0) >= 0 then
 		return love.graphics.newCanvas(w, h, {format = f, dpiscale = 1})
@@ -170,6 +174,7 @@ local function newFBO(w, h, f)
 	end
 end
 
+---@param n integer
 local function dw2strle(n)
 	return string.char(
 		n % 256,
@@ -179,6 +184,7 @@ local function dw2strle(n)
 	)
 end
 
+---@param renderObj {width:integer,height:integer,fps:integer,output:string,audio:string,audioRenderOk:boolean,rate:integer,fxaa:boolean?}
 function Render.initialize(renderObj)
 	assert(hasffi, "FFI functionality needed to render")
 	assert(ls2x.libav, "libav functionality missing")

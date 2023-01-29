@@ -12,9 +12,10 @@ local AudioManager = require("audio_manager")
 local color = require("color")
 local Util = require("util")
 
-local uibase = require("game.live.uibase")
+local UIBase = require("game.live.uibase")
 
-local lwui = Luaoop.class("livesim2.LovewingLiveUI", uibase)
+---@class Livesim2.LovewingLiveUI: Livesim2.LiveUI
+local LovewingUI = Luaoop.class("Livesim2.LovewingLiveUI", UIBase)
 
 -----------------
 -- Base system --
@@ -61,7 +62,7 @@ for i = 0, 5 do
 end
 
 
-function lwui:__construct()
+function LovewingUI:__construct()
 	self.timer = timer.new()
 	self.fonts = AssetCache.loadMultipleFonts({
 		{"fonts/Exo2-Regular.ttf", 12},
@@ -159,7 +160,7 @@ function lwui:__construct()
 	self.liveClearCallbackOpaque = nil
 end
 
-function lwui:update(dt, paused)
+function LovewingUI:update(dt, paused)
 	-- timer
 	if not(paused) then
 		self.timer:update(dt)
@@ -215,11 +216,11 @@ function lwui:update(dt, paused)
 	end
 end
 
-function lwui.getNoteSpawnPosition()
+function LovewingUI.getNoteSpawnPosition()
 	return vector(480, 160)
 end
 
-function lwui.getLanePosition()
+function LovewingUI.getLanePosition()
 	return {
 		vector(816+64, 96+64 ),
 		vector(785+64, 249+64),
@@ -233,7 +234,7 @@ function lwui.getLanePosition()
 	}
 end
 
-function lwui:getFailAnimation()
+function LovewingUI:getFailAnimation()
 	local t = {
 		big = 640,
 		bigOpacity = 0,
@@ -338,11 +339,11 @@ end
 -- Scoring System --
 --------------------
 
-function lwui:setScoreRange(c, b, a, s)
+function LovewingUI:setScoreRange(c, b, a, s)
 	self.scoreBorders[1], self.scoreBorders[2], self.scoreBorders[3], self.scoreBorders[4] = c, b, a, s
 end
 
-function lwui:addScore(amount)
+function LovewingUI:addScore(amount)
 	self.currentScore = self.currentScore + math.floor(amount)
 
 	if self.scoreTimer then
@@ -355,7 +356,7 @@ function lwui:addScore(amount)
 	}, "out-quart")
 end
 
-function lwui:getScore()
+function LovewingUI:getScore()
 	return self.currentScore
 end
 
@@ -363,7 +364,7 @@ end
 -- Combo System --
 ------------------
 
-function lwui:comboJudgement(judgement, addcombo)
+function LovewingUI:comboJudgement(judgement, addcombo)
 	local breakCombo = false
 
 	self.accuracyCount = self.accuracyCount + 1
@@ -420,15 +421,15 @@ function lwui:comboJudgement(judgement, addcombo)
 	self.judgementTimer2 = self.timer:tween(1, self, {judgementOpacity = 0}, "in-quad")
 end
 
-function lwui:getCurrentCombo()
+function LovewingUI:getCurrentCombo()
 	return self.currentCombo
 end
 
-function lwui:getMaxCombo()
+function LovewingUI:getMaxCombo()
 	return self.maxCombo
 end
 
-function lwui:getScoreComboMultipler()
+function LovewingUI:getScoreComboMultipler()
 	if self.currentCombo < 50 then
 		return 1
 	elseif self.currentCombo < 100 then
@@ -450,21 +451,21 @@ end
 -- Stamina --
 -------------
 
-function lwui:setMaxStamina(val)
+function LovewingUI:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
 	self.stamina = self.maxStamina
 	self.staminaInterpolate = self.stamina
 end
 
-function lwui:getMaxStamina()
+function LovewingUI:getMaxStamina()
 	return self.maxStamina
 end
 
-function lwui:getStamina()
+function LovewingUI:getStamina()
 	return self.stamina
 end
 
-function lwui:addStamina(val)
+function LovewingUI:addStamina(val)
 	val = math.floor(val)
 	if val == 0 then return end
 
@@ -482,19 +483,19 @@ end
 -- Pause button --
 ------------------
 
-function lwui:enablePause()
+function LovewingUI:enablePause()
 	self.pauseEnabled = true
 end
 
-function lwui:disablePause()
+function LovewingUI:disablePause()
 	self.pauseEnabled = false
 end
 
-function lwui:isPauseEnabled()
+function LovewingUI:isPauseEnabled()
 	return self.pauseEnabled
 end
 
-function lwui:checkPause(x, y)
+function LovewingUI:checkPause(x, y)
 	return self:isPauseEnabled() and x >= 34 and y >= 17 and x < 63 and y < 46
 end
 
@@ -502,7 +503,7 @@ end
 -- Other things --
 ------------------
 
-function lwui:addTapEffect(x, y, r, g, b, a)
+function LovewingUI:addTapEffect(x, y, r, g, b, a)
 	local tap
 	for i = 1, #self.tapEffectList do
 		local w = self.tapEffectList[i]
@@ -533,27 +534,27 @@ function lwui:addTapEffect(x, y, r, g, b, a)
 	self.tapEffectList[#self.tapEffectList + 1] = tap
 end
 
-function lwui:setTextScaling(scale)
+function LovewingUI:setTextScaling(scale)
 	self.textScaling = scale
 end
 
-function lwui:getOpacity()
+function LovewingUI:getOpacity()
 	return self.opacity
 end
 
-function lwui:setOpacity(opacity)
+function LovewingUI:setOpacity(opacity)
 	self.opacity = opacity
 	self.fullComboAnim:setOpacity(opacity * 255)
 	self.liveClearAnim:setOpacity(opacity * 255)
 end
 
-function lwui.setComboCheer()
+function LovewingUI.setComboCheer()
 end
 
-function lwui.setTotalNotes()
+function LovewingUI.setTotalNotes()
 end
 
-function lwui:startLiveClearAnimation(fullcombo, callback, opaque)
+function LovewingUI:startLiveClearAnimation(fullcombo, callback, opaque)
 	if self.liveClearTime == -math.huge then
 		self.pauseEnabled = false
 		self.liveClearTime = 5
@@ -587,7 +588,7 @@ function lwui:startLiveClearAnimation(fullcombo, callback, opaque)
 	end
 end
 
-function lwui:setLiveClearVoice(voice)
+function LovewingUI:setLiveClearVoice(voice)
 	self.liveClearVoice = voice
 end
 
@@ -614,7 +615,7 @@ local function setColor(warn, r, g, b, a)
 	love.graphics.setColor(color.compat(c1, c2, c3, c4))
 end
 
-function lwui:drawHeader()
+function LovewingUI:drawHeader()
 	-- Placement
 	setColor(self.staminaWarningDuration, 255, 190, 63, self.opacity)
 	love.graphics.rectangle("fill", 190, 21, 140, 24, 4, 4)
@@ -667,7 +668,7 @@ function lwui:drawHeader()
 	love.graphics.setShader(shader)
 end
 
-function lwui:drawStatus()
+function LovewingUI:drawStatus()
 	-- Tap effect
 	for i = #self.tapEffectList, 1, -1 do
 		local tap = self.tapEffectList[i]
@@ -827,4 +828,4 @@ function lwui:drawStatus()
 	end
 end
 
-return lwui
+return LovewingUI

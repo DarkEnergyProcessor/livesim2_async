@@ -17,9 +17,10 @@ local Async = require("async")
 local color = require("color")
 local lily = require("lily")
 
-local uibase = require("game.live.uibase")
+local UIBase = require("game.live.uibase")
 
-local sifui = Luaoop.class("livesim2.SIFLiveUI", uibase)
+---@class Livesim2.SIFLiveUI: Livesim2.LiveUI
+local SIFUI = Luaoop.class("Livesim2.SIFLiveUI", UIBase)
 
 -----------------
 -- Base system --
@@ -52,7 +53,7 @@ local comboQuad = {
 	combo = love.graphics.newQuad(0, 96, 123, 34, 240, 130)
 }
 
-function sifui:__construct(_, mineff)
+function SIFUI:__construct(_, mineff)
 	-- as per uibase definition, constructor can use
 	-- any asynchronous operation (async lib)
 	local fontImageDataList = lily.loadMulti({
@@ -243,7 +244,7 @@ function sifui:__construct(_, mineff)
 	self.liveClearAnim:setMovie("ef_311")
 end
 
-function sifui:update(dt, paused)
+function SIFUI:update(dt, paused)
 	-- timer
 	if not(paused) then
 		self.timer:update(dt)
@@ -398,11 +399,11 @@ function sifui:update(dt, paused)
 	end
 end
 
-function sifui.getNoteSpawnPosition()
+function SIFUI.getNoteSpawnPosition()
 	return vector(480, 160)
 end
 
-function sifui.getLanePosition()
+function SIFUI.getLanePosition()
 	return {
 		vector(816+64, 96+64 ),
 		vector(785+64, 249+64),
@@ -416,7 +417,7 @@ function sifui.getLanePosition()
 	}
 end
 
-function sifui.getFailAnimation()
+function SIFUI.getFailAnimation()
 	return Yohane.newFlashFromFilename("flash/live_gameover.flsh", "ef_312")
 end
 
@@ -427,11 +428,11 @@ end
 local flashTweenTarget = {scoreFlashScale = 1.6, scoreFlashOpacity = 0}
 local barFlashTweenTarget = {scoreBarFlashOpacity = 0}
 
-function sifui:setScoreRange(c, b, a, s)
+function SIFUI:setScoreRange(c, b, a, s)
 	self.scoreBorders[1], self.scoreBorders[2], self.scoreBorders[3], self.scoreBorders[4] = c, b, a, s
 end
 
-function sifui:addScore(amount)
+function SIFUI:addScore(amount)
 	amount = math.floor(amount)
 	self.currentScore = self.currentScore + amount
 	self.currentScoreAdd = self.currentScoreAdd + amount
@@ -498,7 +499,7 @@ function sifui:addScore(amount)
 	end
 end
 
-function sifui:getScore()
+function SIFUI:getScore()
 	return self.currentScore
 end
 
@@ -543,7 +544,7 @@ local function getComboNumberIndex(combo)
 	end
 end
 
-function sifui:comboJudgement(judgement, addcombo)
+function SIFUI:comboJudgement(judgement, addcombo)
 	local breakCombo = false
 
 	if judgement == "perfect" then
@@ -604,15 +605,15 @@ function sifui:comboJudgement(judgement, addcombo)
 	end
 end
 
-function sifui:getCurrentCombo()
+function SIFUI:getCurrentCombo()
 	return self.currentCombo
 end
 
-function sifui:getMaxCombo()
+function SIFUI:getMaxCombo()
 	return self.maxCombo
 end
 
-function sifui:getScoreComboMultipler()
+function SIFUI:getScoreComboMultipler()
 	if self.currentCombo < 50 then
 		return 1
 	elseif self.currentCombo < 100 then
@@ -634,28 +635,28 @@ end
 -- Stamina --
 -------------
 
-function sifui:_updateStamina()
+function SIFUI:_updateStamina()
 	self.staminaText:clear()
 	self.staminaText:add(string.format("%2d", self.stamina))
 	self.staminaInterpolate = math.min(self.maxStamina, self.staminaInterpolate)
 end
 
-function sifui:setMaxStamina(val)
+function SIFUI:setMaxStamina(val)
 	self.maxStamina = math.min(assert(val > 0 and val, "invalid value"), 99)
 	self.stamina = self.maxStamina
 	self.staminaInterpolate = self.stamina
 	self:_updateStamina()
 end
 
-function sifui:getMaxStamina()
+function SIFUI:getMaxStamina()
 	return self.maxStamina
 end
 
-function sifui:getStamina()
+function SIFUI:getStamina()
 	return self.stamina
 end
 
-function sifui:addStamina(val)
+function SIFUI:addStamina(val)
 	val = math.floor(val)
 	if val == 0 then return end
 
@@ -676,19 +677,19 @@ end
 -- Pause button --
 ------------------
 
-function sifui:enablePause()
+function SIFUI:enablePause()
 	self.pauseEnabled = true
 end
 
-function sifui:disablePause()
+function SIFUI:disablePause()
 	self.pauseEnabled = false
 end
 
-function sifui:isPauseEnabled()
+function SIFUI:isPauseEnabled()
 	return self.pauseEnabled
 end
 
-function sifui:checkPause(x, y)
+function SIFUI:checkPause(x, y)
 	return self:isPauseEnabled() and x >= 898 and y >= -12 and x < 970 and y < 60
 end
 
@@ -701,7 +702,7 @@ local circle1TweenTarget = {circle1Opacity = 0, circle1Scale = 4}
 local circle2TweenTarget = {circle2Opacity = 0, circle2Scale = 4}
 local circle3TweenTarget = {circle3Opacity = 0, circle3Scale = 4}
 
-function sifui:addTapEffect(x, y, r, g, b, a)
+function SIFUI:addTapEffect(x, y, r, g, b, a)
 	local tap
 	for i = 1, #self.tapEffectList do
 		local w = self.tapEffectList[i]
@@ -749,30 +750,30 @@ function sifui:addTapEffect(x, y, r, g, b, a)
 	self.tapEffectList[#self.tapEffectList + 1] = tap
 end
 
-function sifui:setTextScaling(scale)
+function SIFUI:setTextScaling(scale)
 	self.textScaling = scale
 end
 
-function sifui:getOpacity()
+function SIFUI:getOpacity()
 	return self.opacity
 end
 
-function sifui:setOpacity(opacity)
+function SIFUI:setOpacity(opacity)
 	self.opacity = opacity
 	self.fullComboAnim:setOpacity(opacity * 255)
 	self.liveClearAnim:setOpacity(opacity * 255)
 	self.comboCheerAnim:setOpacity(opacity * 255)
 end
 
-function sifui:setComboCheer(enable)
+function SIFUI:setComboCheer(enable)
 	self.comboCheer = not(not(enable))
 end
 
-function sifui.setTotalNotes()
+function SIFUI.setTotalNotes()
 	-- noop
 end
 
-function sifui:startLiveClearAnimation(fullcombo, callback, opaque)
+function SIFUI:startLiveClearAnimation(fullcombo, callback, opaque)
 	if self.liveClearTime == -math.huge then
 		self.pauseEnabled = false
 		self.liveClearTime = fullcombo and 7 or 5
@@ -781,7 +782,7 @@ function sifui:startLiveClearAnimation(fullcombo, callback, opaque)
 	end
 end
 
-function sifui:setLiveClearVoice(voice)
+function SIFUI:setLiveClearVoice(voice)
 	self.liveClearVoice = voice
 end
 
@@ -793,7 +794,7 @@ local function triangle(x)
 	return math.abs((x - 1) % 4 - 2) - 1
 end
 
-function sifui:drawHeader()
+function SIFUI:drawHeader()
 	-- draw combo cheer
 	if not(self.minimalEffect) and self.comboCheer and self.currentCombo >= 100 then
 		self.comboCheerAnim:draw()
@@ -871,7 +872,7 @@ function sifui:drawHeader()
 	love.graphics.draw(self.staminaAddText, 290, 90)
 end
 
-function sifui:drawStatus()
+function SIFUI:drawStatus()
 	-- tap effect
 	for i = #self.tapEffectList, 1, -1 do
 		local tap = self.tapEffectList[i]
@@ -952,4 +953,4 @@ function sifui:drawStatus()
 	end
 end
 
-return sifui
+return SIFUI

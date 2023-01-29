@@ -16,9 +16,10 @@ local Setting = require("setting")
 local color = require("color")
 local Util = require("util")
 
-local uibase = require("game.live.uibase")
+local UIBase = require("game.live.uibase")
 
-local mknui = Luaoop.class("livesim2.MakunoLiveUI", uibase)
+---@class Livesim2.MakunoLiveUI: Livesim2.LiveUI
+local MakunoUI = Luaoop.class("Livesim2.MakunoLiveUI", UIBase)
 
 -----------------
 -- Local Stuff --
@@ -152,7 +153,7 @@ end
 --------------------
 -- Core:Construct
 
-function mknui:__construct(autoplay, mineff)
+function MakunoUI:__construct(autoplay, mineff)
 	self.timer = timer:new()
 	self.fonts = AssetCache.loadMultipleFonts({
 		{fonts.Me, l.ds_sbt == 1 and 15 or 13},   -- Head Title (SCORE and STAMINA)
@@ -345,11 +346,11 @@ end
 ------------------------------------------------------------
 -- Data Retrieving
 
-function mknui:getNoteSpawnPosition()
+function MakunoUI:getNoteSpawnPosition()
 	return vector(480, 160)
 end
 
-function mknui:getLanePosition()
+function MakunoUI:getLanePosition()
 	return {
 		vector(816+64, 96+64 ), -- 9 (Right)
 		vector(785+64, 249+64), -- 8
@@ -363,7 +364,7 @@ function mknui:getLanePosition()
 	}
 end
 
-function mknui:getFailAnimation()
+function MakunoUI:getFailAnimation()
 	local TRACKLOST = {
 		t = timer:new();
 		--
@@ -423,31 +424,31 @@ function mknui:getFailAnimation()
 	return TRACKLOST
 end
 
-function mknui:getOpacity()
+function MakunoUI:getOpacity()
 	return self.dis_opacity
 end
 
-function mknui:getMaxStamina()
+function MakunoUI:getMaxStamina()
 	return self.maxstamina
 end
 
-function mknui:getStamina()
+function MakunoUI:getStamina()
 	return self.currentstamina
 end
 
-function mknui:getScore()
+function MakunoUI:getScore()
 	return self.currentscore
 end
 
-function mknui:getCurrentCombo()
+function MakunoUI:getCurrentCombo()
 	return self.currentcombo
 end
 
-function mknui:getMaxCombo()
+function MakunoUI:getMaxCombo()
 	return self.highestcombo
 end
 
-function mknui:getScoreComboMultipler()
+function MakunoUI:getScoreComboMultipler()
 	if l.ds_casm == 1 then
 		return 1
 	else
@@ -472,7 +473,7 @@ end
 ------------------------------------------------------------
 -- Core:Update
 
-function mknui:update(dt,paused)
+function MakunoUI:update(dt,paused)
 
 	if not(paused) then
 		self.time = dt
@@ -568,7 +569,7 @@ end
 --------------------
 -- Primary Function
 
-function mknui:addScore(amount) 
+function MakunoUI:addScore(amount) 
 	
 	local a = math.ceil(amount + (amount * self.overflow_multiply))
 
@@ -598,7 +599,7 @@ function mknui:addScore(amount)
 	end
 end
 
-function mknui:comboJudgement(judgement, addcombo)
+function MakunoUI:comboJudgement(judgement, addcombo)
 	if judgement ~= nil then
 		local combochoke = false
 
@@ -738,7 +739,7 @@ function mknui:comboJudgement(judgement, addcombo)
 	end
 end
 
-function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
+function MakunoUI:startLiveClearAnimation(fullcombo, callback, opaque)
 	if self.time_live_postend == -math.huge then
 		self.pauseEnabled = false
 		self.time_live_postend = 4.5
@@ -812,7 +813,7 @@ function mknui:startLiveClearAnimation(fullcombo, callback, opaque)
 	end
 end
 
-function mknui:addStamina(amount)
+function MakunoUI:addStamina(amount)
 
 	local a = math.ceil(amount)
 
@@ -885,7 +886,7 @@ function mknui:addStamina(amount)
 	end
 end
 
-function mknui:addTapEffect(x, y, r, g, b, a)
+function MakunoUI:addTapEffect(x, y, r, g, b, a)
 	if not(self.minimalEffect) and not(l.ds_fsne == 1) then
 		local tap_e
 		for tap_i = 1,#self.tapEffectList do
@@ -920,7 +921,7 @@ function mknui:addTapEffect(x, y, r, g, b, a)
 end
 
 -- For Set
-function mknui:setOpacity(o, t, m)
+function MakunoUI:setOpacity(o, t, m)
 	if t == nil then t = 1 end
 	if o == nil then o = 1 end
 	if m == nil then m = "out-quart" end
@@ -937,15 +938,15 @@ function mknui:setOpacity(o, t, m)
 	end
 end
 
-function mknui:setSongInfo(sn)
+function MakunoUI:setSongInfo(sn)
 	self.nameDisplay = tostring(sn)
 end
 
-function mknui:setTextScaling(s)
+function MakunoUI:setTextScaling(s)
 
 end
 
-function mknui:setTotalNotes(tl)
+function MakunoUI:setTotalNotes(tl)
 	if (l.ds_adm == 2) then
 		self.totalnote = tl
 	end
@@ -954,21 +955,21 @@ function mknui:setTotalNotes(tl)
 	self.totalnotescore = tl
 end
 
-function mknui:setMaxStamina(val)
+function MakunoUI:setMaxStamina(val)
 	self.maxstamina = math.min(assert(val > 0 and val, "invalid value"), math.huge)
 	self.currentstamina = self.maxstamina
 	self.dis_stamina = self.currentstamina
 end
 
-function mknui:setComboCheer()
+function MakunoUI:setComboCheer()
 
 end
 
-function mknui:setLiveClearVoice(v)
+function MakunoUI:setLiveClearVoice(v)
 	self.audio_liveclearvoice = v
 end
 
-function mknui:setScoreRange(c, b, a, s)
+function MakunoUI:setScoreRange(c, b, a, s)
 	self.sc_bars[1],
 	self.sc_bars[2],
 	self.sc_bars[3],
@@ -980,19 +981,19 @@ function mknui:setScoreRange(c, b, a, s)
 end
 
 -- For Other Use
-function mknui:enablePause()
+function MakunoUI:enablePause()
 	self.pauseEnabled = true
 end
 
-function mknui:disablePause()
+function MakunoUI:disablePause()
 	self.pauseEnabled = false
 end
 
-function mknui:isPauseEnabled()
+function MakunoUI:isPauseEnabled()
 	return self.pauseEnabled
 end
 
-function mknui:checkPause(x, y)
+function MakunoUI:checkPause(x, y)
 	return self:isPauseEnabled() and x >= 155 and y >= 0 and x < 800 and y < 64
 end
 
@@ -1002,7 +1003,7 @@ end
 --------------------
 -- Primary Draw Function
 
-function mknui:drawHeader()
+function MakunoUI:drawHeader()
 
 	local dh = {
 		score_t = tostring(self.text.Top.SCORE.." (Rank "..self.dis_currentrank..")"),
@@ -1201,7 +1202,7 @@ function mknui:drawHeader()
 
 end
 
-function mknui:drawStatus()
+function MakunoUI:drawStatus()
 
 	if not(self.minimalEffect) and not(l.ds_fsne == 1) then
 		for e = #self.tapEffectList, 1, -1 do
@@ -1244,4 +1245,4 @@ function mknui:drawStatus()
 
 end
 
-return mknui
+return MakunoUI

@@ -7,20 +7,20 @@ local Util = require("util")
 local Luaoop = require("libs.Luaoop")
 local log = require("logging")
 local uibase = require("game.live.uibase")
-local ui = {list = {}}
+local LiveUI = {list = {}}
 
-function ui.newLiveUI(name, autoplay, mineff)
+function LiveUI.newLiveUI(name, autoplay, mineff)
 	-- MUST RUN IN ASYNC!
-	if not(ui.list[name]) then
+	if not(LiveUI.list[name]) then
 		error("live ui '"..name.."' not found", 2)
 	end
 
-	return ui.list[name](autoplay, mineff)
+	return LiveUI.list[name](autoplay, mineff)
 end
 
-function ui.enum()
+function LiveUI.enum()
 	local name = {}
-	for k, _ in pairs(ui.list) do
+	for k, _ in pairs(LiveUI.list) do
 		if k == "sif" then
 			table.insert(name, 1, k) -- sif must be at highest
 		else
@@ -39,7 +39,7 @@ for _, dirs in ipairs(love.filesystem.getDirectoryItems("game/live/ui")) do
 		if s then
 			local v = s()
 			if Luaoop.class.is(v, uibase) then
-				ui.list[dirs:sub(1, -5)] = v
+				LiveUI.list[dirs:sub(1, -5)] = v
 			else
 				log.error("live.ui", "cannot load file "..dirs.." (not uibase class)")
 			end
@@ -49,4 +49,4 @@ for _, dirs in ipairs(love.filesystem.getDirectoryItems("game/live/ui")) do
 	end
 end
 
-return ui
+return LiveUI

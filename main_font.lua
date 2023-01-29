@@ -17,6 +17,8 @@ MainFont.notoSansCJK = love.filesystem.newFileData("fonts/NotoSansCJKjp-Regular.
 MainFont.sarabun = love.filesystem.newFileData("fonts/Sarabun-Regular.ttf")
 MainFont.dpiScale = Util.getFontDPIScale()
 
+---@param ... integer
+---@return love.Font ...
 function MainFont.get(...)
 	local arg = {...}
 	local result = {}
