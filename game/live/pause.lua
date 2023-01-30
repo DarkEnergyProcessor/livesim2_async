@@ -10,11 +10,13 @@ local MainFont = require("main_font")
 local Util = require("util")
 local L = require("language")
 
-local pause = Luaoop.class("livesim2.Pause")
+---@class Livesim2.Pause: IUpdateable, IDrawable
+local Pause = Luaoop.class("Livesim2.Pause")
 
--- must be in async
--- callbacks must be table: resume, quit, restart
-function pause:__construct(callbacks, opaque, replay)
+---must be in async
+---@param callbacks {resume:function,quit:function,restart:function,failAnimation:IUpdateable|IDrawable}
+---@param replay string?
+function Pause:__construct(callbacks, opaque, replay)
 	self.font, self.mainCounterFont = MainFont.get(36, 72)
 	self.timer = math.huge
 	self.paused = false
@@ -31,7 +33,8 @@ function pause:__construct(callbacks, opaque, replay)
 	end
 end
 
-function pause:update(dt)
+---@param dt number
+function Pause:update(dt)
 	if self.paused then
 		if self.isFailed then
 			self.callback.failAnimation:update(dt * 1000)
@@ -48,7 +51,7 @@ function pause:update(dt)
 	end
 end
 
-function pause:_drawCounter()
+function Pause:_drawCounter()
 	local fract = self.timer % 1
 	local fractStr = string.format(".%03d", math.min(fract * 1000, 999))
 	local whole = tostring(math.ceil(self.timer))
@@ -87,7 +90,7 @@ local buttons = {
 		color = {color.get(255, 28, 124, 0.5)}
 	}
 }
-function pause:_drawPause()
+function Pause:_drawPause()
 	-- always follow this coordinate:
 	-- x = 416
 	-- y = 228 + i * 72 (where i starts at 1)
@@ -123,11 +126,11 @@ function pause:_drawPause()
 	end
 end
 
-function pause:_drawFailed()
+function Pause:_drawFailed()
 	return self.callback.failAnimation:draw(480, 320)
 end
 
-function pause:draw()
+function Pause:draw()
 	if self.paused then
 		-- draw black overlay
 		love.graphics.push()
@@ -148,18 +151,22 @@ function pause:draw()
 	end
 end
 
-function pause:pause(name, fail)
+---@param name string
+---@param fail boolean
+function Pause:pause(name, fail)
 	self.paused = true
 	self.isFailed = not(not(fail))
 	self.beatmapName = name or self.beatmapName
 	self.displayText = self.beatmapName.."\n"..self.replayString
 end
 
-function pause:isPaused()
+function Pause:isPaused()
 	return self.paused
 end
 
-function pause:mouseReleased(x, y)
+---@param x number
+---@param y number
+function Pause:mouseReleased(x, y)
 	if self.paused then
 		local maxy = 300 + #buttons * 72
 		if x >= 384 and y >= 300 and x < 576 and y < maxy then
@@ -180,7 +187,7 @@ function pause:mouseReleased(x, y)
 	end
 end
 
-function pause:fastResume()
+function Pause:fastResume()
 	if self.paused then
 		self.callback.resume(self.opaque)
 		self.timer = math.huge
@@ -188,4 +195,5 @@ function pause:fastResume()
 	end
 end
 
-return pause
+---@cast Pause +fun(callbacks:{resume:function,quit:function,restart:function,failAnimation:IUpdateable|IDrawable},opaque:any,replay:string?):Livesim2.Pause
+return Pause

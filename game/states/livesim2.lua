@@ -22,17 +22,18 @@ local Glow = require("game.afterglow")
 local tapSound = require("game.tap_sound")
 local BeatmapList = require("game.beatmap.list")
 local BackgroundLoader = require("game.background_loader")
-local srtParse = require("game.srt")
+local SrtParse = require("game.srt")
 local storyLoader = require("game.storyboard.loader")
 local note = require("game.live.note")
-local lyrics = require("game.live.lyrics")
-local pause = require("game.live.pause")
+local Lyrics = require("game.live.lyrics")
+local Pause = require("game.live.pause")
 local liveUI = require("game.live.ui")
 local skill = require("game.live.skill")
 local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 local BeatmapRandomizer = require("game.live.randomizer3")
 
+---@class Livesim2.DEPLSState: Gamestate.Gamestate
 local DEPLS = Gamestate.create {
 	fonts = {},
 	images = {
@@ -213,6 +214,7 @@ local function safeAreaReposition(scale)
 	end
 end
 
+---@param arg {summary:Livesim2.SummaryInfo,beatmapName:string,direct:boolean?,autoplay:boolean?}
 function DEPLS:load(arg)
 	Glow.clear()
 
@@ -610,7 +612,7 @@ function DEPLS:load(arg)
 	self.data.tapNoteAccumulation = assert(tonumber(Setting.get("NS_ACCUMULATION")), "invalid note sound accumulation")
 
 	-- load pause system
-	self.data.pauseObject = pause({
+	self.data.pauseObject = Pause({
 		quit = function()
 			if self.persist.replayMode then
 				-- assume replay data is used to fill information
@@ -646,6 +648,7 @@ function DEPLS:load(arg)
 
 	-- load keymapping
 	do
+		---@type table<string,integer>
 		local keymap = {}
 		local i = 9
 
@@ -665,7 +668,7 @@ function DEPLS:load(arg)
 	self.persist.coverArtDisplayDone = true
 	if arg.summary.coverArt then
 		local w
-		local x = arg.summary.coverArt
+		local x = arg.summary.coverArt ---@cast x -nil
 		local y = {
 			image = love.graphics.newImage(x.image, {mipmaps = true}),
 			scaleX = 0,
@@ -736,7 +739,7 @@ function DEPLS:load(arg)
 	self.data.unitIcons = {}
 	local unitDefaultName = {}
 	local unitImageCache = {}
-	local idolName = Setting.get("IDOL_IMAGE")
+	local idolName = tostring(Setting.get("IDOL_IMAGE"))
 	log.debug("livesim2", "default idol name: "..string.gsub(idolName, "\t", "\\t"))
 	for w in string.gmatch(idolName, "[^\t]+") do
 		unitDefaultName[#unitDefaultName + 1] = w
@@ -831,7 +834,7 @@ function DEPLS:load(arg)
 	if arg.summary.lyrics then
 		log.debug("livesim2", "loading song lyrics data")
 		local str = arg.summary.lyrics:getString():gsub("\r\n", "\n")
-		self.data.lyrics = lyrics(srtParse(str:gmatch("([^\n]*)\n?")))
+		self.data.lyrics = Lyrics(SrtParse(str:gmatch("([^\n]*)\n?")))
 	end
 
 	Async.wait()
@@ -1009,6 +1012,7 @@ function DEPLS:update(dt)
 	end
 end
 
+---@param self Livesim2.DEPLSState
 local function draw(self)
 	-- draw background
 	local drawBackground = true

@@ -12,6 +12,7 @@ local MainFont = require("main_font")
 local Lyrics = Luaoop.class("Livesim2.Lyrics")
 local perZeroThree = 1/0.3
 
+---@param srt Livesim2.SrtParseData[]
 function Lyrics:__construct(srt)
 	local font1, font2 = MainFont.get(24, 16)
 	local timings = {}
@@ -22,8 +23,7 @@ function Lyrics:__construct(srt)
 	self.opacity = 0
 	self.vanish = false
 
-	for i = 1, #srt do
-		local sub = srt[i]
+	for _, sub in ipairs(srt) do
 		local t = {sub.start - 0.1, sub.stop - 0.1, nil, nil}
 
 		local text1 = love.graphics.newText(font1)
@@ -79,5 +79,5 @@ function Lyrics:draw()
 	end
 end
 
----@cast Lyrics +fun(srt):Livesim2.Lyrics
+---@cast Lyrics +fun(srt:Livesim2.SrtParseData[]):Livesim2.Lyrics
 return Lyrics

@@ -158,15 +158,23 @@ local function send(name, ...)
 	return Setting.channel:performAtomic(sendImpl, name, Setting.receiveChannel, ...)
 end
 
+---@param key string
+---@param default number|string
 function Setting.define(key, default)
 	assert(Setting.thread, "'define' can only be called in main thread")
 	return send("init", key, default)
 end
 
+---@param key string
+---@return number|string
+---@nodiscard
 function Setting.default(key)
 	return send("def", key)
 end
 
+---@param key string
+---@return number|string
+---@nodiscard
 function Setting.get(key)
 	send("get", key)
 
@@ -177,6 +185,8 @@ function Setting.get(key)
 	return v
 end
 
+---@param key string
+---@param value number|string
 function Setting.set(key, value)
 	return send("set", key, value)
 end

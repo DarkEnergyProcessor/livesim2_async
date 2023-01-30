@@ -22,9 +22,15 @@ local weak = {__mode = "kv"}
 ---------------------
 -- Gamestate class --
 ---------------------
-local gamestateConstructorObject = Luaoop.class("gamestate.Constructor")
-local gamestateObject = Luaoop.class("gamestate.Gamestate")
+local gamestateConstructorObject = Luaoop.class("Gamestate.Constructor")
 
+---@generic T
+---@class Gamestate.Gamestate
+---@field public persist table
+---@field public assets {images:table<string,love.Image>,fonts:table<string,love.Font>}
+local gamestateObject = Luaoop.class("Gamestate.Gamestate")
+
+---@param info Gamestate.ConstructorInfo
 function gamestateConstructorObject:__construct(info)
 	assert(info.fonts, "missing fonts table")
 	assert(info.images, "missing images table")
@@ -91,6 +97,15 @@ do
 	makeShortcutMacro("resumed")
 	makeShortcutMacro("update")
 	makeShortcutMacro("draw")
+end
+
+if false then
+	---@generic T: Gamestate.Gamestate
+	---@param self T
+	---@param name string
+	---@param callback fun(self:T,...)
+	function gamestateObject.registerEvent(self, name, callback)
+	end
 end
 
 -------------------------------------
@@ -319,6 +334,8 @@ end
 -- Public functions --
 ----------------------
 
+---@param info Gamestate.ConstructorInfo
+---@return Gamestate.Gamestate
 function Gamestate.create(info)
 	return gamestateConstructorObject(info)
 end

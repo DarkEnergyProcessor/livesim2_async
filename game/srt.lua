@@ -6,7 +6,9 @@ local function sortSub(a, b)
 	return a.start < b.start
 end
 
+---@param iter fun():(string|nil)
 return function(iter)
+	---@type Livesim2.SrtParseData[]
 	local res = {}
 
 	-- ignore sub number, unnecessary
