@@ -296,7 +296,7 @@ function gameSetting:load()
 	-- General settings
 	if self.persist.generalSetting == nil then
 		local frame = newSettingFrame()
-		local themeDisplay = {"μ's", "Aqours", "NijiGaku", "Liella"}
+		local themeDisplay = {"μ's", "Aqours", "NijiGaku", "Liella", "Hasunosora"}
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
 			tapSoundDisplay[i] = tapSound[i].name
