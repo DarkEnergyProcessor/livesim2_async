@@ -1,5 +1,5 @@
 -- Makuno Live UI v.2.0
--- Contributed by Makuno, slightly modified
+-- Contributed by Makuno
 -- part of Live Simulator: 2
 -- See copyright notice in main.lua
 
@@ -59,9 +59,7 @@ local itf_conf = {
         Determinate how to display rank bar
 
         0 - Display Regular rank only
-        1 - Display Regular Rank first
-            then use Super Rank.
-        2 - All rank display at once.
+        1 - All rank display at once.
     ]]
     dy_rdm = 0,
 
@@ -77,7 +75,7 @@ local itf_conf = {
         Determinate how accuracy should be displayed.
 
         0 - Display as Percentage (100%)
-        1 - Display as 1 Million Points
+        1 - Display as 1 Million Points (Acc 100%)
     ]]
     dy_adm = 0,
 
@@ -94,7 +92,6 @@ local itf_conf = {
 
         0 - Don't use SIF2 Rank
         1 - Use SIF2 Rank
-
     ]]
     dy_s2r = 0,
 
@@ -210,6 +207,13 @@ local function setLineData(lineamount, scoredata, barsize, offset)
     return linedata
 end
 
+local function spacedtext(text)
+
+    local t = tostring(text)
+
+    return string.gsub(t, ".", " %0"):sub(2)
+end
+
 ------------------------------------
 ------------------------------------
 
@@ -221,8 +225,10 @@ function mknv2ui:__construct(aupy, mife)
         {fonts.medium, 12},     -- Top/Sub title text & Stamina
         {fonts.light, 31},      -- Score & Acc number
         {fonts.regular, 14},    -- Sub info number
-        --
         {fonts.regular, 20},    -- Combo number
+        --
+        {fonts.light, 48},      -- LIVE CLEAR/FAIL Text
+        {fonts.italic, 18},     -- Additional Live Text
     })
     self.image = AssetCache.loadMultipleImages(
         {
@@ -234,8 +240,10 @@ function mknv2ui:__construct(aupy, mife)
         self.fonts[1]:getHeight(),
         self.fonts[2]:getHeight(),
         self.fonts[3]:getHeight(),
-        --
         self.fonts[4]:getHeight(),
+        --
+        self.fonts[5]:getHeight(),
+        self.fonts[6]:getHeight(),
     }
 
     self.bool_pauseEnabled = true
@@ -297,6 +305,19 @@ function mknv2ui:__construct(aupy, mife)
 
     self.display_result = {
         bgcover_dim = 0, bgcover_color = {0, 0, 0},
+
+        text1 = "", text2 = "",
+
+        text2_x = 480 + math.random(-240, 240), 
+
+        text1_y = 340,
+        text2_y = 340,
+
+        text1_scale = 1.25,
+
+        text1_opacity = 0, text1_color = {255, 255, 255},
+        text2_opacity = 0, text2_color = {255, 255, 255},
+
         fakeresultbox_y = 1000,
     }
 
@@ -381,9 +402,9 @@ function mknv2ui:__construct(aupy, mife)
 
     -- 8
     self.data_playresult = {
-        PL = false, -- PERFECT
-        FC = false, -- FULL COMBO
-        NM = false, -- NO MISS (MISSLESS)
+        PL = true, -- PERFECT
+        FC = true, -- FULL COMBO
+        NM = true, -- NO MISS (MISSLESS)
     }
 
     self.display_pause_opacity = 1
@@ -558,14 +579,11 @@ function mknv2ui:update(dt, paused)
         end
     end
 
-    if self.time_prelive > 0 then
+    if self.time_prelive > 0 and self.time_postlive == -math.huge then
         self.time_prelive = self.time_prelive - dt
-    elseif self.time_prelive <= 0 and not(self.bool_pauseplayed) then
-        self.bool_pauseplayed = true
-        self.timer:tween(1, self, {display_pause_opacity = 0}, "out-quart")
     end
 
-    if self.time_postlive ~= math.huge then
+    if self.time_postlive ~= -math.huge then
         if self.time_postlive > 0 then
             self.time_postlive = self.time_postlive - dt
         end
@@ -579,12 +597,55 @@ function mknv2ui:update(dt, paused)
 end
 
 function mknv2ui:startLiveClearAnimation(FC, callback, opaque)
+
+    if self.time_postlive == -math.huge and self.time_prelive > 0 then
+        self.time_postlive = 0.01
+        self.data_livecallback = callback
+        self.data_liveopaque = opaque
+
+        self.display_text_opacity = 1
+        self.display_element_opacity = 1
+    end
+
     if self.time_postlive == -math.huge then
         self.time_postlive = 5 
         self.data_livecallback = callback
         self.data_liveopaque = opaque
 
-        self.timer:tween(0.5, self.display_result, {bgcover_dim = 0.25}, "out-cubic")
+        self.display_result.text1 = spacedtext("LIVE CLEAR")
+        local text2_pickedcolor = {255, 255, 255}
+
+        if FC and self.data_playresult.PL then
+            self.display_result.text2 = spacedtext("PERFECT PERFORMANCE")
+            text2_pickedcolor = {255, 195, 77}
+        elseif FC and self.data_playresult.FC then
+            self.display_result.text2 = spacedtext("GREAT FULL COMBO")
+            text2_pickedcolor = {77, 220, 255}
+        elseif not(FC) and self.data_playresult.NM then
+            self.display_result.text2 = spacedtext("NO MISS")
+            text2_pickedcolor = {236, 153, 255}
+        end
+
+        self.timer:tween(
+            0.5, self.display_result,
+            {
+                bgcover_dim = 0.3,
+            
+                text1_scale = 1,
+                text1_opacity = 1,
+            }, "out-cubic"
+        )
+
+        self.timer:after(1, function() 
+            self.timer:tween(
+                0.55, self.display_result,
+                {
+                    text2_x = 480,
+                    text2_opacity = 1,
+                    text2_color = text2_pickedcolor,
+                }, "out-quart"
+            )
+        end)
 
         self.timer:after(2.5, function()
             self.timer:tween(
@@ -627,16 +688,26 @@ function mknv2ui:startLiveClearAnimation(FC, callback, opaque)
                 "in-quart"
             )
 
+            self.timer:tween(
+                0.5, self.display_result, 
+                {
+                    text1_opacity = 0,
+                    text2_opacity = 0,
+
+                    text1_y = 160,
+                    text2_y = 560,
+                },
+                "in-quart"
+            )
         end)
 
         self.timer:after(4.5, function()
             self.timer:tween(0.5, self.display_result, {
-                bgcover_dim = 0.667, 
+                bgcover_dim = 0.667,
                 bgcover_color = {100, 98, 98},
                 fakeresultbox_y = 231,
             }, "out-quart")
         end)
-
     end
 end
 
@@ -878,7 +949,7 @@ function mknv2ui:drawStatus()
         t_acc = tostring(self.display_text.top.ACC),
         t_pigi = tostring(self.display_text.top.PGR),
         t_exsc = tostring(self.display_text.top.EXS),
-        t_judge = string.gsub(self.display_judgement_text, ".", " %0"):sub(2),
+        t_judge = spacedtext(self.display_judgement_text),
 
         t_pause = nil,
 
@@ -938,53 +1009,20 @@ function mknv2ui:drawStatus()
         love.graphics.rectangle("fill", 281, 68, 374, 14)
     end
 
-    if __DEBUG__ then
-        
-        setColor(200, 200, 200, 0.9)
-
-        -- Visible all Stencil Area
-        love.graphics.polygon("fill", 225, self.display_global.M_bar_y, 225, self.display_global.T_bar_y, 231, self.display_global.T_bar_y)
-        love.graphics.polygon("fill", 729, self.display_global.T_bar_y, 735, self.display_global.T_bar_y, 735, self.display_global.M_bar_y)
-        love.graphics.polygon("fill", 225, self.display_global.M_bar_y, 225, self.display_global.B_bar_y, 231, self.display_global.B_bar_y)
-        love.graphics.polygon("fill", 729, self.display_global.B_bar_y, 735, self.display_global.B_bar_y, 735, self.display_global.M_bar_y)
-
-        love.graphics.rectangle("fill", 5, 0, 220, 50)
-        love.graphics.rectangle("fill", 735, 0, 220, 50)
-        love.graphics.rectangle("fill", 225, 0, 510, 44) 
-
-        love.graphics.rectangle("fill", 5, 52, 220, 30)
-        love.graphics.rectangle("fill", 735, 52, 220, 30)
-
-        love.graphics.polygon("fill", 281, self.display_global.mb_line_y1, 281, self.display_global.mb_line_y2, 293, self.display_global.mb_line_y2)
-        love.graphics.polygon("fill", 679, self.display_global.mb_line_y1, 679, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2)
-
-        love.graphics.rectangle("fill", 225, 56, 56, 26)
-        love.graphics.rectangle("fill", 679, 56, 56, 26)
-        love.graphics.rectangle("fill", 281, 68, 398, 14)
-
-        setColor(255, 255, 255, 1)
-
-        -- Display Inferface Position
-
-        local y, y2 = 300, 400
-        for var, val in pairs(self.display_global) do
-            love.graphics.printf(var..": "..string.format("%.2f", val), self.fonts[1], 950, y, 480, "right", 0, 1, 1, 480, self.fonts_h[1]/2)
-            y = y + 14
-        end
-
-        for hor, rib in pairs(self.display_result) do
-            if not(type(rib) == "table") then
-                love.graphics.printf(hor..": "..string.format("%.2f", rib), self.fonts[1], 10, y2, 480, "left", 0, 1, 1, 0, self.fonts_h[1]/2)
-                y2 = y2 + 14
-            end
-        end
-
+    if itf_conf.dy_rdm == 1 then
+        dcs.b_score = Util.clamp(self.display_score/self.data_scorerank[8], 0, 1) * 506
+        dcs.l_score = setLineData(8, self.data_scorerank, 506, 228)
+    else
+        dcs.b_score = Util.clamp(self.display_score/self.data_scorerank[4], 0, 1) * 506
+        dcs.l_score = setLineData(4, self.data_scorerank, 506, 228)
     end
-
-    dcs.b_score = Util.clamp(self.display_score/self.data_scorerank[4], 0, 1) * 506
-    dcs.l_score = setLineData(4, self.data_scorerank, 506, 228)
-
+    
     --- Pause
+
+    if self.time_prelive <= 0 and not(self.bool_pauseplayed) or self.time_postlive ~= -math.huge then
+        self.bool_pauseplayed = true
+        self.timer:tween(1, self, {display_pause_opacity = 0}, "out-quart")
+    end
 
     if Util.isMobile() then
         dcs.t_pause = "Tap inside this area to pause live."
@@ -1165,10 +1203,13 @@ function mknv2ui:drawStatus()
         setColor(255, 255, 255, 1)
 		love.graphics.rectangle("fill", -88, self.display_result.fakeresultbox_y, 1136, 452)
 
-        
+        setColor(self.display_result.text1_color, self.display_result.text1_opacity)
+        love.graphics.printf(self.display_result.text1, self.fonts[5], 480, self.display_result.text1_y, 480, "center", 0, self.display_result.text1_scale, self.display_result.text1_scale, 240, self.fonts_h[5])
+
+        setColor(self.display_result.text2_color, self.display_result.text2_opacity)
+        love.graphics.printf(self.display_result.text2, self.fonts[6], self.display_result.text2_x, self.display_result.text2_y, 480, "center", 0, 1, 1, 240, 0)
 
     end
-
 end
 
 return mknv2ui
