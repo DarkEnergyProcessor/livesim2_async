@@ -75,7 +75,7 @@ local itf_conf = {
         Determinate how accuracy should be displayed.
 
         0 - Display as Percentage (100%)
-        1 - Display as 1 Million Points (Acc 100%)
+        1 - Display as 1 Million Points
     ]]
     dy_adm = 0,
 
@@ -102,7 +102,7 @@ local itf_conf = {
         1 - Combo will use for Score Multiplier (SIF rule).
         2 - Combo will use for Score Multiplier (Linear 800 Combo rule).
     ]]
-    sy_cam = 2,
+    sy_cam = 1,
     
     --[[    sy_uos = System | Use Overflow Stamina
         Determinate to use Overflow Stamina bonus, If healer
@@ -110,6 +110,7 @@ local itf_conf = {
 
         0 - Don't use Overflow stamina.
         1 - Use Overflow stamina.
+        2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
     ]]
     sy_uos = 0,
 
@@ -194,9 +195,10 @@ end
 
 ---Retrieve position data to be use for draw
 ---@param lineamount number (amount of the line)
----@param scoredata table (score data)
----@param barsize number (size)
----@param offset number (offset)
+---@param scoredata table (table value that contain score value)
+---@param barsize number (size of the bar for draw)
+---@param offset number (use in case if the bar origin is not top-left)
+---@return table linedata (table value that contain x value)
 local function setLineData(lineamount, scoredata, barsize, offset)
     local linedata = {}
 
@@ -207,6 +209,8 @@ local function setLineData(lineamount, scoredata, barsize, offset)
     return linedata
 end
 
+---Spaced Out the letters
+---@param text string
 local function spacedtext(text)
 
     local t = tostring(text)
@@ -410,6 +414,9 @@ function mknv2ui:__construct(aupy, mife)
     self.display_pause_opacity = 1
     self.bool_pauseplayed = false
 
+    self.voice_livecleared = nil
+    self.bool_voiceplayed = false
+
 end
 
 ------------------------------------
@@ -437,6 +444,14 @@ end
 
 function mknv2ui:getFailAnimation()
     local TL = {
+
+        bg_opacity = 0,
+        
+        text = spacedtext("LIVE FAILED"),
+        text_color = {255, 255, 255},
+        text_size = 1,
+        text_opacity = 0,
+
         t = timer:new(),
     }
 
@@ -444,9 +459,22 @@ function mknv2ui:getFailAnimation()
         TL.t:update(dt)
     end
 
+    TL.t:tween(500, TL, {bg_opacity = 0.25, text_opacity = 1}, "out-cubic")
+    TL.t:tween(3000, TL, {text_color = {255, 69, 0}, text_size = 1.04}, "in-out-sine")
+
     function TL:draw(_, x, y)
-        
+
+        love.graphics.setColor(0, 0, 0, TL.bg_opacity)
+        love.graphics.rectangle("fill", -88, -43, 1136, 726)
+
+        love.graphics.setColor(TL.text_color, TL.text_opacity)
+        love.graphics.printf(text, self.fonts[5], 480, 340, "center", 0, 1, 1, 240, self.fonts_h[5])
+
     end
+
+    TL.t:after(2750, function()
+        TL.t:tween(250, TL, {text_opacity = 0})
+    end)
 
     return TL
 end
@@ -755,6 +783,7 @@ function mknv2ui:comboJudgement(judgement, addcombo)
     end
 
     if breakcombo then
+        
         self.data_remainingnote = self.data_remainingnote - 1
         self.data_currentcombo = 0
 
@@ -774,9 +803,8 @@ function mknv2ui:comboJudgement(judgement, addcombo)
             self.data_misscombo = self.data_misscombo + 1
             self.count_miss = self.count_miss + 1
         end
-    end
 
-    if addcombo then
+    elseif addcombo then
 
         self.data_remainingnote = self.data_remainingnote - 1
         self.data_notepress = self.data_notepress + 1
@@ -789,6 +817,7 @@ function mknv2ui:comboJudgement(judgement, addcombo)
             self.data_currentaccuracy = self.data_currentaccuracy + 1
             self.count_perfect = self.count_perfect + 1
         elseif judgement == "great" then
+            self.data_playresult.PL = false
             self.data_currentaccuracy = self.data_currentaccuracy + 0.75
             self.count_great = self.count_great + 1
         end
@@ -1116,7 +1145,14 @@ function mknv2ui:drawStatus()
 
     end
 
-    --- Bar
+    --- Bar/Line
+
+    setColor(65, 65, 65, self.display_element_opacity * 0.2)
+
+    love.graphics.line(225, self.display_global.M_bar_y + 2, self.display_global.L_line_x, self.display_global.M_bar_y + 2)
+    love.graphics.line(735, self.display_global.M_bar_y + 2, self.display_global.R_line_x, self.display_global.M_bar_y + 2)
+
+    love.graphics.line(225, self.display_global.M_bar_y + 2, 231, self.display_global.B_bar_y + 2, 729, self.display_global.B_bar_y + 2, 735, self.display_global.M_bar_y + 2)
 
     setColor(255, 255, 255, self.display_element_opacity)
 
@@ -1164,7 +1200,6 @@ function mknv2ui:drawStatus()
     setColor(255, 255, 255, self.display_text_opacity * 0.9)
     love.graphics.printf(dcs.t_score, self.fonts[1], self.display_global.R_toptext_x, self.display_global.R_toptext_y, 360, "right", 0, 1, 1, 360, 0)
     love.graphics.printf(dcs.n_score, self.fonts[2], self.display_global.R_topnum_x, self.display_global.R_topnum_y, 480, "right", 0, 1, 1, 480, self.fonts_h[2])
-
 
     love.graphics.setStencilTest()
 
