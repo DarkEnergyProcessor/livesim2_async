@@ -1004,7 +1004,7 @@ function mknv2ui:addTapEffect(x, y, r, g, b, a)
             ntap_e = {
                 x = 0, y = 0, x_r = 0, y_r = 0,
                 r = 255, g = 255, b = 255,
-                a = 1, o = 1, s = 1,
+                o = 1, s = 1,
                 done = false,
             }
 
@@ -1014,7 +1014,7 @@ function mknv2ui:addTapEffect(x, y, r, g, b, a)
         end
 
         ntap_e.x, ntap_e.y = x, y
-        ntap_e.r, ntap_e.g, ntap_e.b, ntap_e.a = r, g, b, a
+        ntap_e.r, ntap_e.g, ntap_e.b = r, g, b
         ntap_e.o, ntap_e.s = 1, 1
         ntap_e.done = false
 
@@ -1056,7 +1056,7 @@ function mknv2ui:drawHeader()
             local etli = self.effect_taplist[e]
             if etli.done then break end
             
-            setColor(etli.r, etli.g, etli.b, etli.a * etli.o)
+            setColor(etli.r, etli.g, etli.b, etli.o)
             love.graphics.draw(self.image[1], etli.x, etli.y, 0, etli.s, etli.s, 64, 64)
         end
     end
@@ -1263,12 +1263,12 @@ function mknv2ui:drawStatus()
 
         if self.data_overflowbonus > 0 then
             setColor(25, 25, 25, self.display_element_opacity * self.display_global.bonus_opa * 0.3)
-            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 273, self.display_global.mb_line_y1 + 7, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
+            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 274, self.display_global.mb_line_y1 + 7, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
             setColor(HSLtoRGB(dch_s.c_text, 0.85, 0.42), self.display_text_opacity * self.display_global.bonus_opa * 0.9)
-            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 273, self.display_global.mb_line_y1 + 6, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
+            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 274, self.display_global.mb_line_y1 + 6, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
         end
     end
-    
+
     --- Bar/Line
     setColor(255, 255, 255, self.display_element_opacity)
 
