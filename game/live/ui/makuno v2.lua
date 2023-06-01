@@ -20,8 +20,6 @@ local uibase = require("game.live.uibase")
 
 local mknv2ui = Luaoop.class("livesim2.MakunoV2LiveUI", uibase)
 
-local __DEBUG__ = false
-
 ------------------------------------
 -- Local
 local itf_score = {
@@ -112,7 +110,7 @@ local itf_conf = {
         1 - Use Overflow stamina.
         2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
     ]]
-    sy_uos = 0,
+    sy_uos = 1,
 
 }
 
@@ -300,6 +298,12 @@ function mknv2ui:__construct(aupy, mife)
 
         ---- Stamina Bar
         mb_line_y1 = 56, mb_line_y2 = 68,
+        lb_x1 = 281, 
+        lb_x2 = 293, 
+        rb_x1 = 697, 
+        rb_x2 = 709, 
+        bonus_opa = 0,
+        stami_opa = 1,
 
         ---- Line
         L_line_x = 5, R_line_x = 955,
@@ -403,6 +407,8 @@ function mknv2ui:__construct(aupy, mife)
     self.display_overflowstamina = self.data_currentoverflow
 
     self.tween_display_stamina = nil
+    self.tween_display_overflow = nil
+    self.tween_display_overflowbonus = nil
 
     -- 8
     self.data_playresult = {
@@ -445,35 +451,35 @@ end
 function mknv2ui:getFailAnimation()
     local TL = {
 
-        bg_opacity = 0,
-        
-        text = spacedtext("LIVE FAILED"),
-        text_color = {255, 255, 255},
-        text_size = 1,
-        text_opacity = 0,
+        text1_ele = love.graphics.newText(self.fonts[5]),
+
+        text1 = spacedtext("LIVE FAILED"),
+
+        text1_color = {255, 255, 255},
+        text1_size = 1.1,
+        text1_opacity = 0,
 
         t = timer:new(),
     }
 
-    function TL:update(_, dt)
+    TL.text1_ele:addf(TL.text1, 960, "center", 0, 0, 0, 1, 1, 480, self.fonts_h[5])
+
+    function TL.update(_, dt)
         TL.t:update(dt)
     end
 
-    TL.t:tween(500, TL, {bg_opacity = 0.25, text_opacity = 1}, "out-cubic")
-    TL.t:tween(3000, TL, {text_color = {255, 69, 0}, text_size = 1.04}, "in-out-sine")
-
     function TL:draw(_, x, y)
 
-        love.graphics.setColor(0, 0, 0, TL.bg_opacity)
-        love.graphics.rectangle("fill", -88, -43, 1136, 726)
-
-        love.graphics.setColor(TL.text_color, TL.text_opacity)
-        love.graphics.printf(text, self.fonts[5], 480, 340, "center", 0, 1, 1, 240, self.fonts_h[5])
+        setColor(TL.text1_color, TL.text1_opacity)
+        love.graphics.draw(TL.text1_ele, 480, 340, 0, TL.text1_size, TL.text1_size)
 
     end
 
+    TL.t:tween(500, TL, {text1_opacity = 1, text1_size = 1}, "out-cubic")
+    TL.t:tween(3000, TL, {text1_color = {255, 69, 0}}, "in-out-sine")
+
     TL.t:after(2750, function()
-        TL.t:tween(250, TL, {text_opacity = 0})
+        TL.t:tween(250, TL, {text1_opacity = 0}, "in-quart")
     end)
 
     return TL
@@ -542,7 +548,7 @@ function mknv2ui:setScoreRange(c, b, a, s)
             735000, 
             1180000, 
             2400000, 
-            3535000
+            3535000  
         }
     else
         self.data_scorerank = {
@@ -685,8 +691,20 @@ function mknv2ui:startLiveClearAnimation(FC, callback, opaque)
                     L_subtext_y = 11, R_subtext_y = 11,
                     L_subnum_y = 10, R_subnum_y = 10,
 
+                    lb_x1 = 281, lb_x2 = 293,
+                    rb_x1 = 667, rb_x2 = 679,
                 },
                 "in-quint"
+            )
+        end)
+
+        self.timer:after(2.8, function() 
+            self.timer:tween(
+                0.5, self.display_global,
+                {
+                    bonus_opa = 0, stami_opa = 0,
+                },
+                "out-quint"
             )
         end)
 
@@ -744,7 +762,7 @@ end
 
 function mknv2ui:addScore(amount)
     
-    local a = math.ceil(amount)
+    local a = math.ceil(amount + (amount * self.data_overflowmultiply))
 
     if a == 0 then return end
 
@@ -884,14 +902,90 @@ function mknv2ui:addStamina(value)
 
     if (self.bool_staminafunc == false) or (a == 0) then return end
 
-    self.data_currentstamina = Util.clamp(self.data_currentstamina + a, 0, self.data_maximumstamina)
+    if itf_conf.sy_uos ~= 0 then
+        if (self.data_currentstamina + a) > self.data_maximumstamina then
+            -- Stamina Overflow refills
+            local remainstamina = self.data_maximumstamina - self.data_currentstamina
+            local remainforover = a - remainstamina  
+
+            if (self.data_currentoverflow + remainforover) >= self.data_maximumstamina and itf_conf.sy_uos == 1 then
+                -- Applies bonus (not) similar to SIF1 does
+                local remaincurover = self.data_maximumstamina - self.data_currentoverflow
+                local restover = remainforover - remaincurover
+                
+                self.data_currentoverflow = 0
+                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + restover, 0, self.data_maximumstamina)
+
+                if self.data_overflowbonus >= self.data_overflowmaximum then
+                    self.data_currentoverflow = self.data_maximumstamina
+                    self.data_overflowbonus = self.data_overflowmaximum
+                else
+                    self.data_overflowbonus = self.data_overflowbonus + 1
+                end
+
+                self.data_overflowmultiply = (self.data_overflowbonus * 0.005) + ((self.data_maximumstamina + 10) / 500)
+
+                if self.tween_display_overflowbonus then
+                    self.timer:cancel(self.tween_display_overflowbonus)
+                    self.tween_display_overflowbonus = nil
+                end
+
+                self.tween_display_overflowbonus = self.timer:tween(
+                    self.timer_global.dy_num, self.display_global, {
+                        lb_x1 = 251, lb_x2 = 263,
+                        bonus_opa = 1,
+                    }, "out-quart"
+                )
+
+            else
+                -- Just Single Overflow with no bonus (Mimic SIF2 and other games)
+                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + remainforover, 0, self.data_maximumstamina)
+            end
+        else
+            -- Stamina drain
+            if itf_conf.sy_uos == 1 then
+                -- SIF1: Lost Overflow immediately upon Stamina Lost
+                self.data_currentoverflow = 0
+            else
+                -- SIF2: Basically Second Stamina
+                if (self.data_currentoverflow + a) < 0 and self.data_currentoverflow > 0 then
+                    local ripover = math.abs(a + self.data_currentoverflow)
+                    
+                    self.data_currentoverflow = 0
+                    self.data_currentstamina = Util.clamp(self.data_currentstamina + ripover, 0, self.data_maximumstamina)
+                elseif self.data_currentoverflow > 0 then
+                    self.data_currentoverflow = Util.clamp(self.data_currentoverflow + a, 0, self.data_maximumstamina)
+                else
+                    self.data_currentstamina = Util.clamp(self.data_currentstamina + a, 0, self.data_maximumstamina)
+                end
+            end
+        end
+
+        if self.tween_display_overflow then
+            self.timer:cancel(self.tween_display_overflow)
+            self.tween_display_overflow = nil
+        end
+
+        self.tween_display_overflow = self.timer:tween(
+            self.timer_global.dy_num, self, {
+                display_overflowstamina = self.data_currentoverflow
+            }, "out-quart"
+        )
+
+    else
+        self.data_currentstamina = Util.clamp(self.data_currentstamina + a, 0, self.data_maximumstamina)
+    end
 
     if self.tween_display_stamina then
         self.timer:cancel(self.tween_display_stamina)
         self.tween_display_stamina = nil
     end
 
-    self.tween_display_stamina = self.timer:tween(self.timer_global.dy_num, self, {display_stamina = self.data_currentstamina}, "out-quart")
+    self.tween_display_stamina = self.timer:tween(
+        self.timer_global.dy_num, self, {
+            display_stamina = self.data_currentstamina
+        }, "out-quart"
+    )
 
 end
 
@@ -1047,27 +1141,25 @@ function mknv2ui:drawStatus()
     end
     
     --- Pause
-
     if self.time_prelive <= 0 and not(self.bool_pauseplayed) or self.time_postlive ~= -math.huge then
         self.bool_pauseplayed = true
         self.timer:tween(1, self, {display_pause_opacity = 0}, "out-quart")
     end
 
     if Util.isMobile() then
-        dcs.t_pause = "Tap inside this area to pause live."
+        dcs.t_pause = "Tap inside this area to pause"
     else
-        dcs.t_pause = "Click inside this area to pause live."
+        dcs.t_pause = "Click inside this area to pause"
     end
 
     if self.bool_pauseEnabled then
         setColor(150, 210, 255, self.display_element_opacity * self.display_pause_opacity)
         dcs.g_apaus = Util.gradient("vertical",  color.transparent, color.hex99d5ffa0)
-        love.graphics.draw(dcs.g_apaus, 231, -6, 0, 498, 50)
+        love.graphics.draw(dcs.g_apaus, 231, 6, 0, 498, 44)
         love.graphics.printf(dcs.t_pause, self.fonts[3], 0, 2, 960, "center", 0)
     end
 
     --- Combo & Judgement
-
     if self.data_currentcombo > 0 then
         setColor(55, 55, 55, self.display_text_opacity * self.display_combo_opacity * 0.2)
         love.graphics.printf(dcs.n_combo, self.fonts[4], 480, 402, 240, "center", 0, 1, 1, 120, self.fonts_h[4]/2)
@@ -1083,7 +1175,6 @@ function mknv2ui:drawStatus()
     end
 
     --- Score Bar
-
     love.graphics.stencil(stencil1, "increment", 1)
     love.graphics.setStencilTest("equal", 0)
 
@@ -1099,6 +1190,8 @@ function mknv2ui:drawStatus()
     love.graphics.draw(dcs.g_bscor, 227, self.display_global.T_bar_y, 0, 506, 11)
 
     love.graphics.setLineWidth(2.75)
+    love.graphics.setLineStyle("smooth")
+    love.graphics.setLineJoin("bevel")
 
     setColor(255, 255, 255, self.display_element_opacity * 0.5)
     if not(dcs.l_score == nil) then
@@ -1111,6 +1204,14 @@ function mknv2ui:drawStatus()
 
     love.graphics.setStencilTest()
 
+    --- Bar/Line Shadow
+    setColor(65, 65, 65, self.display_element_opacity * 0.2)
+
+    love.graphics.line(225, self.display_global.M_bar_y + 2, self.display_global.L_line_x, self.display_global.M_bar_y + 2)
+    love.graphics.line(735, self.display_global.M_bar_y + 2, self.display_global.R_line_x, self.display_global.M_bar_y + 2)
+
+    love.graphics.line(225, self.display_global.M_bar_y + 2, 231, self.display_global.B_bar_y + 2, 729, self.display_global.B_bar_y + 2, 735, self.display_global.M_bar_y + 2)
+
     --- Stamina
     if self.bool_staminafunc then
 
@@ -1118,9 +1219,13 @@ function mknv2ui:drawStatus()
             b_stam = Util.clamp(self.display_stamina / self.data_maximumstamina, 0, 1) * 395,
             c_stam = Util.clamp(self.display_stamina / self.data_maximumstamina, 0, 1) * 120,
             b_over = Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 395,
-            c_over = 120 + (Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 120),
+            c_over = 120 + (Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 140),
+            c_text = Util.clamp((self.display_stamina + self.display_overflowstamina) / (self.data_maximumstamina * 2), 0, 1) * 260,
 
             g_bsta = Util.gradient("vertical", color.transparent, color.hex00000022),
+
+            n_stam = string.format("%.0f", self.display_stamina + self.display_overflowstamina),
+            n_ovbon = tostring("x"..self.data_overflowbonus),
         }
 
         love.graphics.stencil(stencil4, "increment", 1)
@@ -1131,29 +1236,40 @@ function mknv2ui:drawStatus()
         setColor(HSLtoRGB(dch_s.c_stam, 0.85, 0.75), self.display_element_opacity * 0.9)
         love.graphics.rectangle("fill", 284, self.display_global.mb_line_y1, dch_s.b_stam, 12)
 
-        setColor(HSLtoRGB(dch_s.c_over, 0.85, 0.75), self.display_element_opacity * 0.9)
+        setColor(HSLtoRGB(dch_s.c_over, 0.85, 0.8), self.display_element_opacity * 0.8)
         love.graphics.rectangle("fill", 284, self.display_global.mb_line_y1, dch_s.b_over, 12)
-
+        
         setColor(255, 255, 255, self.display_element_opacity)
         love.graphics.draw(dch_s.g_bsta, 284, self.display_global.mb_line_y1, 0, 395, 11)
 
         love.graphics.setStencilTest()
+        
+        setColor(65, 65, 65, self.display_element_opacity * 0.2)
+        love.graphics.line(self.display_global.lb_x1, self.display_global.mb_line_y1 + 2, self.display_global.lb_x2, self.display_global.mb_line_y2 + 2, self.display_global.rb_x1, self.display_global.mb_line_y2 + 2, self.display_global.rb_x2, self.display_global.mb_line_y1 + 2)
 
         setColor(255, 255, 255, self.display_element_opacity)
 
+        love.graphics.polygon("fill", self.display_global.lb_x1, self.display_global.mb_line_y1, 281, self.display_global.mb_line_y1, 293, self.display_global.mb_line_y2, self.display_global.lb_x2, self.display_global.mb_line_y2)
+        love.graphics.polygon("fill", 679, self.display_global.mb_line_y1, self.display_global.rb_x2, self.display_global.mb_line_y1, self.display_global.rb_x1, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2)
+
+        love.graphics.line(self.display_global.lb_x1, self.display_global.mb_line_y1, self.display_global.lb_x2, self.display_global.mb_line_y2, 293, self.display_global.mb_line_y2)
+        love.graphics.line(667, self.display_global.mb_line_y2, self.display_global.rb_x1, self.display_global.mb_line_y2, self.display_global.rb_x2, self.display_global.mb_line_y1)
         love.graphics.line(281, self.display_global.mb_line_y1, 293, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2, 679, self.display_global.mb_line_y1)
+        
+        setColor(25, 25, 25, self.display_element_opacity * self.display_global.stami_opa * 0.3)
+        love.graphics.printf(dch_s.n_stam, self.fonts[1], 688, self.display_global.mb_line_y1 + 7, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
+        setColor(HSLtoRGB(dch_s.c_text, 0.85, 0.42), self.display_text_opacity * self.display_global.stami_opa * 0.9)
+        love.graphics.printf(dch_s.n_stam, self.fonts[1], 688, self.display_global.mb_line_y1 + 6, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
 
+        if self.data_overflowbonus > 0 then
+            setColor(25, 25, 25, self.display_element_opacity * self.display_global.bonus_opa * 0.3)
+            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 273, self.display_global.mb_line_y1 + 7, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
+            setColor(HSLtoRGB(dch_s.c_text, 0.85, 0.42), self.display_text_opacity * self.display_global.bonus_opa * 0.9)
+            love.graphics.printf(dch_s.n_ovbon, self.fonts[1], 273, self.display_global.mb_line_y1 + 6, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
+        end
     end
-
+    
     --- Bar/Line
-
-    setColor(65, 65, 65, self.display_element_opacity * 0.2)
-
-    love.graphics.line(225, self.display_global.M_bar_y + 2, self.display_global.L_line_x, self.display_global.M_bar_y + 2)
-    love.graphics.line(735, self.display_global.M_bar_y + 2, self.display_global.R_line_x, self.display_global.M_bar_y + 2)
-
-    love.graphics.line(225, self.display_global.M_bar_y + 2, 231, self.display_global.B_bar_y + 2, 729, self.display_global.B_bar_y + 2, 735, self.display_global.M_bar_y + 2)
-
     setColor(255, 255, 255, self.display_element_opacity)
 
     love.graphics.line(225, self.display_global.M_bar_y, self.display_global.L_line_x, self.display_global.M_bar_y)
@@ -1161,9 +1277,8 @@ function mknv2ui:drawStatus()
 
     love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.T_bar_y, 729, self.display_global.T_bar_y, 735, self.display_global.M_bar_y)
     love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.B_bar_y, 729, self.display_global.B_bar_y, 735, self.display_global.M_bar_y)
-
+    
     --- Accuracy
-
     love.graphics.stencil(stencil2, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
@@ -1190,7 +1305,6 @@ function mknv2ui:drawStatus()
     end
 
     --- Score
-
     setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
     love.graphics.printf(dcs.n_score, self.fonts[2], self.display_global.R_topnum_x + 1.2, self.display_global.R_topnum_y + 1.2, 480, "right", 0, 1, 1, 480, self.fonts_h[2])
 
@@ -1204,7 +1318,6 @@ function mknv2ui:drawStatus()
     love.graphics.setStencilTest()
 
     --- PIGI & EX-Score
-
     love.graphics.stencil(stencil3, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
