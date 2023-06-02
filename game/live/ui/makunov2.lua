@@ -1155,7 +1155,7 @@ function mknv2ui:drawStatus()
     if self.bool_pauseEnabled then
         setColor(150, 210, 255, self.display_element_opacity * self.display_pause_opacity)
         dcs.g_apaus = Util.gradient("vertical",  color.transparent, color.hex99d5ffa0)
-        love.graphics.draw(dcs.g_apaus, 231, 6, 0, 498, 44)
+        love.graphics.draw(dcs.g_apaus, 231, 0, 0, 498, 44)
         love.graphics.printf(dcs.t_pause, self.fonts[3], 0, 2, 960, "center", 0)
     end
 
