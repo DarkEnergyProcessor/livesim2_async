@@ -267,9 +267,7 @@ function osuLoader:getName()
 	return Luaoop.class.data(self).metadata.Title
 end
 
-local videoExtension = Util.hasExtendedVideoSupport() and
-	{".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or
-	{".ogg", ".ogv"}
+local videoExtension = Util.hasExtendedVideoSupport() and {".ogg", ".ogv", ".mp4", ".webm", ".mkv", ".avi"} or {".ogg", ".ogv"}
 
 function osuLoader:getBackground()
 	local internal = Luaoop.class.data(self)
@@ -329,7 +327,7 @@ function osuLoader:getBackground()
 		if internal.video then
 			local ext = Util.getExtension(internal.video)
 
-			if Util.isValueInArray("."..ext, videoExtension) then
+			if Util.isValueInArray(videoExtension, "."..ext) then
 				local status
 				status, videoFile = pcall(Util.newVideoStream, internal.path..internal.video)
 
