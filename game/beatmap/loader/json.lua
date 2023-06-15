@@ -325,7 +325,7 @@ function SIF2Loader:__construct(bm, hash)
 	internal.notes = SIF2Loader.convert(bm.m_NoteList)
 
 	if bm.m_SoundName then
-		internal.songName = util.removeExtension(bm.m_SoundName)
+		internal.songName = Util.removeExtension(bm.m_SoundName)
 	end
 end
 
