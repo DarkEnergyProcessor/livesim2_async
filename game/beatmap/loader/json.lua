@@ -309,6 +309,127 @@ function llpLoader:getAudioPathList()
 	return t
 end
 
+-------------------------
+-- SIF2 Beatmap Loader --
+-------------------------
+
+---@class Livesim2.Beatmap.SIF2
+local SIF2Loader = Luaoop.class("beatmap.SIF2", baseLoader)
+
+---@param bm table
+function SIF2Loader:__construct(bm, hash)
+	assert(bm.m_NoteList, "not SIF2 beatmap")
+
+	local internal = Luaoop.class.data(self)
+	internal.hash = hash
+	internal.notes = SIF2Loader.convert(bm.m_NoteList)
+
+	if bm.m_SoundName then
+		internal.songName = util.removeExtension(bm.m_SoundName)
+	end
+end
+
+---@param notesList table[]
+function SIF2Loader.convert(notesList)
+	-- SIF2 beatmap is a parent/child for swing and long note.
+
+	local result = {}
+	-- SIF2 doesn't expose the attribute. Use default!
+	local attribute = setting.get("LLP_SIFT_DEFATTR")
+
+	-- Stores notes_level for parent swing note.
+	---@type table<number, number?>
+	local swingMap = {}
+	-- Stores converted beatmap for specific SIF2 `m_Id` beatmap.
+	---@type table<number, table>
+	local resultMap = {}
+	local notesLevelId = 2
+
+	for _, v in ipairs(notesList) do
+		if v.m_Type ~= 0 then
+			local add = true
+			local map = {
+				timing_sec = v.m_Time,
+				notes_attribute = attribute + 0,
+				notes_level = 1,
+				effect = 0,
+				effect_value = 1,
+				-- m_Line starts from 0
+				position = v.m_Line + 1
+			}
+
+			if v.m_Type == 1 then
+				if v.m_ParentId ~= 0 then
+					-- Is it long note or swing (long) note?
+					local parentBeatmap = resultMap[v.m_ParentId]
+					local parentNotesLevel = swingMap[v.m_ParentId]
+
+					if parentBeatmap.position == v.m_Line + 1 then
+						-- This is child of a long note.
+						parentBeatmap.effect = 3
+						parentBeatmap.effect_value = v.m_Time - parentBeatmap.timing_sec
+
+						if parentNotesLevel then
+							parentBeatmap.effect = 13
+							parentBeatmap.notes_level = parentNotesLevel
+						end
+
+						add = false
+					else
+						-- This is child of a swing note.
+						-- Set so we only need to lookup once (eliminates `while` loop)
+						swingMap[v.m_Id] = parentNotesLevel
+						map.notes_level = parentNotesLevel
+						map.effect = 11
+					end
+				elseif v.m_ChildId ~= 0 and v.m_ChildLine ~= v.m_Line then
+					-- This is parent of a swing note.
+					map.notes_level = notesLevelId
+					map.effect = 11
+					swingMap[v.m_Id] = notesLevelId
+					-- Increment notes level
+					notesLevelId = notesLevelId + 1
+				else
+					-- This is regular note
+					map.effect = 1
+				end
+			end
+
+			if add then
+				result[#result + 1] = map
+				resultMap[v.m_Id] = map
+			end
+		end
+	end
+
+	return result
+end
+
+function SIF2Loader.getFormatName()
+	return "SIF2 Beatmap", "sif2"
+end
+
+function SIF2Loader:getHash()
+	return assert(Luaoop.class.data(self).hash)
+end
+
+function SIF2Loader:getNotesList()
+	local internal = Luaoop.class.data(self)
+	return internal.notes
+end
+
+function SIF2Loader:getAudioPathList()
+	local internal = Luaoop.class.data(self)
+	local paths = {}
+
+	if internal.songName then
+		paths[#paths + 1] = "audio/"..internal.songName
+	end
+
+	return paths
+end
+
+---@param f love.File
 return function(f)
 	-- f is File object, beatmap.thread guarantee that the
 	-- read position is always at position 0
@@ -317,7 +438,7 @@ return function(f)
 
 	local data = f:read()
 	local s, bm = pcall(JSON.decode, JSON, data)
-	assert(s, "failed to decode JSON")
+	assert(s and bm, "failed to decode JSON")
 	local hash = md5(data)
 
 	if
@@ -333,6 +454,9 @@ return function(f)
 	elseif bm.lane and bm.audiofile then
 		-- LLP
 		return llpLoader(bm, hash)
+	elseif bm.m_NoteList then
+		-- SIF2
+		return SIF2Loader(bm, hash)
 	else
 		-- SIF
 		return sifLoader(bm, hash)
