@@ -335,7 +335,7 @@ function SIF2Loader.convert(notesList)
 
 	local result = {}
 	-- SIF2 doesn't expose the attribute. Use default!
-	local attribute = setting.get("LLP_SIFT_DEFATTR")
+	local attribute = Setting.get("LLP_SIFT_DEFATTR")
 
 	-- Stores notes_level for parent swing note.
 	---@type table<number, number?>
