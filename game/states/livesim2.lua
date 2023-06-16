@@ -168,7 +168,7 @@ local function liveClearCallback(self)
 	}
 
 	Gamestate.replace(nil, "result", {
-		name = self.persist.beatmapName,
+		name = self.persist.beatmapDisplayName,
 		summary = self.persist.summary,
 		replay = replayData,
 		livesim2 = self.persist.arg,
