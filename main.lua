@@ -321,6 +321,7 @@ local function initVolume()
 	Volume.define("voice", Setting.get("VOICE_VOLUME") * 0.01)
 end
 
+-- https://stackoverflow.com/q/52206212
 local function testCaseSensitiveWin32()
 	local ffi = require("ffi")
 	local ntdll = ffi.load("ntdll")
@@ -348,7 +349,6 @@ local function testCaseSensitiveWin32()
 	local status = ntdll.NtQueryInformationFile(dir, iosb, flags, ffi.sizeof("uint32_t"), 71)
 	if status ~= 0 then
 		-- Case-sensitive impossible
-		print("ohno")
 		return false
 	end
 
