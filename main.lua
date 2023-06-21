@@ -321,6 +321,71 @@ local function initVolume()
 	Volume.define("voice", Setting.get("VOICE_VOLUME") * 0.01)
 end
 
+local function testCaseSensitiveWin32()
+	local ffi = require("ffi")
+	local ntdll = ffi.load("ntdll")
+
+	-- TODO: Convert to wchar_t
+	if ffi.C.GetACP() ~= 65001 then
+		error("UTF-8 mode is not enabled")
+	end
+
+	local INVALID_HANDLE = ffi.cast("void*", ffi.cast(ffi.abi("64bit") and "int64_t" or "int32_t", -1))
+	local main = love.filesystem.getSource():gsub("/", "\\")
+	-- The magic number means:
+	-- * No permission
+	-- * FILE_SHARE_READ | FILE_SHARE_WRITE
+	-- * OPEN_EXISTING
+	-- * FILE_FLAG_BACKUP_SEMANTICS
+	local dir = ffi.C.CreateFileA(main, 0, 3, nil, 3, 0x2000000, nil)
+	if dir == INVALID_HANDLE then
+		error("GetLastError() "..ffi.C.GetLastError())
+	end
+
+	local iosb = ffi.new("struct IO_STATUS_BLOCK[1]")
+	local flags = ffi.new("uint32_t[1]")
+	-- 71 = FileCaseSensitiveInformation 
+	local status = ntdll.NtQueryInformationFile(dir, iosb, flags, ffi.sizeof("uint32_t"), 71)
+	if status ~= 0 then
+		-- Case-sensitive impossible
+		print("ohno")
+		return false
+	end
+
+	return flags[0] % 2 == 1
+end
+
+local function testCaseSensitive()
+	if love.filesystem.isFused() or love._os ~= "Windows" then
+		-- Assume case sensitive
+		return true
+	end
+
+	-- TODO: Windows on ARM64 support by running `fsutil` directly.
+	local ffi = require("ffi")
+
+	ffi.cdef[[
+		struct IO_STATUS_BLOCK
+		{
+			size_t status;
+			uint32_t information;
+		};
+
+		void* __stdcall CreateFileA(const char*, uint32_t, uint32_t, void*, uint32_t, uint32_t, void*);
+		bool __stdcall CloseHandle(void*);
+		uint32_t __stdcall NtQueryInformationFile(void*, struct IO_STATUS_BLOCK*, void*, uint32_t, int);
+		uint32_t __stdcall GetLastError();
+	]]
+
+	local status, result = pcall(testCaseSensitiveWin32)
+	if status then
+		return result
+	else
+		log.info("main", "Unable to test for case-sensitive info: "..result)
+		return true
+	end
+end
+
 local usage = [[
 Live Simulator: 2
 Usage: %s [options] [absolute beatmap path]
@@ -432,6 +497,13 @@ function love.load(argv, gameargv)
 	if love._os == "Windows" then
 		local ffi = require("ffi")
 		log.debug("main", "Active code page: "..ffi.C.GetACP())
+	end
+
+	local isCaseSensitive = testCaseSensitive()
+	log.info("main", "Case sensitive? "..tostring(isCaseSensitive))
+	if not isCaseSensitive then
+		love.window.showMessageBox("Case-Sensitivity", "Live Simulator: 2 detects the project folder is not case sensitive.\nCase-sensitive directory is required for development!", "error")
+		error("project directory must be case sensitive")
 	end
 
 	-- Enable key repeat
