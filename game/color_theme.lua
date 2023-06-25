@@ -29,12 +29,12 @@ local ColorTheme = {
 		currentColorDarker = {0xac, 0x7b, 0x0a, color.hexAC7B0A}
 	},
 	[4] = {
-		-- d684df
-		currentColor = {0xd6, 0x84, 0xdf, color.hexD684DF},
-		-- 8b4993
-		currentColorDark = {0x8b, 0x49, 0x93, color.hex8B4993},
-		-- 68366d
-		currentColorDarker = {0x68, 0x36, 0x6d, color.hex68366D}
+		-- d991d8
+		currentColor = {0xd9, 0x91, 0xd8, color.hexD991D8},
+		-- cc6bcb
+		currentColorDark = {0xcc, 0x6b, 0xcb, color.hexCC6BCB},
+		-- bf45bd
+		currentColorDarker = {0xbf, 0x45, 0xbd, color.hexBF45BD}
 	},
 	[5] = {
 		-- fb9ba9
