@@ -775,10 +775,6 @@ function longMovingNote:update(dt)
 			-- Sudden note
 			self.opacity = Util.clamp((self.elapsedTime - self.noteSpeed * 0.4) * 5, 0, 1)
 			self.lnOpacity = Util.clamp((x - self.noteSpeed * 0.4) * 5, 0, 1)
-		elseif self.vanishType == 3 then
-			-- Stealth note
-			self.opacity = 0
-			self.lnOpacity = 0
 		end
 	end
 
