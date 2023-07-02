@@ -614,9 +614,6 @@ function normalMovingNote:update(dt)
 		elseif self.vanishType == 2 then
 			-- Sudden note
 			self.opacity = Util.clamp((self.elapsedTime - self.noteSpeed * 0.4) / self.noteSpeed * 5, 0, 1)
-		elseif self.vanishType == 3 then
-			-- Stealth note
-			self.opacity = 0
 		end
 	end
 
