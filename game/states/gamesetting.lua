@@ -415,8 +415,7 @@ function gameSetting:load()
 		local vanish = {
 			[0] = L"setting:live:vanish:none",
 			L"setting:live:vanish:hidden",
-			L"setting:live:vanish:sudden",
-			L"setting:live:vanish:stealth"
+			L"setting:live:vanish:sudden"
 		}
 		self.persist.liveFrame = frame
 		self.persist.liveSetting = {
@@ -432,7 +431,7 @@ function gameSetting:load()
 				:setPosition(0, 192+12),
 			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
 				:setPosition(0, 256+12),
-			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 3, default = 0, display = vanish})
+			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 2, default = 0, display = vanish})
 				:setPosition(0, 320+12)
 		}
 	end
