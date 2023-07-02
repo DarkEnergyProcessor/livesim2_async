@@ -197,7 +197,6 @@ end
 
 function cbfCompositionThread:__construct()
 	self.threadCount = love.system.getProcessorCount()
-	self.dummyImage = love.image.newImageData(1, 1)
 end
 
 local function splitIntoParts(whole, parts)
@@ -260,16 +259,6 @@ function cbfCompositionThread:compose(decl)
 	return dest
 end
 
-function cbfCompositionThread:__destruct()
-	for i = 1, #self.threads do
-		local t = self.threads[i]
-		t[2]:push(self.dummyImage)
-		log.debug("noteloader.cbf", "killing "..tostring(t[1]))
-		t[1]:wait()
-	end
-end
-
-function cbfCompositionThread.getInstance() end
 do
 	local inst = cbfCompositionThread()
 	function cbfCompositionThread.getInstance()
