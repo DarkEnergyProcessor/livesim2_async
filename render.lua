@@ -189,11 +189,10 @@ function Render.initialize(renderObj)
 	assert(hasffi, "FFI functionality needed to render")
 	assert(ls2x.libav, "libav functionality missing")
 
-	local fmt = love.graphics.getCanvasFormats().rgba16f and "rgba16f" or "rgba8"
 	local width, height, fps = renderObj.width, renderObj.height, renderObj.fps
 	local dpi = math.max(math.floor(height / 640 + 0.5), 1)
 
-	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, canvas=%s, dpiscale=%d", fps, width, height, fmt, dpi)
+	log.debugf("render", "starting render, fps=%d, w=%d, h=%d, dpiscale=%d", fps, width, height, dpi)
 	log.debugf("render", "video=%s audio=%s", renderObj.output, renderObj.audio)
 	Util.setDefaultFontDPIScale(dpi)
 	assert(ls2x.libav.startEncodingSession(renderObj.output, width, height, fps), "failed to start encoding session")
@@ -219,7 +218,7 @@ function Render.initialize(renderObj)
 	Render.offY = (height - Render.scaleOverall * Vires.data.virtualH) / 2
 	Render.image = love.image.newImageData(width, height, "rgba8")
 	Render.imagePointer = ffi.cast("uint8_t*", Render.image:getPointer())
-	Render.framebuffer = newFBO(width, height, fmt)
+	Render.framebuffer = newFBO(width, height, "normal")
 
 	if Util.compareLOVEVersion(11, 0) then
 		Render.MUL = 255
@@ -229,7 +228,7 @@ function Render.initialize(renderObj)
 
 	if renderObj.fxaa then
 		Render.fxaa = love.graphics.newShader(fxaaShader)
-		Render.fxaaFramebuffer = newFBO(width, height, fmt)
+		Render.fxaaFramebuffer = newFBO(width, height, "normal")
 	end
 
 	Render.audio:write(
@@ -283,7 +282,7 @@ function Render.commit()
 	-- apply fxaa
 	if Render.fxaa then
 		love.graphics.push("all")
-		love.graphics.setBlendMode("alpha", "premultiplied")
+		love.graphics.setBlendMode("replace", "premultiplied")
 		love.graphics.setShader(Render.fxaa)
 		love.graphics.setCanvas(Render.fxaaFramebuffer)
 		love.graphics.clear()
@@ -315,9 +314,9 @@ function Render.commit()
 
 	-- draw
 	local s = math.max(960 / Render.width, 640 / Render.height)
-	love.graphics.setBlendMode("alpha", "premultiplied")
+	--love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.draw(Render.framebuffer, 480, 320, 0, s, s, Render.width * 0.5, Render.height * 0.5)
-	love.graphics.setBlendMode("alpha", "alphamultiply")
+	--love.graphics.setBlendMode("alpha", "alphamultiply")
 end
 
 function Render.getStep()
