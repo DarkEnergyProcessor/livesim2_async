@@ -276,4 +276,8 @@ function AudioManager.seek(obj, seconds)
 	end
 end
 
+function AudioManager.isRenderMode()
+	return AudioManager.renderRate > 0
+end
+
 return AudioManager

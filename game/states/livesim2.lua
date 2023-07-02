@@ -556,10 +556,12 @@ function DEPLS:load(arg)
 				bitval = math.floor(value[1] / 8)
 				if bitval % 2 > 0 then
 					local v = {}
+					local dummyData = love.audio.newSource(love.sound.newSoundData(10 * 60 * 1000, 1000, 8, 1))
 					v.drawable = love.graphics.newVideo(table.remove(value, 2))
 					v.w, v.h = v.drawable:getDimensions()
 					v.scale = math.max(960 / v.w, 640 / v.h)
 					v.play = false
+					v.drawable:setSource(dummyData)
 					self.data.video = v
 				end
 
@@ -632,7 +634,7 @@ function DEPLS:load(arg)
 			if self.data.video then
 				self.data.video.drawable:seek(time)
 				log.debugf("livesim2", "seek video to %.3f", time)
-				if self.persist.render then
+				if self.persist.render and AudioManager.isRenderMode() then
 					self.data.video.play = true
 				else
 					self.data.video.drawable:play()
@@ -940,7 +942,7 @@ function DEPLS:update(dt)
 					if self.data.video then
 						self.data.video.drawable:seek(updtDt)
 						log.debugf("livesim2", "seek video to %.3f", updtDt)
-						if self.persist.render then
+						if self.persist.render and AudioManager.isRenderMode() then
 							self.data.video.play = true
 						else
 							self.data.video.drawable:play()
@@ -990,7 +992,7 @@ function DEPLS:update(dt)
 					updtDt = updtDt - 0.02
 				end
 
-				if self.persist.render and self.data.video and self.data.video.play then
+				if self.persist.render and self.data.video and self.data.video.play and (not AudioManager.isRenderMode()) then
 					self.data.video.drawable:seek(self.data.noteManager:getElapsedTime())
 				end
 			end

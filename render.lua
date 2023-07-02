@@ -255,7 +255,7 @@ function Render.begin()
 	love.graphics.push("all")
 	temp[1] = Render.framebuffer
 	love.graphics.setCanvas(temp)
-	love.graphics.clear()
+	love.graphics.clear({0, 0, 0, 255 / Render.MUL})
 	love.graphics.origin()
 	love.graphics.translate(Render.offX, Render.offY)
 	love.graphics.scale(Render.scaleOverall)
