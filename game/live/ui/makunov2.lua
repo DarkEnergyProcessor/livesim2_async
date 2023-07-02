@@ -1,4 +1,4 @@
--- Makuno Live UI v.2.0
+-- Makuno Live UI v.2.0.1
 -- Contributed by Makuno
 -- part of Live Simulator: 2
 -- See copyright notice in main.lua
@@ -45,39 +45,39 @@ local itf_score = {
 -- Local Config
 local itf_conf = {
 
-    --[[    dy_usr - Display | Use Super Rank
+    --[[    dy_usesuperrank - Display | Use Super Rank
         Use Super Rank after passed Rank S
 
         0 - Don't use Super Rank
         1 - Use Super Rank
     ]]--
-    dy_usr = 1,
+    dy_usesuperrank = 1,
 
-    --[[    dy_rdm - Display | Rank Display Mode
+    --[[    dy_rankdisplay - Display | Rank Display Mode
         Determinate how to display rank bar
 
         0 - Display Regular rank only
         1 - All rank display at once.
     ]]
-    dy_rdm = 0,
+    dy_rankdisplay = 0,
 
-    --[[    dy_ulm - Display | Use Lite Mode
+    --[[    dy_uselite - Display | Use Lite Mode
         Reduce amount of text on screen.
 
         0 - Don't use Lite Mode.
         1 - Use Lite Mode (No PIGI-Ratio, EX-Score)
     ]]
-    dy_ulm = 0,
+    dy_uselite = 0,
 
-    --[[    dy_adm - Display | Accuracy Display Mode
+    --[[    dy_accdisplay - Display | Accuracy Display Mode
         Determinate how accuracy should be displayed.
 
         0 - Display as Percentage (100%)
         1 - Display as 1 Million Points
     ]]
-    dy_adm = 0,
+    dy_accdisplay = 0,
 
-    --[[    dy_rs2 - Display | SIF2 Rank
+    --[[    sy_sif2rank - Display | SIF2 Rank
         Mimic the SIF2 Score Rank system.
         (Which have a fixed score regardless of difficulty)
         (   
@@ -91,18 +91,18 @@ local itf_conf = {
         0 - Don't use SIF2 Rank
         1 - Use SIF2 Rank
     ]]
-    dy_s2r = 0,
+    sy_sif2rank = 0,
 
-    --[[    sy_cam - System | Combo Affect Multiplier
+    --[[    sy_comboaffectmultiply - System | Combo Affect Multiplier
         Determinate how Combo should affect score multiplier.
 
         0 - Combo won't use for Score Multiplier.
         1 - Combo will use for Score Multiplier (SIF rule).
         2 - Combo will use for Score Multiplier (Linear 800 Combo rule).
     ]]
-    sy_cam = 1,
+    sy_comboaffectmultiply = 1,
     
-    --[[    sy_uos = System | Use Overflow Stamina
+    --[[    sy_useoverflow = System | Use Overflow Stamina
         Determinate to use Overflow Stamina bonus, If healer
         continue to refill stamina over the max value.
 
@@ -110,7 +110,7 @@ local itf_conf = {
         1 - Use Overflow stamina.
         2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
     ]]
-    sy_uos = 1,
+    sy_useoverflow = 0,
 
 }
 
@@ -435,8 +435,9 @@ function mknv2ui:getNoteSpawnPosition()
 end
 
 function mknv2ui:getLanePosition()
+    -- Their origin is top-left
     return {--  X ,  Y
-        vector(880, 160), -- 9
+        vector(880, 160), -- 1
         vector(849, 313),
         vector(762, 442),
         vector(633, 529),
@@ -444,7 +445,7 @@ function mknv2ui:getLanePosition()
         vector(326, 529),
         vector(197, 442),
         vector(110, 313),
-        vector(80,  160), -- 1
+        vector(80,  160), -- 9
     }
 end
 
@@ -498,7 +499,7 @@ function mknv2ui:getMaxCombo()
 end
 
 function mknv2ui:getScoreComboMultipler()
-    if itf_conf.sy_cam == 1 then
+    if itf_conf.sy_comboaffectmultiply == 1 then
         if self.data_currentcombo < 50 then
 			return 1
 		elseif self.data_currentcombo < 100 then
@@ -514,7 +515,7 @@ function mknv2ui:getScoreComboMultipler()
 		else
 			return 1.35
 		end
-    elseif itf_conf.sy_cam == 2 then
+    elseif itf_conf.sy_comboaffectmultiply == 2 then
         return 1 + ((Util.clamp(self.data_currentcombo, 0, 800) / 800) * 0.35) 
     else
         return 1
@@ -539,7 +540,7 @@ end
 ---- Set Data
 
 function mknv2ui:setScoreRange(c, b, a, s)
-    if itf_conf.dy_s2r == 1 then
+    if itf_conf.sy_sif2rank == 1 then
         self.data_scorerank = {
             25000, 
             100000, 
@@ -603,7 +604,7 @@ function mknv2ui:update(dt, paused)
 
     for i = (#itf_score.txt - 1), 1, -1 do
         if self.display_score >= self.data_scorerank[i] then
-            if (itf_conf.dy_usr == 0) and i > 4 then i = 4 end
+            if (itf_conf.dy_usesuperrank == 0) and i > 4 then i = 4 end
 
             if self.tween_display_colorrank then self.timer:cancel(self.tween_display_colorrank) end
             self.tween_display_colorrank = self.timer:tween(1, self.display_scorecolor, retrieveColor(1 + i), "out-expo")
@@ -902,13 +903,13 @@ function mknv2ui:addStamina(value)
 
     if (self.bool_staminafunc == false) or (a == 0) then return end
 
-    if itf_conf.sy_uos ~= 0 then
+    if itf_conf.sy_useoverflow ~= 0 then
         if (self.data_currentstamina + a) > self.data_maximumstamina then
             -- Stamina Overflow refills
             local remainstamina = self.data_maximumstamina - self.data_currentstamina
-            local remainforover = a - remainstamina  
+            local remainforover = a - remainstamina
 
-            if (self.data_currentoverflow + remainforover) >= self.data_maximumstamina and itf_conf.sy_uos == 1 then
+            if (self.data_currentoverflow + remainforover) >= self.data_maximumstamina and itf_conf.sy_useoverflow == 1 then
                 -- Applies bonus (not) similar to SIF1 does
                 local remaincurover = self.data_maximumstamina - self.data_currentoverflow
                 local restover = remainforover - remaincurover
@@ -943,9 +944,10 @@ function mknv2ui:addStamina(value)
             end
         else
             -- Stamina drain
-            if itf_conf.sy_uos == 1 then
+            if itf_conf.sy_useoverflow == 1 then
                 -- SIF1: Lost Overflow immediately upon Stamina Lost
                 self.data_currentoverflow = 0
+                self.data_currentstamina = Util.clamp(self.data_currentstamina + a, 0, self.data_maximumstamina)
             else
                 -- SIF2: Basically Second Stamina
                 if (self.data_currentoverflow + a) < 0 and self.data_currentoverflow > 0 then
@@ -1132,7 +1134,7 @@ function mknv2ui:drawStatus()
         love.graphics.rectangle("fill", 281, 68, 374, 14)
     end
 
-    if itf_conf.dy_rdm == 1 then
+    if itf_conf.dy_rankdisplay == 1 then
         dcs.b_score = Util.clamp(self.display_score/self.data_scorerank[8], 0, 1) * 506
         dcs.l_score = setLineData(8, self.data_scorerank, 506, 228)
     else
@@ -1282,7 +1284,7 @@ function mknv2ui:drawStatus()
     love.graphics.stencil(stencil2, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
-    if itf_conf.dy_adm == 1 then
+    if itf_conf.dy_accdisplay == 1 then
         setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
         love.graphics.printf(dcs.n_accscore, self.fonts[2], self.display_global.L_topnum_x - 1.2, self.display_global.L_topnum_y + 1.2, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
 
@@ -1321,7 +1323,7 @@ function mknv2ui:drawStatus()
     love.graphics.stencil(stencil3, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
-    if itf_conf.dy_ulm == 0 then
+    if itf_conf.dy_uselite == 0 then
 
         setColor(25, 25, 25, self.display_text_opacity * 0.3)
         love.graphics.printf(dcs.n_exsc, self.fonts[3], self.display_global.R_subnum_x + 1.1, self.display_global.R_subnum_y + 1.1, 240, "left", 0, 1, 1, 0, 0)

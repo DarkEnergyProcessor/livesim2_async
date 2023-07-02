@@ -58,6 +58,7 @@ Special thanks to:
 * RayFirefist - macOS app, iOS maintainer, Italian translation.
 * jwun & TheNozomi - Spanish translation.
 * Salaron & Nick "Zorb" Cage - Russian translation.
+* Makuno - Thai translation, Makuno's Live UI v1 & v2.
 * LovelyA72 - Traditional Chinese translation.
 
 And other people who contributed to the codebase
