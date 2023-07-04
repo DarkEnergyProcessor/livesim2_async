@@ -423,7 +423,7 @@ function gameSetting:load()
 				:setPosition(0, 12),
 			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
 				:setPosition(0, 64+12),
-			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 50})
+			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 10})
 				:setPosition(0, 128+12),
 			numberSetting(frame, L"setting:live:textScaling", "TEXT_SCALING", {
 				min = 50, max = 100, default = 100, snap = 10, div = 100
