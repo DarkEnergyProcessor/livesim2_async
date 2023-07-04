@@ -406,6 +406,7 @@ do
 		love.graphics.draw(self.name, x + 16, y + 28)
 		love.graphics.setColor(ColorTheme.get())
 		love.graphics.draw(self.score, x, y + 28)
+		love.graphics.setColor(color.white)
 		love.graphics.setShader(shader)
 
 		if self.ripple:isActive() then
