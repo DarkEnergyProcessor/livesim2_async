@@ -1159,8 +1159,10 @@ beatmapSelect:registerEvent("filedropped", function(self, file)
 end)
 
 beatmapSelect:registerEvent("textinput", function(self, str)
-	self.persist.searchQuery[#self.persist.searchQuery + 1] = str
-	updateBeatmapList(self)
+	if not(Gamestate.preparedGamestate) then
+		self.persist.searchQuery[#self.persist.searchQuery + 1] = str
+		updateBeatmapList(self)
+	end
 end)
 
 return beatmapSelect
