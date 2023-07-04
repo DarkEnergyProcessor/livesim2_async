@@ -500,14 +500,8 @@ function baseMovingNote.update()
 	return "judgement string"
 end
 
-function baseMovingNote.drawBelow()
-end
-
 function baseMovingNote.draw()
 	error("pure virtual method 'draw'", 2)
-end
-
-function baseMovingNote.drawAbove()
 end
 
 function baseMovingNote.getDistance()
@@ -818,7 +812,7 @@ function longMovingNote:update(dt)
 	end
 end
 
-function longMovingNote:drawBelow()
+function longMovingNote:draw()
 	-- 1. draw note trail
 	local trailOpacity = self.lnHolding and math.abs(math.sin(((self.elapsedTime - self.noteSpeed) % 1) * 2*math.pi)) or 1
 	love.graphics.setColor(color.compat(255, 255, self.lnHolding and 127 or 255, self.manager.opacity * trailOpacity))
@@ -833,9 +827,6 @@ function longMovingNote:drawBelow()
 			s, s, 64, 64
 		)
 	end
-end
-
-function longMovingNote:draw()
 	-- 3. draw main note
 	self.manager:drawNote(
 		self.noteLayers,
@@ -844,9 +835,6 @@ function longMovingNote:draw()
 		self.lnHolding and 1 or self.elapsedTime / self.noteSpeed,
 		self.rotation
 	)
-end
-
-function longMovingNote:drawAbove()
 	-- 4. draw flash effect
 	if self.lnHolding and self.lnFlashEffect then
 		love.graphics.push()
@@ -1218,42 +1206,21 @@ function noteManager:draw()
 	end
 
 	-- draw notes
-	for _, v in ipairs(self.notesListByDraw) do
-		if self.elapsedTime >= v.spawnTime then
-			break
-		end
-
-		if not(self.delete) then
-			v:drawBelow()
-		end
-	end
-
 	if self.workaroundColor then
 		-- See declaration of self.workaroundColor for more info
 		love.graphics.setShader(self.workaroundColor)
 	end
 
 	for _, v in ipairs(self.notesListByDraw) do
-		if self.elapsedTime >= v.spawnTime then
-			break
-		end
-
-		if not(self.delete) then
+		if not(self.delete) and self.elapsedTime >= v.spawnTime then
+			-- Well, just call draw method
 			v:draw()
+		else
+			break
 		end
 	end
 
 	love.graphics.setShader()
-
-	for _, v in ipairs(self.notesListByDraw) do
-		if self.elapsedTime >= v.spawnTime then
-			break
-		end
-
-		if not(self.delete) then
-			v:drawAbove()
-		end
-	end
 end
 
 note.manager = noteManager
