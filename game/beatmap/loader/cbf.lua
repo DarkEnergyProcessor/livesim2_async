@@ -675,4 +675,19 @@ function cbfLoader:getBackground()
 	return nil
 end
 
+-- Unnecessary, but since it a folder, We may have to look a bit...
+function cbfLoader:getLyrics()
+	local internal = Luaoop.class.data(self)
+	local lyrics = nil
+
+	if Util.fileExists(internal.path.."lyrics.srt") then
+		lyrics = love.filesystem.newFileData(internal.path.."lyrics.srt")
+	elseif Util.fileExists(internal.path.."lyrics.srt.gz") then
+		local temp = love.filesystem.newFileData(internal.path.."lyrics.srt")
+		lyrics = Util.decompressToData(temp, "gzip")
+	end
+
+	return lyrics
+end
+
 return cbfLoader, "folder"
