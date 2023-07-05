@@ -641,13 +641,13 @@ end
 
 function mknv2ui:startLiveClearAnimation(FC, callback, opaque)
 
-    if self.time_postlive == -math.huge and self.time_prelive > 0 and not(self.data_totalnote == 0) then
+    if self.time_postlive == -math.huge and self.time_prelive > 0 and self.data_totalnote == 0 then
         self.time_postlive = 0.01
         self.data_livecallback = callback
         self.data_liveopaque = opaque
 
-        self.display_text_opacity = 1
-        self.display_element_opacity = 1
+        self.display_text_opacity = 0
+        self.display_element_opacity = 0
     end
 
     if self.time_postlive == -math.huge then
