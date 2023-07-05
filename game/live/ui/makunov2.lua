@@ -73,8 +73,9 @@ local itf_conf = {
     --[[    dy_accdisplay - Display | Accuracy Display Mode
         Determinate how accuracy should be displayed.
 
-        0 - Display as Percentage (100%)
-        1 - Display as 1 Million Points
+        0 - Display as Percentage (Start from 0%)
+        1 - Display as Percentage (Start from 100%)
+        2 - Display as 1 Million Points
     ]]
     dy_accdisplay = 0,
 
@@ -391,6 +392,7 @@ function mknv2ui:__construct(aupy, mife)
 
     self.data_totalnote = 0
     self.data_remainingnote = 0
+    self.data_notepassed = 0
     self.data_notepress = 0
 
     self.tween_display_accuracy = nil
@@ -805,6 +807,7 @@ function mknv2ui:comboJudgement(judgement, addcombo)
     if breakcombo then
         
         self.data_remainingnote = self.data_remainingnote - 1
+        self.data_notepassed = self.data_notepassed + 1
         self.data_currentcombo = 0
 
         self.data_playresult.FC = false
@@ -827,6 +830,7 @@ function mknv2ui:comboJudgement(judgement, addcombo)
     elseif addcombo then
 
         self.data_remainingnote = self.data_remainingnote - 1
+        self.data_notepassed = self.data_notepassed + 1
         self.data_notepress = self.data_notepress + 1
         self.data_currentcombo = self.data_currentcombo + 1
         self.data_misscombo = 0
@@ -886,7 +890,11 @@ function mknv2ui:comboJudgement(judgement, addcombo)
             self.tween_PIGI_ratio = self.timer:tween(self.timer_global.dy_num, self, {display_PIGIRatio = self.data_PIGI_ratio}, "out-quint")
         end
 
-        self.tween_display_accuracy = self.timer:tween(self.timer_global.dy_num, self, {display_accuracy = (self.data_currentaccuracy/self.data_totalnote) * 100}, "out-quint")
+        if itf_conf.dy_accdisplay == 1 then
+            self.tween_display_accuracy = self.timer:tween(self.timer_global.dy_num, self, {display_accuracy = (self.data_currentaccuracy/self.data_notepassed) * 100}, "out-quint")
+        else
+            self.tween_display_accuracy = self.timer:tween(self.timer_global.dy_num, self, {display_accuracy = (self.data_currentaccuracy/self.data_totalnote) * 100}, "out-quint")
+        end
     end
 
     if self.tween_display_EXscore then
@@ -1285,7 +1293,7 @@ function mknv2ui:drawStatus()
     love.graphics.stencil(stencil2, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
-    if itf_conf.dy_accdisplay == 1 then
+    if itf_conf.dy_accdisplay == 2 then
         setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
         love.graphics.printf(dcs.n_accscore, self.fonts[2], self.display_global.L_topnum_x - 1.2, self.display_global.L_topnum_y + 1.2, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
 
