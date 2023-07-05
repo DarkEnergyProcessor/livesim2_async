@@ -683,7 +683,7 @@ function cbfLoader:getLyrics()
 	if Util.fileExists(internal.path.."lyrics.srt") then
 		lyrics = love.filesystem.newFileData(internal.path.."lyrics.srt")
 	elseif Util.fileExists(internal.path.."lyrics.srt.gz") then
-		local temp = love.filesystem.newFileData(internal.path.."lyrics.srt")
+		local temp = love.filesystem.newFileData(internal.path.."lyrics.srt.gz")
 		lyrics = Util.decompressToData(temp, "gzip")
 	end
 
