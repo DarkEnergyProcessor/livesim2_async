@@ -19,7 +19,7 @@ local Util = require("util")
 local UIBase = require("game.live.uibase")
 
 ---@class Livesim2.MakunoV2LiveUI: Livesim2.LiveUI
-local mknv2ui = Luaoop.class("livesim2.MakunoV2LiveUI", uibase)
+local mknv2ui = Luaoop.class("livesim2.MakunoV2LiveUI", UIBase)
 
 ------------------------------------
 -- Local
