@@ -51,7 +51,7 @@ local itf_conf = {
 
         0 - Don't use Super Rank
         1 - Use Super Rank
-    ]]--
+    ]]
     dy_usesuperrank = 1,
 
     --[[    dy_rankdisplay - Display | Rank Display Mode
@@ -593,7 +593,7 @@ function mknv2ui:setTotalNotes(value)
 end
 
 function mknv2ui:setLiveClearVoice(voice)
-    
+    self.voice_livecleared = voice
 end
 
 ------------------------------------
@@ -624,6 +624,11 @@ function mknv2ui:update(dt, paused)
     if self.time_postlive ~= -math.huge then
         if self.time_postlive > 0 then
             self.time_postlive = self.time_postlive - dt
+        end
+
+        if self.voice_livecleared and not(self.bool_voiceplayed) then
+            AudioManager.play(self.voice_livecleared)
+            self.bool_voiceplayed = true
         end
 
         if self.time_postlive <= 0 and self.data_livecallback then
