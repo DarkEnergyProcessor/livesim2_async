@@ -19,7 +19,7 @@ local Util = require("util")
 local UIBase = require("game.live.uibase")
 
 ---@class Livesim2.MakunoV2LiveUI: Livesim2.LiveUI
-local mknv2ui = Luaoop.class("livesim2.MakunoV2LiveUI", UIBase)
+local MakunoV2UI = Luaoop.class("livesim2.MakunoV2LiveUI", UIBase)
 
 ------------------------------------
 -- Local
@@ -221,7 +221,7 @@ end
 ------------------------------------
 ------------------------------------
 
-function mknv2ui:__construct(aupy, mife)
+function MakunoV2UI:__construct(aupy, mife)
 
     -- 1
     self.timer = timer:new()
@@ -433,11 +433,11 @@ end
 
 ---- Get Data
 -- For other script
-function mknv2ui:getNoteSpawnPosition()
+function MakunoV2UI:getNoteSpawnPosition()
     return vector(480, 160)
 end
 
-function mknv2ui:getLanePosition()
+function MakunoV2UI:getLanePosition()
     -- Their origin is top-left
     return {--  X ,  Y
         vector(880, 160), -- 1
@@ -452,7 +452,7 @@ function mknv2ui:getLanePosition()
     }
 end
 
-function mknv2ui:getFailAnimation()
+function MakunoV2UI:getFailAnimation()
     local TL = {
 
         text1_ele = love.graphics.newText(self.fonts[5]),
@@ -489,19 +489,19 @@ function mknv2ui:getFailAnimation()
     return TL
 end
 
-function mknv2ui:getScore()
+function MakunoV2UI:getScore()
     return self.data_currentscore
 end
 
-function mknv2ui:getCurrentCombo()
+function MakunoV2UI:getCurrentCombo()
     return self.data_currentcombo
 end
 
-function mknv2ui:getMaxCombo()
+function MakunoV2UI:getMaxCombo()
     return self.data_highestcombo
 end
 
-function mknv2ui:getScoreComboMultipler()
+function MakunoV2UI:getScoreComboMultipler()
     if itf_conf.sy_comboaffectmultiply == 1 then
         if self.data_currentcombo < 50 then
 			return 1
@@ -525,15 +525,15 @@ function mknv2ui:getScoreComboMultipler()
     end
 end
 
-function mknv2ui:getOpacity()
+function MakunoV2UI:getOpacity()
     return self.display_element_opacity
 end
 
-function mknv2ui:getMaxStamina()
+function MakunoV2UI:getMaxStamina()
     return self.data_maximumstamina
 end
 
-function mknv2ui:getStamina()
+function MakunoV2UI:getStamina()
     return self.data_currentstamina
 end
 
@@ -542,7 +542,7 @@ end
 
 ---- Set Data
 
-function mknv2ui:setScoreRange(c, b, a, s)
+function MakunoV2UI:setScoreRange(c, b, a, s)
     if itf_conf.sy_sif2rank == 1 then
         self.data_scorerank = {
             25000, 
@@ -568,38 +568,38 @@ function mknv2ui:setScoreRange(c, b, a, s)
     end
 end
 
-function mknv2ui:setMaxStamina(value)
+function MakunoV2UI:setMaxStamina(value)
     self.data_maximumstamina = math.min(value, 99)
     self.data_currentstamina = self.data_maximumstamina
     self.display_stamina = self.data_currentstamina
 end
 
-function mknv2ui:setTextScaling(scale)
+function MakunoV2UI:setTextScaling(scale)
     
 end
 
-function mknv2ui:setOpacity(opacity)
+function MakunoV2UI:setOpacity(opacity)
    self.display_text_opacity = opacity
    self.display_element_opacity = opacity 
 end
 
-function mknv2ui:setComboCheer()
+function MakunoV2UI:setComboCheer()
     
 end
 
-function mknv2ui:setTotalNotes(value)
+function MakunoV2UI:setTotalNotes(value)
     self.data_totalnote = value
     self.data_remainingnote = value
 end
 
-function mknv2ui:setLiveClearVoice(voice)
+function MakunoV2UI:setLiveClearVoice(voice)
     self.voice_livecleared = voice
 end
 
 ------------------------------------
 ------------------------------------
 
-function mknv2ui:update(dt, paused)
+function MakunoV2UI:update(dt, paused)
     
     if not(paused) then
         self.timer:update(dt)
@@ -639,7 +639,7 @@ function mknv2ui:update(dt, paused)
     end
 end
 
-function mknv2ui:startLiveClearAnimation(FC, callback, opaque)
+function MakunoV2UI:startLiveClearAnimation(FC, callback, opaque)
 
     if self.time_postlive == -math.huge and self.time_prelive > 0 and self.data_totalnote == 0 then
         self.time_postlive = 0.01
@@ -769,7 +769,7 @@ end
 ------------------------------------
 ------------------------------------
 
-function mknv2ui:addScore(amount)
+function MakunoV2UI:addScore(amount)
     
     local a = math.ceil(amount + (amount * self.data_overflowmultiply))
 
@@ -785,7 +785,7 @@ function mknv2ui:addScore(amount)
     self.tween_display_currentscore = self.timer:tween(self.timer_global.dy_num, self, {display_score = self.data_currentscore}, "out-quint")
 end
 
-function mknv2ui:comboJudgement(judgement, addcombo)
+function MakunoV2UI:comboJudgement(judgement, addcombo)
     local breakcombo = false
     local hold_bonus = (addcombo and 2) or 1
 
@@ -911,7 +911,7 @@ function mknv2ui:comboJudgement(judgement, addcombo)
 
 end
 
-function mknv2ui:addStamina(value)
+function MakunoV2UI:addStamina(value)
     
     local a = math.ceil(value)
 
@@ -1005,7 +1005,7 @@ function mknv2ui:addStamina(value)
 
 end
 
-function mknv2ui:addTapEffect(x, y, r, g, b, a)
+function MakunoV2UI:addTapEffect(x, y, r, g, b, a)
     if not(self.bool_mineffec) then
         local ntap_e
         for ti = 1, #self.effect_taplist do
@@ -1045,19 +1045,19 @@ end
 ------------------------------------
 ------------------------------------
 
-function mknv2ui:enablePause()
+function MakunoV2UI:enablePause()
     self.bool_pauseEnabled = true
 end
 
-function mknv2ui:disablePause()
+function MakunoV2UI:disablePause()
     self.bool_pauseEnabled = false
 end
 
-function mknv2ui:isPauseEnabled()
+function MakunoV2UI:isPauseEnabled()
     return self.bool_pauseEnabled
 end
 
-function mknv2ui:checkPause(x, y)
+function MakunoV2UI:checkPause(x, y)
     return self:isPauseEnabled() and x >= 155 and y >= 0 and x <= 800 and y <= 50
 end
 
@@ -1065,7 +1065,7 @@ end
 ------------------------------------
 
 -- draw below note
-function mknv2ui:drawHeader()
+function MakunoV2UI:drawHeader()
 
     if not(self.bool_mineffec) then
         for e = #self.effect_taplist, 1, -1 do
@@ -1080,7 +1080,7 @@ function mknv2ui:drawHeader()
 end
 
 -- draw above note
-function mknv2ui:drawStatus()
+function MakunoV2UI:drawStatus()
     
     local dcs = {
         t_score = tostring(self.display_text.top.SCO.." - RANK "..self.display_ranktext),
@@ -1376,4 +1376,4 @@ function mknv2ui:drawStatus()
     end
 end
 
-return mknv2ui
+return MakunoV2UI
