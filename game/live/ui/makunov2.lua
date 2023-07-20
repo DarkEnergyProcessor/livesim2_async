@@ -1137,15 +1137,10 @@ function MakunoV2UI:drawStatus()
         love.graphics.rectangle("fill", 735, 52, 220, 30)
     end
 
+    -- Two Triangle for edge cut at stamina bar
     local stencil4 = function()
         love.graphics.polygon("fill", 281, self.display_global.mb_line_y1, 281, self.display_global.mb_line_y2, 293, self.display_global.mb_line_y2)
         love.graphics.polygon("fill", 679, self.display_global.mb_line_y1, 679, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2)
-    end
-
-    local stencil5 = function()
-        love.graphics.rectangle("fill", 225, 56, 56, 26)
-        love.graphics.rectangle("fill", 679, 56, 56, 26)
-        love.graphics.rectangle("fill", 281, 68, 374, 14)
     end
 
     if itf_conf.dy_rankdisplay == 1 then
@@ -1156,6 +1151,7 @@ function MakunoV2UI:drawStatus()
         dcs.l_score = setLineData(4, self.data_scorerank, 506, 228)
     end
     
+    ----------------------------------------
     --- Pause
     if self.time_prelive <= 0 and not(self.bool_pauseplayed) or self.time_postlive ~= -math.huge then
         self.bool_pauseplayed = true
@@ -1175,6 +1171,7 @@ function MakunoV2UI:drawStatus()
         love.graphics.printf(dcs.t_pause, self.fonts[3], 0, 2, 960, "center", 0)
     end
 
+    ----------------------------------------
     --- Combo & Judgement
     if self.data_currentcombo > 0 then
         setColor(55, 55, 55, self.display_text_opacity * self.display_combo_opacity * 0.2)
@@ -1190,6 +1187,7 @@ function MakunoV2UI:drawStatus()
         love.graphics.printf(dcs.t_judge, self.fonts[4], 480, 430, 240, "center", 0, self.display_judgement_scale, self.display_judgement_scale, 120, self.fonts_h[4]/2)
     end
 
+    ----------------------------------------
     --- Score Bar
     love.graphics.stencil(stencil1, "increment", 1)
     love.graphics.setStencilTest("equal", 0)
@@ -1220,6 +1218,7 @@ function MakunoV2UI:drawStatus()
 
     love.graphics.setStencilTest()
 
+    ----------------------------------------
     --- Bar/Line Shadow
     setColor(65, 65, 65, self.display_element_opacity * 0.2)
 
@@ -1228,6 +1227,7 @@ function MakunoV2UI:drawStatus()
 
     love.graphics.line(225, self.display_global.M_bar_y + 2, 231, self.display_global.B_bar_y + 2, 729, self.display_global.B_bar_y + 2, 735, self.display_global.M_bar_y + 2)
 
+    ----------------------------------------
     --- Stamina
     if self.bool_staminafunc then
 
@@ -1285,6 +1285,7 @@ function MakunoV2UI:drawStatus()
         end
     end
 
+    ----------------------------------------
     --- Bar/Line
     setColor(255, 255, 255, self.display_element_opacity)
 
@@ -1294,6 +1295,7 @@ function MakunoV2UI:drawStatus()
     love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.T_bar_y, 729, self.display_global.T_bar_y, 735, self.display_global.M_bar_y)
     love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.B_bar_y, 729, self.display_global.B_bar_y, 735, self.display_global.M_bar_y)
     
+    ----------------------------------------
     --- Accuracy
     love.graphics.stencil(stencil2, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
@@ -1320,6 +1322,7 @@ function MakunoV2UI:drawStatus()
         love.graphics.printf(dcs.t_acc, self.fonts[1], self.display_global.L_toptext_x, self.display_global.L_toptext_y, 360, "left", 0, 1, 1, 0, 0)
     end
 
+    ----------------------------------------
     --- Score
     setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
     love.graphics.printf(dcs.n_score, self.fonts[2], self.display_global.R_topnum_x + 1.2, self.display_global.R_topnum_y + 1.2, 480, "right", 0, 1, 1, 480, self.fonts_h[2])
@@ -1333,6 +1336,7 @@ function MakunoV2UI:drawStatus()
 
     love.graphics.setStencilTest()
 
+    ----------------------------------------
     --- PIGI & EX-Score
     love.graphics.stencil(stencil3, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
@@ -1359,6 +1363,8 @@ function MakunoV2UI:drawStatus()
 
     love.graphics.setStencilTest()
 
+    ----------------------------------------
+    --- Result Screen
     if self.time_postlive ~= math.huge then
         
         setColor(self.display_result.bgcover_color, self.display_result.bgcover_dim)
