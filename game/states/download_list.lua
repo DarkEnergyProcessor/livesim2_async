@@ -293,6 +293,8 @@ end
 
 local function downloadReceiveCallback(self, data)
 	local dldata = self.persist.downloadData
+	if not dldata then return end
+
 	dldata.data[#dldata.data + 1] = data
 	dldata.bytesWritten = dldata.bytesWritten + #data
 
