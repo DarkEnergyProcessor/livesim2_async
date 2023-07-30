@@ -187,7 +187,7 @@ local function loadDirectly(path)
 			beatmap.list[id] = bv
 			return id, getSummary(bv)
 		else
-			love.event.push("print", string.format("%s: %s", path, value))
+			log.errorf("beatmap.thread", "%s: %s", path, value)
 		end
 	end
 

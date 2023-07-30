@@ -325,7 +325,7 @@ function SIF2Loader:__construct(bm, hash)
 	internal.notes = SIF2Loader.convert(bm.m_NoteList)
 
 	if bm.m_SoundName then
-		internal.songName = util.removeExtension(bm.m_SoundName)
+		internal.songName = Util.removeExtension(bm.m_SoundName)
 	end
 end
 
@@ -335,7 +335,7 @@ function SIF2Loader.convert(notesList)
 
 	local result = {}
 	-- SIF2 doesn't expose the attribute. Use default!
-	local attribute = setting.get("LLP_SIFT_DEFATTR")
+	local attribute = Setting.get("LLP_SIFT_DEFATTR")
 
 	-- Stores notes_level for parent swing note.
 	---@type table<number, number?>
