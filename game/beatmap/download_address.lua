@@ -1,4 +1,1 @@
-return {
-	QUERY = "http://r.llsif.win",
-	LIVEJSON = "http://prod.sunps.ru"
-}
+return "https://llsifmaps.pages.dev"
