@@ -232,7 +232,7 @@ local function downloadCoverArt(self)
 		end
 		self.persist.isCoverDownloading = false
 	end)
-	:download(SERVER_ADDRESS.QUERY.."/"..self.persist.trackData.icon)
+	:download(SERVER_ADDRESS.."/"..self.persist.trackData.icon)
 end
 
 local function downloadBeatmap(self, infodata, dest)
@@ -275,7 +275,7 @@ local function downloadBeatmap(self, infodata, dest)
 		end
 		self.persist.isBeatmapDownloading = false
 	end)
-	:download(SERVER_ADDRESS.LIVEJSON.."/"..infodata.livejson)
+	:download(SERVER_ADDRESS.."/"..infodata.livejson)
 end
 
 local function downloadAudio(self, infodata, dest)
@@ -326,7 +326,7 @@ local function downloadAudio(self, infodata, dest)
 		end
 		self.persist.isAudioDownloading = false
 	end)
-	:download(SERVER_ADDRESS.QUERY.."/"..self.persist.trackData.song)
+	:download(SERVER_ADDRESS.."/"..self.persist.trackData.song)
 end
 
 local function selectPlayButton(_, data)

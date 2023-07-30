@@ -228,7 +228,7 @@ local function initializeBeatmapList(self, mapdata, etag)
 			end
 
 			-- Livejson info
-			infodata.livejson = "livejson/"..v.notes_setting_asset
+			infodata.livejson = v.notes_setting_asset
 		end
 	end
 
@@ -397,7 +397,7 @@ function beatmapDownload:start()
 		:setReceiveCallback(downloadReceiveCallback)
 		:setFinishCallback(downloadFinishCallback)
 		:setErrorCallback(downloadErrorCallback)
-		:download(SERVER_ADDRESS.QUERY.."/maps.json", {
+		:download(SERVER_ADDRESS.."/maps.json", {
 			["If-None-Match"] = lastTag
 		})
 	Glow.addElement(self.data.progress, 32, 584)

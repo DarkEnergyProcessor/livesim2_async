@@ -1237,6 +1237,10 @@ function noteManager:draw()
 		else
 			break
 		end
+
+		if not(self.delete) then
+			v:draw()
+		end
 	end
 
 	love.graphics.setShader()
