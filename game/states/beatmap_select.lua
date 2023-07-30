@@ -406,6 +406,7 @@ do
 		love.graphics.draw(self.name, x + 16, y + 28)
 		love.graphics.setColor(ColorTheme.get())
 		love.graphics.draw(self.score, x, y + 28)
+		love.graphics.setColor(color.white)
 		love.graphics.setShader(shader)
 
 		if self.ripple:isActive() then
@@ -1159,8 +1160,10 @@ beatmapSelect:registerEvent("filedropped", function(self, file)
 end)
 
 beatmapSelect:registerEvent("textinput", function(self, str)
-	self.persist.searchQuery[#self.persist.searchQuery + 1] = str
-	updateBeatmapList(self)
+	if not(Gamestate.preparedGamestate) then
+		self.persist.searchQuery[#self.persist.searchQuery + 1] = str
+		updateBeatmapList(self)
+	end
 end)
 
 return beatmapSelect
