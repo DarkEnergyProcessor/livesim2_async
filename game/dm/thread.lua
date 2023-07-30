@@ -6,6 +6,7 @@ local TAG, input = ...
 local love = require("love")
 local socket = require("socket")
 local log = require("logging")
+local hashttps, https = pcall(require, "https")
 
 require("love.event")
 require("love.timer")
@@ -98,6 +99,35 @@ local function receiveWithLength(h, length)
 	return true
 end
 
+---@param url string
+---@param location string
+local function getNewRedirectLocation(url, location)
+	if location:find("https://", 1, true) == 1 or location:find("http://", 1, true) == 1 then
+		-- Absolute
+		return location
+	elseif location:find("/", 1, true) == 1 then
+		-- Still absolute, but use the existing protocol and domain
+		local protocol = assert(url:find("//", 1, true), "missing protocol")
+		local firstSlash = url:find("/", protocol + 2, true)
+		if firstSlash then
+			return url:sub(1, firstSlash)..location
+		else
+			return url..location
+		end
+	else
+		if url:sub(-1) ~= "/" then
+			url = url.."/"
+		end
+
+		local reverse = url:reverse()
+		local slash = assert(reverse:find("/", 1, true))
+		local stripped = reverse:sub(slash):reverse()
+		return stripped..location
+	end
+end
+
+local delegateHTTPCall
+
 local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	-- Adjust
 	local basicHeader = {
@@ -121,12 +151,12 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	end
 
 	-- Generate HTTP header data
-	local headerstr = {string.format("GET %s HTTP/1.1\r\n", uri)}
+	local baseHeader = {string.format("GET %s HTTP/1.1\r\n", uri)}
 	for n, v in pairs(basicHeader) do
-		headerstr[#headerstr + 1] = string.format("%s: %s\r\n", n, v)
+		baseHeader[#baseHeader + 1] = string.format("%s: %s\r\n", n, v)
 	end
-	headerstr[#headerstr + 1] = "\r\n"
-	headerstr = table.concat(headerstr)
+	baseHeader[#baseHeader + 1] = "\r\n"
+	local headerstr = table.concat(baseHeader)
 	-- Send
 	if input:getCount() > 0 then
 		log.warnf(TAG, "input not empty (%s)", input:peek())
@@ -171,18 +201,8 @@ local function requestHTTPReal(h, uri, dest, url, sentHeaders)
 	elseif statusCode == 301 or statusCode == 302 then
 		-- Redirection
 		local target = assert(receivedHeaders["location"])
-		if target:find("https", 1, true) == 1 then
-			-- HSTS, but we don't support HTTPS
-			error("HTTPS is not supported")
-		elseif target:find("http", 1, true) == 1 then
-			-- Absolute
-			h, uri, dest = getHTTPHandle(receivedHeaders["location"])
-			return requestHTTPReal(h, uri, dest, receivedHeaders["location"], sentHeaders)
-		else
-			-- Relative, rebuild URL
-			url = "http://"..dest..receivedHeaders["location"]
-			return requestHTTPReal(h, receivedHeaders["location"], dest, url, sentHeaders)
-		end
+		local newURL = getNewRedirectLocation(url, target)
+		return delegateHTTPCall(newURL, sentHeaders)
 	end
 
 	-- receive body
@@ -276,7 +296,64 @@ local function requestHTTP(url, sentHeaders)
 	return s
 end
 
+---@param url string
+---@param sentHeaders table<string, string>
+local function requestHTTPS(url, sentHeaders)
+	if not hashttps then
+		error("Lua HTTPS is not available")
+	end
+
+	local newHeaders = {}
+	for k, v in pairs(sentHeaders) do
+		newHeaders[k] = v
+	end
+	newHeaders["User-Agent"] = "AquaShine.Download "..socket._VERSION
+
+	local code, body, headers = https.request(url, {headers = newHeaders})
+	if code == nil then
+		error(body)
+	elseif code == 0 then
+		error("request failed unknown error")
+	elseif math.floor(code / 100) == 1 then
+		error("100 response is not supported")
+	else
+		local receivedHeaders = {}
+		for k, v in pairs(headers) do
+			receivedHeaders[k:lower()] = v
+		end
+
+		if code == 301 or code == 302 then
+			-- Redirection
+			local target = assert(receivedHeaders["location"])
+			local newURL = getNewRedirectLocation(url, target)
+			return delegateHTTPCall(newURL, sentHeaders)
+		end
+
+		local tempchan = love.thread.newChannel()
+		for k, v in pairs(receivedHeaders) do
+			tempchan:push(k)
+			tempchan:push(v)
+		end
+
+		pushEvent("response", code, tempchan, receivedHeaders["content-length"])
+		pushEvent("receive", body)
+		pushEvent("done")
+		return true
+	end
+end
+
+---@param url string
+---@param sentHeaders table<string, string>
+function delegateHTTPCall(url, sentHeaders)
+	if url:sub(1, 8) == "https://" then
+		return requestHTTPS(url, sentHeaders)
+	else
+		return requestHTTP(url, sentHeaders)
+	end
+end
+
 while true do
+	---@type string
 	local destURL = input:demand()
 	if destURL == "quit://" then
 		log.debugf(TAG, "quit requested")
@@ -287,6 +364,7 @@ while true do
 	if destURL == nil then
 		pushEvent("error", "empty URL")
 	else
+		---@type table<string, string>
 		local extraHeaders = {}
 		local hasExtraHeaders = input:demand()
 		while hasExtraHeaders do
@@ -298,7 +376,7 @@ while true do
 		end
 
 		log.debugf(TAG, "initiating download call")
-		local a, b = pcall(requestHTTP, destURL, extraHeaders)
+		local a, b = pcall(delegateHTTPCall, destURL, extraHeaders)
 		if not(a) then
 			pushEvent("error", b)
 		end
