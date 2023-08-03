@@ -850,8 +850,9 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
             self.data_currentaccuracy = self.data_currentaccuracy + 0.75
             self.count_great = self.count_great + 1
         end
+    end
 
-        ------------------------
+    if judgement and addcombo then
 
         if self.tween_combo then
             self.timer:cancel(self.tween_combo)
@@ -862,6 +863,16 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
         if self.display_combo_opacity > 0 then
             self.tween_combo = self.timer:tween(2, self, {display_combo_opacity = 0}, "in-expo")
         end
+    end
+
+    if judgement and not(addcombo) then
+
+        if self.tween_combo then
+            self.timer:cancel(self.tween_combo)
+            self.tween_combo = nil
+        end
+
+        self.display_combo_opacity = 1
     end
 
     if self.tween_judgement1 and self.tween_judgement2 then
