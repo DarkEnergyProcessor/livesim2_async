@@ -167,7 +167,7 @@ end
 ---@param x number
 ---@param y number
 function Pause:mouseReleased(x, y)
-	if self.paused then
+	if self.paused and self.timer == math.huge then
 		local maxy = 300 + #buttons * 72
 		if x >= 384 and y >= 300 and x < 576 and y < maxy then
 			local index = (y - 300) / 72
