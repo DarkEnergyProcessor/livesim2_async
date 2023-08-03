@@ -102,17 +102,15 @@ function resultScreen:load(arg)
 	Glow.addFixedElement(self.data.back, 32, 4)
 
 	do
-		if self.data.showReplay == nil then
+		if not(arg.autoplay) and self.data.showReplay == nil then
 			self.data.showReplay = CircleIconButton(color.hexFFDF35, 43, self.assets.images.videocam, 0.32)
 			self.data.showReplay:addEventListener("mousereleased", function()
-				if not(arg.autoplay) then
-					Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
-						summary = arg.summary,
-						beatmapName = arg.name,
-						replay = arg.replay,
-						allowRetry = not(arg.allowRetry),
-					})
-				end
+				Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
+					summary = arg.summary,
+					beatmapName = arg.name,
+					replay = arg.replay,
+					allowRetry = not(arg.allowRetry),
+				})
 			end)
 		end
 
@@ -173,8 +171,10 @@ function resultScreen:load(arg)
 			addX = addX - 96
 		end
 
-		Glow.addFixedElement(self.data.showReplay, addX, 176)
-		addX = addX - 96
+		if self.data.showReplay then
+			Glow.addFixedElement(self.data.showReplay, addX, 176)
+			addX = addX - 96
+		end
 
 		if self.data.saveReplay then
 			Glow.addFixedElement(self.data.saveReplay, addX, 176)
