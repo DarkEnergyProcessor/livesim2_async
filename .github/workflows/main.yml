@@ -88,7 +88,7 @@ jobs:
       run: |
         set -e
         rm love.svg love.desktop
-        cp ../depls2/assets/image/icon/icon_1024x1024.png livesim2.png
+        cp ../depls2/assets/image/icon/new_icon_1024x1024.png livesim2.png
         cp ../depls2/build-util/livesim2.desktop livesim2.desktop
     - name: Build tar
       working-directory: dist
@@ -203,7 +203,7 @@ jobs:
         7z x -oresourcehacker resourcehacker.zip
         if errorlevel 1 exit /b 1
     - name: Generate Icon
-      run: magick convert depls2/assets/image/icon/icon_1024x1024.png -resize 256x256 -define icon:auto-resize="256,128,96,64,48,32,16" livesim2.ico
+      run: magick convert depls2/assets/image/icon/new_icon_1024x1024.png -resize 256x256 -define icon:auto-resize="256,128,96,64,48,32,16" livesim2.ico
     - name: Generate Resource File
       run: |
         copy /y depls2\build-util\livesim2.manifest livesim2.manifest
