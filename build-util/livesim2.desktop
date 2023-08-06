@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Live Simulator: 2
+Comment=Love Live! School Idol Festival Live Simulator
+Exec=AppRun
+Type=Application
+Categories=Game
+Terminal=true
+PrefersNonDefaultGPU=true
+Icon=livesim2
