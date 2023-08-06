@@ -1,0 +1,286 @@
+name: build
+on: [push, pull_request]
+
+jobs:
+  linux-os:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        ffmpeg: [n5.0, n6.0]
+    steps:
+    - name: Update APT
+      run: sudo apt-get update
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install --assume-yes build-essential git make cmake autoconf automake libcurl4-openssl-dev \
+                                          libtool pkg-config libasound2-dev libpulse-dev libaudio-dev \
+                                          libjack-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev \
+                                          libxfixes-dev libxi-dev libxinerama-dev libxxf86vm-dev libxss-dev \
+                                          libgl1-mesa-dev libdbus-1-dev libudev-dev libgles2-mesa-dev \
+                                          libegl1-mesa-dev libibus-1.0-dev fcitx-libs-dev libsamplerate0-dev \
+                                          libsndio-dev libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ">=3.10"
+    - name: Checkout love-appimage-source
+      uses: actions/checkout@v3
+      with:
+        repository: DarkEnergyProcessor/ls2-love-appimage-script
+    - name: Checkout LÖVE
+      uses: actions/checkout@v3
+      with:
+        repository: DarkEnergyProcessor/livesim3-love
+        path: love2d-master
+        submodules: true
+    - name: Checkout livesim2
+      uses: actions/checkout@v3
+      with:
+        path: depls2
+        submodules: true
+    - name: Get love-appimage-source Commit
+      id: las
+      run: python depls2/build-util/gha_commit_hash.py
+    - name: Get LOVE Commit
+      id: love
+      working-directory: love2d-master
+      run: python ../depls2/build-util/gha_commit_hash.py
+    - name: Pre-Prepare AppImage
+      run: make appimagetool LuaJIT-v2.1/Makefile
+    - name: Get LuaJIT branch
+      id: luajit
+      working-directory: LuaJIT-v2.1
+      run: python ../depls2/build-util/gha_commit_hash.py
+    - name: Restore Compiled AppImage
+      id: appimage
+      uses: actions/cache@v3
+      with:
+        key: ${{ steps.las.outputs.commit }}-${{ steps.luajit.outputs.commit }}-${{ steps.love.outputs.commit }}-${{ matrix.ffmpeg }}
+        path: squashfs-root
+    - name: Get Dependencies for AppImage
+      if: steps.appimage.outputs.cache-hit != 'true'
+      shell: python
+      env:
+        FFMPEG_BRANCH: ${{ matrix.ffmpeg }}
+      run: |
+        import os
+        for i in range(250):
+            if os.system(f"make getdeps FFMPEG_BRANCH={os.environ['FFMPEG_BRANCH']} LOVE_BRANCH=master") == 0:
+                raise SystemExit(0)
+        raise Exception("make getdeps failed")
+    - name: Build AppImage
+      if: steps.appimage.outputs.cache-hit != 'true'
+      env:
+        FFMPEG_BRANCH: ${{ matrix.ffmpeg }}
+      run: make FFMPEG_BRANCH=$FFMPEG_BRANCH LOVE_BRANCH=master
+    - name: Extract AppImage
+      if: steps.appimage.outputs.cache-hit != 'true'
+      run: ./love-master.AppImage --appimage-extract
+    - name: Copy squashfs-root to dist
+      run: cp -r squashfs-root dist
+    - name: Add livesim2
+      run: cp -r depls2 dist/share/livesim2
+    - name: Delete Stuff
+      working-directory: dist/share/livesim2
+      run: rm -rf .git build-util
+    - name: Update AppImage Metadata
+      working-directory: dist
+      run: |
+        set -e
+        rm love.svg love.desktop
+        cp ../depls2/assets/image/icon/icon_1024x1024.png livesim2.png
+        cp ../depls2/build-util/livesim2.desktop livesim2.desktop
+    - name: Build tar
+      working-directory: dist
+      run: tar cvzf ../livesim2.tar.gz *
+    - name: Build AppImage
+      run: ./appimagetool dist livesim2.AppImage
+    - name: Artifact AppImage
+      uses: actions/upload-artifact@v3
+      with:
+        name: livesim2-ffmpeg-${{ matrix.ffmpeg }}.AppImage
+        path: livesim2.AppImage
+    - name: Artifact tar
+      uses: actions/upload-artifact@v3
+      with:
+        name: livesim2-ffmpeg-${{ matrix.ffmpeg }}.tar.gz
+        path: livesim2.tar.gz
+  windows-https:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: cmd
+    steps:
+    - name: Clone Megasource
+      uses: actions/checkout@v3
+      with:
+        path: megasource
+        repository: love2d/megasource
+        ref: main
+    - name: Clone lua-https
+      uses: actions/checkout@v3
+      with:
+        path: lua-https
+        repository: love2d/lua-https
+        ref: main
+    - name: Enable VSDevCmd.bat
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Build LuaJIT
+      working-directory: megasource/libs/LuaJIT/src
+      run: msvcbuild.bat
+    - name: Configure lua-https
+      working-directory: lua-https
+      run: cmake -Bbuild -S. --install-prefix=%CD%\installdir -DLUAJIT_DIR=%CD%\..\megasource\libs\LuaJIT\src
+    - name: Build lua-https
+      working-directory: lua-https
+      run: cmake --build build --config Release --target install
+    - name: Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: lua-https-windows
+        path: lua-https/installdir/https.dll
+        if-no-files-found: error
+  windows-os:
+    # windows-latest is required due to setCaseSensitiveInfo
+    runs-on: windows-latest
+    needs: windows-https
+    strategy:
+      matrix:
+        ffmpeg: ["5.0.1", "6.0"]
+    defaults:
+      run:
+        shell: cmd
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ">=3.10"
+    - name: Make Directory and Set Case Sensitive Mode
+      run: |
+        mkdir depls2
+        if errorlevel 1 exit /b 1
+        fsutil file setCaseSensitiveInfo depls2
+        if errorlevel 1 exit /b 1
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        path: depls2
+    - name: Clone Megasource
+      uses: actions/checkout@v3
+      with:
+        path: megasource
+        repository: love2d/megasource
+        ref: main
+    - name: Get Megasource Commit
+      id: megasource
+      working-directory: megasource
+      run: python ../depls2/build-util/gha_commit_hash.py
+    - name: Checkout LOVE
+      uses: actions/checkout@v3
+      with:
+        path: megasource/libs/love
+        repository: DarkEnergyProcessor/livesim3-love
+        submodules: true
+    - name: Get LOVE Commit
+      id: love
+      working-directory: megasource/libs/love
+      run: python ../../../depls2/build-util/gha_commit_hash.py
+    - name: Restore Resource Hacker
+      id: resourcehacker
+      uses: actions/cache@v3
+      with:
+        key: resourcehacker
+        path: resourcehacker
+    - name: Get Resource Hacker
+      if: steps.resourcehacker.outputs.cache-hit != 'true'
+      run: |
+        curl -Lfo resourcehacker.zip http://www.angusj.com/resourcehacker/resource_hacker.zip
+        if errorlevel 1 exit /b 1
+        mkdir resourcehacker
+        if errorlevel 1 exit /b 1
+        7z x -oresourcehacker resourcehacker.zip
+        if errorlevel 1 exit /b 1
+    - name: Generate Icon
+      run: magick convert depls2/assets/image/icon/icon_1024x1024.png -resize 256x256 -define icon:auto-resize="256,128,96,64,48,32,16" livesim2.ico
+    - name: Generate Resource File
+      run: |
+        copy /y depls2\build-util\livesim2.manifest livesim2.manifest
+        if errorlevel 1 exit /b 1
+        python depls2/build-util/create_rc.py depls2/main.lua livesim2.rc
+        if errorlevel 1 exit /b 1
+        start "" /B /WAIT resourcehacker\ResourceHacker.exe -open livesim2.rc -save livesim2.res -action compile
+    - name: Download FFmpeg Development Libraries
+      env:
+        FFMPEG_VERSION: ${{ matrix.ffmpeg }}
+      run: curl -Lo ffmpeg-dev.7z https://github.com/GyanD/codexffmpeg/releases/download/%FFMPEG_VERSION%/ffmpeg-%FFMPEG_VERSION%-full_build-shared.7z
+    - name: Extract FFmpeg Development Libraries
+      run: 7z x ffmpeg-dev.7z
+    - name: Download lua-https Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: lua-https-windows
+        path: lua-https
+    - name: Restore Compiled LOVE
+      id: lovec
+      uses: actions/cache@v3
+      with:
+        path: installdir
+        key: ${{ steps.megasource.outputs.commit }}-${{ steps.love.outputs.commit }}-${{ matrix.ffmpeg }}
+    - name: Configure
+      if: steps.lovec.outputs.cache-hit != 'true'
+      env:
+        FFMPEG_VERSION: ${{ matrix.ffmpeg }}
+      run: |
+        set BUILD_TARGET=x64
+        set LS2X_LIBAV_TARGET=-DLS2X_LIBAV_INCLUDE_DIR=%CD%\ffmpeg-%FFMPEG_VERSION%-full_build-shared\include
+        cmake -Bbuild -Smegasource -T v143 -A %BUILD_TARGET% --install-prefix=%CD%\installdir %LS2X_LIBAV_TARGET% -DLOVE_MPG123=0
+    - name: Build
+      if: steps.lovec.outputs.cache-hit != 'true'
+      run: cmake --build build --config Release --target install -j2
+    - name: Archive Lua Scripts
+      working-directory: depls2
+      run: |
+        echo 1> OUTSIDE_ASSET
+        7z a -ssc ../livesim2_luascript.zip -ir!*.lua OUTSIDE_ASSET
+        if errorlevel 1 exit /b 1
+        del OUTSIDE_ASSET
+        exit /b 0
+    - name: Make dist Directory
+      run: |
+        mkdir dist
+        if errorlevel 1 exit /b 1
+        fsutil file setCaseSensitiveInfo dist
+        if errorlevel 1 exit /b 1
+    - name: Copy depls2 to dist
+      run: xcopy depls2 dist /e /y /h /r
+    - name: Delete Some Stuff
+      working-directory: dist
+      run: |
+        del /s /q *.lua love_*.exe TODO.txt .gitignore .gitmodules mpg123.dll
+        rmdir /s /q .git .github build-util docs game libs
+        exit /b 0
+    - name: Copy LOVE to dist
+      run: |
+        xcopy installdir dist /e /y /h /r
+        if errorlevel 1 exit /b 1
+        del /s /q love_*.exe mpg123.dll
+        exit /b 0
+    - name: Copy lua-https to dist
+      run: xcopy lua-https dist /e /y /h /r
+    - name: Replace Resource Data
+      run: |
+        copy /Y /B dist\lovec_*.exe temp.exe
+        if errorlevel 1 exit /b 1
+        start "" /B /WAIT resourcehacker\ResourceHacker.exe -open temp.exe -save newtemp.exe -action addoverwrite -res livesim2.res
+    - name: Fuse
+      run: copy /B newtemp.exe+livesim2_luascript.zip dist\livesim2.exe
+    - name: Test Version
+      working-directory: dist
+      run: livesim2.exe -version
+    - name: Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: livesim2-ffmpeg-${{ matrix.ffmpeg }}
+        path: dist
