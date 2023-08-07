@@ -304,9 +304,7 @@ function MakunoUI:__construct(autoplay, mineff)
 	self.MC = true
 	--
 	self.audio_liveclearvoice = nil
-	self.audio_livefailvoice = nil
 	self.check_liveclearvoiceplayed = false
-	self.check_livefailvoiceplayed = false
 	--
 
 	---- Other #8
