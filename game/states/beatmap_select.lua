@@ -1098,7 +1098,7 @@ function beatmapSelect:draw()
 			-- FIXME: Implement better caching for this table creation
 			local _, info = self.data.mainFont2:getWrap(v.info, 300)
 			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(table.concat(info, "\n", 1, math.min(#info, 2)), 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
+			love.graphics.printf(table.concat(info, "\n", 1, math.min(#info, 4)), 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
 		end
 
 		if self.persist.beatmapCoverArt then
