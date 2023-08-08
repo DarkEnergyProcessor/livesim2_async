@@ -8,6 +8,8 @@ It is currently LL!SIF live simulator that supports variety of different beatmap
 How to run
 ==========
 
+**v4.0 Note**: A 64-bit OS is required!
+
 Please see `docs/How_To_Setup.md`
 
 Supported Beatmaps

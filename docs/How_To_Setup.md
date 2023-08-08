@@ -16,64 +16,77 @@ System Requirements
 
 Before you proceed, make sure your device comply these requirements
 
-* At least 1GHz dual core. \*
+* **v4.0**: a 64-bit CPU and 64-bit OS.
 
-* At least 256MB of free RAM. \*
+* At least 1.4 GHz dual core. \*
 
-* Desktop: OpenGL 2.1, unless noted.
+* At least 384 MB of free RAM. \*
 
-* Windows: Windows Vista or above. Graphics card must support at least Direct3D 9 (by using ANGLE backend, and treated as OpenGLES 2), but OpenGL 2.1 is recommended.
+* Desktop: OpenGL 2.1-capable graphics card (or iGPU) or later.
 
-* Linux: Can't be determined, but for Ubuntu: At least Ubuntu 14.04
+* Windows: Windows 7 or later. Note that tests are done in Windows 10 and 11.
+
+* Linux: Oldest-supported Ubuntu distribution.
 
 * Mac OS X: Mac OS X v10.7 or above.
 
 * Mobile: OpenGLES 2 capable graphics card.
 
-* Android: Android v4.1 or above (x86 is natively supported). **ARMv5 and ARMv6 CPUs is not supported**
+* Android: Android 5.0 or later. x86-64 is supported.
 
 * iOS: Live Simulator: 2 only tested under iOS 9, but older version should be possible, down to iOS 6. **Jailbreak needed**
 
 \* More complex storyboard system requires more CPU, GPU, and RAM
 
-Getting LOVE and run Live Simulator: 2
-----------------------------------------
+Nightly Builds
+--------------
 
-If your device comply with requirements above, then proceed.
+GitHub Actions automatically builds new fused binary on each commit for Windows and Linux in here: https://github.com/DarkEnergyProcessor/livesim2_async/actions?query=workflow%3Abuild. Logging in to GitHub is required to download the artifacts.
+
+The nighly builds uses a modified LOVE with [`ls2xlib`](https://github.com/DarkEnergyProcessor/ls2x) and [`lua-https`](https://github.com/love2d/lua-https) built-in. The FFmpeg version denotes the LS2X's needed FFmpeg version.
+
+Getting Live Simulator: 2
+-------------------------
 
 ### Windows
 
-#### Method A
+#### Releases
 
-1. Simply download from releases tab above, extract, and run `livesim2.exe`
+Simply download from releases tab above, extract, and run `livesim2.exe`
 
-#### Method B
+#### Nightly Builds
 
-1. Clone this repository with git or download it as zip. Make sure you extract the zip.
+[See above.](#nightly-builds)
 
-2. Download LOVE2D [here](https://love2d.org/). Zip file is recommended.
+#### From Source
 
-3. Extract it somewhere and open command prompt in location where you extracted LOVE2D.
+Note: Running from source requires **Windows 10 1809 or later**!
 
-4. Now, type `lovec <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu.
+1. Create new directory `livesim2` (or any folder you like).
 
-> `lovec` is available in LOVE2D v0.10.2 and later. It's not hard to create one for older version if you have VS command prompt. To create `lovec`, run `copy love.exe lovec.exe && editbin /SUBSYSTEM:CONSOLE lovec.exe` in VS command prompt.
+2. Run `fsutil file setCaseSensitiveInfo livesim2 enable` in elevated **command prompt** (not powershell).
+
+3. Clone this repository with `git clone --recurse-submodules https://github.com/DarkEnergyProcessor/livesim2_async livesim2` or any equivalent link provided above. The `livesim2` denotes the folder in step 1 and 2. Add `--depth 1` if needed.
+
+4. Download LÖVE: https://love2d.org/ or https://github.com/love2d/love/releases. Latest 11.x version and Zip file is recommended. Make sure to pick `win64` version!
+
+5. Extract it somewhere and open command prompt in location where you extracted LÖVE.
+
+6. Now, type `lovec <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu.
 
 ### Linux
 
-#### Ubuntu
+#### Nightly Builds
 
-1. Clone this repository with git or download it as zip. Make sure you extract the zip.
+[See above.](#nightly-builds)
 
-2. Add [this PPA](https://launchpad.net/~bartbes/+archive/love-stable) to your apt repository.
+#### From Source
 
-3. Type `sudo apt-get update` and `sudo apt-get install love`.
+1. Clone this repository with `git clone --recurse-submodules https://github.com/DarkEnergyProcessor/livesim2_async livesim2` or any equivalent link provided above. The `livesim2` denotes the folder destination. Add `--depth 1` if needed.
 
-4. Type `love <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu
+2. Download LÖVE AppImage: https://love2d.org/ or https://github.com/love2d/love/releases. Latest 11.x version is recommended. You may need to install `libfuse2` and FUSE-capable kernel. Mark the AppImage as executable.
 
-#### Other distros
-
-**TODO: Use AppImages**
+3. Now, type `path/to/love.AppImage <livesim2 folder>`. If it works correctly, you'll see Live Simulator: 2 main menu.
 
 ### Mac OS X
 
