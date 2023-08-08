@@ -276,7 +276,7 @@ function resultScreen:start(arg)
 		love.graphics.clear(color.compat(255, 222, 45, 0))
 		love.graphics.setColor(color.hexFFDE2D)
 		love.graphics.setLineWidth(3)
-		love.graphics.setLineJoin("miter")
+		love.graphics.setLineJoin("bevel")
 		love.graphics.line(lines)
 		love.graphics.pop()
 	end
