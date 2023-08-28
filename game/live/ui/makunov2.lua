@@ -1,4 +1,4 @@
--- Makuno Live UI v.2.0.1
+-- Makuno Live UI v.2.1.0
 -- Contributed by Makuno
 -- part of Live Simulator: 2
 -- See copyright notice in main.lua
@@ -112,7 +112,7 @@ local itf_conf = {
         1 - Use Overflow stamina.
         2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
     ]]
-    sy_useoverflow = 0,
+    sy_useoverflow = 2,
 
 }
 
@@ -229,7 +229,7 @@ function MakunoV2UI:__construct(aupy, mife)
         {fonts.medium, 12},     -- Top/Sub title text & Stamina
         {fonts.light, 31},      -- Score & Acc number
         {fonts.regular, 14},    -- Sub info number
-        {fonts.regular, 20},    -- Combo number
+        {fonts.regular, 20},    -- Combo number & Judgement text
         --
         {fonts.light, 48},      -- LIVE CLEAR/FAIL Text
         {fonts.italic, 18},     -- Additional Live Text
@@ -265,6 +265,7 @@ function MakunoV2UI:__construct(aupy, mife)
     -- 2
     self.display_text_opacity = 1
     self.display_element_opacity = 1
+    self.display_text_scale = 1
 
     self.display_text = {
         top = {
@@ -316,24 +317,7 @@ function MakunoV2UI:__construct(aupy, mife)
     self.display_result = {
         bgcover_dim = 0, bgcover_color = {0, 0, 0},
 
-        text1 = "", text2 = "",
-
-        text2_x = 480 + math.random(-240, 240), 
-
-        text1_y = 340,
-        text2_y = 340,
-
-        text1_scale = 1.25,
-
-        text1_opacity = 0, text1_color = {255, 255, 255},
-        text2_opacity = 0, text2_color = {255, 255, 255},
-
         fakeresultbox_y = 1000,
-    }
-
-    self.timer_global = {
-        dy_num = 0.35,
-        dy_tae = 0.25,
     }
 
     self.tween_text_opacity = nil
@@ -364,7 +348,16 @@ function MakunoV2UI:__construct(aupy, mife)
     self.display_combo_opacity = 1
 
     self.tween_combo = nil
-    self.tween_combo2 = nil
+
+    -- 4.5
+    self._next_comboburst = 100
+
+    self.display_comboburst_opacity = 0
+    self.display_comboburst_scale = 1
+
+    self.bool_played_comboburst = false
+
+    self.tween_comboburst = nil
 
     -- 5
     self.count_perfect = 0
@@ -376,7 +369,7 @@ function MakunoV2UI:__construct(aupy, mife)
     self.data_PIGI_ratio = 0
     self.display_PIGIRatio = 0
 
-    self.display_judgement_text = ""
+    self.display_judgement_text = nil
     self.display_judgement_opacity = 1
     self.display_judgement_scale = 1.1
 
@@ -563,7 +556,7 @@ function MakunoV2UI:setScoreRange(c, b, a, s)
             (s*2)+(c*1.4), 
             (s*3)+(b*1.3), 
             (s*6)+(a*1.2), 
-            (s*9)+(s*1.1)
+            (s*9)+(s*1.1)  
         }
     end
 end
@@ -575,12 +568,15 @@ function MakunoV2UI:setMaxStamina(value)
 end
 
 function MakunoV2UI:setTextScaling(scale)
-    
+    if not(type(scale) == "number") then return end
+
+    local newscale = 0.5 * (2 * scale - 1) + 1
+    self.display_text_scale = newscale
 end
 
 function MakunoV2UI:setOpacity(opacity)
-   self.display_text_opacity = opacity
-   self.display_element_opacity = opacity 
+    self.display_text_opacity = opacity
+    self.display_element_opacity = opacity 
 end
 
 function MakunoV2UI:setComboCheer()
@@ -651,117 +647,69 @@ function MakunoV2UI:startLiveClearAnimation(FC, callback, opaque)
     end
 
     if self.time_postlive == -math.huge then
-        self.time_postlive = 5
+        self.time_postlive = 3
         self.data_livecallback = callback
         self.data_liveopaque = opaque
 
-        self.display_result.text1 = spacedtext("LIVE CLEAR")
-        local text2_pickedcolor = {255, 255, 255}
-
-        if FC and self.data_playresult.PL then
-            self.display_result.text2 = spacedtext("PERFECT PERFORMANCE")
-            text2_pickedcolor = {255, 195, 77}
-        elseif FC and self.data_playresult.FC then
-            self.display_result.text2 = spacedtext("GREAT FULL COMBO")
-            text2_pickedcolor = {77, 220, 255}
-        elseif not(FC) and self.data_playresult.NM then
-            self.display_result.text2 = spacedtext("NO MISS")
-            text2_pickedcolor = {236, 153, 255}
+        if not(self.bool_autoplay) then
+            
         end
 
+        -- Most of Text Information & Bar
         self.timer:tween(
-            0.5, self.display_result,
-            {
-                bgcover_dim = 0.3,
-            
-                text1_scale = 1,
-                text1_opacity = 1,
-            }, "out-cubic"
+            1, self.display_global, {
+                L_toptext_y = 80, R_toptext_y = 80,
+                L_topnum_y = 133, R_topnum_y = 133,
+
+                L_subtext_y = 11, R_subtext_y = 11,
+                L_subnum_y = 10, R_subnum_y = 10,
+
+                lb_x1 = 281, lb_x2 = 293,
+                rb_x1 = 667, rb_x2 = 679,
+            }, "in-quint"
         )
 
-        self.timer:after(1, function() 
+        -- Stamina/Overflow Text
+        self.timer:after(0.5, function()
             self.timer:tween(
-                0.55, self.display_result,
-                {
-                    text2_x = 480,
-                    text2_opacity = 1,
-                    text2_color = text2_pickedcolor,
+                0.5, self.display_global, {
+                    bonus_opa = 0, stami_opa = 0,
+                }, "out-quint"
+            )
+        end)
+
+        -- All Text Interface + 2 Side Line
+        self.timer:after(1, function()
+            self.timer:tween(
+                1, self, {
+                    display_text_opacity = 0
+                }, "out-quint"
+            )
+
+            self.timer:tween(
+                0.5, self.display_global, {
+                    L_line_x = 225, R_line_x = 735,
+                }, "out-quint"
+            )
+        end)
+
+        self.timer:after(1.5, function()
+            self.timer:tween(
+                0.95, self.display_global, {
+                    M_bar_y = 50 - 900, T_bar_y = 44 - 900, B_bar_y = 56 - 900,
+                    mb_line_y1 = 56 - 900, mb_line_y2 = 68 - 900,
+                }, "in-quart"
+            )
+        end)
+
+        self.timer:after(2.49, function()
+            self.timer:tween(
+                0.5, self.display_result, {
+                    bgcover_dim = 0.67,
+                    bgcover_color = {100, 98, 98},
+                    fakeresultbox_y = 231,
                 }, "out-quart"
             )
-        end)
-
-        self.timer:after(2.5, function()
-            self.timer:tween(
-                1, self.display_global,
-                {
-                    L_toptext_y = 80, R_toptext_y = 80,
-                    L_topnum_y = 133, R_topnum_y = 133,
-
-                    L_subtext_y = 11, R_subtext_y = 11,
-                    L_subnum_y = 10, R_subnum_y = 10,
-
-                    lb_x1 = 281, lb_x2 = 293,
-                    rb_x1 = 667, rb_x2 = 679,
-                },
-                "in-quint"
-            )
-        end)
-
-        self.timer:after(2.8, function() 
-            self.timer:tween(
-                0.5, self.display_global,
-                {
-                    bonus_opa = 0, stami_opa = 0,
-                },
-                "out-quint"
-            )
-        end)
-
-        self.timer:after(3.5, function()
-            self.timer:tween(
-                0.5, self, {display_text_opacity = 0}, "out-quint"
-            )
-        end)
-
-        self.timer:after(3.5, function()
-            self.timer:tween(
-                0.5, self.display_global,
-                {
-                    L_line_x = 225, R_line_x = 735,
-                },
-                "out-quint"
-            )
-        end)
-
-        self.timer:after(4, function()
-            self.timer:tween(
-                0.95, self.display_global,
-                {
-                    M_bar_y = 50 - (100 * 9), T_bar_y = 44 - (100 * 9), B_bar_y = 56 - (100 * 9),
-                    mb_line_y1 = 56 - (100 * 9), mb_line_y2 = 68 - (100 * 9),
-                },
-                "in-quart"
-            )
-
-            self.timer:tween(
-                0.5, self.display_result, 
-                {
-                    text1_opacity = 0,
-                    text2_opacity = 0,
-
-                    text1_y = 160,
-                    text2_y = 560,
-                },
-                "in-quart"
-            )
-        end)
-
-        self.timer:after(4.5, function()
-            self.timer:tween(0.5, self.display_result, {
-                bgcover_dim = 0.667,
-                bgcover_color = {100, 98, 98},
-                fakeresultbox_y = 231,
-            }, "out-quart")
         end)
     end
 end
@@ -782,7 +730,7 @@ function MakunoV2UI:addScore(amount)
         self.tween_display_currentscore = nil
     end
 
-    self.tween_display_currentscore = self.timer:tween(self.timer_global.dy_num, self, {display_score = self.data_currentscore}, "out-quint")
+    self.tween_display_currentscore = self.timer:tween(0.35, self, {display_score = self.data_currentscore}, "out-quint")
 end
 
 function MakunoV2UI:comboJudgement(judgement, addcombo)
@@ -797,15 +745,15 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
         self.display_judgement_text = self.display_text.judge.Great
     elseif judgement == "good" then
         breakcombo = true
-        self.data_currentEXscore = self.data_currentEXscore - (4 * hold_bonus)
+        self.data_currentEXscore = self.data_currentEXscore - (1 * hold_bonus)
         self.display_judgement_text = self.display_text.judge.Good
     elseif judgement == "bad" then
         breakcombo = true
-        self.data_currentEXscore = self.data_currentEXscore - (1 * hold_bonus)
+        self.data_currentEXscore = self.data_currentEXscore - (2 * hold_bonus)
         self.display_judgement_text = self.display_text.judge.Bad
     elseif judgement == "miss" then
         breakcombo = true
-        self.data_currentEXscore = self.data_currentEXscore - (2 * hold_bonus)
+        self.data_currentEXscore = self.data_currentEXscore - (3 * hold_bonus)
         self.display_judgement_text = self.display_text.judge.Miss
     end
 
@@ -850,6 +798,35 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
             self.data_currentaccuracy = self.data_currentaccuracy + 0.75
             self.count_great = self.count_great + 1
         end
+
+        if not(self.bool_mineffec) then
+            if (self.data_currentcombo >= self._next_comboburst) then
+                self._next_comboburst = self._next_comboburst + 100
+
+                if (self.bool_played_comboburst == false) then 
+                    self.display_comboburst_opacity = 1
+                end
+
+                self.bool_played_comboburst = true
+            end
+
+            if (self.bool_played_comboburst and self.display_comboburst_scale < 2) then
+                self.tween_comboburst = self.timer:tween(1.5, self, {
+                    display_comboburst_opacity = 0,
+                    display_comboburst_scale = 2
+                }, "out-quint")
+            else
+                if self.tween_comboburst then
+                    self.timer:cancel(self.tween_comboburst)
+                    self.tween_comboburst = nil
+                end
+
+                self.bool_played_comboburst = false
+                self.display_comboburst_opacity = 0
+                self.display_comboburst_scale = 1
+            end
+        end
+
     end
 
     if judgement and addcombo then
@@ -903,13 +880,13 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
                 self.tween_PIGI_ratio = nil
             end
 
-            self.tween_PIGI_ratio = self.timer:tween(self.timer_global.dy_num, self, {display_PIGIRatio = self.data_PIGI_ratio}, "out-quint")
+            self.tween_PIGI_ratio = self.timer:tween(0.35, self, {display_PIGIRatio = self.data_PIGI_ratio}, "out-quint")
         end
 
         if itf_conf.dy_accdisplay == 1 then
-            self.tween_display_accuracy = self.timer:tween(self.timer_global.dy_num, self, {display_accuracy = (self.data_currentaccuracy/self.data_notepassed) * 100}, "out-quint")
+            self.tween_display_accuracy = self.timer:tween(0.35, self, {display_accuracy = (self.data_currentaccuracy/self.data_notepassed) * 100}, "out-quint")
         else
-            self.tween_display_accuracy = self.timer:tween(self.timer_global.dy_num, self, {display_accuracy = (self.data_currentaccuracy/self.data_totalnote) * 100}, "out-quint")
+            self.tween_display_accuracy = self.timer:tween(0.35, self, {display_accuracy = (self.data_currentaccuracy/self.data_totalnote) * 100}, "out-quint")
         end
     end
 
@@ -918,7 +895,7 @@ function MakunoV2UI:comboJudgement(judgement, addcombo)
         self.tween_display_EXscore = nil
     end
 
-    self.tween_display_EXscore = self.timer:tween(self.timer_global.dy_num, self, {display_EXscore = self.data_currentEXscore}, "out-quint")
+    self.tween_display_EXscore = self.timer:tween(0.35, self, {display_EXscore = self.data_currentEXscore}, "out-quint")
 
 end
 
@@ -931,16 +908,16 @@ function MakunoV2UI:addStamina(value)
     if itf_conf.sy_useoverflow ~= 0 then
         if (self.data_currentstamina + a) > self.data_maximumstamina then
             -- Stamina Overflow refills
-            local remainstamina = self.data_maximumstamina - self.data_currentstamina
-            local remainforover = a - remainstamina
+            local remain_stamina = self.data_maximumstamina - self.data_currentstamina
+            local remain_forover = a - remain_stamina
 
-            if (self.data_currentoverflow + remainforover) >= self.data_maximumstamina and itf_conf.sy_useoverflow == 1 then
+            if (self.data_currentoverflow + remain_forover) >= self.data_maximumstamina and itf_conf.sy_useoverflow == 1 then
                 -- Applies bonus (not) similar to SIF1 does
-                local remaincurover = self.data_maximumstamina - self.data_currentoverflow
-                local restover = remainforover - remaincurover
+                local remain_curover = self.data_maximumstamina - self.data_currentoverflow
+                local rest_over = remain_forover - remain_curover
                 
                 self.data_currentoverflow = 0
-                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + restover, 0, self.data_maximumstamina)
+                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + rest_over, 0, self.data_maximumstamina)
 
                 if self.data_overflowbonus >= self.data_overflowmaximum then
                     self.data_currentoverflow = self.data_maximumstamina
@@ -957,7 +934,7 @@ function MakunoV2UI:addStamina(value)
                 end
 
                 self.tween_display_overflowbonus = self.timer:tween(
-                    self.timer_global.dy_num, self.display_global, {
+                    0.35, self.display_global, {
                         lb_x1 = 251, lb_x2 = 263,
                         bonus_opa = 1,
                     }, "out-quart"
@@ -965,7 +942,7 @@ function MakunoV2UI:addStamina(value)
 
             else
                 -- Just Single Overflow with no bonus (Mimic SIF2 and other games)
-                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + remainforover, 0, self.data_maximumstamina)
+                self.data_currentoverflow = Util.clamp(self.data_currentoverflow + remain_forover, 0, self.data_maximumstamina)
             end
         else
             -- Stamina drain
@@ -976,10 +953,10 @@ function MakunoV2UI:addStamina(value)
             else
                 -- SIF2: Basically Second Stamina
                 if (self.data_currentoverflow + a) < 0 and self.data_currentoverflow > 0 then
-                    local ripover = math.abs(a + self.data_currentoverflow)
+                    local rip_over = math.abs(a + self.data_currentoverflow)
                     
                     self.data_currentoverflow = 0
-                    self.data_currentstamina = Util.clamp(self.data_currentstamina + ripover, 0, self.data_maximumstamina)
+                    self.data_currentstamina = Util.clamp(self.data_currentstamina + rip_over, 0, self.data_maximumstamina)
                 elseif self.data_currentoverflow > 0 then
                     self.data_currentoverflow = Util.clamp(self.data_currentoverflow + a, 0, self.data_maximumstamina)
                 else
@@ -994,7 +971,7 @@ function MakunoV2UI:addStamina(value)
         end
 
         self.tween_display_overflow = self.timer:tween(
-            self.timer_global.dy_num, self, {
+            0.35, self, {
                 display_overflowstamina = self.data_currentoverflow
             }, "out-quart"
         )
@@ -1009,7 +986,7 @@ function MakunoV2UI:addStamina(value)
     end
 
     self.tween_display_stamina = self.timer:tween(
-        self.timer_global.dy_num, self, {
+        0.35, self, {
             display_stamina = self.data_currentstamina
         }, "out-quart"
     )
@@ -1045,7 +1022,7 @@ function MakunoV2UI:addTapEffect(x, y, r, g, b, a)
         ntap_e.o, ntap_e.s = 1, 1
         ntap_e.done = false
 
-        self.timer:tween(self.timer_global.dy_tae, ntap_e, {
+        self.timer:tween(0.25, ntap_e, {
             s = 2, o = 0
         }, "out-quart", ntap_e.func)
 
@@ -1109,6 +1086,7 @@ function MakunoV2UI:drawStatus()
         n_pigi = nil,
         n_exsc = string.format("%.0f", self.display_EXscore),
         n_combo = tostring(self.data_currentcombo),
+        n_comboburst = tostring(self._next_comboburst - 100),
 
         b_score = nil,
         l_score = nil,
@@ -1126,6 +1104,8 @@ function MakunoV2UI:drawStatus()
             dcs.n_pigi = string.format("%.2f", self.display_PIGIRatio)..":1"
         end
     end
+
+    local shader = love.graphics.getShader()
 
     -- Four Triangle used to cut edge of score bar
     local stencil1 = function()
@@ -1175,6 +1155,7 @@ function MakunoV2UI:drawStatus()
         dcs.t_pause = "Click inside this area to pause"
     end
 
+	love.graphics.setShader(Util.drawText.workaroundShader)
     if self.bool_pauseEnabled then
         setColor(150, 210, 255, self.display_element_opacity * self.display_pause_opacity)
         dcs.g_apaus = Util.gradient("vertical",  color.transparent, color.hex99d5ffa0)
@@ -1186,16 +1167,23 @@ function MakunoV2UI:drawStatus()
     --- Combo & Judgement
     if self.data_currentcombo > 0 then
         setColor(55, 55, 55, self.display_text_opacity * self.display_combo_opacity * 0.2)
-        love.graphics.printf(dcs.n_combo, self.fonts[4], 480, 402, 240, "center", 0, 1, 1, 120, self.fonts_h[4]/2)
-        setColor(255, 255, 255, self.display_text_opacity * self.display_combo_opacity * 0.9)
-        love.graphics.printf(dcs.n_combo, self.fonts[4], 480, 400, 240, "center", 0, 1, 1, 120, self.fonts_h[4]/2)
+        love.graphics.printf(dcs.n_combo, self.fonts[4], 480, 402, 240, "center", 0, self.display_text_scale, self.display_text_scale, 120, self.fonts_h[4] * 0.5)
+        setColor(255, 255, 255, self.display_text_opacity * self.display_combo_opacity * 0.85)
+        love.graphics.printf(dcs.n_combo, self.fonts[4], 480, 400, 240, "center", 0, self.display_text_scale, self.display_text_scale, 120, self.fonts_h[4] * 0.5)
+    end
+
+    if not(self.bool_mineffec) and self.display_comboburst_opacity > 0 then
+        setColor(55, 55, 55, self.display_text_opacity * self.display_comboburst_opacity * 0.2)
+        love.graphics.printf(dcs.n_comboburst, self.fonts[4], 480, 402, 240, "center", 0, self.display_comboburst_scale * self.display_text_scale, self.display_comboburst_scale * self.display_text_scale, 120, self.fonts_h[4] * 0.5)
+        setColor(255, 255, 255, self.display_text_opacity * self.display_comboburst_opacity * 0.85)
+        love.graphics.printf(dcs.n_comboburst, self.fonts[4], 480, 400, 240, "center", 0, self.display_comboburst_scale * self.display_text_scale, self.display_comboburst_scale * self.display_text_scale, 120, self.fonts_h[4] * 0.5)
     end
 
     if self.display_judgement_text and dcs.t_judge and self.display_judgement_opacity > 0 then
         setColor(55, 55, 55, self.display_text_opacity * self.display_judgement_opacity * 0.2)
-        love.graphics.printf(dcs.t_judge, self.fonts[4], 480, 432, 240, "center", 0, self.display_judgement_scale, self.display_judgement_scale, 120, self.fonts_h[4]/2)
-        setColor(255, 255, 255, self.display_text_opacity * self.display_judgement_opacity * 0.9)
-        love.graphics.printf(dcs.t_judge, self.fonts[4], 480, 430, 240, "center", 0, self.display_judgement_scale, self.display_judgement_scale, 120, self.fonts_h[4]/2)
+        love.graphics.printf(dcs.t_judge, self.fonts[4], 480, 430, 240, "center", 0, self.display_judgement_scale * self.display_text_scale, self.display_judgement_scale * self.display_text_scale, 120, self.fonts_h[4] * 0.5)
+        setColor(255, 255, 255, self.display_text_opacity * self.display_judgement_opacity * 0.85)
+        love.graphics.printf(dcs.t_judge, self.fonts[4], 480, 428, 240, "center", 0, self.display_judgement_scale * self.display_text_scale, self.display_judgement_scale * self.display_text_scale, 120, self.fonts_h[4] * 0.5)
     end
 
     ----------------------------------------
@@ -1239,15 +1227,16 @@ function MakunoV2UI:drawStatus()
     love.graphics.line(225, self.display_global.M_bar_y + 2, 231, self.display_global.B_bar_y + 2, 729, self.display_global.B_bar_y + 2, 735, self.display_global.M_bar_y + 2)
 
     ----------------------------------------
-    --- Stamina
+    --- Stamina (Element)
+    local dch_s = nil
     if self.bool_staminafunc then
 
-        local dch_s = {
+        dch_s = {
             b_stam = Util.clamp(self.display_stamina / self.data_maximumstamina, 0, 1) * 395,
             c_stam = Util.clamp(self.display_stamina / self.data_maximumstamina, 0, 1) * 120,
             b_over = Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 395,
-            c_over = 120 + (Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 140),
-            c_text = Util.clamp((self.display_stamina + self.display_overflowstamina) / (self.data_maximumstamina * 2), 0, 1) * 260,
+            c_over = 140 + (Util.clamp(self.display_overflowstamina / self.data_maximumstamina, 0, 1) * 160),
+            c_text = Util.clamp((self.display_stamina + self.display_overflowstamina) / (self.data_maximumstamina * 2), 0, 1) * 300,
 
             g_bsta = Util.gradient("vertical", color.transparent, color.hex00000022),
 
@@ -1283,6 +1272,21 @@ function MakunoV2UI:drawStatus()
         love.graphics.line(667, self.display_global.mb_line_y2, self.display_global.rb_x1, self.display_global.mb_line_y2, self.display_global.rb_x2, self.display_global.mb_line_y1)
         love.graphics.line(281, self.display_global.mb_line_y1, 293, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2, 679, self.display_global.mb_line_y1)
         
+    end
+
+    ----------------------------------------
+    --- Bar/Line
+    setColor(255, 255, 255, self.display_element_opacity)
+
+    love.graphics.line(225, self.display_global.M_bar_y, self.display_global.L_line_x, self.display_global.M_bar_y)
+    love.graphics.line(735, self.display_global.M_bar_y, self.display_global.R_line_x, self.display_global.M_bar_y)
+
+    love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.T_bar_y, 729, self.display_global.T_bar_y, 735, self.display_global.M_bar_y)
+    love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.B_bar_y, 729, self.display_global.B_bar_y, 735, self.display_global.M_bar_y)
+    
+    ----------------------------------------
+    --- Stamina (Text)
+    if self.bool_staminafunc then
         setColor(25, 25, 25, self.display_element_opacity * self.display_global.stami_opa * 0.3)
         love.graphics.printf(dch_s.n_stam, self.fonts[1], 688, self.display_global.mb_line_y1 + 7, 75, "center", 0, 1, 1, 37.5, self.fonts_h[1] / 2)
         setColor(HSLtoRGB(dch_s.c_text, 0.85, 0.42), self.display_text_opacity * self.display_global.stami_opa * 0.9)
@@ -1296,16 +1300,6 @@ function MakunoV2UI:drawStatus()
         end
     end
 
-    ----------------------------------------
-    --- Bar/Line
-    setColor(255, 255, 255, self.display_element_opacity)
-
-    love.graphics.line(225, self.display_global.M_bar_y, self.display_global.L_line_x, self.display_global.M_bar_y)
-    love.graphics.line(735, self.display_global.M_bar_y, self.display_global.R_line_x, self.display_global.M_bar_y)
-
-    love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.T_bar_y, 729, self.display_global.T_bar_y, 735, self.display_global.M_bar_y)
-    love.graphics.line(225, self.display_global.M_bar_y, 231, self.display_global.B_bar_y, 729, self.display_global.B_bar_y, 735, self.display_global.M_bar_y)
-    
     ----------------------------------------
     --- Accuracy
     love.graphics.stencil(stencil2, "increment", 1)
@@ -1372,6 +1366,7 @@ function MakunoV2UI:drawStatus()
         
     end
 
+    love.graphics.setShader(shader)
     love.graphics.setStencilTest()
 
     ----------------------------------------
@@ -1383,12 +1378,6 @@ function MakunoV2UI:drawStatus()
 
         setColor(255, 255, 255, 1)
 		love.graphics.rectangle("fill", -88, self.display_result.fakeresultbox_y, 1136, 452)
-
-        setColor(self.display_result.text1_color, self.display_result.text1_opacity)
-        love.graphics.printf(self.display_result.text1, self.fonts[5], 480, self.display_result.text1_y, 480, "center", 0, self.display_result.text1_scale, self.display_result.text1_scale, 240, self.fonts_h[5])
-
-        setColor(self.display_result.text2_color, self.display_result.text2_opacity)
-        love.graphics.printf(self.display_result.text2, self.fonts[6], self.display_result.text2_x, self.display_result.text2_y, 480, "center", 0, 1, 1, 240, 0)
 
     end
 end
