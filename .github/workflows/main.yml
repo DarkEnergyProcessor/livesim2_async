@@ -275,7 +275,8 @@ jobs:
         submodules: recursive
     - name: Build livesim3-love-android
       if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
-      run: bash livesim3-love-android/gradlew assembleEmbedNoRecord${{ matrix.build_type }}
+      working-directory: livesim3-love-android
+      run: bash ./gradlew assembleEmbedNoRecord${{ matrix.build_type }}
     - name: Copy Partially Compiled Directory (Cache Miss)
       if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
       run: cp -r livesim3-love-android livesim3-love-android-cached
