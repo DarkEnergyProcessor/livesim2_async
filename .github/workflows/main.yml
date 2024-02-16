@@ -270,6 +270,7 @@ jobs:
       uses: actions/checkout@v4
       if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
       with:
+        repository: DarkEnergyProcessor/livesim3-love-android
         path: livesim3-love-android
         submodules: recursive
     - name: Build livesim3-love-android
