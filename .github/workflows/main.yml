@@ -295,7 +295,8 @@ jobs:
       working-directory: livesim3-love-android/app/src/embed/assets
       run: rm -rf .git build-util
     - name: Build APK
-      run: bash livesim3-love-android/gradlew assembleEmbedNoRecord${{ matrix.build_type }}
+      working-directory: livesim3-love-android
+      run: bash ./gradlew assembleEmbedNoRecord${{ matrix.build_type }}
     - name: Artifact APK
       uses: actions/upload-artifact@v4
       with:
