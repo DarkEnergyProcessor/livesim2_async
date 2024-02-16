@@ -25,10 +25,10 @@
 -- luacheck: globals DEPLS_VERSION_CODENAME
 
 -- Version string
-DEPLS_VERSION = "4.0.0-beta5"
+DEPLS_VERSION = "4.0.0-beta6"
 -- Version number
 -- In form xxyyzzww. x = major, y = minor, z = patch, w = pre-release counter (99 = not a pre release)
-DEPLS_VERSION_NUMBER = 03030201
+DEPLS_VERSION_NUMBER = 03030202
 -- Version codename
 DEPLS_VERSION_CODENAME = "Over the Rainbow"
 
