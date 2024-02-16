@@ -2,7 +2,7 @@ name: build
 on: [push, pull_request]
 
 jobs:
-  linux-os:
+  linux-build:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -24,17 +24,17 @@ jobs:
       with:
         python-version: ">=3.10"
     - name: Checkout love-appimage-source
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: DarkEnergyProcessor/ls2-love-appimage-script
     - name: Checkout LÖVE
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: DarkEnergyProcessor/livesim3-love
         path: love2d-master
-        submodules: true
+        submodules: recursive
     - name: Checkout livesim2
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: depls2
         submodules: true
@@ -53,7 +53,7 @@ jobs:
       run: python ../depls2/build-util/gha_commit_hash.py
     - name: Restore Compiled AppImage
       id: appimage
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         key: ${{ steps.las.outputs.commit }}-${{ steps.luajit.outputs.commit }}-${{ steps.love.outputs.commit }}-${{ matrix.ffmpeg }}
         path: squashfs-root
@@ -96,56 +96,20 @@ jobs:
     - name: Build AppImage
       run: ./appimagetool dist livesim2.AppImage
     - name: Artifact AppImage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: livesim2-ffmpeg-${{ matrix.ffmpeg }}.AppImage
         path: livesim2.AppImage
+        if-no-files-found: error
     - name: Artifact tar
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: livesim2-ffmpeg-${{ matrix.ffmpeg }}.tar.gz
         path: livesim2.tar.gz
-  windows-https:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: cmd
-    steps:
-    - name: Clone Megasource
-      uses: actions/checkout@v3
-      with:
-        path: megasource
-        repository: love2d/megasource
-        ref: main
-    - name: Clone lua-https
-      uses: actions/checkout@v3
-      with:
-        path: lua-https
-        repository: love2d/lua-https
-        ref: main
-    - name: Enable VSDevCmd.bat
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-    - name: Build LuaJIT
-      working-directory: megasource/libs/LuaJIT/src
-      run: msvcbuild.bat
-    - name: Configure lua-https
-      working-directory: lua-https
-      run: cmake -Bbuild -S. --install-prefix=%CD%\installdir -DLUAJIT_DIR=%CD%\..\megasource\libs\LuaJIT\src
-    - name: Build lua-https
-      working-directory: lua-https
-      run: cmake --build build --config Release --target install
-    - name: Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: lua-https-windows
-        path: lua-https/installdir/https.dll
         if-no-files-found: error
-  windows-os:
+  windows-build:
     # windows-latest is required due to setCaseSensitiveInfo
     runs-on: windows-latest
-    needs: windows-https
     strategy:
       matrix:
         ffmpeg: ["5.0.1", "6.0"]
@@ -164,32 +128,32 @@ jobs:
         fsutil file setCaseSensitiveInfo depls2
         if errorlevel 1 exit /b 1
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: depls2
     - name: Clone Megasource
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: megasource
         repository: love2d/megasource
-        ref: main
+        ref: 11.x
     - name: Get Megasource Commit
       id: megasource
       working-directory: megasource
       run: python ../depls2/build-util/gha_commit_hash.py
     - name: Checkout LOVE
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: megasource/libs/love
         repository: DarkEnergyProcessor/livesim3-love
-        submodules: true
+        submodules: recursive
     - name: Get LOVE Commit
       id: love
       working-directory: megasource/libs/love
       run: python ../../../depls2/build-util/gha_commit_hash.py
     - name: Restore Resource Hacker
       id: resourcehacker
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         key: resourcehacker
         path: resourcehacker
@@ -217,14 +181,9 @@ jobs:
       run: curl -Lo ffmpeg-dev.7z https://github.com/GyanD/codexffmpeg/releases/download/%FFMPEG_VERSION%/ffmpeg-%FFMPEG_VERSION%-full_build-shared.7z
     - name: Extract FFmpeg Development Libraries
       run: 7z x ffmpeg-dev.7z
-    - name: Download lua-https Artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: lua-https-windows
-        path: lua-https
     - name: Restore Compiled LOVE
       id: lovec
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: installdir
         key: ${{ steps.megasource.outputs.commit }}-${{ steps.love.outputs.commit }}-${{ matrix.ffmpeg }}
@@ -267,8 +226,6 @@ jobs:
         if errorlevel 1 exit /b 1
         del /s /q love_*.exe mpg123.dll
         exit /b 0
-    - name: Copy lua-https to dist
-      run: xcopy lua-https dist /e /y /h /r
     - name: Replace Resource Data
       run: |
         copy /Y /B dist\lovec_*.exe temp.exe
@@ -280,7 +237,66 @@ jobs:
       working-directory: dist
       run: livesim2.exe -version
     - name: Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: livesim2-ffmpeg-${{ matrix.ffmpeg }}
         path: dist
+        if-no-files-found: error
+  android-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ">=3.10"
+    - name: Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: adopt-hotspot
+        java-version: 17
+    - name: Get livesim3-love-android Commit
+      id: ls3a
+      run: git ls-remote https://github.com/DarkEnergyProcessor/livesim3-love-android master | awk '{ print "commit="$1}' >> $GITHUB_OUTPUT
+    - name: Restore livesim3-love-android Cache
+      id: ls3a_cache
+      uses: actions/cache@v4
+      with:
+        key: ${{ steps.ls3a.outputs.commit }}-${{ matrix.build_type }}
+        path: livesim3-love-android-cached
+    - name: Checkout livesim3-love-android
+      uses: actions/checkout@v4
+      if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
+      with:
+        path: livesim3-love-android
+        submodules: recursive
+    - name: Build livesim3-love-android
+      if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
+      run: bash livesim3-love-android/gradlew assembleEmbedNoRecord${{ matrix.build_type }}
+    - name: Copy Partially Compiled Directory (Cache Miss)
+      if: ${{ steps.ls3a_cache.outputs.cache-hit != 'true' }}
+      run: cp -r livesim3-love-android livesim3-love-android-cached
+    - name: Copy Partially Compiled Directory (Cache Hit)
+      if: ${{ steps.ls3a_cache.outputs.cache-hit == 'true' }}
+      run: cp -r livesim3-love-android-cached livesim3-love-android
+    - name: Checkout livesim2
+      uses: actions/checkout@v4
+      with:
+        path: livesim3-love-android/app/src/embed/assets
+        submodules: true
+    - name: Replace Version Information
+      working-directory: livesim3-love-android
+      run: python app/src/embed/assets/build-util/replace_gradle_properties.py app/src/embed/assets/main.lua gradle.properties -o gradle.properties
+    - name: Delete Some Stuff
+      working-directory: livesim3-love-android/app/src/embed/assets
+      run: rm -rf .git build-util
+    - name: Build APK
+      run: bash livesim3-love-android/gradlew assembleEmbedNoRecord${{ matrix.build_type }}
+    - name: Artifact APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: livesim2-android-${{ matrix.build_type }}
+        path: livesim3-love-android/app/build/outputs/apk
+        if-no-files-found: error
