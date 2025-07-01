@@ -655,7 +655,7 @@ function gameSetting:draw()
 		love.graphics.draw(self.persist.background)
 		love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
-		love.graphics.setColor(color.white25PT)
+		love.graphics.setColor(color.white50PT)
 		love.graphics.rectangle("fill", 0, 0, 240, 640)
 
 		if set then
