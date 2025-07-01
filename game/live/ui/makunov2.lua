@@ -26,7 +26,7 @@ local MakunoV2UI = Luaoop.class("livesim2.MakunoV2LiveUI", UIBase)
 local itf_score = {
     txt = {
         "D","C","B","A","S", -- Regular Rank
-        "SS","SSS","SPI","UPI" -- Super Rank
+        "SS","SSS","SSI","USI" -- Super Rank
     },
 
     color = {
@@ -38,8 +38,8 @@ local itf_score = {
         ----------------------
         {255, 220,  85}, -- SS  (x2 of S)
         {145, 235, 255}, -- SSS (x3 of S)
-        {255,  10, 215}, -- SPI (x6 of S)
-        {255,  50,  50}, -- UPI (x9 of S)
+        {255,  10, 215}, -- SSI (x6 of S)
+        {255,  50,  50}, -- USI (x9 of S)
     },
 }
 
@@ -119,7 +119,6 @@ local itf_conf = {
 local fonts = {
     light = "fonts/Jost-Light.ttf",
     regular = "fonts/Jost-Regular.ttf",
-    italic = "fonts/Jost-Italic.ttf",
     medium = "fonts/Jost-Medium.ttf",
 }
 
