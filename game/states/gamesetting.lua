@@ -656,7 +656,7 @@ function gameSetting:draw()
 		love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
 		love.graphics.setColor(color.white50PT)
-		love.graphics.rectangle("fill", 0, 0, 240, 640)
+		love.graphics.rectangle("fill", 0, 0, 240, 720)
 
 		if set then
 			for i = 1, #set[3] do
@@ -674,7 +674,7 @@ function gameSetting:draw()
 		if set then
 			local theme = ColorTheme.get()
 			love.graphics.setColor(theme[1], theme[2], theme[3], select(4, color.compat(0, 0, 0, opacity)))
-			love.graphics.rectangle("fill", 240, 86, 6, 597)
+			love.graphics.rectangle("fill", 240, 80, 6, 620)
 		end
 	end
 
