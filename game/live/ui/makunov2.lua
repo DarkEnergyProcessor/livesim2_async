@@ -110,7 +110,7 @@ local itf_conf = {
 
         0 - Don't use Overflow stamina.
         1 - Use Overflow stamina.
-        2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
+        2 - Mimic [insert any gacha card (mini) rhythm game here] Stamina Overflow (No Bonus).
     ]]
     sy_useoverflow = 2,
 
@@ -1252,7 +1252,7 @@ function MakunoV2UI:drawStatus()
     love.graphics.setLineJoin("bevel")
 
     setColor(255, 255, 255, self.display_element_opacity * 0.5)
-    if not(dse.l_score == nil) then
+    if (dse.l_score) then
         for i, v in pairs(dse.l_score) do
             if (i < #dse.l_score) then
                 love.graphics.line(v, self.display_global.T_bar_y, v, self.display_global.B_bar_y)
