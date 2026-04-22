@@ -52,7 +52,7 @@ local ColorTheme = {
 		-- c40035
 		currentColorDarker = {0xc4, 0x00, 0x35, color.hexC40035}
 	},
-	[7] = {	-- Yohane (the Parhelion)
+	[7] = {	-- YTP (Yohane the Parhelion)
 		-- 23a2b0
 		currentColor = {0x23, 0xa2, 0xb0, color.hex23A2B0},
 		-- 1e8a96
