@@ -60,7 +60,7 @@ local ColorTheme = {
 		-- 19737d
 		currentColorDarker = {0x19, 0x73, 0x7d, color.hex19737D}
 	},
-	[8] = { -- Bluebird
+	[8] = { -- Ikizulive
 		-- ff7500
 		currentColor = {0xff, 0x75, 0x00, color.hexFF7500},
 		-- ed6d00

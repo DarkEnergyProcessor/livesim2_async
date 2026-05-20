@@ -300,7 +300,7 @@ function gameSetting:load()
 		local themeDisplay = {
 			"μ's", "Aqours", "NijiGaku", 
 			"Liella", "Hasunosora", "Musical", 
-			"Yohane", "Bluebird"
+			"Yohane", "Ikizulive"
 		}
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
