@@ -3,6 +3,7 @@
 
 local love = require("love")
 local color = require("color")
+local color_theme = require("game.color_theme")
 local log = require("logging")
 local Util = require("util")
 local PostExit = require("post_exit")
@@ -83,7 +84,7 @@ function love.errorhandler(msg)
 		local pos = 70
 		love.graphics.printf(p, pos, pos, love.graphics.getWidth() - pos)
 		love.graphics.present()
-		love.graphics.clear(color.hex599DDC)
+		love.graphics.clear(color_theme.getDarker())
 	end
 
 	local fullErrorText = p
