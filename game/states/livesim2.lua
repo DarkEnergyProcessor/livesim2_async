@@ -498,9 +498,23 @@ function DEPLS:load(arg)
 				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1
 			end
 
-			fullScore = fullScore + (t.effect > 10 and 370 or 739)
-		end
+			if t.effect == 13 then
+				fullScore = fullScore + (self.persist.tapScore * 0.625)
+			elseif t.effect == 3 then
+				fullScore = fullScore + (self.persist.tapScore * 1.25)
+			elseif t.effect > 10 then
+				fullScore = fullScore + (self.persist.tapScore * 0.5)
+			else
+				fullScore = fullScore + self.persist.tapScore
+			end
 
+			--fullScore = fullScore + (t.effect > 10 and 370 or 739)
+			
+			if i == #notes then
+				fullScore = math.floor(fullScore * 0.94)
+			end
+		end
+		
 		self.persist.noteInfo.totalNotes = #notes
 		self.data.liveUI:setTotalNotes(#notes)
 		self.data.noteManager:initialize()
