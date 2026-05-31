@@ -252,6 +252,9 @@ function DEPLS:load(arg)
 		replay.setEventData(arg.replay.events)
 	end
 
+	-- pause on unfocused
+	self.persist.pauseonUnfocused = Setting.get("PAUSE_ON_UNFOCUSED") == 1
+
 	-- note vanish type
 	local vanishType
 	if arg.replay then
@@ -1300,7 +1303,7 @@ DEPLS:registerEvent("touchmoved", livesimInputMoved)
 DEPLS:registerEvent("touchreleased", livesimInputReleased)
 
 DEPLS:registerEvent("focus", function(self)
-	if Util.isMobile() then
+	if Util.isMobile() or (self.persist.pauseonUnfocused and not(self.persist.autoplay)) then
 		pauseGame(self)
 	end
 

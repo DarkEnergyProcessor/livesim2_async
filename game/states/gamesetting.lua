@@ -424,22 +424,24 @@ function gameSetting:load()
 		}
 		self.persist.liveFrame = frame
 		self.persist.liveSetting = {
-			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
+			switchSetting(frame, L"setting:live:pauseonUnfocused", "PAUSE_ON_UNFOCUSED")
 				:setPosition(0, 12),
-			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
+			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
 				:setPosition(0, 64+12),
-			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 10})
+			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
 				:setPosition(0, 128+12),
+			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 10})
+				:setPosition(0, 192+12),
 			numberSetting(frame, L"setting:live:textScaling", "TEXT_SCALING", {
 				min = 50, max = 100, default = 100, snap = 10, div = 100
 			})
-				:setPosition(0, 192+12),
-			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
 				:setPosition(0, 256+12),
-			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 3, default = 0, display = vanish})
+			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
 				:setPosition(0, 320+12),
+			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 3, default = 0, display = vanish})
+				:setPosition(0, 384+12),
 			numberSetting(frame, L"setting:live:noteVisualSize", "VISUAL_NOTEICONSIZE", {min = 75, max = 125, default = 100, snap = 5})
-				:setPosition(0, 384+12)
+				:setPosition(0, 448+12)
 		}
 	end
 
