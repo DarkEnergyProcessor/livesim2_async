@@ -231,17 +231,19 @@ function yamlStoryboard:__construct(storyboardData, info)
 	end
 
 	-- Load events
-	for i, v in ipairs(storyData.storyboard) do
-		if type(v.time) ~= "number" then
-			error("storyboard #"..i.." time is mandatory and must be number")
-		end
-
-		if v["do"] then
-			for j = 1, #v["do"] do
-				handleEvent(i, v.time, v["do"][j])
+	if storyData.storyboard then
+		for i, v in ipairs(storyData.storyboard) do
+			if type(v.time) ~= "number" then
+				error("storyboard #"..i.." time is mandatory and must be number")
 			end
-		else
-			handleEvent(i, v.time, v)
+
+			if v["do"] then
+				for j = 1, #v["do"] do
+					handleEvent(i, v.time, v["do"][j])
+				end
+			else
+				handleEvent(i, v.time, v)
+			end
 		end
 	end
 
