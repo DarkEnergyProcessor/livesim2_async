@@ -1303,7 +1303,7 @@ DEPLS:registerEvent("touchmoved", livesimInputMoved)
 DEPLS:registerEvent("touchreleased", livesimInputReleased)
 
 DEPLS:registerEvent("focus", function(self)
-	if Util.isMobile() or (self.persist.pauseonUnfocused and not(self.persist.autoplay)) then
+	if Util.isMobile() or (self.persist.pauseonUnfocused and not(self.persist.autoplay or self.persist.replayMode)) then
 		pauseGame(self)
 	end
 
