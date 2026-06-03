@@ -64,6 +64,10 @@ skill:
    # Skill card type, determines the popup effect
    # default to SR if not specified
    rarity: card_rarity
+   # Audio file to play on skill trigger
+   # Path is relative to beatmap root or embedded data
+   # Examples: "voices/skill_trigger_01.ogg", "sfx/special_sound.wav"
+   audio: audio_file_path
    # Trigger conditions. you can specify multiple requirements
    # but at least one condition below must be specified
    condition:
