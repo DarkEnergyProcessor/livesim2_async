@@ -1020,14 +1020,13 @@ end
 ---@param self Livesim2.DEPLSState
 local function draw(self)
 	-- draw background
-	local drawBackground = true
-
 	love.graphics.setColor(color.white)
+	love.graphics.setBlendMode("replace", "alphamultiply")
+	love.graphics.draw(self.data.background)
+	love.graphics.setBlendMode("alpha", "alphamultiply")
+
 	if self.persist.liveDelayCounter <= 0 and self.persist.coverArtDisplayDone then
-		if self.data.storyboard then
-			self.data.storyboard:draw()
-			drawBackground = false
-		elseif self.data.video then
+		if self.data.video then
 			love.graphics.setBlendMode("replace", "alphamultiply")
 			love.graphics.draw(
 				self.data.video.drawable,
@@ -1036,14 +1035,11 @@ local function draw(self)
 				self.data.video.w * 0.5, self.data.video.h * 0.5
 			)
 			love.graphics.setBlendMode("alpha", "alphamultiply")
-			drawBackground = false
 		end
-	end
 
-	if drawBackground then
-		love.graphics.setBlendMode("replace", "alphamultiply")
-		love.graphics.draw(self.data.background)
-		love.graphics.setBlendMode("alpha", "alphamultiply")
+		if self.data.storyboard then
+			self.data.storyboard:draw()
+		end
 	end
 
 	if self.persist.coverArtDisplayDone == false then
