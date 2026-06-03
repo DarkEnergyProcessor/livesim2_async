@@ -159,7 +159,6 @@ function yamlStoryboard:__construct(storyboardData, info)
 		type = "image",
 		tweenParams = {}
 	}
-	self.drawing[1] = self.drawable.__background
 
 	-- Load skill
 	if storyData.skill then
