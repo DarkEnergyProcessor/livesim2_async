@@ -735,13 +735,13 @@ function changeUnits:draw()
 	end
 end
 
-changeUnits:registerEvent("keyreleased", function(self, key)
-	if key == "escape" then
+changeUnits:registerEvent("keyreleased", function(self, _, scancode)
+	if scancode == "escape" then
 		tryLeave(nil, self)
 	elseif self.persist.keymapIndex > 0 then
 		-- unmappable keys means "cancel"
 		for i = 1, #unmapableKeys do
-			if unmapableKeys[i] == key then
+			if unmapableKeys[i] == scancode then
 				tryLeave(nil, self)
 				return
 			end
@@ -750,7 +750,7 @@ changeUnits:registerEvent("keyreleased", function(self, key)
 		-- Key is mappable
 		local kmap = self.persist.keymap
 		-- check if it's same key
-		if kmap[self.persist.keymapIndex] == key then
+		if kmap[self.persist.keymapIndex] == scancode then
 			-- cancel
 			tryLeave(nil, self)
 			return
@@ -758,7 +758,7 @@ changeUnits:registerEvent("keyreleased", function(self, key)
 
 		-- Check if this key is already used by different unit
 		for i = 1, 9 do
-			if kmap[i] == key then
+			if kmap[i] == scancode then
 				-- swap keys
 				kmap[i], kmap[self.persist.keymapIndex] = kmap[self.persist.keymapIndex], kmap[i]
 				tryLeave(nil, self)
@@ -767,7 +767,7 @@ changeUnits:registerEvent("keyreleased", function(self, key)
 		end
 
 		-- It's not used anywhere. Assign.
-		kmap[self.persist.keymapIndex] = key
+		kmap[self.persist.keymapIndex] = scancode
 		tryLeave(nil, self)
 	end
 end)

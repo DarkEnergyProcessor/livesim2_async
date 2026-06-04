@@ -252,6 +252,9 @@ function DEPLS:load(arg)
 		replay.setEventData(arg.replay.events)
 	end
 
+	-- pause on unfocused
+	self.persist.pauseonUnfocused = Setting.get("PAUSE_ON_UNFOCUSED") == 1
+
 	-- note vanish type
 	local vanishType
 	if arg.replay then
@@ -498,9 +501,23 @@ function DEPLS:load(arg)
 				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1
 			end
 
-			fullScore = fullScore + (t.effect > 10 and 370 or 739)
-		end
+			if t.effect == 13 then
+				fullScore = fullScore + (self.persist.tapScore * 0.625)
+			elseif t.effect == 3 then
+				fullScore = fullScore + (self.persist.tapScore * 1.25)
+			elseif t.effect > 10 then
+				fullScore = fullScore + (self.persist.tapScore * 0.5)
+			else
+				fullScore = fullScore + self.persist.tapScore
+			end
 
+			--fullScore = fullScore + (t.effect > 10 and 370 or 739)
+			
+			if i == #notes then
+				fullScore = math.floor(fullScore * 0.94)
+			end
+		end
+		
 		self.persist.noteInfo.totalNotes = #notes
 		self.data.liveUI:setTotalNotes(#notes)
 		self.data.noteManager:initialize()
@@ -1202,32 +1219,32 @@ DEPLS:registerEvent("resize", function(self, w, h)
 	end
 end)
 
-DEPLS:registerEvent("keypressed", function(self, key, _, rep)
+DEPLS:registerEvent("keypressed", function(self, _, scancode, rep)
 	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
-	log.debugf("livesim2", "keypressed, key: %s, repeat: %s", key, tostring(rep))
+	log.debugf("livesim2", "keypressed, scancode: %s, repeat: %s", scancode, tostring(rep))
 
 	if
 		not(rep) and
 		not(self.persist.replayMode) and
 		not(self.data.pauseObject:isPaused()) and
-		self.persist.keymap[key]
+		self.persist.keymap[scancode]
 	then
 		if not(self.persist.autoplay) then
-			replay.recordKeypressed(self.persist.keymap[key])
+			replay.recordKeypressed(self.persist.keymap[scancode])
 		end
-		return self.data.noteManager:setTouch(self.persist.keymap[key], key)
+		return self.data.noteManager:setTouch(self.persist.keymap[scancode], scancode)
 	end
 end)
 
-DEPLS:registerEvent("keyreleased", function(self, key)
+DEPLS:registerEvent("keyreleased", function(self, _, scancode)
 	if self.persist.render then return end
 	if not(self.persist.coverArtDisplayDone) then return end
-	log.debugf("livesim2", "keypressed, key: %s", key)
+	log.debugf("livesim2", "keypressed, scancode: %s", scancode)
 
 	local isPaused = self.data.pauseObject:isPaused()
 
-	if key == "escape" then
+	if scancode == "escape" then
 		if love._os == "Android" then
 			if self.persist.liveDelayCounter <= 0 and not(isPaused) then
 				return pauseGame(self)
@@ -1237,7 +1254,7 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 		else
 			return Gamestate.leave(LoadingInstance.getInstance())
 		end
-	elseif key == "pause" then
+	elseif scancode == "pause" then
 		if isPaused then
 			return self.data.pauseObject:fastResume()
 		elseif self.persist.liveDelayCounter <= 0 then
@@ -1245,11 +1262,11 @@ DEPLS:registerEvent("keyreleased", function(self, key)
 		end
 	end
 
-	if not(self.persist.replayMode) and not(isPaused) and self.persist.keymap[key] then
+	if not(self.persist.replayMode) and not(isPaused) and self.persist.keymap[scancode] then
 		if not(self.persist.autoplay) then
-			replay.recordKeyreleased(self.persist.keymap[key])
+			replay.recordKeyreleased(self.persist.keymap[scancode])
 		end
-		return self.data.noteManager:setTouch(self.persist.keymap[key], key, true)
+		return self.data.noteManager:setTouch(self.persist.keymap[scancode], scancode, true)
 	end
 end)
 
@@ -1282,7 +1299,7 @@ DEPLS:registerEvent("touchmoved", livesimInputMoved)
 DEPLS:registerEvent("touchreleased", livesimInputReleased)
 
 DEPLS:registerEvent("focus", function(self)
-	if Util.isMobile() then
+	if Util.isMobile() or (self.persist.pauseonUnfocused and not(self.persist.autoplay or self.persist.replayMode)) then
 		pauseGame(self)
 	end
 

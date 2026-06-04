@@ -228,7 +228,7 @@ do
 		love.graphics.rectangle("line", x, y, self.width, self.height, 20, 20)
 		love.graphics.setColor(color.black)
 		love.graphics.draw(self.image, x + 12, y + 7, 0, 0.32)
-		Util.drawText(self.text, x + 37, y + 12)
+		Util.drawText(self.text, x + 42, y + 12)
 
 		if self.ripple:isActive() then
 			Util.stencil11(self.stencilFunc, "replace", 1, false)

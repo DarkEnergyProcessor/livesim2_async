@@ -26,7 +26,7 @@ local MakunoV2UI = Luaoop.class("livesim2.MakunoV2LiveUI", UIBase)
 local itf_score = {
     txt = {
         "D","C","B","A","S", -- Regular Rank
-        "SS","SSS","SPI","UPI" -- Super Rank
+        "SS","SSS","SSI","USI" -- Super Rank
     },
 
     color = {
@@ -38,8 +38,8 @@ local itf_score = {
         ----------------------
         {255, 220,  85}, -- SS  (x2 of S)
         {145, 235, 255}, -- SSS (x3 of S)
-        {255,  10, 215}, -- SPI (x6 of S)
-        {255,  50,  50}, -- UPI (x9 of S)
+        {255,  10, 215}, -- SSI (x6 of S)
+        {255,  50,  50}, -- USI (x9 of S)
     },
 }
 
@@ -110,7 +110,7 @@ local itf_conf = {
 
         0 - Don't use Overflow stamina.
         1 - Use Overflow stamina.
-        2 - Mimic SIF2/Bandori/D4DJ Stamina Overflow (No Bonus).
+        2 - Mimic [insert any gacha card (mini) rhythm game here] Stamina Overflow (No Bonus).
     ]]
     sy_useoverflow = 2,
 
@@ -119,7 +119,6 @@ local itf_conf = {
 local fonts = {
     light = "fonts/Jost-Light.ttf",
     regular = "fonts/Jost-Regular.ttf",
-    italic = "fonts/Jost-Italic.ttf",
     medium = "fonts/Jost-Medium.ttf",
 }
 
@@ -209,6 +208,7 @@ end
 
 ---Spaced Out the letters
 ---@param text string
+---@return string
 local function spacedtext(text)
 
     local t = tostring(text)
@@ -334,6 +334,7 @@ function MakunoV2UI:__construct(aupy, mife)
     self.display_EXscore = self.data_currentEXscore
 
     self.data_scorerank = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+    self.data_currentscorerank = 0
     self.display_scorecolor = retrieveColor()
     self.display_ranktext = itf_score.txt[1]
 
@@ -445,7 +446,12 @@ function MakunoV2UI:__construct(aupy, mife)
         love.graphics.polygon("fill", 679, self.display_global.mb_line_y1, 679, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2)
     end
 
+    -- Cut the line the creep through score bar
     self.sten_stencil5 = function()
+        love.graphics.rectangle("fill", self.display_global.lb_x1 - 10, self.display_global.mb_line_y1 - 12, self.display_global.rb_x2 - self.display_global.lb_x1 + 15, 13)
+    end
+
+    self.sten_stencil6 = function()
         love.graphics.polygon("fill", self.display_global.lb_x1, self.display_global.mb_line_y1, 281, self.display_global.mb_line_y1, 293, self.display_global.mb_line_y2, self.display_global.lb_x2, self.display_global.mb_line_y2)
         love.graphics.polygon("fill", 679, self.display_global.mb_line_y1, self.display_global.rb_x2, self.display_global.mb_line_y1, self.display_global.rb_x1, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2)
     end
@@ -648,8 +654,11 @@ function MakunoV2UI:update(dt, paused)
 
         for i = (#itf_score.txt - 1), 1, -1 do
             if self.display_score >= self.data_scorerank[i] then
+                if self.data_currentscorerank == i then break end
+                self.data_currentscorerank = i
+
                 if (itf_conf.dy_usesuperrank == 0) and i > 4 then i = 4 end
-    
+                
                 if self.tween_display_colorrank then self.timer:cancel(self.tween_display_colorrank) end
                 self.tween_display_colorrank = self.timer:tween(1, self.display_scorecolor, retrieveColor(1 + i), "out-expo")
     
@@ -944,7 +953,7 @@ function MakunoV2UI:addStamina(value)
             local remain_stamina = self.data_maximumstamina - self.data_currentstamina
             local remain_forover = a - remain_stamina
 
-            if (self.data_currentoverflow + remain_forover) >= self.data_maximumstamina and itf_conf.sy_useoverflow == 1 then
+            if itf_conf.sy_useoverflow == 1 and (self.data_currentoverflow + remain_forover) >= self.data_maximumstamina then
                 -- Applies bonus (not) similar to SIF1 does
                 local remain_curover = self.data_maximumstamina - self.data_currentoverflow
                 local rest_over = remain_forover - remain_curover
@@ -1107,7 +1116,6 @@ end
 -- Most of the element
 local dst, dsn, dse = {
     t_score = nil,
-    t_accscore = nil,
     t_acc = nil,
     t_pigi = nil,
     t_exsc = nil,
@@ -1116,7 +1124,6 @@ local dst, dsn, dse = {
 }, {
     n_score = nil,
     n_acc = nil,
-    n_accscore = nil,
     n_pigi = nil,
     n_exsc = nil,
     n_combo = nil,
@@ -1144,16 +1151,24 @@ local ds_se, ds_sn = {
 }
 function MakunoV2UI:drawStatus()
     
+    if itf_conf.dy_accdisplay == 2 then
+        dst.t_acc = tostring(self.display_text.top.ACC.." "..self.display_text.top.SCO)
+    else
+        dst.t_acc = tostring(self.display_text.top.ACC)
+    end
+
     dst.t_score = tostring(self.display_text.top.SCO.." - RANK "..self.display_ranktext)
-    dst.t_accscore = tostring(self.display_text.top.ACC.." "..self.display_text.top.SCO)
-    dst.t_acc = tostring(self.display_text.top.ACC)
     dst.t_pigi = tostring(self.display_text.top.PGR)
     dst.t_exsc = tostring(self.display_text.top.EXS)
     dst.t_judge = spacedtext(self.display_judgement_text)
     
+    if itf_conf.dy_accdisplay == 2 then
+        dsn.n_acc = string.format("%.0f", self.display_accuracy*10000):reverse():gsub("(%d%d%d)","%1,"):gsub(",(%-?)$", "%1"):reverse()
+    else
+        dsn.n_acc = string.format("%.2f%%", self.display_accuracy)
+    end
+
     dsn.n_score = string.format("%.0f", self.display_score):reverse():gsub("(%d%d%d)","%1,"):gsub(",(%-?)$", "%1"):reverse()
-    dsn.n_acc = string.format("%.2f%%", self.display_accuracy)
-    dsn.n_accscore = string.format("%.0f", self.display_accuracy*10000):reverse():gsub("(%d%d%d)","%1,"):gsub(",(%-?)$", "%1"):reverse()
     dsn.n_exsc = string.format("%.0f", self.display_EXscore)
     dsn.n_combo = tostring(self.data_currentcombo)
     dsn.n_comboburst = tostring(self._next_comboburst - 100)
@@ -1237,7 +1252,7 @@ function MakunoV2UI:drawStatus()
     love.graphics.setLineJoin("bevel")
 
     setColor(255, 255, 255, self.display_element_opacity * 0.5)
-    if not(dse.l_score == nil) then
+    if (dse.l_score) then
         for i, v in pairs(dse.l_score) do
             if (i < #dse.l_score) then
                 love.graphics.line(v, self.display_global.T_bar_y, v, self.display_global.B_bar_y)
@@ -1283,6 +1298,9 @@ function MakunoV2UI:drawStatus()
 
         love.graphics.setStencilTest()
         
+        love.graphics.stencil(self.sten_stencil5, "increment", 1)
+        love.graphics.setStencilTest("equal", 0)
+
         setColor(65, 65, 65, self.display_element_opacity * 0.2)
         love.graphics.line(self.display_global.lb_x1, self.display_global.mb_line_y1 + 2, self.display_global.lb_x2, self.display_global.mb_line_y2 + 2, self.display_global.rb_x1, self.display_global.mb_line_y2 + 2, self.display_global.rb_x2, self.display_global.mb_line_y1 + 2)
 
@@ -1295,6 +1313,7 @@ function MakunoV2UI:drawStatus()
         love.graphics.line(667, self.display_global.mb_line_y2, self.display_global.rb_x1, self.display_global.mb_line_y2, self.display_global.rb_x2, self.display_global.mb_line_y1)
         love.graphics.line(281, self.display_global.mb_line_y1, 293, self.display_global.mb_line_y2, 667, self.display_global.mb_line_y2, 679, self.display_global.mb_line_y1)
         
+        love.graphics.setStencilTest()
     end
 
     ----------------------------------------
@@ -1314,7 +1333,7 @@ function MakunoV2UI:drawStatus()
         ds_sn.n_stam = string.format("%.0f", self.display_stamina + self.display_overflowstamina)
         ds_sn.n_ovbon = tostring("x"..self.data_overflowbonus)
 
-        love.graphics.stencil(self.sten_stencil5, "increment", 1)
+        love.graphics.stencil(self.sten_stencil6, "increment", 1)
         love.graphics.setStencilTest("gequal", 1)
 
         setColor(25, 25, 25, self.display_element_opacity * self.display_global.stami_opa * 0.3)
@@ -1337,27 +1356,15 @@ function MakunoV2UI:drawStatus()
     love.graphics.stencil(self.sten_stencil2, "increment", 1)
     love.graphics.setStencilTest("gequal", 1)
 
-    if itf_conf.dy_accdisplay == 2 then
-        setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
-        love.graphics.printf(dsn.n_accscore, self.fonts[2], self.display_global.L_topnum_x - 1.2, self.display_global.L_topnum_y + 1.2, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
+    setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
+    love.graphics.printf(dsn.n_acc, self.fonts[2], self.display_global.L_topnum_x - 1.2, self.display_global.L_topnum_y + 1.2, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
 
-        setColor(25, 25, 25, self.display_text_opacity * 0.3)
-        love.graphics.printf(dst.t_accscore, self.fonts[1], self.display_global.L_toptext_x - 1.1, self.display_global.L_toptext_y + 1.1, 360, "left", 0, 1, 1, 0, 0)
+    setColor(25, 25, 25, self.display_text_opacity * 0.3)
+    love.graphics.printf(dst.t_acc, self.fonts[1], self.display_global.L_toptext_x  - 1.1, self.display_global.L_toptext_y + 1.1, 360, "left", 0, 1, 1, 0, 0)
 
-        setColor(255, 255, 255, self.display_text_opacity * 0.9)
-        love.graphics.printf(dsn.n_accscore, self.fonts[2], self.display_global.L_topnum_x, self.display_global.L_topnum_y, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
-        love.graphics.printf(dst.t_accscore, self.fonts[1], self.display_global.L_toptext_x, self.display_global.L_toptext_y, 360, "left", 0, 1, 1, 0, 0)
-    else
-        setColor(self.display_scorecolor, self.display_text_opacity * 0.3)
-        love.graphics.printf(dsn.n_acc, self.fonts[2], self.display_global.L_topnum_x - 1.2, self.display_global.L_topnum_y + 1.2, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
-
-        setColor(25, 25, 25, self.display_text_opacity * 0.3)
-        love.graphics.printf(dst.t_acc, self.fonts[1], self.display_global.L_toptext_x  - 1.1, self.display_global.L_toptext_y + 1.1, 360, "left", 0, 1, 1, 0, 0)
-
-        setColor(255, 255, 255, self.display_text_opacity * 0.9)
-        love.graphics.printf(dsn.n_acc, self.fonts[2], self.display_global.L_topnum_x, self.display_global.L_topnum_y, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
-        love.graphics.printf(dst.t_acc, self.fonts[1], self.display_global.L_toptext_x, self.display_global.L_toptext_y, 360, "left", 0, 1, 1, 0, 0)
-    end
+    setColor(255, 255, 255, self.display_text_opacity * 0.9)
+    love.graphics.printf(dsn.n_acc, self.fonts[2], self.display_global.L_topnum_x, self.display_global.L_topnum_y, 360, "left", 0, 1, 1, 0, self.fonts_h[2])
+    love.graphics.printf(dst.t_acc, self.fonts[1], self.display_global.L_toptext_x, self.display_global.L_toptext_y, 360, "left", 0, 1, 1, 0, 0)
 
     ----------------------------------------
     --- Score

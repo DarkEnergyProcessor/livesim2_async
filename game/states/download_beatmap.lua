@@ -384,6 +384,7 @@ local function leave()
 end
 
 function beatmapInfoDL:load()
+	--TODO: This section need to redesign to match with other interface
 	Glow.clear()
 	local font22 = MainFont.get(22)
 

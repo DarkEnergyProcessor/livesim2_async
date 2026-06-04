@@ -297,7 +297,11 @@ function gameSetting:load()
 	-- General settings
 	if self.persist.generalSetting == nil then
 		local frame = newSettingFrame()
-		local themeDisplay = {"μ's", "Aqours", "NijiGaku", "Liella", "Hasunosora", "Musical", "Yohane"}
+		local themeDisplay = {
+			"μ's", "Aqours", "NijiGaku", 
+			"Liella", "Hasunosora", "Musical", 
+			"Yohane", "Ikizulive"
+		}
 		local tapSoundDisplay = {}
 		for i = 1, #tapSound do
 			tapSoundDisplay[i] = tapSound[i].name
@@ -420,22 +424,24 @@ function gameSetting:load()
 		}
 		self.persist.liveFrame = frame
 		self.persist.liveSetting = {
-			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
+			switchSetting(frame, L"setting:live:pauseonUnfocused", "PAUSE_ON_UNFOCUSED")
 				:setPosition(0, 12),
-			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
+			switchSetting(frame, L"setting:live:customUnits", "CBF_UNIT_LOAD")
 				:setPosition(0, 64+12),
-			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 10})
+			switchSetting(frame, L"setting:live:minimalEffect", "MINIMAL_EFFECT")
 				:setPosition(0, 128+12),
+			numberSetting(frame, L"setting:live:noteSpeed", "NOTE_SPEED", {min = 400, max = 3000, snap = 10})
+				:setPosition(0, 192+12),
 			numberSetting(frame, L"setting:live:textScaling", "TEXT_SCALING", {
 				min = 50, max = 100, default = 100, snap = 10, div = 100
 			})
-				:setPosition(0, 192+12),
-			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
 				:setPosition(0, 256+12),
-			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 3, default = 0, display = vanish})
+			switchSetting(frame, L"setting:live:skillPopup", "SKILL_POPUP")
 				:setPosition(0, 320+12),
+			numberSetting(frame, L"setting:live:vanish", "VANISH_TYPE", {min = 0, max = 3, default = 0, display = vanish})
+				:setPosition(0, 384+12),
 			numberSetting(frame, L"setting:live:noteVisualSize", "VISUAL_NOTEICONSIZE", {min = 75, max = 125, default = 100, snap = 5})
-				:setPosition(0, 384+12)
+				:setPosition(0, 448+12)
 		}
 	end
 
@@ -651,8 +657,8 @@ function gameSetting:draw()
 		love.graphics.draw(self.persist.background)
 		love.graphics.setColor(color.compat(0, 0, 0, self.persist.backgroundDim))
 		love.graphics.rectangle("fill", -88, -43, 1136, 726)
-		love.graphics.setColor(color.white25PT)
-		love.graphics.rectangle("fill", 0, 0, 240, 640)
+		love.graphics.setColor(color.white50PT)
+		love.graphics.rectangle("fill", 0, 0, 240, 720)
 
 		if set then
 			for i = 1, #set[3] do
@@ -670,7 +676,7 @@ function gameSetting:draw()
 		if set then
 			local theme = ColorTheme.get()
 			love.graphics.setColor(theme[1], theme[2], theme[3], select(4, color.compat(0, 0, 0, opacity)))
-			love.graphics.rectangle("fill", 240, 86, 6, 597)
+			love.graphics.rectangle("fill", 240, 80, 6, 620)
 		end
 	end
 

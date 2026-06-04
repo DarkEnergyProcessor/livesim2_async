@@ -95,6 +95,7 @@
 		"setting:general:themeColor": "Theme Color",
 		"setting:general:timingOffset": "Timing Offset",
 		"setting:live": "Live",
+		"setting:live:pauseonUnfocused": "Pause on Unfocused",
 		"setting:live:customUnits": "Load Custom Units",
 		"setting:live:minimalEffect": "Minimal Effect",
 		"setting:live:noteSpeed": "Note Speed",

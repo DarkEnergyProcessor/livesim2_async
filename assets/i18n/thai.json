@@ -108,6 +108,7 @@
 		"setting:general:downloadOffset": "บีทแมพจากการดาวน์โหลด (ms)",
 
 		"setting:live": "ไลฟ์",
+		"setting:live:pauseonUnfocused": "หยุดพักถ้าหน้าต่างไม่โฟกัส",
 		"setting:live:customUnits": "ใช้ทีมจากบีทแมพ (ถ้ามี)",
 		"setting:live:minimalEffect": "ลดเอฟเฟคขณะไลฟ์",
 		"setting:live:noteSpeed": "ความเร็วโน้ต",
