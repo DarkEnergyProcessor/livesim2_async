@@ -19,7 +19,7 @@ local skill = Luaoop.class("Livesim2.Skill")
 -- index 1 is skill text (440x139 in 1024x1024 atlas)
 -- index 2 is unit skill color (64x64 in 256x256 atlas)
 local function skillTextQuad(x, y)
-	return love.graphics.newQuad(x * 400, y * 139, 440, 139, 1024, 1024)
+	return love.graphics.newQuad(x * 440, y * 139, 440, 139, 1024, 1024)
 end
 
 local function unitSkillColorQuad(x, y)
