@@ -8,6 +8,15 @@ local socket = require("socket")
 local log = require("logging")
 local hashttps, https = pcall(require, "https")
 
+if not hashttps then
+	-- Stock LOVE builds don't include lua-https; fall back to system curl (macOS/Linux)
+	local okCurl, curlHttps = pcall(require, "game.dm.curl_https")
+	if okCurl and curlHttps.available() then
+		hashttps, https = true, curlHttps
+		log.infof(TAG, "lua-https not available, using system curl")
+	end
+end
+
 require("love.event")
 require("love.timer")
 
