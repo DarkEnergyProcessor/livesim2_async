@@ -252,7 +252,7 @@ function mainMenu:load()
 
 	if not(self.data.changeUnitsButton) then
 		self.data.changeUnitsButton = ChangeUnitsButton(self)
-		self.data.changeUnitsButton:addEventListener("mousereleased", makeEnterGamestateFunction("changeUnits"))
+		self.data.changeUnitsButton:addEventListener("mousereleased", makeEnterGamestateFunction("teamSelect"))
 	end
 	Glow.addElement(self.data.changeUnitsButton, 497, 29)
 

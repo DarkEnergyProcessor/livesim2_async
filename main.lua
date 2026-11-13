@@ -129,6 +129,8 @@ local function registerGamestates()
 	Gamestate.register("beatmapInsert", require("game.states.beatmap_process"))
 	Gamestate.register("beatmapSelect", require("game.states.beatmap_select"))
 	Gamestate.register("changeUnits", require("game.states.change_units"))
+	Gamestate.register("teamSelect", require("game.states.team_select"))
+	Gamestate.register("cardPicker", require("game.states.card_picker"))
 	Gamestate.register("dummy", require("game.states.dummy"))
 	Gamestate.register("language", require("game.states.gamelang"))
 	Gamestate.register("livesim2", require("game.states.livesim2"))
@@ -144,6 +146,7 @@ local SETTING_LIST = {
 	AUTOPLAY = 0,
 	AUTO_BACKGROUND = 1,
 	BACKGROUND_IMAGE = 10,
+	CARD_TEAM = "ur_appeal\tssr_lane\tsr_perfect\tur_crit\tur_key\tssr_lock\tsr_opener\tssr_heal\tsr_steady",
 	CBF_UNIT_LOAD = 1,
 	COLOR_THEME = 1,
 	GLOBAL_OFFSET = 0,
@@ -166,7 +169,7 @@ local SETTING_LIST = {
 	SKILL_POPUP = 1,
 	SONG_VOLUME = 80,
 	STAMINA_DISPLAY = 32,
-	STAMINA_FUNCTIONAL = 0,
+	STAMINA_FUNCTIONAL = 1,
 	STORYBOARD = Util.isMobile() and 0 or 1,
 	TAP_SOUND = 1,
 	TEXT_SCALING = 1,
@@ -570,6 +573,7 @@ function love.load(argv, gameargv)
 	end
 	-- Process command line
 	local absolutePlayBeatmapName
+	local startState
 	local playBeatmapName
 	local autoplayOverride
 	local storyboardOverride
@@ -644,6 +648,9 @@ function love.load(argv, gameargv)
 				i = i + 1
 			elseif arg == "-random" then
 				randomizeBeatmap = true
+			elseif arg == "-state" then
+				startState = assert(argv[i+1], "please specify gamestate name")
+				i = i + 1
 			elseif arg == "-render" then
 				render = {}
 				render.output = assert(argv[i+1], "please specify output file")
@@ -943,7 +950,7 @@ function love.load(argv, gameargv)
 			if love.filesystem.isFused() or alwaysSplash then
 				Gamestate.enter(nil, "splash")
 			else
-				Gamestate.enter(LoadingInstance.getInstance(), "mainMenu")
+				Gamestate.enter(LoadingInstance.getInstance(), startState or "mainMenu")
 			end
 		end
 	end

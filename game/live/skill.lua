@@ -125,13 +125,20 @@ function skill:__construct(fullNavi, liveUI, noteManager, seed)
 		great = {},
 		good = {},
 		bad = {},
-		miss = {}
+		miss = {},
+		crit = {},
+		lane_notes = {},
+		hp_below = {},
 	}
+	-- card skills: list of {skill = obj, conditions = {entries...}, card = card, slot = n}
+	self.cardSkills = {}
+	self.cardLive = nil
+	self.hpTriggered = {}
 end
 
 local validCondition = {
 	"notes", "combo", "star", "token", "time", "score",
-	"perfect", "great", "good", "bad", "miss"
+	"perfect", "great", "good", "bad", "miss", "crit", "lane_notes"
 }
 
 function skill:register(data, condition)
@@ -172,7 +179,7 @@ end
 function skill:_triggerSkill(v)
 	if not(self.flash) then
 		self.flash = getFlash()
-		if self.fullNavi then
+		if self.fullNavi and v.navi then
 			self.flash:setMovie(v.rarity)
 			self.flash:setImage("skill_chara", v.navi)
 		else
@@ -201,8 +208,12 @@ function skill:_handleSkill(v, value)
 	while v.counter >= v.needed do
 		v.counter = v.counter - v.needed
 
-		if self.rng:random() < v.skill.chance then
-			log.debugf("skill", "triggering skill with chance %.2f", v.skill.chance)
+		local chance = v.skill.chance
+		if v.skill.card and self.cardLive then
+			chance = self.cardLive:getSkillChance(chance, v.skill.slot)
+		end
+		if self.rng:random() < chance then
+			log.debugf("skill", "triggering skill with chance %.2f", chance)
 			self:_triggerSkill(v.skill)
 		end
 	end
@@ -248,11 +259,19 @@ function skill:update(dt, paused)
 	self.liveUIOpacity = self.liveUI:getOpacity()
 end
 
-function skill:noteCallback(judgement, token, star)
+function skill:noteCallback(judgement, token, star, lane)
 	assert(Util.isValueInArray(validCondition, judgement), "invalid judgement")
 
 	for _, v in ipairs(self.skillCondition[judgement]) do
 		self:_handleSkill(v, 1)
+	end
+
+	if lane then
+		for _, v in ipairs(self.skillCondition.lane_notes) do
+			if v.skill.slot == lane then
+				self:_handleSkill(v, 1)
+			end
+		end
 	end
 
 	-- combo-based
@@ -291,6 +310,114 @@ function skill:scoreCallback(score)
 	-- score-based
 	for _, v in ipairs(self.skillCondition.score) do
 		self:_handleSkill(v, score)
+	end
+end
+
+function skill:critCallback()
+	for _, v in ipairs(self.skillCondition.crit) do
+		self:_handleSkill(v, 1)
+	end
+end
+
+-- fraction: current HP / max HP, called after damage
+function skill:hpCallback(fraction)
+	for _, v in ipairs(self.skillCondition.hp_below) do
+		if fraction < v.needed and not(self.hpTriggered[v]) then
+			self.hpTriggered[v] = true
+			self:_handleSkill(v, v.needed) -- counter reaches needed exactly once
+		end
+	end
+end
+
+-- Key note: every card skill that is "ready" fires at keyChance, once per key section
+function skill:keyNoteCallback(keyChance, section)
+	keyChance = keyChance or 1
+	section = section or 0
+	for _, cs in ipairs(self.cardSkills) do
+		if cs.lastKeySection ~= section then
+			local ready = cs.key
+			if not ready then
+				for _, cond in ipairs(cs.conditions) do
+					if cond.needed > 0 and cond.counter >= cond.needed * 0.5 then
+						ready = true
+						cond.counter = 0
+					end
+				end
+			end
+			if ready then
+				cs.lastKeySection = section
+				if self.rng:random() < keyChance then
+					log.debugf("skill", "key note fires skill of slot %d", cs.slot)
+					self:_triggerSkill(cs.skill)
+				end
+			end
+		end
+	end
+end
+
+local effectIcon = {
+	heal = "healer",
+	perfect_lock = "tw+",
+	perfect_lock_strong = "tw++",
+}
+
+-- Register a card's skill. cardLive is the Livesim2.CardLive instance.
+function skill:registerCard(slot, card, cardLive, naviImage)
+	self.cardLive = cardLive
+	local sk = card.skill
+	if not sk then return end
+
+	local icon = "score_up"
+	for _, e in ipairs(sk.effects) do
+		if effectIcon[e.type] then icon = effectIcon[e.type] break end
+	end
+
+	local obj = {
+		image = skill.list[icon],
+		chance = sk.chance,
+		rarity = skill.rarity[card.rarity] or skill.rarity.r,
+		callback = function()
+			cardLive:applyEffects(sk.effects, slot)
+		end,
+		navi = naviImage,
+		audio = sk.audio,
+		value = 0,
+		index = assert(self.unitPosition[slot], "invalid slot"),
+		card = card,
+		slot = slot,
+	}
+
+	local entry = {skill = obj, conditions = {}, card = card, slot = slot, key = sk.trigger.key == true}
+	self.cardSkills[#self.cardSkills + 1] = entry
+
+	for name, needed in pairs(sk.trigger) do
+		if name == "key" or name == "start" then
+			-- handled separately
+		elseif self.skillCondition[name] then
+			local cond = {counter = 0, needed = needed, skill = obj}
+			local u = self.skillCondition[name]
+			u[#u + 1] = cond
+			entry.conditions[#entry.conditions + 1] = cond
+		else
+			log.warnf("skill", "card %s: unknown trigger %q", card.id, tostring(name))
+		end
+	end
+
+	if sk.trigger.start then
+		entry.startPending = true
+	end
+end
+
+-- Call once when the live starts (after the countdown)
+function skill:liveStartCallback()
+	for _, cs in ipairs(self.cardSkills) do
+		if cs.startPending then
+			cs.startPending = false
+			local chance = self.cardLive and self.cardLive:getSkillChance(cs.skill.chance, cs.slot) or cs.skill.chance
+			if self.rng:random() < chance then
+				self:_triggerSkill(cs.skill)
+			end
+		end
 	end
 end
 

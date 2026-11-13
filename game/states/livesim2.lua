@@ -32,6 +32,8 @@ local skill = require("game.live.skill")
 local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 local BeatmapRandomizer = require("game.live.randomizer3")
+local cards = require("game.cards")
+local CardLive = require("game.cards.live")
 
 ---@class Livesim2.DEPLSState: Gamestate.Gamestate
 local DEPLS = Gamestate.create {
@@ -275,10 +277,10 @@ function DEPLS:load(arg)
 		self.persist.tapScore = Setting.get("SCORE_ADD_NOTE")
 	end
 	assert(self.persist.tapScore > 0, "invalid score/tap, check setting!")
-	self.persist.stamina = arg.replay and self.persist.replayMode.stamina or arg.summary.stamina or 0
-	if self.persist.stamina == 0 then
-		self.persist.stamina = Setting.get("STAMINA_DISPLAY")
-	end
+	-- cards: the team decides HP and per-note score
+	self.persist.team = cards.getTeam()
+	self.data.cardLive = CardLive(self.persist.team)
+	self.persist.stamina = self.data.cardLive.displayMax
 	self.persist.noFail = Setting.get("STAMINA_FUNCTIONAL") == 0
 
 	-- load live UI
@@ -344,20 +346,33 @@ function DEPLS:load(arg)
 			)
 			local release = releaseFlag == 2
 
-			-- judgement
+			-- key note: ready skills fire before this note is scored
+			if object.key and releaseFlag ~= 1 then
+				self.data.skill:keyNoteCallback(self.data.cardLive.rules.keyNoteChance, object.keySection)
+			end
+
+			-- judgement (perfect locks / combo shields may upgrade it)
+			local rawJudgement = judgement
+			judgement = self.data.cardLive:adjustJudgement(judgement, lane)
+			local comboBefore = self.data.liveUI:getCurrentCombo()
 			self.data.liveUI:comboJudgement(judgement, releaseFlag ~= 1)
 			if releaseFlag ~= 1 then
 				local lowestJudgement = pickLowestJudgement(judgement, object.previousJudgement)
 
 				-- Send skill
-				self.data.skill:noteCallback(lowestJudgement, object.token, object.star)
+				self.data.skill:noteCallback(lowestJudgement, object.token, object.star, lane)
 
 				if judgement ~= "miss" then
-					local scoreMulType = (release and 1.25 or 1) * (object.swing and 0.5 or 1)
-					local scoreMul = scoreMulType * (object.scoreMultipler or 1) * self.data.liveUI:getScoreComboMultipler()
-					local score = math.ceil(scoreMul * scoreMultipler[judgement] * self.persist.tapScore)
+					local score, crit = self.data.cardLive:noteScore(lane, lowestJudgement, comboBefore, {
+						release = release, swing = object.swing
+					})
 					self.data.liveUI:addScore(score)
-					self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+					if crit then
+						self.data.liveUI:addTapEffect(position.x, position.y, 255, 230, 80, 1)
+						self.data.skill:critCallback()
+					else
+						self.data.liveUI:addTapEffect(position.x, position.y, 255, 255, 255, 1)
+					end
 					self.data.skill:scoreCallback(score)
 				end
 
@@ -383,7 +398,7 @@ function DEPLS:load(arg)
 				object.previousJudgement = judgement
 			else
 				-- in this case, the note is not pressed and it miss
-				self.data.skill:noteCallback("miss", object.token, object.star)
+				self.data.skill:noteCallback("miss", object.token, object.star, lane)
 			end
 
 			-- play SFX
@@ -418,8 +433,12 @@ function DEPLS:load(arg)
 
 			-- damage
 			if not(self.persist.noFail or self.persist.replayMode) then
-				self.data.liveUI:addStamina(-math.floor(staminaJudgmentDamage[judgement] * (object.star and 2 or 1)))
-				if self.data.liveUI:getStamina() == 0 then
+				local damage = self.data.cardLive:getDamage(judgement, object.star)
+				if damage > 0 then
+					self.data.cardLive:damage(damage)
+					self.data.skill:hpCallback(self.data.cardLive:getHPFraction())
+				end
+				if self.data.cardLive:getHP() <= 0 then
 					-- fail
 					pauseGame(self, true)
 				end
@@ -451,6 +470,7 @@ function DEPLS:load(arg)
 	else
 		self.persist.randomGeneratedSeed = {math.random(0, 4294967295), math.random(0, 4294967295)}
 	end
+	self.data.cardLive:setSeed(self.persist.randomGeneratedSeed)
 
 	-- background
 	local loadBackground = Setting.get("AUTO_BACKGROUND") == 1
@@ -494,8 +514,19 @@ function DEPLS:load(arg)
 			end
 		end
 
+		-- key sections: notes inside them are key notes
+		local keySections = cards.loadKeySections(arg.beatmapName)
+		local keyCount = 0
+
 		for i = 1, #notes do
 			local t = notes[i]
+
+			local section = keySections and cards.isInKeySection(keySections, t.timing_sec)
+			if section then
+				t.key = true
+				t.keySection = section
+				keyCount = keyCount + 1
+			end
 
 			if self.data.noteManager:addNote(t) then
 				self.persist.noteInfo.tokenAmount = self.persist.noteInfo.tokenAmount + 1
@@ -519,6 +550,7 @@ function DEPLS:load(arg)
 		end
 		
 		self.persist.noteInfo.totalNotes = #notes
+		log.infof("livesim2", "key notes: %d", keyCount)
 		self.data.liveUI:setTotalNotes(#notes)
 		self.data.noteManager:initialize()
 
@@ -768,10 +800,15 @@ function DEPLS:load(arg)
 	end
 	assert(#unitDefaultName == 9, "IDOL_IMAGE setting is not valid")
 	log.debug("livesim2", "initializing units")
+	self.data.cardImages = {}
 	for i = 1, 9 do
 		local image
+		local card = self.persist.team[i]
 
-		if self.data.customUnit and self.data.customUnit[i] then
+		if card and cards.loadImage(card) then
+			image = cards.loadImage(card)
+			self.data.cardImages[i] = image
+		elseif self.data.customUnit and self.data.customUnit[i] then
 			image = unitImageCache[self.data.customUnit[i]]
 			if not(image) then
 				image = love.graphics.newImage(self.data.customUnit[i], {mipmaps = true})
@@ -815,6 +852,10 @@ function DEPLS:load(arg)
 		self.data.noteManager,
 		self.persist.randomGeneratedSeed
 	)
+	self.data.cardLive:attach(self.data.liveUI, self.data.noteManager, self.data.skill)
+	for i = 1, 9 do
+		self.data.skill:registerCard(i, self.persist.team[i], self.data.cardLive, self.data.cardImages[i])
+	end
 
 	-- Initialize storyboard
 	if loadStoryboard and storyboardData then
@@ -948,12 +989,14 @@ function DEPLS:update(dt)
 
 				-- update skill
 				self.data.skill:update(dt, liveClear)
+				self.data.cardLive:update(dt, liveClear)
 
 				-- play song if it's not played
 				local updtDt = dt
 				if self.persist.liveDelayCounter ~= -math.huge then
 					updtDt = -self.persist.liveDelayCounter
 					self.persist.liveDelayCounter = -math.huge
+					self.data.skill:liveStartCallback()
 					if self.data.song then
 						self.data.song:seek(updtDt)
 						self.data.song:play()

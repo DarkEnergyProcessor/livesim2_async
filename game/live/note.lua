@@ -415,7 +415,18 @@ function noteManager.isUncolorableLayer(layerIndex)
 		layerIndex == 86
 end
 
-function noteManager:drawNote(layers, opacity, position, scale, rotation)
+function noteManager:drawNote(layers, opacity, position, scale, rotation, key)
+	if key then
+		-- key note: pulsing gold ring behind the note
+		local t = love.timer.getTime()
+		local pulse = 1.15 + 0.12 * math.sin(t * 8)
+		local r = 64 * scale * pulse
+		love.graphics.setColor(color.compat(255, 220, 90, self.opacity * opacity * 0.9))
+		love.graphics.setLineWidth(math.max(2, 6 * scale))
+		love.graphics.circle("line", position.x, position.y, r)
+		love.graphics.setLineWidth(1)
+	end
+
 	for i = 1, #layers do
 		local layer = layers[i]
 		local quad = note.quadRegion[layer]
@@ -582,6 +593,9 @@ function normalMovingNote:__construct(definition, param)
 	self.token = assert(definition.effect) == 2
 	-- star note
 	self.star = definition.effect == 4
+	-- key note (card skills fire on it); set by the beatmap's key sections
+	self.key = definition.key == true
+	self.keySection = definition.keySection
 	-- swing note
 	self.swing = definition.effect > 10
 	-- swing note group
@@ -640,7 +654,8 @@ function normalMovingNote:draw()
 		self.opacity,
 		self.position,
 		(self.elapsedTime / self.noteSpeed) * self.manager.noteSize,
-		self.rotation
+		self.rotation,
+		self.key
 	)
 end
 
@@ -851,7 +866,8 @@ function longMovingNote:draw()
 		self.opacity,
 		self.position,
 		self.lnHolding and self.manager.noteSize or (self.elapsedTime / self.noteSpeed) * self.manager.noteSize,
-		self.rotation
+		self.rotation,
+		self.key
 	)
 end
 

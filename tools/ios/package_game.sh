@@ -20,7 +20,7 @@ tar -C "$REPO" --exclude=.git --exclude=docs --exclude=build-util --exclude=tool
 
 # Bundle downloaded beatmaps + audio (the in-game downloader doesn't work on iPhone)
 found=0
-for d in beatmap audio live_icon; do
+for d in beatmap audio live_icon cards keynotes; do
 	if [ -d "$SAVE/$d" ]; then
 		mkdir -p "$TMP/$d"
 		cp -R "$SAVE/$d/." "$TMP/$d/"

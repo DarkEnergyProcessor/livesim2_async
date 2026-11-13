@@ -14,7 +14,7 @@
 		"general:dateFormat": "%{month} %{day}, %{year}",
 		"general:score": "Score",
 		"general:token": "Token",
-		"menu:changeUnits": "Change Units",
+		"menu:changeUnits": "Team",
 		"menu:play": "Play",
 		"menu:quit": "Exit",
 		"menu:renderer": "Renderer",
