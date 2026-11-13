@@ -25,6 +25,7 @@ local Ripple = require("game.ui.ripple")
 local PlayButton = Luaoop.class("Livesim2.MainMenu.PlayButton", Glow.Element)
 local ChangeUnitsButton = Luaoop.class("Livesim2.MainMenu.ChangeUnitsButton", Glow.Element)
 local SettingsButton = Luaoop.class("Livesim2.MainMenu.SettingsButton", Glow.Element)
+local TimingButton = Luaoop.class("Livesim2.MainMenu.TimingButton", Glow.Element)
 
 function PlayButton:new(state)
 	local text = L"menu:play"
@@ -180,6 +181,55 @@ function SettingsButton:render(x, y)
 	end
 end
 
+function TimingButton:new(state)
+	local text = "Timing"
+	self.image = state.assets.images.slowMotion
+	self.text = love.graphics.newText(state.data.titleFont)
+	self.text:add(text, -state.data.titleFont:getWidth(text) * 41/46, 0, 0, 41/46)
+	self.width, self.height = 404, 156
+	self.isPressed = false
+	self.x, self.y = 0, 0
+	self.ripple = Ripple(math.sqrt(self.width * self.width + self.height * self.height))
+	self.stencilFunc = function()
+		return love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	end
+
+	self:addEventListener("mousepressed", TimingButton._pressed)
+	self:addEventListener("mousereleased", TimingButton._released)
+	self:addEventListener("mousecanceled", TimingButton._released)
+end
+
+function TimingButton:update(dt)
+	self.ripple:update(dt)
+end
+
+function TimingButton:_pressed(_, x, y)
+	self.isPressed = true
+	self.ripple:pressed(x, y)
+end
+
+function TimingButton:_released(_)
+	self.isPressed = false
+	self.ripple:released()
+end
+
+function TimingButton:render(x, y)
+	self.x, self.y = x, y
+	love.graphics.setColor(color.hexFFA73D)
+	love.graphics.rectangle("fill", x, y, self.width, self.height)
+	love.graphics.setColor(color.white)
+	Util.drawText(self.text, x + 395, y + 100)
+	love.graphics.draw(self.image, x + 5, y + 56, 0, 0.32, 0.32)
+
+	if self.ripple:isActive() then
+		-- Setup stencil buffer
+		Util.stencil11(self.stencilFunc, "replace", 1, false)
+		Util.setStencilTest11("equal", 1)
+		self.ripple:draw(255, 255, 255, x, y)
+		Util.setStencilTest11()
+	end
+end
+
 -- End UI stuff
 
 local function makeEnterGamestateFunction(name, noloading)
@@ -200,7 +250,8 @@ local mainMenu = Gamestate.create {
 	images = {
 		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
 		settingsDualGear = {"assets/image/ui/over_the_rainbow/settings_main_menu.png", mipmaps},
-		changeUnits = {"assets/image/ui/over_the_rainbow/people_outline_24px_outlined.png", mipmaps}
+		changeUnits = {"assets/image/ui/over_the_rainbow/people_outline_24px_outlined.png", mipmaps},
+		slowMotion = {"assets/image/ui/over_the_rainbow/slow_motion_video.png", mipmaps}
 	},
 }
 
@@ -261,6 +312,12 @@ function mainMenu:load()
 		self.data.settingsButton:addEventListener("mousereleased", makeEnterGamestateFunction("settings"))
 	end
 	Glow.addElement(self.data.settingsButton, 497, 207)
+
+	if not(self.data.timingButton) then
+		self.data.timingButton = TimingButton(self)
+		self.data.timingButton:addEventListener("mousereleased", makeEnterGamestateFunction("calibration"))
+	end
+	Glow.addElement(self.data.timingButton, 497, 385)
 
 	if not(self.data.background) then
 		self.data.background = BackgroundLoader.load(2)
