@@ -191,7 +191,13 @@ local function safeAreaScaling(self)
 	local gameHeight = 640 * scale + vYOffset
 	local safeHeight
 
-	if (love._os == "iOS" or love._os == "Android") and love.window.getSafeArea then
+	-- SIF gift fork: on iOS (landscape-only, UIScene) the safe area comes back
+	-- with portrait insets (top+bottom ~93pt), shrinking the whole lane arc to
+	-- ~76% and leaving a big gap at the bottom. In landscape the only thing at
+	-- the bottom edge is the thin home bar, so use the full height on iOS.
+	if love._os == "iOS" then
+		safeHeight = gameHeight
+	elseif love._os == "Android" and love.window.getSafeArea then
 		safeHeight = select(4, love.window.getSafeArea())
 	else
 		safeHeight = gameHeight
