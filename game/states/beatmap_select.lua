@@ -1,4 +1,4 @@
--- Beatmap selection
+-- Beatmap selection (sleek restyle for the SIF gift fork)
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
@@ -6,8 +6,6 @@ local love = require("love")
 local Luaoop = require("libs.Luaoop")
 local lsr = require("libs.lsr")
 
-local color = require("color")
-local MainFont = require("main_font")
 local Setting = require("setting")
 local fileDialog = require("file_dialog")
 local log = require("logging")
@@ -17,422 +15,308 @@ local LoadingInstance = require("loading_instance")
 local L = require("language")
 
 local BeatmapList = require("game.beatmap.list")
-local ColorTheme = require("game.color_theme")
 local Glow = require("game.afterglow")
-local Ripple = require("game.ui.ripple")
-local CircleIconButton = require("game.ui.circle_icon_button")
+local Sleek = require("game.ui.sleek")
 
 local mipmaps = {mipmaps = true}
 
--- One shot usage, no need to have it in different file
--- 451x94
-local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.BeatmapSelectButton", Glow.Element)
-local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.OptionToggleButton", Glow.Element)
-local playButton = Luaoop.class("Livesim2.BeatmapSelect.PlayButton", Glow.Element)
-local diffDropdown = Luaoop.class("Livesim2.BeatmapSelect.DifficultyDropdown", Glow.Element)
-local diffText = Luaoop.class("Livesim2.BeatmapSelect.DifficultySelect", Glow.Element)
-local replayButton = Luaoop.class("Livesim2.BeatmapSelect.ReplayButton", Glow.Element)
+-- Layout
+local LIST_X, LIST_Y, LIST_W = 20, 88, 532
+local ROW_W, ROW_H, ROW_STEP = 494, 56, 64
+local PANEL_X, PANEL_Y, PANEL_W, PANEL_H = 568, 88, 372, 536
+local PAD = 22
+local COVER = 104
+local DIFF_Y = PANEL_Y + PAD + COVER + 18
+local OPT_Y = DIFF_Y + 54
+local REPLAY_Y = OPT_Y + 2 * 50 + 16
+local PLAY_H = 54
+local PLAY_Y = PANEL_Y + PANEL_H - PAD - PLAY_H
 
-do
-	local coverShader
+local beatmapSelectButton = Luaoop.class("Livesim2.BeatmapSelect.SleekRow", Glow.Element)
+local optionToggleButton = Luaoop.class("Livesim2.BeatmapSelect.SleekSwitch", Glow.Element)
+local diffPills = Luaoop.class("Livesim2.BeatmapSelect.SleekDiffPills", Glow.Element)
+local replayButton = Luaoop.class("Livesim2.BeatmapSelect.SleekReplay", Glow.Element)
+local roundIcon = Luaoop.class("Livesim2.BeatmapSelect.SleekRoundIcon", Glow.Element)
 
-	local function commonPressed(self, _, x, y)
-		self.isPressed = true
-		self.ripple:pressed(x, y)
+local function ellipsize(font, text, w)
+	if font:getWidth(text) <= w then return text end
+	local t = text
+	while #t > 1 and font:getWidth(t.."…") > w do
+		t = t:sub(1, -2)
+		-- don't cut a UTF-8 sequence in half
+		while #t > 0 and t:byte(-1) >= 128 and t:byte(-1) < 192 do t = t:sub(1, -2) end
+		if #t > 0 and t:byte(-1) >= 192 then t = t:sub(1, -2) end
+	end
+	return t.."…"
+end
+
+local function pressable(self)
+	self.isPressed = false
+	self:addEventListener("mousepressed", function() self.isPressed = true end)
+	self:addEventListener("mousecanceled", function() self.isPressed = false end)
+	self:addEventListener("mousereleased", function() self.isPressed = false end)
+end
+
+---------------------------------------------------------------- list row
+
+function beatmapSelectButton:new(state, name, subtitle, coverImage)
+	self.name = name
+	self.subtitle = subtitle or ""
+	self:setCoverImage(coverImage)
+	self.width, self.height = ROW_W, ROW_H
+	self.selected = false
+	pressable(self)
+end
+
+function beatmapSelectButton:setCoverImage(coverImage)
+	self.coverImage = coverImage
+end
+
+function beatmapSelectButton:render(x, y)
+	local r = ROW_H / 2
+	Sleek.setColor(Sleek.color.panel)
+	love.graphics.rectangle("fill", x, y, self.width, self.height, r, r, 32)
+	if self.selected then
+		Sleek.setColor(Sleek.color.accent)
+		love.graphics.setLineWidth(2)
+		love.graphics.rectangle("line", x + 1, y + 1, self.width - 2, self.height - 2, r - 1, r - 1, 32)
+		love.graphics.setLineWidth(1)
+	else
+		Sleek.setColor(Sleek.color.border)
+		love.graphics.rectangle("line", x, y, self.width, self.height, r, r, 32)
 	end
 
-	local function commonReleased(self)
-		self.isPressed = false
-		self.ripple:released()
+	local cx, cy = x + 6 + 22, y + r
+	if self.coverImage then
+		Sleek.drawCircleImage(self.coverImage, cx, cy, 22)
+	else
+		Sleek.setColor(Sleek.color.accentSoft)
+		love.graphics.circle("fill", cx, cy, 22, 48)
+		Sleek.iconNote(cx, cy, 22, Sleek.color.accentDark)
 	end
 
-	function beatmapSelectButton:new(state, name, format, coverImage)
-		coverShader = coverShader or state.data.coverMaskShader
+	local nameFont, subFont = Sleek.font(17, "medium"), Sleek.font(12)
+	local tx = x + 6 + 44 + 14
+	local tw = self.width - (tx - x) - 20
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.setFont(nameFont)
+	love.graphics.print(ellipsize(nameFont, self.name, tw), tx, y + 8)
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.setFont(subFont)
+	love.graphics.print(ellipsize(subFont, self.subtitle, tw), tx, y + 32)
 
-		self.name = love.graphics.newText(state.data.mainFont)
-		self.name:add(name, 0, 0, 0, 24/44)
-		self.format = love.graphics.newText(state.assets.fonts.formatFont, format)
-		self:setCoverImage(coverImage)
-
-		self.width, self.height = 450, 94
-		self.x, self.y = 0, 0
-		self.ripple = Ripple(460.691871)
-		self.selected = false
-		self.stencilFunc = function()
-			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
-		end
-		self.isPressed = false
-		self:addEventListener("mousepressed", commonPressed)
-		self:addEventListener("mousereleased", commonReleased)
-		self:addEventListener("mousecanceled", commonReleased)
-	end
-
-	function beatmapSelectButton:setCoverImage(coverImage)
-		if coverImage then
-			local w, h = coverImage:getDimensions()
-			self.coverScaleW, self.coverScaleH = 82 / w, 82 / h
-		end
-
-		self.coverImage = coverImage
-	end
-
-	function beatmapSelectButton:update(dt)
-		self.ripple:update(dt)
-	end
-
-	function beatmapSelectButton:render(x, y)
-		local shader = love.graphics.getShader()
-		self.x, self.y = x, y
-
-		love.graphics.setColor(self.selected and ColorTheme.get() or color.hex434242)
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setShader(Util.drawText.workaroundShader)
-		love.graphics.setColor(color.white)
-		love.graphics.draw(self.name, x + 110, y + 20)
-		love.graphics.draw(self.format, x + 110, y + 60)
-
-		if self.coverImage then
-			love.graphics.setShader(coverShader)
-			love.graphics.draw(self.coverImage, x + 6, y + 6, 0, self.coverScaleW, self.coverScaleH)
-		else
-			love.graphics.setShader()
-			love.graphics.setColor(color.hexC4C4C4)
-			love.graphics.rectangle("fill", x + 6, y + 6, 82, 82, 12, 12)
-			love.graphics.rectangle("line", x + 6, y + 6, 82, 82, 12, 12)
-		end
-
-		love.graphics.setShader(shader)
-
-		if self.ripple:isActive() then
-			Util.stencil11(self.stencilFunc, "replace", 1, false)
-			Util.setStencilTest11("equal", 1)
-			self.ripple:draw(255, 255, 255, x, y)
-			Util.setStencilTest11()
-		end
-	end
-
-	function optionToggleButton:new(checked, image, imageS, imageY, font, text, textY)
-		self.image = image
-		self.imageW, self.imageH = image:getDimensions()
-		self.imageS = imageS
-		self.imageY = imageY
-		self.description = love.graphics.newText(font)
-		self.descriptionY = textY
-		self.description:add(text, font:getWidth(text) * -0.5, 0)
-
-		self.width, self.height = 120, 98
-		self.x, self.y = 0, 0
-		self.ripple = Ripple(154.932243)
-		self.selected = false
-		self.stencilFunc = function()
-			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
-		end
-		self.isPressed = false
-		self.checked = not(not(checked))
-		self.blurIcon = Util.drawBlur(120, 98, 2, optionToggleButton._renderIcon, self, color.white, 0, 0)
-		self:addEventListener("mousepressed", commonPressed)
-		self:addEventListener("mousereleased", optionToggleButton._released)
-		self:addEventListener("mousecanceled", commonReleased)
-	end
-
-	function optionToggleButton:_released()
-		commonReleased(self)
-		self.checked = not(self.checked)
-		self:triggerEvent("changed", self.checked)
-	end
-
-	function optionToggleButton:_renderIcon(col, x, y)
-		if col then love.graphics.setColor(col) end
-
-		love.graphics.draw(
-			self.image, x + 60, y + self.imageY, 0,
-			self.imageS, self.imageS,
-			self.imageW * 0.5, self.imageH * 0.5
-		)
-		Util.drawText(self.description, x + 60, y + self.descriptionY)
-	end
-
-	function optionToggleButton:update(dt)
-		self.ripple:update(dt)
-	end
-
-	function optionToggleButton:render(x, y)
-		self.x, self.y = x, y
-
-		love.graphics.setColor(ColorTheme.getDark())
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
-
-		if self.checked then
-			love.graphics.setColor(color.white)
-			love.graphics.setBlendMode("alpha", "premultiplied")
-			love.graphics.draw(self.blurIcon, x, y)
-			love.graphics.setBlendMode("alpha", "alphamultiply")
-			self:_renderIcon(nil, x, y)
-		else
-			self:_renderIcon(color.black, x, y)
-		end
-
-		if self.ripple:isActive() then
-			Util.stencil11(self.stencilFunc, "replace", 1, false)
-			Util.setStencilTest11("equal", 1)
-			self.ripple:draw(255, 255, 255, x, y)
-			Util.setStencilTest11()
-		end
-	end
-
-	function playButton:new(font, pb)
-		local text = L"beatmapSelect:play"
-		self.text = love.graphics.newText(font)
-		self.text:add(text, 0, 0, 0, 15/16)
-		self.image = pb
-
-		self.height = 40
-		self.width = math.ceil(pb:getWidth() * 0.24 + font:getWidth(text) * 15/16 + 40)
-		self.x, self.y = 0, 0
-		self.ripple = Ripple(math.sqrt(self.width * self.width + 1600))
-		self.selected = false
-		self.stencilFunc = function()
-			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height, 20, 20)
-		end
-		self.isPressed = false
-		self:addEventListener("mousepressed", playButton._pressed)
-		self:addEventListener("mousereleased", commonReleased)
-		self:addEventListener("mousecanceled", commonReleased)
-	end
-
-	function playButton:_pressed(_, x, y)
-		if
-			-- Square
-			(x >= 20 and y >= 0 and x < self.width - 20 and y < 40) or
-			-- Circle left
-			Util.distance(x, y, 20, 20) <= 20 or
-			-- Circle right
-			Util.distance(x, y, self.width - 20, 20) <= 20
-		then
-			self.isPressed = true
-			self.ripple:pressed(x, y)
-			return false
-		else
-			return true
-		end
-	end
-
-	function playButton:update(dt)
-		self.ripple:update(dt)
-	end
-
-	function playButton:render(x, y)
-		self.x, self.y = x, y
-		love.graphics.setColor(color.hexFFDF35)
-		love.graphics.rectangle("fill", x, y, self.width, self.height, 20, 20)
-		love.graphics.rectangle("line", x, y, self.width, self.height, 20, 20)
-		love.graphics.setColor(color.black)
-		love.graphics.draw(self.image, x + 12, y + 7, 0, 0.32)
-		Util.drawText(self.text, x + 42, y + 12)
-
-		if self.ripple:isActive() then
-			Util.stencil11(self.stencilFunc, "replace", 1, false)
-			Util.setStencilTest11("equal", 1)
-			self.ripple:draw(255, 255, 255, x, y)
-			Util.setStencilTest11()
-		end
-	end
-
-	local cb = require("libs.cubic_bezier")
-	local dropdownInterpolation = cb(0.4, 0, 0.2, 1):getFunction()
-
-	-- This one is not meant to be "glow.addElement" directly.
-	-- font = mainFont2
-	function diffDropdown:new(font)
-		self.optionText = love.graphics.newText(font)
-		self.optionUpdated = true
-		self.timer = 0
-		self.width, self.height = 150, 0
-		self.realHeight = 26
-		self.items = {}
-		self.destFrame = nil
-		self.x, self.y = 0, 0
-
-		self:addEventListener("mousepressed", diffDropdown._pressed)
-		self:addEventListener("mousemoved", diffDropdown._moved)
-		self:addEventListener("mousereleased", diffDropdown._released)
-		self:addEventListener("mousecanceled", diffDropdown.hide)
-	end
-
-	function diffDropdown:_pressed(_, x, y)
-		self.x, self.y = x, y
-	end
-
-	function diffDropdown:_moved(_, x, y)
-		self.x, self.y = x, y
-	end
-
-	function diffDropdown:_released()
-		local clickedIndex = math.floor(self.y / 26) + 1
-		if self.items[clickedIndex] then
-			self:triggerEvent("itemselected", clickedIndex, self.items[clickedIndex])
-		end
-
-		self:hide()
-	end
-
-	function diffDropdown:_updateList()
-		if not(self.optionUpdated) then
-			self.optionText:clear()
-			self.realHeight = #self.items * 26
-
-			for i, v in ipairs(self.items) do
-				self.optionText:add(tostring(v), 18, (i - 1) * 26 + 4)
-			end
-
-			self.optionUpdated = true
-		end
-	end
-
-	function diffDropdown:setItems(items)
-		self.items = {}
-		for i = 1, #items do
-			self.items[i] = items[i]
-		end
-
-		self.optionUpdated = false
-	end
-
-	function diffDropdown:show(frame, x, y)
-		if #self.items == 0 then
-			error("attempt to show empty dropdown")
-		end
-
-		if self.destFrame then return end
-
-		self.timer = 0
-		self.destFrame = frame
-		self:_updateList()
-		frame:addElement(self, x, y)
-	end
-
-	function diffDropdown:isShown()
-		return not(not(self.destFrame))
-	end
-
-	function diffDropdown:hide()
-		local frame = self.destFrame
-		self.timer = 0
-
-		if frame then
-			-- Prevent stack overflow
-			self.destFrame = nil
-			frame:removeElement(self)
-		end
-	end
-
-	function diffDropdown:update(dt)
-		self.timer = math.min(self.timer + dt * 5, 1)
-		self:_updateList()
-		self.height = dropdownInterpolation(self.timer) * self.realHeight
-	end
-
-	function diffDropdown:render(x, y)
-		local maxloop = math.ceil(self.height / 26)
-
-		love.graphics.setColor(color.hex434242)
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setColor(color.white75PT)
-		for i = 1, maxloop do
-			love.graphics.rectangle("line", x, y + (i - 1) * 26, 150, 26)
-		end
-		love.graphics.setColor(color.white)
-		Util.drawText(self.optionText, x, y)
-	end
-
-	function diffText:new(font, img)
-		self.text = love.graphics.newText(font)
-		self.image = img -- "dropDown" image
-		self.showImage = false
-		self.width, self.height = 150, 26
-	end
-
-	function diffText:setText(text, showlist)
-		self.text:clear()
-		self.text:add(tostring(text or L"beatmapSelect:diffUnknown"))
-		self.showImage = not(not(showlist))
-	end
-
-	function diffText:render(x, y)
-		love.graphics.setColor(ColorTheme.getDarker())
-		love.graphics.rectangle("fill", x, y, 150, 26, 13, 13)
-		love.graphics.rectangle("line", x, y, 150, 26, 13, 13)
-		love.graphics.setColor(color.white)
-		Util.drawText(self.text, x + 18, y + 4)
-		if self.showImage then
-			love.graphics.draw(self.image, x + 120, y + 2, 0, 0.32)
-		end
-	end
-
-	function replayButton:new(state, replay)
-		local time = os.date("*t", replay.timestamp)
-		self.name = love.graphics.newText(state.data.mainFont2)
-		self.score = love.graphics.newText(state.data.mainFont2)
-		self.name:add(L("general:dateFormat", {
-			month = state.data.monthNames[time.month],
-			day = time.day,
-			year = time.year
-		})..string.format(" %02d:%02d:%02d", time.hour, time.min, time.sec))
-		self.score:addf(tostring(replay.score), 440, "right")
-
-		self.width, self.height = 450, 72
-		self.x, self.y = 0, 0
-		self.ripple = Ripple(455.7236004422)
-		self.stencilFunc = function()
-			love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
-		end
-		self.isPressed = false
-		self:addEventListener("mousepressed", commonPressed)
-		self:addEventListener("mousereleased", commonReleased)
-		self:addEventListener("mousecanceled", commonReleased)
-	end
-
-	function replayButton:update(dt)
-		self.ripple:update(dt)
-	end
-
-	function replayButton:render(x, y)
-		local shader = love.graphics.getShader()
-		self.x, self.y = x, y
-
-		love.graphics.rectangle("fill", x, y, self.width, self.height)
-		love.graphics.setShader(Util.drawText.workaroundShader)
-		love.graphics.setColor(color.black)
-		love.graphics.draw(self.name, x + 16, y + 28)
-		love.graphics.setColor(ColorTheme.get())
-		love.graphics.draw(self.score, x, y + 28)
-		love.graphics.setColor(color.white)
-		love.graphics.setShader(shader)
-
-		if self.ripple:isActive() then
-			Util.stencil11(self.stencilFunc, "replace", 1, false)
-			Util.setStencilTest11("equal", 1)
-			self.ripple:draw(255, 79, 174, x, y)
-			Util.setStencilTest11()
-		end
+	if self.isPressed then
+		love.graphics.setColor(0, 0, 0, 0.05)
+		love.graphics.rectangle("fill", x, y, self.width, self.height, r, r, 32)
 	end
 end
+
+---------------------------------------------------------------- option switch
+
+local SWITCH_W = (PANEL_W - PAD * 2 - 10) / 2
+
+function optionToggleButton:new(checked, text)
+	self.text = text
+	self.width, self.height = SWITCH_W, 42
+	self.checked = not(not(checked))
+	self.knob = self.checked and 1 or 0
+	pressable(self)
+	self:addEventListener("mousereleased", optionToggleButton._released)
+end
+
+function optionToggleButton:_released()
+	self.checked = not(self.checked)
+	self:triggerEvent("changed", self.checked)
+end
+
+function optionToggleButton:update(dt)
+	local target = self.checked and 1 or 0
+	if self.knob < target then
+		self.knob = math.min(self.knob + dt * 8, 1)
+	elseif self.knob > target then
+		self.knob = math.max(self.knob - dt * 8, 0)
+	end
+end
+
+function optionToggleButton:render(x, y)
+	local h = self.height
+	Sleek.setColor(Sleek.color.panel)
+	love.graphics.rectangle("fill", x, y, self.width, h, h / 2, h / 2, 32)
+	Sleek.setColor(Sleek.color.border)
+	love.graphics.rectangle("line", x, y, self.width, h, h / 2, h / 2, 32)
+
+	local font = Sleek.font(14)
+	love.graphics.setFont(font)
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.print(self.text, x + 14, y + (h - font:getHeight()) / 2)
+
+	-- switch
+	local sw, sh = 40, 24
+	local sx, sy = x + self.width - 8 - sw, y + (h - sh) / 2
+	Sleek.setColor(self.checked and Sleek.color.accent or Sleek.color.grey)
+	love.graphics.rectangle("fill", sx, sy, sw, sh, sh / 2, sh / 2, 24)
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.circle("fill", sx + 12 + self.knob * (sw - 24), sy + sh / 2, 9, 24)
+
+	if self.isPressed then
+		love.graphics.setColor(0, 0, 0, 0.05)
+		love.graphics.rectangle("fill", x, y, self.width, h, h / 2, h / 2, 32)
+	end
+end
+
+---------------------------------------------------------------- difficulty pills
+
+function diffPills:new()
+	self.width, self.height = PANEL_W - PAD * 2, 40
+	self.items = {}
+	self.selected = 1
+	self.pressX = nil
+	self:addEventListener("mousepressed", function(_, _, x) self.pressX = x end)
+	self:addEventListener("mousecanceled", function() self.pressX = nil end)
+	self:addEventListener("mousereleased", diffPills._released)
+end
+
+function diffPills:setItems(items, selected)
+	self.items = items or {}
+	self.selected = selected or 1
+end
+
+function diffPills:_released(_, x)
+	self.pressX = nil
+	local n = #self.items
+	if n < 2 or not x then return end
+	local idx = Util.clamp(math.floor(x / (self.width / n)) + 1, 1, n)
+	if idx ~= self.selected then
+		self.selected = idx
+		self:triggerEvent("itemselected", idx, self.items[idx])
+	end
+end
+
+function diffPills:render(x, y)
+	local n = #self.items
+	if n == 0 then return end
+	local h = self.height
+	Sleek.setColor(Sleek.color.track)
+	love.graphics.rectangle("fill", x, y, self.width, h, h / 2, h / 2, 32)
+	local w = self.width / n
+	local font = Sleek.font(15, "medium")
+	love.graphics.setFont(font)
+	for i, name in ipairs(self.items) do
+		local px = x + (i - 1) * w
+		if i == self.selected then
+			Sleek.setColor(Sleek.color.panel)
+			love.graphics.rectangle("fill", px + 4, y + 4, w - 8, h - 8, (h - 8) / 2, (h - 8) / 2, 32)
+			Sleek.setColor(Sleek.color.text)
+		else
+			Sleek.setColor(Sleek.color.muted)
+		end
+		love.graphics.printf(ellipsize(font, tostring(name), w - 16), px, y + (h - font:getHeight()) / 2, w, "center")
+	end
+end
+
+---------------------------------------------------------------- replay row
+
+function replayButton:new(state, replay)
+	local time = os.date("*t", replay.timestamp)
+	self.name = L("general:dateFormat", {
+		month = state.data.monthNames[time.month],
+		day = time.day,
+		year = time.year
+	})..string.format(" %02d:%02d", time.hour, time.min)
+	self.score = tostring(replay.score)
+	self.width, self.height = PANEL_W - PAD * 2 - 4, 40
+	pressable(self)
+end
+
+function replayButton:render(x, y)
+	local h = self.height
+	Sleek.setColor(Sleek.color.panel)
+	love.graphics.rectangle("fill", x, y, self.width, h, h / 2, h / 2, 32)
+	Sleek.setColor(Sleek.color.border)
+	love.graphics.rectangle("line", x, y, self.width, h, h / 2, h / 2, 32)
+	local font = Sleek.font(14)
+	love.graphics.setFont(font)
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.print(self.name, x + 16, y + (h - font:getHeight()) / 2)
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.setFont(Sleek.font(15, "medium"))
+	love.graphics.printf(self.score, x, y + (h - font:getHeight()) / 2, self.width - 16, "right")
+	if self.isPressed then
+		love.graphics.setColor(0, 0, 0, 0.05)
+		love.graphics.rectangle("fill", x, y, self.width, h, h / 2, h / 2, 32)
+	end
+end
+
+---------------------------------------------------------------- round icon button
+
+function roundIcon:new(size, drawIcon)
+	self.width, self.height = size, size
+	self.drawIcon = drawIcon
+	pressable(self)
+end
+
+function roundIcon:render(x, y)
+	local r = self.width / 2
+	Sleek.setColor(Sleek.color.panel)
+	love.graphics.circle("fill", x + r, y + r, r, 48)
+	Sleek.setColor(Sleek.color.border)
+	love.graphics.circle("line", x + r, y + r, r, 48)
+	self.drawIcon(x + r, y + r, self.width)
+	if self.isPressed then
+		love.graphics.setColor(0, 0, 0, 0.06)
+		love.graphics.circle("fill", x + r, y + r, r, 48)
+	end
+end
+
+local function iconDownload(cx, cy, s)
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.setLineWidth(2)
+	love.graphics.line(cx, cy - s * 0.2, cx, cy + s * 0.08)
+	love.graphics.line(cx - s * 0.12, cy - s * 0.04, cx, cy + s * 0.08, cx + s * 0.12, cy - s * 0.04)
+	love.graphics.line(cx - s * 0.2, cy + s * 0.18, cx + s * 0.2, cy + s * 0.18)
+	love.graphics.setLineWidth(1)
+end
+
+local function iconFolder(cx, cy, s)
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.setLineWidth(2)
+	love.graphics.line(
+		cx - s * 0.22, cy + s * 0.16, cx - s * 0.22, cy - s * 0.16, cx - s * 0.06, cy - s * 0.16,
+		cx - s * 0.02, cy - s * 0.1, cx + s * 0.22, cy - s * 0.1, cx + s * 0.22, cy + s * 0.16, cx - s * 0.22, cy + s * 0.16
+	)
+	love.graphics.setLineWidth(1)
+end
+
+local function iconAdd(cx, cy, s)
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.setLineWidth(2)
+	love.graphics.line(cx - s * 0.18, cy, cx + s * 0.18, cy)
+	love.graphics.line(cx, cy - s * 0.18, cx, cy + s * 0.18)
+	love.graphics.setLineWidth(1)
+end
+
+local function iconTrash(cx, cy, s)
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.setLineWidth(1.6)
+	love.graphics.line(cx - s * 0.22, cy - s * 0.16, cx + s * 0.22, cy - s * 0.16)
+	love.graphics.line(cx - s * 0.08, cy - s * 0.16, cx - s * 0.08, cy - s * 0.24, cx + s * 0.08, cy - s * 0.24, cx + s * 0.08, cy - s * 0.16)
+	love.graphics.line(cx - s * 0.16, cy - s * 0.12, cx - s * 0.12, cy + s * 0.24, cx + s * 0.12, cy + s * 0.24, cx + s * 0.16, cy - s * 0.12)
+	love.graphics.setLineWidth(1)
+end
+
+---------------------------------------------------------------- helpers
 
 local function leave()
 	return Gamestate.leave(LoadingInstance.getInstance())
 end
 
 local function setStatusText(self, text, blink)
-	self.persist.statusText:clear()
-	if not(text) or #text == 0 then return end
-
-	local x = self.persist.beatmapText:getWidth() + 54
-	self.persist.statusText:add(text, x, 106, 0, 23/44)
+	self.persist.statusString = text or ""
 	self.persist.statusTextBlink = blink and 0 or math.huge
 end
 
-local function createOptionToggleSetting(settingName, image, imageS, imageY, font, text, textY)
-	local x = optionToggleButton(Setting.get(settingName) == 1, image, imageS, imageY, font, text, textY)
+local function createOptionToggleSetting(settingName, text)
+	local x = optionToggleButton(Setting.get(settingName) == 1, text)
 	x:addEventListener("changed", function(_, _, value)
 		Setting.set(settingName, value and 1 or 0)
 	end)
@@ -463,7 +347,7 @@ local function resizeImage(img, w, h)
 	love.graphics.push("all")
 	love.graphics.reset()
 	love.graphics.setCanvas(canvas)
-	love.graphics.setColor(color.white)
+	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.setBlendMode("alpha", "premultiplied")
 	love.graphics.draw(img, 0, 0, 0, w / iw, h / ih)
 	love.graphics.pop()
@@ -495,7 +379,6 @@ end
 
 local function updateBeatmapList(self)
 	self.persist.beatmapFrame:clear()
-	self.data.searchText:clear()
 
 	if #self.persist.searchQuery > 0 then
 		local i = 1
@@ -504,44 +387,31 @@ local function updateBeatmapList(self)
 
 		for _, v in ipairs(self.persist.beatmaps) do
 			if v.name:lower():find(queryLower, 1, true) then
-				self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
+				self.persist.beatmapFrame:addElement(v.element, 4, (i - 1) * ROW_STEP + 4)
 				i = i + 1
 			end
 		end
 
-		self.data.searchText:add(query, 0, 0, 0, 22/44)
 		setStatusText(self, L("beatmapSelect:searchResult", {amount = i - 1}))
 	else
 		for i, v in ipairs(self.persist.beatmaps) do
-			self.persist.beatmapFrame:addElement(v.element, 30, (i - 1) * 94)
+			self.persist.beatmapFrame:addElement(v.element, 4, (i - 1) * ROW_STEP + 4)
 		end
 
-		self.data.searchText:add(L"beatmapSelect:searchPrompt", 0, 0, 0, 22/44)
 		setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}))
 	end
 end
 
+local function rowSubtitle(v)
+	if v.group then
+		return table.concat(v.difficulty, ", ")
+	end
+	return v.difficulty or v.format or ""
+end
+
 local beatmapSelect = Gamestate.create {
-	images = {
-		add = {"assets/image/ui/over_the_rainbow/add_icon.png", mipmaps},
-		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
-		delete = {"assets/image/ui/over_the_rainbow/delete.png", mipmaps},
-		downloadCircle = {"assets/image/ui/over_the_rainbow/download_beatmap.png", mipmaps},
-		dropDown = {"assets/image/ui/over_the_rainbow/expand.png", mipmaps},
-		fastForward = {"assets/image/ui/over_the_rainbow/fast_forward.png", mipmaps},
-		folder = {"assets/image/ui/over_the_rainbow/folder.png", mipmaps},
-		movie = {"assets/image/ui/over_the_rainbow/movie.png", mipmaps},
-		navigateBack = {"assets/image/ui/over_the_rainbow/navigate_back.png", mipmaps},
-		play = {"assets/image/ui/over_the_rainbow/play.png", mipmaps},
-		poll = {"assets/image/ui/over_the_rainbow/poll.png", mipmaps},
-		search = {"assets/image/ui/over_the_rainbow/search.png", mipmaps},
-		shuffle = {"assets/image/ui/over_the_rainbow/shuffle.png", mipmaps},
-		star = {"assets/image/ui/over_the_rainbow/star.png", mipmaps},
-		video = {"assets/image/ui/over_the_rainbow/video.png", mipmaps},
-	},
-	fonts = {
-		formatFont = {"fonts/Roboto-Regular.ttf", 15}
-	},
+	images = {},
+	fonts = {},
 }
 
 local function setSearchKeyboard(self, shown)
@@ -549,103 +419,93 @@ local function setSearchKeyboard(self, shown)
 	love.keyboard.setTextInput(shown)
 end
 
+local SEARCH_W = 248
+
 function beatmapSelect:load()
 	Glow.clear()
-
-	---@type Font
-	self.data.mainFont, self.data.mainFont2 = MainFont.get(44, 16)
-
-	if self.data.shadowGradient == nil then
-		self.data.shadowGradient = Util.gradient("vertical", color.black75PT, color.transparent)
-	end
-
-	if self.data.coverMaskShader == nil then
-		self.data.coverMaskShader = love.graphics.newShader("assets/shader/mask.fs")
-		self.data.coverMaskShader:send("mask", self.assets.images.coverMask)
-	end
-
-	if self.data.replaysText == nil then
-		self.data.replaysText = love.graphics.newText(self.data.mainFont2, L"beatmapSelect:replays")
-	end
+	Sleek.loadTheme()
 
 	if self.data.monthNames == nil then
 		local t = {}
-
 		for w in L("general:months"):gmatch("%S+") do
 			t[#t + 1] = w
 		end
-
 		self.data.monthNames = t
 	end
 
-	if self.data.emptyReplaysText == nil then
-		local t = love.graphics.newText(self.data.mainFont2)
-		local l = L"beatmapSelect:noReplays"
-		t:add(l, -0.5 * self.data.mainFont2:getWidth(l), 0)
-		self.data.emptyReplaysText = t
-	end
-
 	if self.data.back == nil then
-		self.data.back = CircleIconButton(color.hex333131, 36, self.assets.images.navigateBack, 0.48, ColorTheme.get())
-		self.data.back:setData(self)
+		self.data.back = Sleek.backButton()
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	Glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 24, 16)
 
-	if self.data.search == nil then
-		self.data.search = CircleIconButton(color.hex333131, 36, self.assets.images.search, 0.64, ColorTheme.get())
-		self.data.search:setData(self)
-		self.data.search:addEventListener("mousereleased", function()
-			-- track the state ourselves: hasTextInput() is unreliable on iOS
-			setSearchKeyboard(self, not(self.persist.searchKeyboard))
-		end)
-	end
-	Glow.addFixedElement(self.data.search, 112, 4)
-
-	if self.data.searchText == nil then
-		self.data.searchText = love.graphics.newText(self.data.mainFont)
-		if self.persist.searchQuery and #self.persist.searchQuery > 0 then
-			self.data.searchText:add(table.concat(self.persist.searchQuery), 0, 0, 0, 22/44)
-		else
-			self.data.searchText:add(L"beatmapSelect:searchPrompt", 0, 0, 0, 22/44)
-		end
-	end
-
+	-- header buttons, right to left: folder, download, (add), search
+	local hx = 936 - 44
 	if self.data.openDirectory == nil then
-		self.data.openDirectory = CircleIconButton(color.hex333131, 36, self.assets.images.folder, 0.64, ColorTheme.get())
+		self.data.openDirectory = roundIcon(44, iconFolder)
 		self.data.openDirectory:addEventListener("mousereleased", function(_, url)
 			love.system.openURL(url)
 		end)
 		self.data.openDirectory:setData("file://"..love.filesystem.getSaveDirectory().."/beatmap")
 	end
-	Glow.addFixedElement(self.data.openDirectory, 856, 4)
+	if not Util.isMobile() then
+		Glow.addFixedElement(self.data.openDirectory, hx, 16)
+		hx = hx - 52
+	end
 
 	if self.data.downloadBeatmap == nil then
-		self.data.downloadBeatmap = CircleIconButton(color.hex333131, 36, self.assets.images.downloadCircle, 0.64, ColorTheme.get())
+		self.data.downloadBeatmap = roundIcon(44, iconDownload)
 		self.data.downloadBeatmap:addEventListener("mousereleased", function()
 			Gamestate.enter(LoadingInstance.getInstance(), "beatmapDownload")
 		end)
-		self.data.downloadBeatmap:setData(self)
 	end
-	Glow.addFixedElement(self.data.downloadBeatmap, 776, 4)
+	Glow.addFixedElement(self.data.downloadBeatmap, hx, 16)
+	hx = hx - 52
 
 	if fileDialog.isSupported() then
 		if self.data.addBeatmap == nil then
-			self.data.addBeatmap = CircleIconButton(color.hex333131, 36, self.assets.images.add, 0.64, ColorTheme.get())
+			self.data.addBeatmap = roundIcon(44, iconAdd)
 			self.data.addBeatmap:addEventListener("mousereleased", function()
-				-- this block but oh well
 				local list = fileDialog.open(L"beatmapSelect:insert", nil, nil, true)
 				if #list > 0 then
 					self.persist.beatmapUpdate = list
 				end
 			end)
 		end
-
-		Glow.addFixedElement(self.data.addBeatmap, 696, 4)
+		Glow.addFixedElement(self.data.addBeatmap, hx, 16)
+		hx = hx - 52
 	end
 
+	if self.data.search == nil then
+		self.data.search = Sleek.Button({
+			w = SEARCH_W, h = 44, border = true,
+			icon = function(x, y, w, h)
+				Sleek.iconSearch(x + 24, y + h / 2, 22, Sleek.color.muted)
+				local q = self.persist.searchQuery and table.concat(self.persist.searchQuery) or ""
+				local font = Sleek.font(15)
+				love.graphics.setFont(font)
+				if #q > 0 then
+					Sleek.setColor(Sleek.color.text)
+				else
+					Sleek.setColor(Sleek.color.faint)
+					q = "Search songs"
+				end
+				love.graphics.print(ellipsize(font, q, w - 60), x + 44, y + (h - font:getHeight()) / 2)
+				if self.persist.searchKeyboard then
+					Sleek.setColor(Sleek.color.accent)
+					love.graphics.rectangle("fill", x + 1, y + 1, 4, 4) -- tiny marker that typing is on
+				end
+			end
+		})
+		self.data.search:addEventListener("mousereleased", function()
+			-- track the state ourselves: hasTextInput() is unreliable on iOS
+			setSearchKeyboard(self, not(self.persist.searchKeyboard))
+		end)
+	end
+	Glow.addFixedElement(self.data.search, hx + 44 - SEARCH_W, 16)
+
 	if self.data.deleteBeatmap == nil then
-		self.data.deleteBeatmap = CircleIconButton(color.hexFFFFFF, 18, self.assets.images.delete, 0.32, ColorTheme.get())
+		self.data.deleteBeatmap = roundIcon(34, iconTrash)
 		self.data.deleteBeatmap:addEventListener("mousereleased", function()
 			if not(self.persist.selectedBeatmap) then
 				return
@@ -667,151 +527,108 @@ function beatmapSelect:load()
 				})
 			end
 
-			-- love.window.showMessageBox is confusing (notice `enterbutton` and `escapebutton`)
 			-- "Yes" is 2, "No" is 1
 			local messageButton = {L"dialog:no", L"dialog:yes", enterbutton = 2, escapebutton = 2}
 			if love.window.showMessageBox(L"beatmapSelect:delete", message, messageButton, "warning") == 2 then
-				-- Delete, only need to use the first id
 				local firstID = target.group and target.beatmaps[1].id or target.id
 				local index = self.persist.selectedBeatmap
 				table.remove(self.persist.beatmaps, self.persist.selectedBeatmap)
 				self.persist.beatmapFrame:removeElement(target.element)
 				target = nil
 				self.persist.beatmapSummary = nil
-				self.persist.beatmapNameHeight = 0
 				self.persist.beatmapCoverArt = nil
 				self.persist.selectedBeatmap = nil
 				self.persist.replaysFrame:clear()
-				self.data.difficultyButton:setText("", false)
-				self.data.difficultyDropdown:hide()
+				self.data.difficulty:setItems({})
 				Glow.removeElement(self.data.deleteBeatmap)
 
-				-- Move element
 				for i = index, #self.persist.beatmaps do
 					local v = self.persist.beatmaps[i]
 					v.element:setData(i)
 				end
 
-				-- Force GC
 				collectgarbage()
 				collectgarbage()
-				-- Send delete command
 				BeatmapList.deleteBeatmap(firstID)
-				-- Set status text
 				updateBeatmapList(self)
-				--setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 			end
 		end)
 	end
 
-	-- Option toggle
+	-- options
+	local ox1, ox2 = PANEL_X + PAD, PANEL_X + PAD + SWITCH_W + 10
 	if self.data.autoplayToggle == nil then
-		self.data.autoplayToggle = createOptionToggleSetting(
-			"AUTOPLAY",
-			self.assets.images.fastForward, 0.32, 44,
-			self.data.mainFont2, L"beatmapSelect:optionAutoplay", 60
-		)
+		self.data.autoplayToggle = createOptionToggleSetting("AUTOPLAY", L"beatmapSelect:optionAutoplay")
 	end
-	Glow.addFixedElement(self.data.autoplayToggle, 480, 248)
+	Glow.addFixedElement(self.data.autoplayToggle, ox1, OPT_Y)
 
 	if self.data.randomToggle == nil then
-		self.data.randomToggle = optionToggleButton(
-			false,
-			self.assets.images.shuffle, 0.32, 44,
-			self.data.mainFont2, L"beatmapSelect:optionRandom", 60
-		)
+		self.data.randomToggle = optionToggleButton(false, L"beatmapSelect:optionRandom")
 	end
-	Glow.addFixedElement(self.data.randomToggle, 600, 248)
+	Glow.addFixedElement(self.data.randomToggle, ox2, OPT_Y)
 
 	if self.data.storyToggle == nil then
-		self.data.storyToggle = createOptionToggleSetting(
-			"STORYBOARD",
-			self.assets.images.video, 0.32, 44,
-			self.data.mainFont2, L"beatmapSelect:optionStoryboard", 60
-		)
+		self.data.storyToggle = createOptionToggleSetting("STORYBOARD", L"beatmapSelect:optionStoryboard")
 	end
-	Glow.addFixedElement(self.data.storyToggle, 720, 248)
+	Glow.addFixedElement(self.data.storyToggle, ox1, OPT_Y + 50)
 
 	if self.data.videoToggle == nil then
-		self.data.videoToggle = createOptionToggleSetting(
-			"VIDEOBG",
-			self.assets.images.movie, 0.32, 44,
-			self.data.mainFont2, L"beatmapSelect:optionVideo", 60
-		)
+		self.data.videoToggle = createOptionToggleSetting("VIDEOBG", "Video")
 	end
-	Glow.addFixedElement(self.data.videoToggle, 840, 248)
+	Glow.addFixedElement(self.data.videoToggle, ox2, OPT_Y + 50)
 
 	if self.data.playButton == nil then
-		self.data.playButton = playButton(self.data.mainFont2, self.assets.images.play)
+		self.data.playButton = Sleek.Button({
+			w = PANEL_W - PAD * 2, h = PLAY_H, text = "Play", size = 22,
+			fill = Sleek.color.accent, textColor = Sleek.color.white, shadow = true, textOffset = 10,
+			icon = function(x, y, w, h)
+				local font = Sleek.font(22, "medium")
+				local tw = font:getWidth("Play")
+				Sleek.iconPlay(x + w / 2 - tw / 2 - 10, y + h / 2, 18, Sleek.color.white)
+			end
+		})
 		self.data.playButton:addEventListener("mousereleased", startPlayBeatmap)
 		self.data.playButton:setData(self)
 	end
-	do
-		local width = self.data.playButton.width
-		-- Place in between "Random" and "Storyboard" text
-		Glow.addFixedElement(self.data.playButton, 720 - width * 0.5, 336)
-	end
+	Glow.addFixedElement(self.data.playButton, PANEL_X + PAD, PLAY_Y)
 
-	if self.data.difficultyButton == nil then
-		local b = diffText(self.data.mainFont2, self.assets.images.dropDown)
-		b:addEventListener("mousereleased", function()
+	if self.data.difficulty == nil then
+		local b = diffPills()
+		b:addEventListener("itemselected", function(_, _, index)
 			local target = self.persist.beatmaps[self.persist.selectedBeatmap]
-
-			if target.group then
-				if self.data.difficultyDropdown:isShown() then
-					self.data.difficultyDropdown:hide()
-				else
-					self.data.difficultyDropdown:setData(target)
-					self.data.difficultyDropdown:setItems(target.difficulty)
-					self.data.difficultyDropdown:show(self.persist.dropdownFrame, 508, 232)
-				end
+			if target and target.group then
+				target.selected = index
+				self.persist.beatmapSummary = nil
+				self.persist.beatmapCoverArt = nil
+				BeatmapList.getSummary(target.beatmaps[index].id, self.persist.summaryGet)
 			end
 		end)
 
 		if self.persist.selectedBeatmap then
 			local selectedBeatmap = self.persist.beatmaps[self.persist.selectedBeatmap]
-
 			if selectedBeatmap.group then
-				b:setText(selectedBeatmap.difficulty[selectedBeatmap.selected], true)
+				b:setItems(selectedBeatmap.difficulty, selectedBeatmap.selected)
 			else
-				b:setText(selectedBeatmap.difficulty, false)
+				b:setItems({selectedBeatmap.difficulty or L"beatmapSelect:diffUnknown"}, 1)
 			end
 		end
 
-		self.data.difficultyButton = b
+		self.data.difficulty = b
 	end
-	Glow.addFixedElement(self.data.difficultyButton, 508, 206)
-
-	if self.data.difficultyDropdown == nil then
-		self.data.difficultyDropdown = diffDropdown(self.data.mainFont2)
-		self.data.difficultyDropdown:addEventListener("itemselected", function(_, target, index, name)
-			target.selected = index
-			self.data.difficultyButton:setText(name, true)
-
-			BeatmapList.getSummary(target.beatmaps[index].id, self.persist.summaryGet)
-		end)
-	end
+	Glow.addFixedElement(self.data.difficulty, PANEL_X + PAD, DIFF_Y)
 end
 
 function beatmapSelect:start()
-	self.persist.beatmapFrame = Glow.Frame(0, 152, 480, 488)
-	self.persist.replaysFrame = Glow.Frame(480, 398, 480, 242)
-	self.persist.dropdownFrame = Glow.Frame(0, 0, 960, 640)
+	self.persist.beatmapFrame = Glow.Frame(LIST_X, LIST_Y, LIST_W, 640 - LIST_Y)
+	self.persist.replaysFrame = Glow.Frame(PANEL_X + PAD, REPLAY_Y + 26, PANEL_W - PAD * 2 + 30, PLAY_Y - 12 - (REPLAY_Y + 26))
 	self.persist.beatmaps = {sorted = false}
 	self.persist.selectedBeatmap = nil
 	self.persist.beatmapSummary = nil
 	self.persist.beatmapUpdate = nil
-	self.persist.beatmapNameHeight = 0
 	self.persist.active = true
-	self.persist.beatmapText = love.graphics.newText(self.data.mainFont, L"beatmapSelect:beatmaps")
-	self.persist.statusText = love.graphics.newText(self.data.mainFont)
+	self.persist.statusString = ""
 	self.persist.statusTextBlink = math.huge
 	self.persist.searchQuery = {}
-
-	self.persist.beatmapFrame:setSliderColor(color.hex434242)
-	self.persist.beatmapFrame:setVerticalSliderPosition("left")
-	self.persist.replaysFrame:setSliderColor(color.white)
-	self.persist.replaysFrame:setSliderHandleColor(ColorTheme.get())
 	self.persist.emptyReplays = false
 
 	self.persist.summaryGet = function(d)
@@ -831,10 +648,6 @@ function beatmapSelect:start()
 		if beatmapTarget.replays == nil then
 			beatmapTarget.replays = enumerateReplays(beatmapTarget.id, d.hash)
 		end
-
-		self.persist.beatmapNameHeight =
-			#select(2, self.data.mainFont:getWrap(beatmapTarget.name, 300 / (24/44))) *
-			self.data.mainFont:getHeight() * (24/44)
 
 		self.persist.replaysFrame:clear()
 		if #beatmapTarget.replays > 0 then
@@ -873,14 +686,14 @@ function beatmapSelect:start()
 				local elem = replayButton(self, v)
 				elem:addEventListener("mousereleased", replayCallback)
 				elem:setData(v)
-				self.persist.replaysFrame:addElement(elem, 4, (i - 1) * 72)
+				self.persist.replaysFrame:addElement(elem, 2, (i - 1) * 46 + 2)
 			end
 		else
 			self.persist.emptyReplays = true
 		end
 
 		Glow.removeElement(self.data.deleteBeatmap)
-		Glow.addElement(self.data.deleteBeatmap, 742, 198)
+		Glow.addFixedElement(self.data.deleteBeatmap, PANEL_X + PANEL_W - PAD - 34, PANEL_Y + PAD)
 	end
 
 	local function beatmapSelected(_, index)
@@ -889,8 +702,6 @@ function beatmapSelect:start()
 			return
 		end
 
-		self.data.difficultyDropdown:hide()
-
 		local target = self.persist.beatmaps[index]
 		for i, v in ipairs(self.persist.beatmaps) do
 			v.element.selected = i == index
@@ -898,10 +709,10 @@ function beatmapSelect:start()
 
 		if target.group then
 			BeatmapList.getSummary(target.beatmaps[target.selected].id, self.persist.summaryGet)
-			self.data.difficultyButton:setText(target.difficulty[target.selected], true)
+			self.data.difficulty:setItems(target.difficulty, target.selected)
 		else
 			BeatmapList.getSummary(target.id, self.persist.summaryGet)
-			self.data.difficultyButton:setText(target.difficulty, false)
+			self.data.difficulty:setItems({target.difficulty or L"beatmapSelect:diffUnknown"}, 1)
 		end
 
 		self.persist.beatmapCoverArt = nil
@@ -911,15 +722,35 @@ function beatmapSelect:start()
 
 	local unprocessedBeatmaps = {}
 
-	-- Lock fonts
-	self.persist.mainFont = self.data.mainFont
-	self.persist.formatFont = self.assets.fonts.formatFont
+	local function attachCover(entry, id)
+		BeatmapList.getCoverArt(id, function(has, img, info)
+			local imageCover = nil
+
+			if has then
+				local image = love.graphics.newImage(img, mipmaps)
+				local w, h = image:getDimensions()
+				Util.releaseObject(img)
+				entry.coverArtImage = image
+				entry.info = info
+
+				if w > 128 or h > 128 then
+					imageCover = resizeImage(image, 128, 128)
+					Util.releaseObject(image)
+				else
+					imageCover = image
+				end
+			end
+
+			entry.element:setCoverImage(imageCover)
+			entry.element:addEventListener("mousereleased", beatmapSelected)
+		end)
+	end
+
 	BeatmapList.push()
 	BeatmapList.enumerate(function(id, name, fmt, diff, _, group)
 		if id == "" then
 			for _, v in ipairs(unprocessedBeatmaps) do
 				if v.group then
-					-- look for existing
 					local targetGroup
 
 					for _, w in ipairs(self.persist.beatmaps) do
@@ -929,7 +760,6 @@ function beatmapSelect:start()
 						end
 					end
 
-					-- create new group
 					if not(targetGroup) then
 						targetGroup = {
 							name = v.name,
@@ -938,67 +768,25 @@ function beatmapSelect:start()
 							difficulty = {},
 							group = v.group,
 							selected = 1,
-							element = beatmapSelectButton(self, v.name, v.format)
 						}
-
-						BeatmapList.getCoverArt(v.id, function(has, img, info)
-							local imageCover = nil
-
-							if has then
-								local image = love.graphics.newImage(img, mipmaps)
-								local w, h = image:getDimensions()
-								Util.releaseObject(img)
-								targetGroup.coverArtImage = image
-								targetGroup.info = info
-
-								if w > 128 or h > 128 then
-									imageCover = resizeImage(image, 128, 128)
-									Util.releaseObject(image)
-								else
-									imageCover = image
-								end
-							end
-
-							targetGroup.element:setCoverImage(imageCover)
-							targetGroup.element:addEventListener("mousereleased", beatmapSelected)
-						end)
-
+						targetGroup.element = beatmapSelectButton(self, v.name, "")
+						attachCover(targetGroup, v.id)
 						self.persist.beatmaps[#self.persist.beatmaps + 1] = targetGroup
 					end
 
 					targetGroup.beatmaps[#targetGroup.beatmaps + 1] = v
 					targetGroup.difficulty[#targetGroup.difficulty + 1] = v.difficulty
+					targetGroup.element.subtitle = rowSubtitle(targetGroup)
 				else
-					v.element = beatmapSelectButton(self, v.name, v.format)
+					v.element = beatmapSelectButton(self, v.name, rowSubtitle(v))
 					self.persist.beatmaps[#self.persist.beatmaps + 1] = v
 
 					if BeatmapList.isActive() then
-						BeatmapList.getCoverArt(v.id, function(has, img, info)
-							local imageCover = nil
-
-							if has then
-								local image = love.graphics.newImage(img, mipmaps)
-								local w, h = image:getDimensions()
-								Util.releaseObject(img)
-								v.coverArtImage = image
-								v.info = info
-
-								if w > 128 or h > 128 then
-									imageCover = resizeImage(image, 128, 128)
-									Util.releaseObject(image)
-								else
-									imageCover = image
-								end
-							end
-
-							v.element:setCoverImage(imageCover)
-							v.element:addEventListener("mousereleased", beatmapSelected)
-						end)
+						attachCover(v, v.id)
 					end
 				end
 			end
 
-			-- sort
 			table.sort(self.persist.beatmaps, function(a, b)
 				return a.name < b.name
 			end)
@@ -1011,12 +799,7 @@ function beatmapSelect:start()
 
 			if self.persist.active then
 				updateBeatmapList(self)
-				setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 			end
-
-			-- Unlock fonts
-			self.persist.mainFont = nil
-			self.persist.formatFont = nil
 
 			return false
 		end
@@ -1033,7 +816,6 @@ function beatmapSelect:start()
 
 	Glow.addFrame(self.persist.beatmapFrame)
 	Glow.addFrame(self.persist.replaysFrame)
-	Glow.addFrame(self.persist.dropdownFrame)
 	setStatusText(self, L"beatmapSelect:loading", true)
 end
 
@@ -1044,18 +826,18 @@ function beatmapSelect:exit()
 end
 
 function beatmapSelect:resumed()
+	Sleek.loadTheme()
 	self.persist.active = true
 	if self.persist.beatmaps.sorted then
 		setStatusText(self, L("beatmapSelect:available", {amount = #self.persist.beatmaps}), false)
 	end
 
 	if self.persist.selectedBeatmap then
-		Glow.addElement(self.data.deleteBeatmap, 742, 198)
+		Glow.addFixedElement(self.data.deleteBeatmap, PANEL_X + PANEL_W - PAD - 34, PANEL_Y + PAD)
 	end
 
 	Glow.addFrame(self.persist.replaysFrame)
 	Glow.addFrame(self.persist.beatmapFrame)
-	Glow.addFrame(self.persist.dropdownFrame)
 end
 
 function beatmapSelect:paused()
@@ -1071,83 +853,101 @@ function beatmapSelect:update(dt)
 
 	self.persist.beatmapFrame:update(dt)
 	self.persist.replaysFrame:update(dt)
-	self.persist.dropdownFrame:update(dt)
+	Sleek.slimScrollbars(self.persist.beatmapFrame)
+	Sleek.slimScrollbars(self.persist.replaysFrame)
 
 	if self.persist.statusTextBlink ~= math.huge then
 		self.persist.statusTextBlink = (self.persist.statusTextBlink + dt) % 2
 	end
 end
 
+local function drawCover(img, x, y, size, r)
+	Util.stencil11(function()
+		love.graphics.rectangle("fill", x, y, size, size, r, r, 32)
+	end, "replace", 1, false)
+	Util.setStencilTest11("equal", 1)
+	local w, h = img:getDimensions()
+	local s = size / math.min(w, h)
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.draw(img, x + size / 2, y + size / 2, 0, s, s, w / 2, h / 2)
+	Util.setStencilTest11()
+end
+
 function beatmapSelect:draw()
-	love.graphics.setColor(color.hex434242)
-	love.graphics.rectangle("fill", -88, -43, 1136, 726)
-	love.graphics.setColor(ColorTheme.get())
-	love.graphics.rectangle("fill", 480, 10, 480, 673)
+	Sleek.background("plain")
 
-	local shader = love.graphics.getShader()
-	love.graphics.setShader(Util.drawText.workaroundShader)
-	love.graphics.setColor(color.white)
-	love.graphics.rectangle("fill", 484, 346, 472, 294)
-	love.graphics.draw(self.persist.beatmapText, 30, 93)
+	-- list
+	self.persist.beatmapFrame:draw()
+	-- header strip over the list
+	Sleek.setColor(Sleek.color.bg)
+	love.graphics.rectangle("fill", -88, -43, 1136, LIST_Y + 43)
+
+	-- title + status
+	love.graphics.setFont(Sleek.font(28, "medium"))
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.print("Songs", 84, 14)
+	love.graphics.setFont(Sleek.font(14))
+	local blinkA = 1
 	if self.persist.statusTextBlink ~= math.huge then
-		love.graphics.setColor(color.compat(255, 255, 255, math.abs(1 - self.persist.statusTextBlink)))
+		blinkA = math.abs(1 - self.persist.statusTextBlink)
 	end
-	love.graphics.draw(self.persist.statusText)
-	love.graphics.setColor(ColorTheme.get())
-	love.graphics.draw(self.data.replaysText, 500, 374)
-	love.graphics.setColor(color.white)
+	Sleek.setColor(Sleek.color.muted, blinkA)
+	love.graphics.print(self.persist.statusString or "", 85, 50)
 
-	if self.persist.selectedBeatmap and self.persist.beatmapSummary then
-		local v = assert(self.persist.beatmaps[self.persist.selectedBeatmap])
-		local summary = self.persist.beatmapSummary
-		love.graphics.setFont(self.data.mainFont)
-		love.graphics.printf(v.name, 500, 98, 300 / (24/44), "left", 0, 24/44)
+	-- detail panel
+	Sleek.panel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, 28)
+	local cx, cy = PANEL_X + PAD, PANEL_Y + PAD
+	local selected = self.persist.selectedBeatmap and self.persist.beatmaps[self.persist.selectedBeatmap]
 
-		if summary.coverArt and summary.coverArt.info then
-			-- FIXME: Implement better caching for this table creation
-			local _, info = self.data.mainFont2:getWrap(v.info, 300)
-			love.graphics.setFont(self.data.mainFont2)
-			love.graphics.printf(table.concat(info, "\n", 1, math.min(#info, 4)), 500, 98 + self.persist.beatmapNameHeight, 300 / (9/16), "left", 0, 9/16)
-		end
+	if self.persist.beatmapCoverArt then
+		drawCover(self.persist.beatmapCoverArt, cx, cy, COVER, 24)
+	else
+		Sleek.setColor(Sleek.color.accentSoft)
+		love.graphics.rectangle("fill", cx, cy, COVER, COVER, 24, 24, 32)
+		Sleek.iconNote(cx + COVER / 2, cy + COVER / 2, 44, Sleek.color.accentDark)
+	end
 
-		if self.persist.beatmapCoverArt then
-			local w, h = self.persist.beatmapCoverArt:getDimensions()
-			love.graphics.setShader(self.data.coverMaskShader)
-			love.graphics.draw(self.persist.beatmapCoverArt, 806, 94, 0, 140 / w, 140 / h)
-		else
-			love.graphics.setColor(color.hexC4C4C4)
-			love.graphics.rectangle("fill", 806, 94, 140, 140, 15, 15)
-			love.graphics.rectangle("line", 806, 94, 140, 140, 15, 15)
-			love.graphics.setColor(color.white)
+	local tx = cx + COVER + 16
+	local tw = PANEL_X + PANEL_W - PAD - tx - (selected and 40 or 0)
+	if selected then
+		local titleFont = Sleek.font(20, "medium")
+		love.graphics.setFont(titleFont)
+		Sleek.setColor(Sleek.color.text)
+		local _, lines = titleFont:getWrap(selected.name, tw)
+		local shown = {}
+		for i = 1, math.min(#lines, 3) do shown[i] = lines[i] end
+		love.graphics.printf(table.concat(shown, "\n"), tx, cy, tw, "left")
+		local ty = cy + #shown * titleFont:getHeight() + 4
+		local info = selected.info
+		if self.persist.beatmapSummary and info and #info > 0 then
+			local f = Sleek.font(13)
+			love.graphics.setFont(f)
+			Sleek.setColor(Sleek.color.muted)
+			local _, il = f:getWrap(info, tw + (selected and 40 or 0))
+			local maxLines = math.max(math.floor((cy + COVER - ty) / f:getHeight()), 0)
+			love.graphics.printf(table.concat(il, "\n", 1, math.min(#il, maxLines)), tx, ty, tw + 40, "left")
 		end
 	else
-		love.graphics.setColor(color.hexC4C4C4)
-		love.graphics.rectangle("fill", 806, 94, 140, 140, 15, 15)
-		love.graphics.rectangle("line", 806, 94, 140, 140, 15, 15)
-		love.graphics.setColor(color.white)
+		love.graphics.setFont(Sleek.font(16))
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.printf("Pick a song from the list", tx, cy + COVER / 2 - 22, tw, "left")
 	end
 
-	love.graphics.setShader(shader)
-	love.graphics.draw(self.data.shadowGradient, -88, 77, 0, 1136, 8)
-	love.graphics.setColor(color.hex333131)
-	love.graphics.rectangle("fill", -88, 0, 1136, 80)
-	love.graphics.setColor(#self.persist.searchQuery > 0 and color.white or color.hexC0C0C0)
-	Util.drawText(self.data.searchText, 192, 24)
-
-	if self.persist.emptyReplays then
-		love.graphics.setColor(color.hex8B8B8B)
-		love.graphics.draw(self.assets.images.poll, 720, 488, 0, 0.32, 0.32, 46, 46)
-		Util.drawText(self.data.emptyReplaysText, 720, 500)
+	-- replays
+	love.graphics.setFont(Sleek.font(12, "medium"))
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.print("REPLAYS", PANEL_X + PAD + 2, REPLAY_Y + 4)
+	if selected and self.persist.emptyReplays then
+		love.graphics.setFont(Sleek.font(14))
+		Sleek.setColor(Sleek.color.faint)
+		love.graphics.print("None yet", PANEL_X + PAD + 2, REPLAY_Y + 30)
 	end
 
 	Glow.draw()
-	self.persist.beatmapFrame:draw()
 	self.persist.replaysFrame:draw()
-	self.persist.dropdownFrame:draw()
 end
 
 beatmapSelect:registerEvent("mousereleased", function(self, x, y)
-	self.data.difficultyDropdown:hide()
 	-- tapping anywhere below the top bar closes the on-screen keyboard
 	if self.persist.searchKeyboard and y and y > 80 then
 		setSearchKeyboard(self, false)

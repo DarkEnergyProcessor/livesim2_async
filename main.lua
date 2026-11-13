@@ -150,6 +150,7 @@ local SETTING_LIST = {
 	CARD_TEAM = "ur_appeal\tssr_lane\tsr_perfect\tur_crit\tur_key\tssr_lock\tsr_opener\tssr_heal\tsr_steady",
 	CBF_UNIT_LOAD = 1,
 	COLOR_THEME = 1,
+	SLEEK_DARK = 0,
 	GLOBAL_OFFSET = 0,
 	IDOL_IMAGE = " \t \t \t \t \t \t \t \t ",
 	IDOL_KEYS = "a\ts\td\tf\tspace\tj\tk\tl\t;",

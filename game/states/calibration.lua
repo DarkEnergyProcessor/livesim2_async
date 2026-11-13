@@ -3,18 +3,14 @@
 -- Part of the SIF gift fork
 
 local love = require("love")
-local Luaoop = require("libs.Luaoop")
 
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
-local color = require("color")
-local MainFont = require("main_font")
 local Setting = require("setting")
 local Volume = require("volume")
 
 local Glow = require("game.afterglow")
-local BackgroundLoader = require("game.background_loader")
-local BackNavigation = require("game.ui.back_navigation")
+local Sleek = require("game.ui.sleek")
 
 local calibration = Gamestate.create {
 	images = {},
@@ -28,32 +24,9 @@ local WARMUP_BEATS = 4             -- listen-only beats before taps count
 local TARGET_TAPS = 20             -- taps collected before showing results
 local ACCEPT_WINDOW = 0.2          -- |offset| beyond this = stray tap, ignored
 
-local CENTER_X, CENTER_Y = 480, 340
+local CENTER_X, CENTER_Y = 480, 360
 local TARGET_RADIUS = 72
-local RING_START_RADIUS = 210
-
----------------------------------------------------------------- big button
-
-local bigButton = Luaoop.class("Livesim2.CalibrationButton", Glow.Element)
-
-function bigButton:new(text, w, fill)
-	self.width, self.height = w or 240, 56
-	self.text = text
-	self.fill = fill or color.hexFFA73D
-	self.font = MainFont.get(24)
-	self.isPressed = false
-	self:addEventListener("mousepressed", function() self.isPressed = true end)
-	self:addEventListener("mousecanceled", function() self.isPressed = false end)
-	self:addEventListener("mousereleased", function() self.isPressed = false end)
-end
-
-function bigButton:render(x, y)
-	love.graphics.setColor(self.isPressed and color.white50PT or self.fill)
-	love.graphics.rectangle("fill", x, y, self.width, self.height, 28, 28)
-	love.graphics.setColor(color.white)
-	love.graphics.setFont(self.font)
-	love.graphics.printf(self.text, x, y + (self.height - self.font:getHeight()) / 2, self.width, "center")
-end
+local RING_START_RADIUS = 180
 
 ---------------------------------------------------------------- helpers
 
@@ -100,8 +73,8 @@ local function finishRun(self)
 	local mid = median(self.persist.offsets)
 	self.persist.resultMs = math.floor(mid * 1000 + 0.5)
 	self.persist.spreadMs = math.floor(spread(self.persist.offsets, mid) * 1000 + 0.5)
-	Glow.addFixedElement(self.data.saveButton, CENTER_X - 250, 520)
-	Glow.addFixedElement(self.data.againButton, CENTER_X + 10, 520)
+	Glow.addFixedElement(self.data.againButton, CENTER_X - 250, 548)
+	Glow.addFixedElement(self.data.saveButton, CENTER_X + 10, 548)
 end
 
 local function registerTap(self)
@@ -137,15 +110,13 @@ end
 
 function calibration:load()
 	Glow.clear()
+	Sleek.loadTheme()
 
-	if self.data.background == nil then
-		self.data.background = BackgroundLoader.load(11)
-	end
 	if self.data.back == nil then
-		self.data.back = BackNavigation("Timing")
+		self.data.back = Sleek.backButton()
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	Glow.addFixedElement(self.data.back, 0, 0)
+	Glow.addFixedElement(self.data.back, 24, 16)
 
 	if self.data.tick == nil then
 		self.data.tick = love.audio.newSource("sound/tap/sif/SE_306.ogg", "static")
@@ -153,28 +124,30 @@ function calibration:load()
 	self.data.tick:setVolume(Volume.get("se", 0.75))
 
 	if self.data.startButton == nil then
-		self.data.startButton = bigButton("Start", 260)
+		self.data.startButton = Sleek.Button({
+			w = 260, h = 54, text = "Start", size = 20,
+			fill = Sleek.color.accent, textColor = Sleek.color.white, shadow = true,
+		})
 		self.data.startButton:addEventListener("mousereleased", function() startRun(self) end)
 	end
 	if self.data.saveButton == nil then
-		self.data.saveButton = bigButton("Save", 240, color.hex55CAFD)
+		self.data.saveButton = Sleek.Button({
+			w = 240, h = 54, text = "Save", size = 20,
+			fill = Sleek.color.accent, textColor = Sleek.color.white, shadow = true,
+		})
 		self.data.saveButton:addEventListener("mousereleased", function() saveResult(self) end)
 	end
 	if self.data.againButton == nil then
-		self.data.againButton = bigButton("Try again", 240)
+		self.data.againButton = Sleek.Button({w = 240, h = 54, text = "Try again", size = 20, border = true})
 		self.data.againButton:addEventListener("mousereleased", function() startRun(self) end)
 	end
-
-	self.data.bigFont = MainFont.get(40)
-	self.data.font = MainFont.get(22)
-	self.data.smallFont = MainFont.get(16)
 end
 
 function calibration:start()
 	self.persist.phase = "idle"
 	self.persist.flash = 0
 	self.persist.savedMs = nil
-	Glow.addFixedElement(self.data.startButton, CENTER_X - 130, 480)
+	Glow.addFixedElement(self.data.startButton, CENTER_X - 130, 440)
 end
 
 function calibration:update(dt)
@@ -199,114 +172,100 @@ local function fmtOffset(ms)
 	elseif ms < 0 then
 		return string.format("%d ms early", -ms)
 	else
-		return "spot on"
+		return "right on the beat"
 	end
 end
 
+local function centered(text, y, font, col)
+	love.graphics.setFont(font)
+	Sleek.setColor(col or Sleek.color.text)
+	love.graphics.printf(text, 0, y, 960, "center")
+end
+
 function calibration:draw()
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.background)
-	-- dim it so the circles read clearly
-	love.graphics.setColor(color.compat(0, 0, 0, 0.5))
-	love.graphics.rectangle("fill", -88, -43, 1136, 726)
+	Sleek.background()
+	Sleek.header("Timing")
 
 	local phase = self.persist.phase
 
 	if phase == "idle" then
-		love.graphics.setColor(color.white)
-		love.graphics.setFont(self.data.bigFont)
-		love.graphics.printf("Timing check", 0, 120, 960, "center")
-		love.graphics.setFont(self.data.font)
-		love.graphics.printf(
-			"A steady beat will play. Tap anywhere in time with it.\n"
-			.."After "..TARGET_TAPS.." taps you'll see how early or late your taps land,\n"
-			.."and the game can adjust itself to match.",
-			80, 220, 800, "center")
-		love.graphics.setFont(self.data.smallFont)
-		love.graphics.printf(
-			string.format("Current adjustment: %d ms", currentOffsetSetting()),
-			0, 360, 960, "center")
+		Sleek.panel(180, 120, 600, 280, 28)
+		centered("Tap along with the beat", 156, Sleek.font(30, "medium"))
+		centered(
+			"A steady beat will play. After four beats, tap anywhere\n"
+			.."in time with it. After "..TARGET_TAPS.." taps you'll see if your taps\n"
+			.."land early or late, and you can save the result.",
+			214, Sleek.font(17), Sleek.color.muted)
+		centered(string.format("Current offset: %d ms", currentOffsetSetting()), 340, Sleek.font(15), Sleek.color.faint)
 	elseif phase == "run" then
 		local now = love.timer.getTime()
 		local inWarmup = now < beatTime(self, WARMUP_BEATS)
+
+		centered(inWarmup and "Listen..." or "Tap along", 92, Sleek.font(32, "medium"))
+		centered(string.format("%d / %d", #self.persist.offsets, TARGET_TAPS), 140, Sleek.font(18), Sleek.color.muted)
 
 		-- shrinking ring toward the next beat
 		local toNext = (beatTime(self, self.persist.nextBeat) - now) / INTERVAL
 		toNext = math.min(math.max(toNext, 0), 1)
 		local r = TARGET_RADIUS + (RING_START_RADIUS - TARGET_RADIUS) * toNext
-		love.graphics.setColor(color.white50PT)
-		love.graphics.setLineWidth(3)
-		love.graphics.circle("line", CENTER_X, CENTER_Y, r)
+		Sleek.setColor(Sleek.color.faint, 0.6)
+		love.graphics.setLineWidth(2)
+		love.graphics.circle("line", CENTER_X, CENTER_Y, r, 96)
 
 		-- target circle, flashing on the beat
 		local f = self.persist.flash
-		love.graphics.setColor(color.compat(255, 255 - 88 * f, 255 - 194 * f, 0.6 + 0.4 * f))
-		love.graphics.circle("fill", CENTER_X, CENTER_Y, TARGET_RADIUS * (1 + 0.12 * f))
-		love.graphics.setColor(color.white)
-		love.graphics.setLineWidth(4)
-		love.graphics.circle("line", CENTER_X, CENTER_Y, TARGET_RADIUS * (1 + 0.12 * f))
+		local rr = TARGET_RADIUS * (1 + 0.1 * f)
+		Sleek.setColor(Sleek.color.accentSoft)
+		love.graphics.circle("fill", CENTER_X, CENTER_Y, rr, 96)
+		Sleek.setColor(Sleek.color.accent, 0.35 + 0.65 * f)
+		love.graphics.circle("fill", CENTER_X, CENTER_Y, rr - 10, 96)
+		Sleek.setColor(Sleek.color.accent)
+		love.graphics.setLineWidth(3)
+		love.graphics.circle("line", CENTER_X, CENTER_Y, rr, 96)
 		love.graphics.setLineWidth(1)
-
-		love.graphics.setFont(self.data.bigFont)
-		if inWarmup then
-			love.graphics.printf("Listen...", 0, 96, 960, "center")
-		else
-			love.graphics.printf("Tap with the beat", 0, 96, 960, "center")
-		end
-
-		love.graphics.setFont(self.data.font)
-		love.graphics.printf(
-			string.format("%d / %d", #self.persist.offsets, TARGET_TAPS),
-			0, 160, 960, "center")
 
 		if self.persist.lastTap then
 			local ms = math.floor(self.persist.lastTap * 1000 + 0.5)
-			love.graphics.setColor(ms > 0 and color.hexFFA73D or color.hex55CAFD)
-			love.graphics.printf(fmtOffset(ms), 0, 560, 960, "center")
+			centered(fmtOffset(ms), 572, Sleek.font(20, "medium"), ms > 0 and Sleek.color.goldDark or Sleek.color.blueDark)
 		end
 	elseif phase == "done" then
-		love.graphics.setColor(color.white)
-		love.graphics.setFont(self.data.bigFont)
-		love.graphics.printf("Your taps: "..fmtOffset(self.persist.resultMs), 0, 130, 960, "center")
-
-		love.graphics.setFont(self.data.font)
+		Sleek.panel(120, 96, 720, 384, 28)
+		centered("Your taps were "..fmtOffset(self.persist.resultMs), 126, Sleek.font(30, "medium"))
 		local consistency
 		if self.persist.spreadMs <= 25 then
-			consistency = string.format("Spread: ±%d ms — nice and consistent.", self.persist.spreadMs)
+			consistency = "Consistent."
 		elseif self.persist.spreadMs <= 45 then
-			consistency = string.format("Spread: ±%d ms — decent; a second run can tighten it.", self.persist.spreadMs)
+			consistency = "Fairly consistent. Another run may help."
 		else
-			consistency = string.format("Spread: ±%d ms — quite scattered; worth another run.", self.persist.spreadMs)
+			consistency = "Quite scattered. Try another run before saving."
 		end
-		love.graphics.printf(consistency, 0, 210, 960, "center")
+		centered(string.format("Spread: about %d ms. %s", self.persist.spreadMs, consistency), 180, Sleek.font(17), Sleek.color.muted)
 
-		love.graphics.printf(string.format(
-			"Adjustment now: %d ms        After saving: %d ms",
-			currentOffsetSetting(), self.persist.resultMs),
-			0, 280, 960, "center")
-
-		-- tap scatter: one notch per tap on an early/late axis
-		local bx, bw, by = 180, 600, 380
-		love.graphics.setColor(color.white50PT)
-		love.graphics.rectangle("fill", bx, by, bw, 4)
-		love.graphics.rectangle("fill", bx + bw / 2 - 1, by - 22, 3, 48)
-		love.graphics.setFont(self.data.smallFont)
-		love.graphics.print("early", bx - 2, by + 14)
-		love.graphics.print("late", bx + bw - 28, by + 14)
+		-- tap scatter: one mark per tap on an early/late axis
+		local bx, bw, by = 200, 560, 300
+		Sleek.setColor(Sleek.color.track)
+		love.graphics.rectangle("fill", bx, by - 2, bw, 4, 2, 2)
+		Sleek.setColor(Sleek.color.border)
+		love.graphics.rectangle("fill", bx + bw / 2 - 1, by - 26, 2, 52)
+		love.graphics.setFont(Sleek.font(14))
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.print("early", bx, by + 20)
+		love.graphics.printf("late", bx, by + 20, bw, "right")
+		love.graphics.printf("on the beat", bx, by + 20, bw, "center")
 		for _, off in ipairs(self.persist.offsets) do
 			local t = math.min(math.max(off / ACCEPT_WINDOW, -1), 1)
-			love.graphics.setColor(off > 0 and color.hexFFA73D or color.hex55CAFD)
-			love.graphics.rectangle("fill", bx + bw / 2 + t * bw / 2 - 1, by - 14, 3, 32)
+			Sleek.setColor(off > 0 and Sleek.color.gold or Sleek.color.blue)
+			love.graphics.rectangle("fill", bx + bw / 2 + t * bw / 2 - 1.5, by - 16, 3, 32, 1.5, 1.5)
 		end
 
+		centered(string.format("Offset now: %d ms.   After saving: %d ms.", currentOffsetSetting(), self.persist.resultMs),
+			400, Sleek.font(16), Sleek.color.text)
 		if self.persist.savedMs then
-			love.graphics.setColor(color.hex55CAFD)
-			love.graphics.setFont(self.data.font)
-			love.graphics.printf("Saved!", 0, 470, 960, "center")
+			centered("Saved.", 446, Sleek.font(18, "medium"), Sleek.color.accent)
 		end
 	end
 
-	love.graphics.setColor(color.white)
+	love.graphics.setColor(1, 1, 1, 1)
 	Glow.draw()
 end
 

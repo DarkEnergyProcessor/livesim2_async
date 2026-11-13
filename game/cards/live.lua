@@ -21,7 +21,12 @@ function CardLive:__construct(team, seed)
 	self.liveUI = nil        -- set by livesim2 after liveUI exists
 	self.skill = nil         -- skill engine, set by livesim2
 	self.noteManager = nil
-	self.stats = {crits = 0, skillFires = 0}
+	-- per-lane stats are indexed by team slot (1 = rightmost lane)
+	self.stats = {crits = 0, skillFires = 0, laneScore = {}, laneCrits = {}, laneSkills = {}, laneNotes = {}}
+	for i = 1, 9 do
+		self.stats.laneScore[i], self.stats.laneCrits[i] = 0, 0
+		self.stats.laneSkills[i], self.stats.laneNotes[i] = 0, 0
+	end
 
 	-- HP
 	local total = 0
@@ -169,6 +174,9 @@ function CardLive:applyEffect(e, slot, permanent, source)
 
 	if t == "score" then
 		self:addScore(e.value or 0)
+		if self.stats.laneScore[slot] then
+			self.stats.laneScore[slot] = self.stats.laneScore[slot] + math.floor(e.value or 0)
+		end
 	elseif t == "heal" then
 		local amount = e.fraction and (e.fraction * self.maxHP) or (e.value or 0)
 		self:heal(amount)
@@ -187,7 +195,22 @@ end
 
 function CardLive:applyEffects(effects, slot)
 	self.stats.skillFires = self.stats.skillFires + 1
+	if self.stats.laneSkills[slot] then
+		self.stats.laneSkills[slot] = self.stats.laneSkills[slot] + 1
+	end
 	for i, e in ipairs(effects) do self:applyEffect(e, slot, false, slot.."/"..i) end
+end
+
+-- Copy of the per-song stats for the results screen
+function CardLive:getStats()
+	local out = {crits = self.stats.crits, skillFires = self.stats.skillFires}
+	for _, k in ipairs({"laneScore", "laneCrits", "laneSkills", "laneNotes"}) do
+		out[k] = {}
+		for i = 1, 9 do out[k][i] = self.stats[k][i] or 0 end
+	end
+	out.team = {}
+	for i = 1, 9 do out.team[i] = self.team[i] end
+	return out
 end
 
 -- Activation chance for a card's skill, after modifiers
@@ -249,10 +272,13 @@ function CardLive:noteScore(slot, judgement, combo, flags)
 		crit = true
 		base = base * ((r.critMultiplier or 1.5) + self:getMod("crit_damage_up", slot))
 		self.stats.crits = self.stats.crits + 1
+		self.stats.laneCrits[slot] = (self.stats.laneCrits[slot] or 0) + 1
 	end
 
-	base = base * self:getMult("score_mult", slot)
-	return math.ceil(base), crit
+	base = math.ceil(base * self:getMult("score_mult", slot))
+	self.stats.laneScore[slot] = (self.stats.laneScore[slot] or 0) + base
+	self.stats.laneNotes[slot] = (self.stats.laneNotes[slot] or 0) + 1
+	return base, crit
 end
 
 function CardLive:getDamage(judgement, star)

@@ -1,4 +1,4 @@
--- Live result display
+-- Live result display (sleek restyle for the SIF gift fork)
 -- Part of Live Simulator: 2
 -- See copyright notice in main.lua
 
@@ -6,50 +6,46 @@ local love = require("love")
 local lsr = require("libs.lsr")
 local CubicBezier = require("libs.cubic_bezier")
 
-local MainFont = require("main_font")
-local color = require("color")
-local Setting = require("setting")
 local Gamestate = require("gamestate")
 local LoadingInstance = require("loading_instance")
 local Util = require("util")
 local L = require("language")
 
-local BackgroundLoader = require("game.background_loader")
 local Glow = require("game.afterglow")
-local CircleIconButton = require("game.ui.circle_icon_button")
+local Sleek = require("game.ui.sleek")
+local cards = require("game.cards")
 
 local interpolation = CubicBezier(0.4, 0, 0.2, 1):getFunction()
 local mipmaps = {mipmaps = true}
-local accuracyColorMap = {
-	{color.hexBE8C00, "PERFECT"},
-	{color.hex47BDFF, "GREAT"},
-	{color.hex52CC4F, "GOOD"},
-	{color.hexF98322, "BAD"},
-	{color.hexFB2256, "MISS"}
+
+-- layout
+local TOP_Y, TOP_H = 72, 208
+local LEFT_W = 360
+local BOT_Y, BOT_H = 296, 260
+local GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H = 32 + 24 + 64, BOT_Y + 92, 896 - 48 - 64, 140
+local BTN_Y, BTN_H = 572, 48
+
+local judgementRows = {
+	{"perfect", "PERFECT", "accent"},
+	{"great", "GREAT", "blue"},
+	{"good", "GOOD", "green"},
+	{"bad", "BAD", "gold"},
+	{"miss", "MISS", "faint"},
 }
-local rankingQuad
 
 local resultScreen = Gamestate.create {
 	fonts = {},
-	images = {
-		arrowBack = {"assets/image/ui/over_the_rainbow/arrow_back.png", mipmaps},
-		coverMask = {"assets/image/ui/cover_mask.png", mipmaps},
-		ranking = {"assets/image/ui/ranking.png", mipmaps},
-		reload = {"assets/image/ui/over_the_rainbow/reload.png", mipmaps},
-		save = {"assets/image/ui/over_the_rainbow/save.png", mipmaps},
-		videocam = {"assets/image/ui/over_the_rainbow/videocam.png", mipmaps},
-	}
+	images = {},
 }
 
-local function showText(self, text)
-	self.persist.statusText:clear()
-	local length = self.data.mainFont:getWidth(text)
-	self.persist.statusText:add({color.black, text}, 0, 0, 0, 18/32, 18/32, length * 0.5, 0)
-	self.persist.statusTimer = 0
+local function fmt(n)
+	local s = tostring(math.floor(n + 0.5))
+	return (s:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""))
 end
 
-local function PV(v, i)
-	return tostring(math.floor(v * i + 0.5))
+local function showText(self, text)
+	self.persist.statusString = text
+	self.persist.statusTimer = 0
 end
 
 local function leave()
@@ -59,7 +55,14 @@ end
 local function skipResultTween(self)
 	if not(self) then return end
 	self.persist.graphTimer = 3
-	self.persist.statusTimer = 5.7
+end
+
+local function pill(text, fill, textColor, border)
+	local font = Sleek.font(16, "medium")
+	return Sleek.Button({
+		w = font:getWidth(text) + 52, h = BTN_H, text = text, size = 16,
+		fill = fill, textColor = textColor, border = border,
+	})
 end
 
 function resultScreen:load(arg)
@@ -73,327 +76,372 @@ function resultScreen:load(arg)
 	-- * autoplay - Is result from autoplay?
 	-- * comboRange - Score and combo range
 	-- * background - Beatmap background
+	-- * cardStats - per-lane card stats (only right after a song)
 	Glow.clear()
+	Sleek.loadTheme()
 
-	rankingQuad = {
-		love.graphics.newQuad(0, 2, 620, 150, 620, 604),
-		love.graphics.newQuad(0, 152, 620, 150, 620, 604),
-		love.graphics.newQuad(0, 302, 620, 150, 620, 604),
-		love.graphics.newQuad(0, 452, 620, 150, 620, 604),
-	}
 	local saveAllowed = arg.allowSave and not(arg.autoplay)
 
-	self.data.background = arg.background or BackgroundLoader.load(Setting.get("BACKGROUND_IMAGE"))
-
-	if self.data.mainFont == nil then
-		self.data.mainFont = MainFont.get(32)
-	end
-
-	if self.data.coverMaskShader == nil then
-		self.data.coverMaskShader = love.graphics.newShader([[
-			extern Image mask;
-			vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
-			{
-				vec4 col1 = Texel(tex, tc);
-				return color * vec4(col1.rgb, col1.a * Texel(mask, tc).r);
-			}
-		]])
-		self.data.coverMaskShader:send("mask", self.assets.images.coverMask)
-	end
-
 	if self.data.back == nil then
-		self.data.back = CircleIconButton(color.transparent, 36, self.assets.images.arrowBack, 0.32)
+		self.data.back = Sleek.backButton()
 		self.data.back:addEventListener("mousereleased", leave)
 	end
-	Glow.addFixedElement(self.data.back, 32, 4)
+	Glow.addFixedElement(self.data.back, 24, 16)
 
-	do
-		if not(arg.autoplay) and self.data.showReplay == nil then
-			self.data.showReplay = CircleIconButton(color.hexFFDF35, 43, self.assets.images.videocam, 0.32)
-			self.data.showReplay:addEventListener("mousereleased", function()
-				Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
-					summary = arg.summary,
-					beatmapName = arg.name,
-					replay = arg.replay,
-					allowRetry = not(arg.allowRetry),
-				})
-			end)
-		end
+	local buttons = {}
 
-		if arg.allowRetry and self.data.reloadLive == nil then
-			self.data.reloadLive = CircleIconButton(color.hex1CA0FF, 43, self.assets.images.reload, 0.32)
-			self.data.reloadLive:addEventListener("mousereleased", function()
-				-- It may contain replay data, but the table may used somewhere
-				-- so clone it first.
-				local newArg = {}
-				for k, v in pairs(arg.livesim2) do
-					newArg[k] = v
-				end
-				newArg.replay = nil
+	if saveAllowed and self.data.saveReplay == nil then
+		self.data.saveReplay = pill("Save replay", Sleek.color.panel, Sleek.color.text, true)
+		self.data.saveReplay:addEventListener("mousereleased", function()
+			local name
+			if not(love.filesystem.createDirectory("replays/"..arg.name)) then
+				showText(self, L"livesim2:replay:errorDirectory")
+				return
+			end
 
-				return Gamestate.replace(LoadingInstance.getInstance(), "livesim2", newArg)
-			end)
-		end
+			if arg.replay.filename then
+				showText(self, L"livesim2:replay:errorAlreadySaved")
+				return
+			end
 
-		if saveAllowed and self.data.saveReplay == nil then
-			self.data.saveReplay = CircleIconButton(color.hexFF4FAE, 43, self.assets.images.save, 0.32)
-			self.data.saveReplay:addEventListener("mousereleased", function()
-				local name
-				if not(love.filesystem.createDirectory("replays/"..arg.name)) then
-					showText(self, L"livesim2:replay:errorDirectory")
-					return
-				end
+			name = "replays/"..arg.name.."/"..arg.replay.timestamp..".lsr"
+			if Util.fileExists(name) then
+				showText(self, L"livesim2:replay:errorAlreadySaved")
+				return
+			end
 
-				if arg.replay.filename then
-					showText(self, L"livesim2:replay:errorAlreadySaved")
-					return
-				end
+			local s = lsr.saveReplay(
+				name,
+				arg.summary.hash,
+				arg.replay,
+				arg.replay.accuracy,
+				arg.replay.events
+			)
+			if s then
+				arg.replay.filename = name
+				showText(self, L"livesim2:replay:saved")
+			else
+				showText(self, L"livesim2:replay:errorSaveGeneric")
+			end
+		end)
+	end
+	if self.data.saveReplay then buttons[#buttons + 1] = self.data.saveReplay end
 
-				name = "replays/"..arg.name.."/"..arg.replay.timestamp..".lsr"
-				if Util.fileExists(name) then
-					showText(self, L"livesim2:replay:errorAlreadySaved")
-					return
-				end
+	if not(arg.autoplay) and self.data.showReplay == nil then
+		self.data.showReplay = pill("Watch replay", Sleek.color.panel, Sleek.color.text, true)
+		self.data.showReplay:addEventListener("mousereleased", function()
+			Gamestate.replace(LoadingInstance.getInstance(), "livesim2", {
+				summary = arg.summary,
+				beatmapName = arg.name,
+				replay = arg.replay,
+				allowRetry = not(arg.allowRetry),
+			})
+		end)
+	end
+	if self.data.showReplay then buttons[#buttons + 1] = self.data.showReplay end
 
-				local s = lsr.saveReplay(
-					name,
-					arg.summary.hash,
-					arg.replay,
-					arg.replay.accuracy,
-					arg.replay.events
-				)
-				if s then
-					arg.replay.filename = name
-					showText(self, L"livesim2:replay:saved")
-				else
-					showText(self, L"livesim2:replay:errorSaveGeneric")
-				end
-			end)
-		end
+	if self.data.songs == nil then
+		self.data.songs = pill("Songs", Sleek.color.panel, Sleek.color.text, true)
+		self.data.songs:addEventListener("mousereleased", leave)
+	end
+	buttons[#buttons + 1] = self.data.songs
 
-		local addX = 840
-		if self.data.reloadLive then
-			Glow.addFixedElement(self.data.reloadLive, addX, 176)
-			addX = addX - 96
-		end
+	if arg.allowRetry and self.data.reloadLive == nil then
+		local font = Sleek.font(16, "medium")
+		self.data.reloadLive = Sleek.Button({
+			w = font:getWidth("Retry") + 80, h = BTN_H, text = "Retry", size = 16, textOffset = 12,
+			fill = Sleek.color.accent, textColor = Sleek.color.white, shadow = true,
+			icon = function(x, y, w, h)
+				Sleek.iconRetry(x + w / 2 - font:getWidth("Retry") / 2 - 8, y + h / 2, 22, Sleek.color.white)
+			end
+		})
+		self.data.reloadLive:addEventListener("mousereleased", function()
+			-- It may contain replay data, but the table may used somewhere
+			-- so clone it first.
+			local newArg = {}
+			for k, v in pairs(arg.livesim2) do
+				newArg[k] = v
+			end
+			newArg.replay = nil
 
-		if self.data.showReplay then
-			Glow.addFixedElement(self.data.showReplay, addX, 176)
-			addX = addX - 96
-		end
+			return Gamestate.replace(LoadingInstance.getInstance(), "livesim2", newArg)
+		end)
+	end
+	if self.data.reloadLive then buttons[#buttons + 1] = self.data.reloadLive end
 
-		if self.data.saveReplay then
-			Glow.addFixedElement(self.data.saveReplay, addX, 176)
-		end
+	-- right-aligned row
+	local x = 928
+	for i = #buttons, 1, -1 do
+		x = x - buttons[i].width
+		Glow.addFixedElement(buttons[i], x, BTN_Y)
+		x = x - 12
 	end
 end
 
+local function rankFor(score, range)
+	if not range then return nil end
+	if score >= range[4] then return "S"
+	elseif score >= range[3] then return "A"
+	elseif score >= range[2] then return "B"
+	elseif score >= range[1] then return "C"
+	end
+	return "D"
+end
+
+local function buildGraph(self, accuracyData)
+	-- the original live clear graph: one point per note, 1 = perfect .. 0 = miss
+	local canvas = Util.newCanvas(GRAPH_W, GRAPH_H, nil, true)
+	local pad = 8
+	local lines = {}
+	local h = GRAPH_H - pad * 2
+	if #accuracyData == 0 then
+		lines = {0, GRAPH_H - pad, GRAPH_W, GRAPH_H - pad}
+	elseif #accuracyData == 1 then
+		local v = accuracyData[1]
+		lines = {0, pad + (1 - v) * h, GRAPH_W, pad + (1 - v) * h}
+	else
+		local n = math.floor(GRAPH_W)
+		for i = 1, n do
+			local idx = (i - 1) / (n - 1) * (#accuracyData - 1)
+			local v0 = accuracyData[math.floor(idx) + 1]
+			local v1 = accuracyData[math.ceil(idx) + 1] or accuracyData[#accuracyData]
+			local t = idx % 1
+			local v = (1 - t) * v0 + t * v1
+			lines[#lines + 1] = i - 1
+			lines[#lines + 1] = pad + (1 - v) * h
+		end
+	end
+
+	love.graphics.push("all")
+	love.graphics.reset()
+	love.graphics.setCanvas(canvas)
+	love.graphics.clear(0, 0, 0, 0)
+	Sleek.setColor(Sleek.color.accent)
+	love.graphics.setLineWidth(2.5)
+	love.graphics.setLineJoin("bevel")
+	love.graphics.line(lines)
+	love.graphics.pop()
+
+	self.persist.graphCanvas = canvas
+	self.persist.graphPad = pad
+end
+
 function resultScreen:start(arg)
-	self.persist.nameText = love.graphics.newText(self.data.mainFont)
-	self.persist.statusText = love.graphics.newText(self.data.mainFont)
-	self.persist.indicatorText = love.graphics.newText(self.data.mainFont)
-	self.persist.valueInfoText = love.graphics.newText(self.data.mainFont)
-	self.persist.statusTimer = 0 -- show for 0.2 + 5 + 0.5 seconds
+	self.persist.statusTimer = 5.7
+	self.persist.statusString = ""
 	self.persist.replay = arg.replay
-	self.persist.comboRange = arg.comboRange or {
-		math.ceil(arg.replay.totalNotes * 0.3),
-		math.ceil(arg.replay.totalNotes * 0.5),
-		math.ceil(arg.replay.totalNotes * 0.7),
-		arg.replay.totalNotes
-	}
+	self.persist.cardStats = arg.cardStats
+	self.persist.isLive = arg.livesim2 ~= nil
+	self.persist.name = arg.summary.name or arg.name or ""
 	self.persist.scoreRange = arg.summary.scoreS and {
 		arg.summary.scoreC,
 		arg.summary.scoreB,
 		arg.summary.scoreA,
 		arg.summary.scoreS,
 	}
-	self.persist.comboWeight = arg.replay.perfect + arg.replay.great + arg.replay.good + arg.replay.bad + arg.replay.miss
-	self.persist.coverArt = arg.summary.coverArt and arg.summary.coverArt.image
-	if self.persist.coverArt then
-		self.persist.coverArt = love.graphics.newImage(self.persist.coverArt, mipmaps)
-	end
+	self.persist.rank = rankFor(arg.replay.score, self.persist.scoreRange)
+	self.persist.comboWeight = math.max(arg.replay.perfect + arg.replay.great + arg.replay.good + arg.replay.bad + arg.replay.miss, 1)
+	self.persist.graphTimer = 0 -- up to 3 seconds
+	self.persist.graphShader = love.graphics.newShader([[
+		extern number p;
 
-	self.persist.nameText:addf(arg.summary.name, 740, "left")
+		vec4 effect(vec4 color, Image tex, vec2 tc, vec2 _)
+		{
+			if (tc.x > p)
+				discard;
+			else
+				return Texel(tex, tc) * color;
+		}
+	]])
+	buildGraph(self, arg.replay.accuracy or {})
 
-	do
-		local combo = arg.replay.maxCombo
-
-		if self.persist.scoreRange then
-			local score = arg.replay.score
-			if score >= self.persist.scoreRange[4] then
-				self.persist.scoreQuad = rankingQuad[4]
-			elseif score >= self.persist.scoreRange[3] then
-				self.persist.scoreQuad = rankingQuad[3]
-			elseif score >= self.persist.scoreRange[2] then
-				self.persist.scoreQuad = rankingQuad[2]
-			elseif score >= self.persist.scoreRange[1] then
-				self.persist.scoreQuad = rankingQuad[1]
-			end
+	-- card images for the lane chart
+	if self.persist.cardStats then
+		local imgs = {}
+		for i = 1, 9 do
+			local c = self.persist.cardStats.team[i]
+			imgs[i] = c and not c.blank and cards.loadImage(c) or nil
 		end
-
-		if combo >= self.persist.comboRange[4] then
-			self.persist.comboQuad = rankingQuad[4]
-		elseif combo >= self.persist.comboRange[3] then
-			self.persist.comboQuad = rankingQuad[3]
-		elseif combo >= self.persist.comboRange[2] then
-			self.persist.comboQuad = rankingQuad[2]
-		elseif combo >= self.persist.comboRange[1] then
-			self.persist.comboQuad = rankingQuad[1]
-		end
+		self.persist.cardImages = imgs
 	end
-
-	do
-		local accuracyData = arg.replay.accuracy
-		local lines = {}
-		self.persist.graphCanvas = Util.newCanvas(900, 132, nil, true)
-		self.persist.graphTimer = 0 -- up to 3 seconds
-		self.persist.graphShader = love.graphics.newShader([[
-			extern number p;
-
-			vec4 effect(vec4 color, Image tex, vec2 tc, vec2 _)
-			{
-				if (tc.x > p)
-					discard;
-				else
-					return Texel(tex, tc) * color;
-			}
-		]])
-
-		if #accuracyData == 0 then
-			lines[1] = 5
-			lines[2] = 132
-			lines[3] = 894
-			lines[4] = 132
-		else
-			for i = 1, 890 do
-				local idx = (i-1) / 890 * #accuracyData
-				local v0 = accuracyData[math.floor(idx)+1]
-				local v1 = accuracyData[math.ceil(idx)+1] or accuracyData[#accuracyData]
-				local t = idx % 1
-				local v = (1 - t) * v0 + t * v1
-				lines[#lines + 1] = i - 1 + 5
-				lines[#lines + 1] = 132 - v * 127
-			end
-		end
-
-		love.graphics.push("all")
-		love.graphics.reset()
-		love.graphics.setCanvas(self.persist.graphCanvas)
-		love.graphics.clear(color.compat(255, 222, 45, 0))
-		love.graphics.setColor(color.hexFFDE2D)
-		love.graphics.setLineWidth(3)
-		love.graphics.setLineJoin("bevel")
-		love.graphics.line(lines)
-		love.graphics.pop()
-	end
-
-	-- 274x368 start, step +120+0
-	local fsc = 18/32
-	for i, v in ipairs(accuracyColorMap) do
-		self.persist.indicatorText:addf(v, 120 / fsc, "center", 274 - 60 + (i - 1) * 120, 406, 0, fsc)
-	end
-	self.persist.indicatorText:addf({color.black, "COMBO"}, 120 / fsc, "center", 274 - 60 + 5 * 120, 406, 0, fsc)
-	self.persist.indicatorText:addf({color.black, "Score"}, 240 * 32/24, "center", 480, 260, 0, 24/32, 24/32, 120 * 32/24)
 end
 
 function resultScreen:update(dt)
-	local needRefresh = self.persist.graphTimer <= 3
-	if needRefresh then
+	if self.persist.graphTimer < 3 then
 		self.persist.graphTimer = math.min(self.persist.graphTimer + dt, 3)
 	end
-	local interp = self.persist.graphTimer / 3
-	local ip = interpolation(interp)
-
 	if self.persist.statusTimer < 5.7 then
 		self.persist.statusTimer = math.min(self.persist.statusTimer + dt, 5.7)
 	end
+	self.persist.graphShader:send("p", self.persist.graphTimer / 3)
+end
 
-	self.persist.graphShader:send("p", interp)
+local function drawScorePanel(self, ip)
+	local info = self.persist.replay
+	Sleek.panel(32, TOP_Y, LEFT_W, TOP_H, 28)
+	local cx, cy = 32 + 28 + 58, TOP_Y + TOP_H / 2
+	Sleek.setColor(Sleek.color.accent)
+	love.graphics.setLineWidth(3)
+	love.graphics.circle("line", cx, cy, 56, 64)
+	love.graphics.setLineWidth(1)
+	local rankFont = Sleek.font(64, "light")
+	love.graphics.setFont(rankFont)
+	if self.persist.graphTimer >= 2.8 then
+		local a = interpolation(math.min((self.persist.graphTimer - 2.8) * 5, 1))
+		Sleek.setColor(Sleek.color.accent, a)
+		love.graphics.printf(self.persist.rank or "–", cx - 56, cy - rankFont:getHeight() / 2, 112, "center")
+	end
 
-	if needRefresh then
-		local info = self.persist.replay
-		self.persist.valueInfoText:clear()
+	local tx = cx + 56 + 24
+	love.graphics.setFont(Sleek.font(12, "medium"))
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.print("SCORE", tx, cy - 50)
+	love.graphics.setFont(Sleek.font(38, "light"))
+	Sleek.setColor(Sleek.color.text)
+	love.graphics.print(fmt(info.score * ip), tx, cy - 34)
 
-		-- 274x368 start, step +120+0
-		for i, v in ipairs(accuracyColorMap) do
-			local cv = info[v[2]:lower()]
-			local combo = math.floor(cv * interp + 0.5)
-
-			self.persist.valueInfoText:addf(
-				{v[1], tostring(combo)},
-				120, "center",
-				274 - 60 + (i - 1) * 120, 360
-			)
-			self.persist.valueInfoText:addf(
-				{v[1], string.format("%.2f%%", combo / self.persist.comboWeight * 100)},
-				120 * 32/16, "center",
-				-- 214 + 0 * 120
-				274 - 60 + (i - 1) * 120, 392, 0, 16/32
-			)
-		end
-		-- COMBO
-		self.persist.valueInfoText:addf(
-			{color.black, PV(info.maxCombo, ip)},
-			120, "center",
-			-- 214 + 5 * 120
-			814, 360
-		)
-		-- Score
-		self.persist.valueInfoText:addf({color.black, PV(info.score, ip)}, 360, "center", 300, 296)
+	local stats = self.persist.cardStats
+	if stats then
+		local f, fb = Sleek.font(14), Sleek.font(14, "medium")
+		local yy = cy + 20
+		love.graphics.setFont(f)
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.print("Crits", tx, yy)
+		love.graphics.setFont(fb)
+		Sleek.setColor(Sleek.color.text)
+		local cw = f:getWidth("Crits ")
+		love.graphics.print(tostring(stats.crits), tx + cw, yy)
+		local sx = tx + cw + fb:getWidth(tostring(stats.crits)) + 16
+		love.graphics.setFont(f)
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.print("Skills", sx, yy)
+		love.graphics.setFont(fb)
+		Sleek.setColor(Sleek.color.text)
+		love.graphics.print(tostring(stats.skillFires), sx + f:getWidth("Skills "), yy)
 	end
 end
 
-function resultScreen:draw()
-	-- Draw background
-	local shader = love.graphics.getShader()
-	love.graphics.setColor(color.white)
-	love.graphics.draw(self.data.background)
-	love.graphics.setColor(color.hex646262AA)
-	love.graphics.rectangle("fill", -88, -43, 1136, 280)
-	love.graphics.setColor(color.white)
+local function drawLanePanel(self, ip)
+	local x, y, w, h = 32 + LEFT_W + 16, TOP_Y, 896 - LEFT_W - 16, TOP_H
+	Sleek.panel(x, y, w, h, 28)
+	love.graphics.setFont(Sleek.font(12, "medium"))
+	Sleek.setColor(Sleek.color.muted)
+	love.graphics.print("SCORE BY LANE", x + 20, y + 18)
 
-	if self.persist.coverArt then
-		local w, h = self.persist.coverArt:getDimensions()
-		love.graphics.setShader(self.data.coverMaskShader)
-		love.graphics.draw(self.persist.coverArt, 63, 84, 0, 130 / w, 130 / h)
-		love.graphics.setShader(shader)
-	else
-		love.graphics.setColor(color.hexFF9486)
-		love.graphics.rectangle("fill", 63, 84, 130, 130)
-		love.graphics.rectangle("line", 63, 84, 130, 130)
-		love.graphics.setColor(color.white)
+	local stats = self.persist.cardStats
+	if not stats then
+		love.graphics.setFont(Sleek.font(14))
+		Sleek.setColor(Sleek.color.faint)
+		love.graphics.printf("Only shown right after a song.", x + 20, y + h / 2 - 10, w - 40, "left")
+		return
 	end
 
-	love.graphics.rectangle("fill", -88, 231, 1136, 452)
-	love.graphics.setShader(Util.drawText.workaroundShader)
-	love.graphics.draw(self.persist.nameText, 214, 100)
-	local c = love.graphics.getCanvas()
-	love.graphics.draw(self.persist.indicatorText)
-	love.graphics.draw(self.persist.valueInfoText)
-	local statusOpacity =
-		self.persist.statusTimer < 0.2 and (self.persist.statusTimer * 5) or
-		(self.persist.statusTimer >= 5.2 and (1 - (self.persist.statusTimer - 5.2) * 2) or 1)
-	love.graphics.setColor(color.compat(255, 255, 255, statusOpacity))
-	love.graphics.draw(self.persist.statusText, 480, 446)
-	love.graphics.setColor(color.white)
+	local maxScore = 1
+	for i = 1, 9 do maxScore = math.max(maxScore, stats.laneScore[i]) end
+	local colW = (w - 40) / 9
+	local baseY = y + h - 16 - 38 -- top of the card circle
+	local barMax = baseY - 8 - (y + 58)
+	local small = Sleek.font(11)
+	for lane = 1, 9 do
+		local slot = 10 - lane
+		local score = stats.laneScore[slot]
+		local cx = x + 20 + (lane - 0.5) * colW
+		local bh = math.max(6, barMax * (score / maxScore) * ip)
+		Sleek.setColor(score == maxScore and score > 0 and Sleek.color.accent or Sleek.color.grey)
+		love.graphics.rectangle("fill", cx - 9, baseY - 8 - bh, 18, bh, 9, 9, 16)
+		love.graphics.setFont(small)
+		Sleek.setColor(Sleek.color.muted)
+		local label = score >= 1000 and (math.floor(score / 1000 + 0.5).."k") or tostring(score)
+		love.graphics.printf(label, cx - colW / 2, baseY - 8 - bh - 16, colW, "center")
+		local card = stats.team[slot]
+		Sleek.drawCard(card, self.persist.cardImages and self.persist.cardImages[slot], cx, baseY + 19, 19, {shadow = false})
+	end
+end
+
+local function drawJudgementPanel(self, ip)
+	local info = self.persist.replay
+	local interp = self.persist.graphTimer / 3
+	Sleek.panel(32, BOT_Y, 896, BOT_H, 28)
+
+	-- six columns: judgements + combo
+	local colW = (896 - 48) / 6
+	local labelFont, valueFont, pctFont = Sleek.font(12, "medium"), Sleek.font(26), Sleek.font(12)
+	for i = 1, 6 do
+		local cx = 32 + 24 + (i - 0.5) * colW
+		local label, value, pct, col
+		if i <= 5 then
+			local row = judgementRows[i]
+			local count = math.floor(info[row[1]] * interp + 0.5)
+			label, value = row[2], tostring(count)
+			pct = string.format("%.2f%%", count / self.persist.comboWeight * 100)
+			col = Sleek.color[row[3]]
+		else
+			label, value, pct, col = "COMBO", fmt(info.maxCombo * ip), "max", Sleek.color.text
+		end
+		love.graphics.setFont(labelFont)
+		local lw = labelFont:getWidth(label)
+		Sleek.setColor(col)
+		love.graphics.circle("fill", cx - lw / 2 - 8, BOT_Y + 26, 4, 16)
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.print(label, cx - lw / 2 + 2, BOT_Y + 18)
+		love.graphics.setFont(valueFont)
+		Sleek.setColor(Sleek.color.text)
+		love.graphics.printf(value, cx - colW / 2, BOT_Y + 34, colW, "center")
+		love.graphics.setFont(pctFont)
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.printf(pct, cx - colW / 2, BOT_Y + 68, colW, "center")
+	end
+
+	-- accuracy graph
+	local gx, gy = GRAPH_X, GRAPH_Y
+	Sleek.setColor(Sleek.color.track, 0.6)
+	love.graphics.rectangle("fill", gx - 6, gy, GRAPH_W + 12, GRAPH_H, 14, 14, 24)
+	local pad = self.persist.graphPad
+	local h = GRAPH_H - pad * 2
+	love.graphics.setFont(Sleek.font(10, "medium"))
+	for i, row in ipairs(judgementRows) do
+		local ly = gy + pad + (i - 1) / 4 * h
+		Sleek.setColor(Sleek.color.border)
+		love.graphics.rectangle("fill", gx, math.floor(ly), GRAPH_W, 1)
+		Sleek.setColor(Sleek.color.muted)
+		love.graphics.printf(row[2], 32 + 16, ly - 6, 64 - 4, "right")
+	end
+	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.setBlendMode("alpha", "premultiplied")
+	local prev = love.graphics.getShader()
 	love.graphics.setShader(self.persist.graphShader)
-	love.graphics.draw(self.persist.graphCanvas, 30, 493)
+	love.graphics.draw(self.persist.graphCanvas, gx, gy)
+	love.graphics.setShader(prev)
 	love.graphics.setBlendMode("alpha", "alphamultiply")
-	love.graphics.setCanvas(c)
-	love.graphics.setShader(shader)
+end
 
-	if self.persist.graphTimer >= 2.8 then
-		local ip3 = interpolation((self.persist.graphTimer - 2.8) * 5)
-		love.graphics.setColor(color.compat(255, 255, 255, ip3))
+function resultScreen:draw()
+	Sleek.background()
+	local ip = interpolation(self.persist.graphTimer / 3)
 
-		if self.persist.scoreQuad then
-			love.graphics.draw(self.assets.images.ranking, self.persist.scoreQuad, 32, 268, 0, 0.24)
-		end
+	-- header
+	local labelFont = Sleek.font(13, "medium")
+	love.graphics.setFont(labelFont)
+	Sleek.setColor(Sleek.color.accentDark)
+	local label = self.persist.isLive and "LIVE CLEAR" or "REPLAY"
+	love.graphics.print(label, 84, 30)
+	local titleFont = Sleek.font(24, "medium")
+	love.graphics.setFont(titleFont)
+	Sleek.setColor(Sleek.color.text)
+	local tx = 84 + labelFont:getWidth(label) + 14
+	love.graphics.print(self.persist.name, tx, 22)
 
-		if self.persist.comboQuad then
-			love.graphics.draw(self.assets.images.ranking, self.persist.comboQuad, 32, 372, 0, 0.24)
-		end
+	drawScorePanel(self, ip)
+	drawLanePanel(self, ip)
+	drawJudgementPanel(self, ip)
+
+	-- status line (replay saved etc.)
+	if self.persist.statusTimer < 5.7 and #self.persist.statusString > 0 then
+		local t = self.persist.statusTimer
+		local a = t < 0.2 and (t * 5) or (t >= 5.2 and (1 - (t - 5.2) * 2) or 1)
+		love.graphics.setFont(Sleek.font(15))
+		Sleek.setColor(Sleek.color.muted, a)
+		love.graphics.print(self.persist.statusString, 36, BTN_Y + 14)
 	end
 
 	return Glow.draw()

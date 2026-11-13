@@ -1,14 +1,21 @@
 # Cards
 
 Each `.lua` file here is one card. Put your own cards (and their images) in the
-`cards` folder inside the game's save directory; files there override these.
+`cards` folder inside the game's save directory; files there override these,
+including ones with the same name (e.g. a `ur_crit.lua` + `ur_crit.png` there
+replaces the built-in Sharpshooter). `tools/ios/package_game.sh` copies them
+into the iPhone build.
 `rules.lua` holds the global scoring numbers.
 
 ```lua
 return {
 	name    = "Kanan - Dancing Night",   -- shown in menus
-	image   = "kanan_dn.png",            -- square image in the same folder
-	rarity  = "UR",                      -- R / SR / SSR / UR (cut-in style only)
+	image   = "kanan_dn.png",            -- any size; shown cropped into a circle
+	crop    = {x = 0.55, y = 0.25, zoom = 1.9},  -- optional: the point of the picture
+	                                     -- to center in the circle (0..1 across / down)
+	                                     -- and how far to zoom in (1 = whole width)
+	rarity  = "UR",                      -- R / SR / SSR / UR (ring color; UR gets the SIF frame)
+	attribute = "pure",                  -- optional, UR frame color: smile / pure / cool / all
 	appeal  = 5200,                      -- score when a note lands on this card's lane
 	stamina = 3100,                      -- adds to team HP
 	tech    = 5900,                      -- crit chance; tech > appeal = crit profile (+15%)

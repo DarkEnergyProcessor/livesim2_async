@@ -33,6 +33,7 @@ local replay = require("game.live.replay")
 local BGM = require("game.bgm")
 local BeatmapRandomizer = require("game.live.randomizer3")
 local cards = require("game.cards")
+local Sleek = require("game.ui.sleek")
 local CardLive = require("game.cards.live")
 
 ---@class Livesim2.DEPLSState: Gamestate.Gamestate
@@ -170,6 +171,7 @@ local function liveClearCallback(self)
 	}
 
 	Gamestate.replace(nil, "result", {
+		cardStats = self.data.cardLive and self.data.cardLive:getStats() or nil,
 		name = self.persist.beatmapDisplayName,
 		summary = self.persist.summary,
 		replay = replayData,
@@ -1168,7 +1170,17 @@ local function draw(self)
 		-- draw unit icons
 		love.graphics.setColor(color.white)
 		for i, v in ipairs(self.persist.lane) do
-			love.graphics.draw(self.data.unitIcons[i], v.x, v.y, 0, self.persist.noteVisualSize, self.persist.noteVisualSize, 64, 64)
+			local card = self.persist.team and self.persist.team[i]
+			local cardImage = self.data.cardImages and self.data.cardImages[i]
+			if card and cardImage then
+				-- card art cropped into a circle with its rarity ring
+				Sleek.drawCard(card, cardImage, v.x, v.y, 62 * self.persist.noteVisualSize, {
+					shadow = false, gapColor = Sleek.color.white
+				})
+				love.graphics.setColor(color.white)
+			else
+				love.graphics.draw(self.data.unitIcons[i], v.x, v.y, 0, self.persist.noteVisualSize, self.persist.noteVisualSize, 64, 64)
+			end
 		end
 		-- draw unit skill indicator
 		self.data.skill:drawUpper()

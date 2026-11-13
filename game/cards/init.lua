@@ -18,6 +18,19 @@ local loadedRules = nil
 
 ---------------------------------------------------------------------- helpers
 
+-- Files in the save folder's cards/ win over the built-in ones. The game folder
+-- is searched first by love.filesystem, so same-named save files are read
+-- directly from disk here. (On iPhone they are packaged into the game instead.)
+local function readSaveCardFile(file)
+	local ok, base = pcall(love.filesystem.getSaveDirectory)
+	if not ok or not base or base == "" then return nil end
+	local f = io.open(base.."/"..CARD_DIR.."/"..file, "rb")
+	if not f then return nil end
+	local data = f:read("*a")
+	f:close()
+	return data
+end
+
 local function loadLuaFile(path)
 	local chunk, err = love.filesystem.load(path)
 	if not chunk then return nil, err end
@@ -126,6 +139,19 @@ local function sanitizeCard(def, id)
 	c.tech = tonumber(def.tech) or 1000
 	c.critProfile = c.tech > c.appeal
 	c.description = def.description
+	-- only picks the SIF frame color for UR cards (smile / pure / cool / all)
+	c.attribute = def.attribute and tostring(def.attribute):lower() or nil
+	-- where to center the circle crop: {x = 0..1, y = 0..1, zoom = >=1}
+	if type(def.crop) == "table" then
+		c.crop = {x = tonumber(def.crop.x), y = tonumber(def.crop.y), zoom = tonumber(def.crop.zoom)}
+	end
+	if def.image then
+		local bytes = readSaveCardFile(def.image)
+		if bytes then
+			c.imageData = love.filesystem.newFileData(bytes, def.image)
+			c.image = "save:"..def.image
+		end
+	end
 
 	if def.skill then
 		local s = def.skill
@@ -161,7 +187,19 @@ function cards.getAll(reload)
 	for _, file in ipairs(items) do
 		local id = file:match("^(.+)%.lua$")
 		if id and id ~= "rules" then
-			local def, err = loadLuaFile(CARD_DIR.."/"..file)
+			local def, err
+			local saved = readSaveCardFile(file)
+			if saved then
+				local chunk, cerr = loadstring(saved, "@"..CARD_DIR.."/"..file)
+				if chunk then
+					local ok, res = pcall(chunk)
+					if ok and type(res) == "table" then def = res else err = ok and "file must return a table" or res end
+				else
+					err = cerr
+				end
+			else
+				def, err = loadLuaFile(CARD_DIR.."/"..file)
+			end
 			if def then
 				local ok, card = pcall(sanitizeCard, def, id)
 				if ok then
@@ -265,8 +303,8 @@ function cards.loadImage(card)
 	if not (card and card.image) then return nil end
 	local img = imageCache[card.image]
 	if img == nil then
-		if Util.fileExists(card.image) then
-			local ok, res = pcall(love.graphics.newImage, card.image, {mipmaps = true})
+		if card.imageData or Util.fileExists(card.image) then
+			local ok, res = pcall(love.graphics.newImage, card.imageData or card.image, {mipmaps = true})
 			img = ok and res or false
 			if not ok then log.errorf("cards", "cannot load image %s: %s", card.image, tostring(res)) end
 		else
