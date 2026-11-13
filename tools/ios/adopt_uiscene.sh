@@ -156,7 +156,24 @@ else:
 EOF
 fi
 
-# 3. Old deployment targets in the library project upset newer Xcode ----------
+# 3. Landscape only on iPhone (SIF is a landscape game) ----------------------
+python3 - "$PLIST" <<'EOF2'
+import plistlib, sys
+p = sys.argv[1]
+with open(p, "rb") as f:
+    d = plistlib.load(f)
+want = ["UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"]
+if d.get("UISupportedInterfaceOrientations") != want:
+    d["UISupportedInterfaceOrientations"] = want
+    d["UIRequiresFullScreen"] = True
+    with open(p, "wb") as f:
+        plistlib.dump(d, f)
+    print("Set iPhone orientation to landscape only")
+else:
+    print("Info.plist already landscape only")
+EOF2
+
+# 4. Old deployment targets in the library project upset newer Xcode ----------
 LIBPBX="$SRC/platform/xcode/liblove.xcodeproj/project.pbxproj"
 if [ -f "$LIBPBX" ] && grep -q "IPHONEOS_DEPLOYMENT_TARGET = 8.0;" "$LIBPBX"; then
 	sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = 8.0;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' "$LIBPBX"
