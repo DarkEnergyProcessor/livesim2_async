@@ -38,6 +38,9 @@ sed -i.bak \
 	"$PBX"
 rm -f "$PBX.bak"
 
+# iOS 27 SDK requires the scene life cycle
+bash "$(dirname "$0")/adopt_uiscene.sh" "$DEST/love-$VER-ios-source"
+
 # Home-screen name
 PLIST="$XC/ios/love-ios.plist"
 if command -v plutil >/dev/null 2>&1; then

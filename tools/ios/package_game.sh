@@ -2,7 +2,7 @@
 # Packages the game (plus beatmaps and songs you've downloaded on this Mac)
 # into a single .love file to copy onto the iPhone.
 #
-# Usage: bash tools/ios/make_love.sh [output file]
+# Usage: bash tools/ios/package_game.sh [output file]
 #   default output: ~/livesim-ios/livesim2.love
 set -euo pipefail
 
