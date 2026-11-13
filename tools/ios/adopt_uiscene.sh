@@ -23,7 +23,7 @@ MARK="LOVE_UISCENE_ADOPTION"
 [ -f "$PLIST" ] || { echo "Not found: $PLIST"; exit 1; }
 
 # 1. Scene delegate + window attachment ---------------------------------------
-PATCH_VERSION=2
+PATCH_VERSION=3
 if grep -q "$MARK v$PATCH_VERSION" "$IOSMM"; then
 	echo "ios.mm already patched"
 else
@@ -39,7 +39,7 @@ EOF2
 	fi
 	cat >> "$IOSMM" <<'EOF'
 
-// ---- LOVE_UISCENE_ADOPTION v2 ------------------------------------------------
+// ---- LOVE_UISCENE_ADOPTION v3 ------------------------------------------------
 // Scene life cycle support, required for apps built with the iOS 27 SDK.
 // SDL2 still creates its UIWindow the old way (initWithFrame:), and a window
 // without a window scene never reaches the screen, so every window that is
@@ -54,12 +54,20 @@ static NSHashTable *loveSceneWindows = nil;   // weak: every window shown so far
 static NSHashTable *loveSceneKeyWindow = nil; // weak: the last window made key
 static UIWindowScene *loveWindowScene = nil;
 
+// SDL creates its UIWindow from UIScreen.bounds before the scene connects, so
+// the window can be portrait-sized while the scene is landscape. Attach it to
+// the scene and give it the scene's bounds.
 static void loveAttachWindowToScene(UIWindow *window)
 {
 	if (@available(iOS 13.0, *))
 	{
-		if (loveWindowScene != nil && window.windowScene == nil)
+		if (loveWindowScene == nil)
+			return;
+		if (window.windowScene == nil)
 			window.windowScene = loveWindowScene;
+		CGRect bounds = loveWindowScene.coordinateSpace.bounds;
+		if (!CGRectEqualToRect(window.frame, bounds))
+			window.frame = bounds;
 	}
 }
 
@@ -106,6 +114,7 @@ static void loveRestoreViewFrames(void)
 {
 	for (UIWindow *window in [loveSceneWindows allObjects])
 	{
+		loveAttachWindowToScene(window);
 		UIViewController *vc = window.rootViewController;
 		if (vc != nil && vc.view != nil)
 		{
