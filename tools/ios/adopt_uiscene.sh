@@ -23,12 +23,23 @@ MARK="LOVE_UISCENE_ADOPTION"
 [ -f "$PLIST" ] || { echo "Not found: $PLIST"; exit 1; }
 
 # 1. Scene delegate + window attachment ---------------------------------------
-if grep -q "$MARK" "$IOSMM"; then
+PATCH_VERSION=2
+if grep -q "$MARK v$PATCH_VERSION" "$IOSMM"; then
 	echo "ios.mm already patched"
 else
+	if grep -q "$MARK" "$IOSMM"; then
+		# remove the older patch block
+		python3 - "$IOSMM" <<'EOF2'
+import re, sys
+p = sys.argv[1]
+s = open(p).read()
+s = re.sub(r"\n// ---- LOVE_UISCENE_ADOPTION.*?// ---- end LOVE_UISCENE_ADOPTION -+\n", "\n", s, flags=re.S)
+open(p, "w").write(s)
+EOF2
+	fi
 	cat >> "$IOSMM" <<'EOF'
 
-// ---- LOVE_UISCENE_ADOPTION ---------------------------------------------------
+// ---- LOVE_UISCENE_ADOPTION v2 ------------------------------------------------
 // Scene life cycle support, required for apps built with the iOS 27 SDK.
 // SDL2 still creates its UIWindow the old way (initWithFrame:), and a window
 // without a window scene never reaches the screen, so every window that is
@@ -88,7 +99,30 @@ static void loveAttachWindowToScene(UIWindow *window)
 @property (nonatomic, strong) UIWindow *window;
 @end
 
+// SDL resizes its view when the on-screen keyboard appears, using
+// statusBarOrientation, which is wrong under the scene life cycle and leaves the
+// game squashed into a corner. After SDL has reacted, put the view back.
+static void loveRestoreViewFrames(void)
+{
+	for (UIWindow *window in [loveSceneWindows allObjects])
+	{
+		UIViewController *vc = window.rootViewController;
+		if (vc != nil && vc.view != nil)
+		{
+			vc.view.transform = CGAffineTransformIdentity;
+			vc.view.frame = window.bounds;
+		}
+	}
+}
+
 @implementation LoveSceneDelegate
+
+- (void)loveKeyboardChanged:(NSNotification *)note
+{
+	dispatch_async(dispatch_get_main_queue(), ^{
+		loveRestoreViewFrames();
+	});
+}
 
 - (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions
 {
@@ -96,6 +130,11 @@ static void loveAttachWindowToScene(UIWindow *window)
 		return;
 
 	loveWindowScene = (UIWindowScene *) scene;
+
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	[nc addObserver:self selector:@selector(loveKeyboardChanged:) name:UIKeyboardDidShowNotification object:nil];
+	[nc addObserver:self selector:@selector(loveKeyboardChanged:) name:UIKeyboardDidHideNotification object:nil];
+	[nc addObserver:self selector:@selector(loveKeyboardChanged:) name:UIKeyboardDidChangeFrameNotification object:nil];
 
 	// Windows SDL created before the scene connected
 	for (UIWindow *window in [loveSceneWindows allObjects])
