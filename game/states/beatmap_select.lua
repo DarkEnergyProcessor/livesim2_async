@@ -544,6 +544,11 @@ local beatmapSelect = Gamestate.create {
 	},
 }
 
+local function setSearchKeyboard(self, shown)
+	self.persist.searchKeyboard = shown
+	love.keyboard.setTextInput(shown)
+end
+
 function beatmapSelect:load()
 	Glow.clear()
 
@@ -591,7 +596,8 @@ function beatmapSelect:load()
 		self.data.search = CircleIconButton(color.hex333131, 36, self.assets.images.search, 0.64, ColorTheme.get())
 		self.data.search:setData(self)
 		self.data.search:addEventListener("mousereleased", function()
-			love.keyboard.setTextInput(not(love.keyboard.hasTextInput()))
+			-- track the state ourselves: hasTextInput() is unreliable on iOS
+			setSearchKeyboard(self, not(self.persist.searchKeyboard))
 		end)
 	end
 	Glow.addFixedElement(self.data.search, 112, 4)
@@ -1032,6 +1038,7 @@ function beatmapSelect:start()
 end
 
 function beatmapSelect:exit()
+	if self.persist.searchKeyboard then setSearchKeyboard(self, false) end
 	self.persist.active = false
 	BeatmapList.pop(true)
 end
@@ -1052,6 +1059,7 @@ function beatmapSelect:resumed()
 end
 
 function beatmapSelect:paused()
+	if self.persist.searchKeyboard then setSearchKeyboard(self, false) end
 	self.persist.active = false
 end
 
@@ -1138,14 +1146,20 @@ function beatmapSelect:draw()
 	self.persist.dropdownFrame:draw()
 end
 
-beatmapSelect:registerEvent("mousereleased", function(self)
+beatmapSelect:registerEvent("mousereleased", function(self, x, y)
 	self.data.difficultyDropdown:hide()
+	-- tapping anywhere below the top bar closes the on-screen keyboard
+	if self.persist.searchKeyboard and y and y > 80 then
+		setSearchKeyboard(self, false)
+	end
 end)
 
 beatmapSelect:registerEvent("keypressed", function(self, key)
 	if key == "backspace" then
 		self.persist.searchQuery[#self.persist.searchQuery] = nil
 		updateBeatmapList(self)
+	elseif (key == "return" or key == "kpenter") and self.persist.searchKeyboard then
+		setSearchKeyboard(self, false)
 	end
 end)
 
