@@ -172,7 +172,12 @@ local function liveClearCallback(self)
 
 	Gamestate.replace(nil, "result", {
 		cardStats = self.data.cardLive and self.data.cardLive:getStats() or nil,
-		name = self.persist.beatmapDisplayName,
+		-- SIF gift fork: must be the beatmap file id, not the display title.
+		-- The result screen uses arg.name for replays/<name>/ save paths and
+		-- for relaunching the live ("Watch replay"); passing the display name
+		-- saved replays in the wrong folder and crashed watch-replay with
+		-- "beatmap doesn't exist". The title shown comes from summary.name.
+		name = self.persist.beatmapName,
 		summary = self.persist.summary,
 		replay = replayData,
 		livesim2 = self.persist.arg,
